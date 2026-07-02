@@ -1,0 +1,1218 @@
+"use server"
+
+import { z } from "zod"
+
+import { getAppMetadata, type AppRole } from "@/lib/auth"
+import { matchNoteFromScore, scoreMatch } from "@/lib/matching"
+import { loadPlexusDb } from "@/lib/plexus-data"
+import type {
+  Announcement,
+  AnnouncementChannel,
+  AnnouncementTarget,
+  CompanyRegistrationProfile,
+  Deal,
+  DelegationCompany,
+  EventResource,
+  LocalDb,
+  MatchStatus,
+  Meeting,
+  PartnerCompany,
+} from "@/lib/local-db"
+import { createSupabaseServerClient } from "@/lib/supabase/server"
+
+type ActionResult = { ok: true; db: LocalDb } | { ok: false; error: string }
+
+const uuidSchema = z.uuid()
+const delegationStatusSchema = z.enum([
+  "Onboarded",
+  "Invited",
+  "Incomplete",
+  "Locked",
+])
+const partnerStatusSchema = z.enum([
+  "Sourced",
+  "Invited",
+  "Confirmed",
+  "Declined",
+])
+const partnerTypeSchema = z.enum(["Government", "Association", "Enterprise"])
+const verifiedSchema = z.enum(["Verified", "Pending", "Flagged"])
+const attendanceSchema = z.enum(["Invited", "Confirmed", "Declined", "Arrived"])
+const matchStatusSchema = z.enum([
+  "Proposed",
+  "Accepted",
+  "Rejected",
+  "Session Scheduled",
+])
+const meetingStatusSchema = z.enum([
+  "Scheduled",
+  "Live",
+  "Completed",
+  "Cancelled",
+])
+const platformSchema = z.enum(["Zoom", "VooV"])
+const dealStatusSchema = z.enum([
+  "Under Discussion",
+  "Agreement Reached",
+  "Signed",
+  "Failed",
+])
+const announcementTargetSchema = z.enum([
+  "all",
+  "delegation",
+  "partner",
+  "admin",
+])
+const announcementChannelSchema = z.enum(["email", "notification", "both"])
+const resourceAudienceSchema = z.enum(["all", "delegation", "partner", "admin"])
+const resourceCategorySchema = z.enum([
+  "Agenda",
+  "Map",
+  "Briefing",
+  "Logistics",
+  "Other",
+])
+const meetingSlotSchema = z
+  .array(z.iso.datetime({ offset: true }))
+  .min(3)
+  .max(6)
+  .optional()
+const registrationProfileSchema = z.object({
+  companyNameEn: z.string().trim().min(1).max(240),
+  companyNameCn: z.string().trim().max(240).default(""),
+  countryRegion: z.string().trim().max(80).default(""),
+  countryOther: z.string().trim().max(120).default(""),
+  yearEstablished: z.string().trim().max(20).default(""),
+  registrationNumber: z.string().trim().max(120).default(""),
+  website: z.string().trim().max(240).default(""),
+  address: z.string().trim().max(500).default(""),
+  employeeRange: z.string().trim().max(40).default(""),
+  annualRevenueRange: z.string().trim().max(80).default(""),
+  contactName: z.string().trim().max(160).default(""),
+  contactPosition: z.string().trim().max(160).default(""),
+  contactEmail: z.email().or(z.literal("")).default(""),
+  mobileNumber: z.string().trim().max(80).default(""),
+  chatId: z.string().trim().max(120).default(""),
+  preferredLanguages: z.array(z.string().trim().max(40)).default([]),
+  industries: z.array(z.string().trim().max(100)).default([]),
+  industryOther: z.string().trim().max(160).default(""),
+  introduction: z.string().trim().max(3000).default(""),
+  productsServices: z.string().trim().max(3000).default(""),
+  certifications: z.array(z.string().trim().max(80)).default([]),
+  certificationOther: z.string().trim().max(160).default(""),
+  offers: z.array(z.string().trim().max(100)).default([]),
+  offerOther: z.string().trim().max(160).default(""),
+  lookingFor: z.array(z.string().trim().max(120)).default([]),
+  lookingForOther: z.string().trim().max(160).default(""),
+  preferredPartnerTypes: z.array(z.string().trim().max(120)).default([]),
+  preferredPartnerOther: z.string().trim().max(160).default(""),
+  expectedOutcomes: z.array(z.string().trim().max(120)).default([]),
+  idealPartner: z.string().trim().max(2500).default(""),
+  opportunity: z.string().trim().max(2500).default(""),
+  exportsInternationally: z.string().trim().max(12).default(""),
+  exportMarkets: z.string().trim().max(1000).default(""),
+  meetingFormat: z.string().trim().max(40).default(""),
+  availableMeetingDates: z.string().trim().max(1000).default(""),
+  maxMeetings: z.string().trim().max(40).default(""),
+  supportingDocuments: z.array(z.string().trim().max(120)).default([]),
+  consent: z.boolean().default(false),
+  consentName: z.string().trim().max(160).default(""),
+  consentDate: z.string().trim().max(40).default(""),
+})
+
+const delegationCompanySchema = z.object({
+  id: z.string(),
+  role: z.literal("delegation"),
+  nameEn: z.string().trim().min(1),
+  nameCn: z.string().trim().min(1),
+  sector: z.string().trim().min(1),
+  origin: z.string().trim().min(1),
+  size: z.string().trim().min(1),
+  needs: z.string().trim().min(1),
+  contact: z.string().trim().min(1),
+  contactMeta: z.string().trim().min(1),
+  status: delegationStatusSchema,
+  profileComplete: z.number().int().min(0).max(100),
+  urgent: z.boolean(),
+  coordinator: z.string().trim().min(1),
+  profileData: registrationProfileSchema.optional(),
+})
+
+const partnerCompanySchema = z.object({
+  id: z.string(),
+  role: z.literal("partner"),
+  nameEn: z.string().trim().min(1),
+  nameCn: z.string().trim().min(1),
+  sector: z.string().trim().min(1),
+  type: partnerTypeSchema,
+  size: z.string().trim().min(1),
+  offerings: z.string().trim().min(1),
+  contact: z.string().trim().min(1),
+  contactMeta: z.string().trim().min(1),
+  status: partnerStatusSchema,
+  profileComplete: z.number().int().min(0).max(100),
+  verified: verifiedSchema,
+  attendance: attendanceSchema,
+  arrived: z.boolean(),
+  profileData: registrationProfileSchema.optional(),
+})
+
+const managedCompanySchema = z.discriminatedUnion("role", [
+  delegationCompanySchema,
+  partnerCompanySchema,
+])
+
+async function runMutation(
+  operation: Parameters<typeof withSession>[0],
+  options?: { role?: AppRole }
+): Promise<ActionResult> {
+  return withSession(operation, options)
+}
+
+async function withSession(
+  operation: (
+    context: Awaited<ReturnType<typeof createActionContext>>
+  ) => Promise<{ error?: { message: string } | null } | void>,
+  options?: { role?: AppRole }
+): Promise<ActionResult> {
+  const context = await createActionContext()
+
+  if (!context.userRole) {
+    return { ok: false, error: "Your account is missing app_metadata.role." }
+  }
+
+  if (options?.role && context.userRole !== options.role) {
+    return {
+      ok: false,
+      error: "You do not have permission to perform this action.",
+    }
+  }
+
+  const result = await operation(context)
+
+  if (result?.error) {
+    return { ok: false, error: result.error.message }
+  }
+
+  return { ok: true, db: await loadPlexusDb(context.supabase) }
+}
+
+async function createActionContext() {
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+
+  if (error || !user) {
+    throw new Error(error?.message ?? "You must be logged in.")
+  }
+
+  const metadata = getAppMetadata(user)
+
+  return {
+    supabase,
+    metadata,
+    userRole: metadata.role,
+  }
+}
+
+function toDelegationPayload(company: DelegationCompany) {
+  return {
+    name_en: company.nameEn,
+    name_cn: company.nameCn,
+    sector: company.sector,
+    origin: company.origin,
+    company_size: company.size,
+    needs: company.needs,
+    contact: company.contact,
+    contact_meta: company.contactMeta,
+    status: company.status,
+    profile_complete: company.profileComplete,
+    urgent: company.urgent,
+    coordinator: company.coordinator,
+    profile_data: company.profileData ?? {},
+  }
+}
+
+function toPartnerPayload(company: PartnerCompany) {
+  return {
+    name_en: company.nameEn,
+    name_cn: company.nameCn,
+    sector: company.sector,
+    partner_type: company.type,
+    company_size: company.size,
+    offerings: company.offerings,
+    contact: company.contact,
+    contact_meta: company.contactMeta,
+    status: company.status,
+    profile_complete: company.profileComplete,
+    verified: company.verified,
+    attendance: company.attendance,
+    arrived: company.arrived,
+    profile_data: company.profileData ?? {},
+  }
+}
+
+function profileCompleteness(profile: CompanyRegistrationProfile) {
+  const requiredValues = [
+    profile.countryRegion,
+    profile.companyNameEn,
+    profile.yearEstablished,
+    profile.registrationNumber,
+    profile.website,
+    profile.address,
+    profile.employeeRange,
+    profile.contactName,
+    profile.contactPosition,
+    profile.contactEmail,
+    profile.mobileNumber,
+    profile.introduction,
+    profile.productsServices,
+    profile.idealPartner,
+    profile.opportunity,
+    profile.exportsInternationally,
+    profile.meetingFormat,
+    profile.availableMeetingDates,
+    profile.maxMeetings,
+    profile.consentName,
+    profile.consentDate,
+  ]
+  const requiredLists = [
+    profile.preferredLanguages,
+    profile.industries,
+    profile.offers,
+    profile.lookingFor,
+    profile.preferredPartnerTypes,
+    profile.expectedOutcomes,
+  ]
+  const filled =
+    requiredValues.filter(Boolean).length +
+    requiredLists.filter((items) => items.length > 0).length +
+    (profile.consent ? 1 : 0)
+
+  return Math.min(100, Math.round((filled / 28) * 100))
+}
+
+function isUuid(value: string) {
+  return uuidSchema.safeParse(value).success
+}
+
+export async function createCompanyAction(
+  values: unknown
+): Promise<ActionResult> {
+  const parsed = managedCompanySchema.safeParse(values)
+
+  if (!parsed.success) {
+    return { ok: false, error: "Check the company fields and try again." }
+  }
+
+  return runMutation(
+    async ({ supabase }) => {
+      if (parsed.data.role === "delegation") {
+        const payload = toDelegationPayload(parsed.data)
+        const insertPayload: Record<string, unknown> = isUuid(parsed.data.id)
+          ? { id: parsed.data.id, ...payload }
+          : payload
+
+        return supabase.from("delegation_companies").insert(insertPayload)
+      }
+
+      const payload = toPartnerPayload(parsed.data)
+      const insertPayload: Record<string, unknown> = isUuid(parsed.data.id)
+        ? { id: parsed.data.id, ...payload }
+        : payload
+
+      return supabase.from("partner_companies").insert(insertPayload)
+    },
+    { role: "admin" }
+  )
+}
+
+export async function updateCompanyAction(
+  values: unknown
+): Promise<ActionResult> {
+  const parsed = managedCompanySchema.safeParse(values)
+
+  if (!parsed.success || !isUuid(parsed.data.id)) {
+    return { ok: false, error: "Check the company fields and try again." }
+  }
+
+  return runMutation(async ({ supabase }) => {
+    if (parsed.data.role === "delegation") {
+      return supabase
+        .from("delegation_companies")
+        .update(toDelegationPayload(parsed.data))
+        .eq("id", parsed.data.id)
+    }
+
+    return supabase
+      .from("partner_companies")
+      .update(toPartnerPayload(parsed.data))
+      .eq("id", parsed.data.id)
+  })
+}
+
+export async function deleteCompanyAction(
+  kind: "delegation" | "partner",
+  id: string
+): Promise<ActionResult> {
+  if (!isUuid(id)) {
+    return { ok: false, error: "Invalid company id." }
+  }
+
+  return runMutation(
+    async ({ supabase }) =>
+      kind === "delegation"
+        ? await supabase.from("delegation_companies").delete().eq("id", id)
+        : await supabase.from("partner_companies").delete().eq("id", id),
+    { role: "admin" }
+  )
+}
+
+export async function addMatchAction(
+  delegationId: string,
+  partnerId: string
+): Promise<ActionResult> {
+  if (!isUuid(delegationId) || !isUuid(partnerId)) {
+    return {
+      ok: false,
+      error: "Select valid companies before creating a match.",
+    }
+  }
+
+  return runMutation(
+    async ({ supabase }) => {
+      const [delegationResult, partnerResult] = await Promise.all([
+        supabase
+          .from("delegation_companies")
+          .select("sector, needs, profile_complete")
+          .eq("id", delegationId)
+          .single(),
+        supabase
+          .from("partner_companies")
+          .select("sector, offerings, verified, profile_complete")
+          .eq("id", partnerId)
+          .single(),
+      ])
+
+      if (delegationResult.error) {
+        return delegationResult
+      }
+      if (partnerResult.error) {
+        return partnerResult
+      }
+
+      const result = scoreMatch({
+        delegation: {
+          sector: delegationResult.data.sector,
+          needs: delegationResult.data.needs,
+          profileComplete: delegationResult.data.profile_complete,
+        },
+        partner: {
+          sector: partnerResult.data.sector,
+          offerings: partnerResult.data.offerings,
+          verified: partnerResult.data.verified,
+          profileComplete: partnerResult.data.profile_complete,
+        },
+      })
+
+      return supabase.from("matches").insert({
+        delegation_company_id: delegationId,
+        partner_company_id: partnerId,
+        status: "Proposed",
+        score: result.score,
+        note: matchNoteFromScore(result),
+      })
+    },
+    { role: "admin" }
+  )
+}
+
+type MatchCandidateRow = {
+  id: string
+  name_en: string
+  name_cn: string
+  sector: string
+}
+
+export async function requestMatchAction(
+  counterpartId: string
+): Promise<ActionResult> {
+  if (!isUuid(counterpartId)) {
+    return { ok: false, error: "Select a valid company to match." }
+  }
+
+  return runMutation(async ({ supabase, metadata, userRole }) => {
+    if (userRole !== "delegation" && userRole !== "partner") {
+      return {
+        error: {
+          message: "Only delegation or partner accounts can request matches.",
+        },
+      }
+    }
+
+    // Confirm the counterpart is on the opposite side and visible through the
+    // name+sector-only discovery function (no other columns are exposed).
+    const candidatesResult = await supabase.rpc("match_candidates")
+
+    if (candidatesResult.error) {
+      return candidatesResult
+    }
+
+    const candidates = (candidatesResult.data ?? []) as MatchCandidateRow[]
+    const candidate = candidates.find((row) => row.id === counterpartId)
+
+    if (!candidate) {
+      return { error: { message: "That company is not available to match." } }
+    }
+
+    let delegationId: string
+    let partnerId: string
+    let scoreInput: Parameters<typeof scoreMatch>[0]
+
+    if (userRole === "delegation") {
+      if (!metadata.delegation_company_id) {
+        return {
+          error: { message: "No delegation company is linked to your account." },
+        }
+      }
+
+      delegationId = metadata.delegation_company_id
+      partnerId = counterpartId
+
+      const ownResult = await supabase
+        .from("delegation_companies")
+        .select("sector, needs, profile_complete")
+        .eq("id", delegationId)
+        .single()
+
+      if (ownResult.error) {
+        return ownResult
+      }
+
+      scoreInput = {
+        delegation: {
+          sector: ownResult.data.sector,
+          needs: ownResult.data.needs,
+          profileComplete: ownResult.data.profile_complete,
+        },
+        partner: {
+          sector: candidate.sector,
+          offerings: "",
+          verified: "Pending",
+          profileComplete: 0,
+        },
+      }
+    } else {
+      if (!metadata.partner_company_id) {
+        return {
+          error: { message: "No partner company is linked to your account." },
+        }
+      }
+
+      partnerId = metadata.partner_company_id
+      delegationId = counterpartId
+
+      const ownResult = await supabase
+        .from("partner_companies")
+        .select("sector, offerings, verified, profile_complete")
+        .eq("id", partnerId)
+        .single()
+
+      if (ownResult.error) {
+        return ownResult
+      }
+
+      scoreInput = {
+        delegation: {
+          sector: candidate.sector,
+          needs: "",
+          profileComplete: 0,
+        },
+        partner: {
+          sector: ownResult.data.sector,
+          offerings: ownResult.data.offerings,
+          verified: ownResult.data.verified,
+          profileComplete: ownResult.data.profile_complete,
+        },
+      }
+    }
+
+    const existing = await supabase
+      .from("matches")
+      .select("id")
+      .eq("delegation_company_id", delegationId)
+      .eq("partner_company_id", partnerId)
+      .limit(1)
+
+    if (existing.error) {
+      return existing
+    }
+
+    if ((existing.data ?? []).length > 0) {
+      return {
+        error: { message: "You have already matched with this company." },
+      }
+    }
+
+    const result = scoreMatch(scoreInput)
+
+    return supabase.from("matches").insert({
+      delegation_company_id: delegationId,
+      partner_company_id: partnerId,
+      status: "Proposed",
+      score: result.score,
+      note: `Self-requested by ${userRole}. ${matchNoteFromScore(result)}`,
+    })
+  })
+}
+
+export async function updateMatchStatusAction(
+  matchId: string,
+  status: MatchStatus
+): Promise<ActionResult> {
+  const parsed = matchStatusSchema.safeParse(status)
+
+  if (!isUuid(matchId) || !parsed.success) {
+    return { ok: false, error: "Invalid match status update." }
+  }
+
+  return runMutation(
+    async ({ supabase }) =>
+      await supabase
+        .from("matches")
+        .update({ status: parsed.data })
+        .eq("id", matchId)
+  )
+}
+
+export async function scheduleMeetingAction(
+  matchId: string,
+  requestedSlots?: string[],
+  requestedInterpreterId?: string | null
+): Promise<ActionResult> {
+  const parsedSlots = meetingSlotSchema.safeParse(requestedSlots)
+  const parsedInterpreter = z
+    .union([uuidSchema, z.null()])
+    .optional()
+    .safeParse(requestedInterpreterId)
+
+  if (!isUuid(matchId) || !parsedSlots.success || !parsedInterpreter.success) {
+    return { ok: false, error: "Invalid match id." }
+  }
+
+  const interpreterId = parsedInterpreter.data ?? null
+  const meetingSlots = parsedSlots.data ?? []
+
+  if (meetingSlots.length > 0 && !meetingSlots.every(isValidMeetingSlot)) {
+    return {
+      ok: false,
+      error: "Select at least 3 future one-hour working-day slots.",
+    }
+  }
+
+  const meetingId = crypto.randomUUID()
+
+  return runMutation(async ({ supabase, metadata, userRole }) => {
+    const matchResult = await supabase
+      .from("matches")
+      .select("delegation_company_id, partner_company_id, status")
+      .eq("id", matchId)
+      .single()
+
+    if (matchResult.error) {
+      return matchResult
+    }
+
+    const match = matchResult.data
+    const canSchedule =
+      userRole === "admin" ||
+      (userRole === "delegation" &&
+        metadata.delegation_company_id === match.delegation_company_id) ||
+      (userRole === "partner" &&
+        metadata.partner_company_id === match.partner_company_id)
+
+    if (!canSchedule) {
+      return {
+        error: {
+          message: "You can only request meetings for your own matches.",
+        },
+      }
+    }
+
+    if (
+      userRole !== "admin" &&
+      !["Accepted", "Session Scheduled"].includes(match.status)
+    ) {
+      return {
+        error: {
+          message: "Accept the match before requesting a meeting.",
+        },
+      }
+    }
+
+    let requestedInterpreter: { name: string; languages: string } | null = null
+
+    if (interpreterId) {
+      const interpreterResult = await supabase
+        .from("interpreters")
+        .select("name, languages, available")
+        .eq("id", interpreterId)
+        .single()
+
+      if (interpreterResult.error) {
+        return {
+          error: { message: "The selected interpreter is no longer available." },
+        }
+      }
+
+      if (!interpreterResult.data.available) {
+        return {
+          error: { message: "The selected interpreter is not available." },
+        }
+      }
+
+      requestedInterpreter = {
+        name: interpreterResult.data.name,
+        languages: interpreterResult.data.languages,
+      }
+    }
+
+    const existingMeeting = await supabase
+      .from("meetings")
+      .select("id")
+      .eq("match_id", matchId)
+      .limit(1)
+
+    if (existingMeeting.error) {
+      return existingMeeting
+    }
+
+    const matchUpdate = await supabase
+      .from("matches")
+      .update({ status: "Session Scheduled" })
+      .eq("id", matchId)
+
+    if (matchUpdate.error) {
+      return matchUpdate
+    }
+
+    const startsAt = meetingSlots[0] ?? "2026-07-15T11:00:00+08:00"
+    const interpreterNote = requestedInterpreter
+      ? ` Preferred interpreter: ${requestedInterpreter.name} (${requestedInterpreter.languages}) — admin to confirm.`
+      : ""
+    const summary =
+      (meetingSlots.length > 0
+        ? `Participant selected preferred 1-hour working-day slots: ${meetingSlots.join(", ")}. Admin should confirm one slot and replace the placeholder with the final Zoom/VooV session.`
+        : userRole === "admin"
+          ? "Admin scheduled production session. Replace with Zoom/VooV API after workflow confirmation."
+          : "Participant requested a meeting after accepting the match. Admin can replace this placeholder with a confirmed Zoom/VooV slot.") +
+      interpreterNote
+
+    if ((existingMeeting.data ?? []).length > 0) {
+      return supabase
+        .from("meetings")
+        .update({
+          starts_at: startsAt,
+          duration_minutes: 60,
+          requested_interpreter_id: interpreterId,
+          summary,
+          status: "Scheduled",
+        })
+        .eq("id", existingMeeting.data?.[0]?.id)
+    }
+
+    return supabase.from("meetings").insert({
+      id: meetingId,
+      match_id: matchId,
+      starts_at: startsAt,
+      duration_minutes: 60,
+      platform: "VooV",
+      link: `https://meeting.tencent.com/dm/${meetingId}`,
+      interpreter: "To be confirmed",
+      requested_interpreter_id: interpreterId,
+      host: "Sarah Lim",
+      status: "Scheduled",
+      summary,
+    })
+  })
+}
+
+function isValidMeetingSlot(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}T(09|10|11|14|15|16):00:00\+08:00$/.test(value)) {
+    return false
+  }
+
+  const date = new Date(value)
+  const day = date.getUTCDay()
+
+  return date.getTime() > Date.now() && day >= 1 && day <= 5
+}
+
+export async function completeMeetingAction(
+  meetingId: string
+): Promise<ActionResult> {
+  if (!isUuid(meetingId)) {
+    return { ok: false, error: "Invalid meeting id." }
+  }
+
+  return runMutation(
+    async ({ supabase }) =>
+      await supabase
+        .from("meetings")
+        .update({
+          status: "Completed" satisfies Meeting["status"],
+          summary:
+            "Admin summary saved: both parties requested September follow-up.",
+        })
+        .eq("id", meetingId),
+    { role: "admin" }
+  )
+}
+
+const interpreterSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  languages: z.string().trim().min(2).max(120),
+  email: z.email().or(z.literal("")).default(""),
+  notes: z.string().trim().max(1000).default(""),
+  available: z.boolean().default(true),
+})
+
+export async function createInterpreterAction(
+  input: unknown
+): Promise<ActionResult> {
+  const parsed = interpreterSchema.safeParse(input)
+
+  if (!parsed.success) {
+    return { ok: false, error: "Check the interpreter fields and try again." }
+  }
+
+  return runMutation(
+    async ({ supabase }) =>
+      await supabase.from("interpreters").insert({
+        name: parsed.data.name,
+        languages: parsed.data.languages,
+        email: parsed.data.email,
+        notes: parsed.data.notes,
+        available: parsed.data.available,
+      }),
+    { role: "admin" }
+  )
+}
+
+export async function updateInterpreterAction(
+  interpreterId: string,
+  input: unknown
+): Promise<ActionResult> {
+  const parsed = interpreterSchema.safeParse(input)
+
+  if (!isUuid(interpreterId) || !parsed.success) {
+    return { ok: false, error: "Check the interpreter fields and try again." }
+  }
+
+  return runMutation(
+    async ({ supabase }) =>
+      await supabase
+        .from("interpreters")
+        .update({
+          name: parsed.data.name,
+          languages: parsed.data.languages,
+          email: parsed.data.email,
+          notes: parsed.data.notes,
+          available: parsed.data.available,
+        })
+        .eq("id", interpreterId),
+    { role: "admin" }
+  )
+}
+
+export async function deleteInterpreterAction(
+  interpreterId: string
+): Promise<ActionResult> {
+  if (!isUuid(interpreterId)) {
+    return { ok: false, error: "Invalid interpreter id." }
+  }
+
+  return runMutation(
+    async ({ supabase }) =>
+      await supabase.from("interpreters").delete().eq("id", interpreterId),
+    { role: "admin" }
+  )
+}
+
+export async function assignMeetingInterpreterAction(
+  meetingId: string,
+  interpreterId: string | null
+): Promise<ActionResult> {
+  const parsedInterpreter = z
+    .union([uuidSchema, z.null()])
+    .safeParse(interpreterId)
+
+  if (!isUuid(meetingId) || !parsedInterpreter.success) {
+    return { ok: false, error: "Invalid interpreter assignment." }
+  }
+
+  const assignedId = parsedInterpreter.data
+
+  return runMutation(
+    async ({ supabase }) => {
+      let interpreterText = "To be confirmed"
+
+      if (assignedId) {
+        const interpreterResult = await supabase
+          .from("interpreters")
+          .select("name, languages")
+          .eq("id", assignedId)
+          .single()
+
+        if (interpreterResult.error) {
+          return {
+            error: { message: "The selected interpreter no longer exists." },
+          }
+        }
+
+        interpreterText = `${interpreterResult.data.name} · ${interpreterResult.data.languages}`
+      }
+
+      // Only update the confirmed interpreter (display text); the requester's
+      // preference in requested_interpreter_id is preserved for the record.
+      return supabase
+        .from("meetings")
+        .update({ interpreter: interpreterText })
+        .eq("id", meetingId)
+    },
+    { role: "admin" }
+  )
+}
+
+export async function updateDealAction(
+  dealId: string,
+  status: Deal["status"]
+): Promise<ActionResult> {
+  const parsed = dealStatusSchema.safeParse(status)
+
+  if (!isUuid(dealId) || !parsed.success) {
+    return { ok: false, error: "Invalid deal update." }
+  }
+
+  return runMutation(
+    async ({ supabase }) =>
+      await supabase
+        .from("deals")
+        .update({
+          status: parsed.data,
+          ...(parsed.data === "Signed"
+            ? { document: "Signed-MOU-production.pdf" }
+            : {}),
+        })
+        .eq("id", dealId),
+    { role: "admin" }
+  )
+}
+
+export async function confirmAttendanceAction(
+  partnerId: string
+): Promise<ActionResult> {
+  if (!isUuid(partnerId)) {
+    return { ok: false, error: "Invalid partner id." }
+  }
+
+  return runMutation(
+    async ({ supabase }) =>
+      await supabase
+        .from("partner_companies")
+        .update({ attendance: "Confirmed", status: "Confirmed" })
+        .eq("id", partnerId)
+  )
+}
+
+export async function checkInPartnerAction(
+  partnerId: string
+): Promise<ActionResult> {
+  if (!isUuid(partnerId)) {
+    return { ok: false, error: "Invalid partner id." }
+  }
+
+  return runMutation(
+    async ({ supabase }) =>
+      await supabase
+        .from("partner_companies")
+        .update({ attendance: "Arrived", arrived: true })
+        .eq("id", partnerId),
+    { role: "admin" }
+  )
+}
+
+export async function publishItineraryAction(
+  slotId: string
+): Promise<ActionResult> {
+  if (!isUuid(slotId)) {
+    return { ok: false, error: "Invalid itinerary slot id." }
+  }
+
+  return runMutation(
+    async ({ supabase }) => {
+      const { data, error } = await supabase
+        .from("itinerary_slots")
+        .select("published")
+        .eq("id", slotId)
+        .single()
+
+      if (error) {
+        return { error }
+      }
+
+      return supabase
+        .from("itinerary_slots")
+        .update({ published: !data.published })
+        .eq("id", slotId)
+    },
+    { role: "admin" }
+  )
+}
+
+export async function updateCompanyProfileAction(
+  kind: "delegation" | "partner",
+  id: string,
+  values: unknown
+): Promise<ActionResult> {
+  const parsed = registrationProfileSchema.safeParse(values)
+
+  if (!isUuid(id) || !parsed.success) {
+    return { ok: false, error: "Check the company profile and try again." }
+  }
+
+  const profile = parsed.data
+  const profileComplete = profileCompleteness(profile)
+
+  return runMutation(async ({ supabase, metadata, userRole }) => {
+    if (
+      userRole === "delegation" &&
+      (kind !== "delegation" || metadata.delegation_company_id !== id)
+    ) {
+      return {
+        error: { message: "You can only update your own company profile." },
+      }
+    }
+
+    if (
+      userRole === "partner" &&
+      (kind !== "partner" || metadata.partner_company_id !== id)
+    ) {
+      return {
+        error: { message: "You can only update your own company profile." },
+      }
+    }
+
+    if (kind === "delegation") {
+      return await supabase
+        .from("delegation_companies")
+        .update({
+          sector: profile.industries.join(", ") || "Pending profile",
+          name_en: profile.companyNameEn,
+          name_cn: profile.companyNameCn || profile.companyNameEn,
+          origin: profile.countryOther || profile.countryRegion || "Pending",
+          company_size: profile.employeeRange || "Pending",
+          needs:
+            profile.opportunity || profile.idealPartner || "Pending profile",
+          contact: profile.contactName || "Pending contact",
+          contact_meta: [
+            profile.contactPosition,
+            profile.contactEmail,
+            profile.mobileNumber,
+            profile.chatId,
+          ]
+            .filter(Boolean)
+            .join(" · "),
+          profile_complete: profileComplete,
+          status: profileComplete >= 90 ? "Locked" : "Incomplete",
+          urgent: !profile.consent,
+          profile_data: profile,
+        })
+        .eq("id", id)
+    }
+
+    return await supabase
+      .from("partner_companies")
+      .update({
+        sector: profile.industries.join(", ") || "Pending profile",
+        name_en: profile.companyNameEn,
+        name_cn: profile.companyNameCn || profile.companyNameEn,
+        company_size: profile.employeeRange || "Pending",
+        offerings:
+          profile.productsServices ||
+          profile.offers.join(", ") ||
+          "Pending profile",
+        contact: profile.contactName || "Pending contact",
+        contact_meta: [
+          profile.contactPosition,
+          profile.contactEmail,
+          profile.mobileNumber,
+          profile.chatId,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+        profile_complete: profileComplete,
+        verified:
+          profileComplete >= 90 && profile.consent ? "Verified" : "Pending",
+        profile_data: profile,
+      })
+      .eq("id", id)
+  })
+}
+
+export async function createMeetingAction(input: {
+  matchId: string
+  startsAt: string
+  duration: number
+  platform: Meeting["platform"]
+  link: string
+  interpreter: string
+  host: string
+  status: Meeting["status"]
+  summary: string
+}): Promise<ActionResult> {
+  const parsed = z
+    .object({
+      matchId: uuidSchema,
+      startsAt: z.iso.datetime({ offset: true }),
+      duration: z.number().int().min(5).max(480),
+      platform: platformSchema,
+      link: z.url(),
+      interpreter: z.string().trim().min(1),
+      host: z.string().trim().min(1),
+      status: meetingStatusSchema,
+      summary: z.string().trim().min(1),
+    })
+    .safeParse(input)
+
+  if (!parsed.success) {
+    return { ok: false, error: "Check the meeting fields and try again." }
+  }
+
+  return runMutation(
+    async ({ supabase }) =>
+      await supabase.from("meetings").insert({
+        match_id: parsed.data.matchId,
+        starts_at: parsed.data.startsAt,
+        duration_minutes: parsed.data.duration,
+        platform: parsed.data.platform,
+        link: parsed.data.link,
+        interpreter: parsed.data.interpreter,
+        host: parsed.data.host,
+        status: parsed.data.status,
+        summary: parsed.data.summary,
+      }),
+    { role: "admin" }
+  )
+}
+
+export async function sendAnnouncementAction(input: {
+  title: string
+  message: string
+  target: AnnouncementTarget
+  channel: AnnouncementChannel
+  status?: Announcement["status"]
+}): Promise<ActionResult> {
+  const parsed = z
+    .object({
+      title: z.string().trim().min(3).max(120),
+      message: z.string().trim().min(10).max(2000),
+      target: announcementTargetSchema,
+      channel: announcementChannelSchema,
+      status: z.enum(["Draft", "Queued", "Sent"]).optional(),
+    })
+    .safeParse(input)
+
+  if (!parsed.success) {
+    return { ok: false, error: "Check the announcement fields and try again." }
+  }
+
+  return runMutation(
+    async ({ supabase }) => {
+      const status = parsed.data.status ?? "Queued"
+      const announcementResult = await supabase.from("announcements").insert({
+        title: parsed.data.title,
+        message: parsed.data.message,
+        target: parsed.data.target,
+        channel: parsed.data.channel,
+        status,
+        sent_at: status === "Sent" ? new Date().toISOString() : null,
+        created_by: "Admin team",
+      })
+
+      if (announcementResult.error) {
+        return announcementResult
+      }
+
+      if (
+        parsed.data.channel === "notification" ||
+        parsed.data.channel === "both"
+      ) {
+        return supabase.from("notifications").insert({
+          message: `${parsed.data.title}: ${parsed.data.message}`,
+        })
+      }
+    },
+    { role: "admin" }
+  )
+}
+
+export async function createResourceAction(input: {
+  title: string
+  category: EventResource["category"]
+  fileName: string
+  fileUrl: string
+  audience: EventResource["audience"]
+  visibleToDelegation: boolean
+  notes: string
+}): Promise<ActionResult> {
+  const parsed = z
+    .object({
+      title: z.string().trim().min(3).max(120),
+      category: resourceCategorySchema,
+      fileName: z.string().trim().min(3).max(160),
+      fileUrl: z.string().trim().min(1).max(500),
+      audience: resourceAudienceSchema,
+      visibleToDelegation: z.boolean(),
+      notes: z.string().trim().max(1000),
+    })
+    .safeParse(input)
+
+  if (!parsed.success) {
+    return { ok: false, error: "Check the resource fields and try again." }
+  }
+
+  return runMutation(
+    async ({ supabase }) =>
+      await supabase.from("event_resources").insert({
+        title: parsed.data.title,
+        category: parsed.data.category,
+        file_name: parsed.data.fileName,
+        file_url: parsed.data.fileUrl,
+        audience: parsed.data.audience,
+        visible_to_delegation: parsed.data.visibleToDelegation,
+        notes: parsed.data.notes,
+      }),
+    { role: "admin" }
+  )
+}
+
+export async function toggleResourceVisibilityAction(
+  resourceId: string,
+  visibleToDelegation: boolean
+): Promise<ActionResult> {
+  if (!isUuid(resourceId)) {
+    return { ok: false, error: "Invalid resource id." }
+  }
+
+  return runMutation(
+    async ({ supabase }) =>
+      await supabase
+        .from("event_resources")
+        .update({ visible_to_delegation: visibleToDelegation })
+        .eq("id", resourceId),
+    { role: "admin" }
+  )
+}

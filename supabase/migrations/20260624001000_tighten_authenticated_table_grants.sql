@@ -1,0 +1,24 @@
+revoke all on public.user_profiles from authenticated;
+revoke all on public.delegation_companies from authenticated;
+revoke all on public.partner_companies from authenticated;
+revoke all on public.matches from authenticated;
+revoke all on public.meetings from authenticated;
+revoke all on public.deals from authenticated;
+revoke all on public.itinerary_slots from authenticated;
+revoke all on public.site_visits from authenticated;
+revoke all on public.site_visit_delegations from authenticated;
+revoke all on public.liaison_contacts from authenticated;
+revoke all on public.notifications from authenticated;
+
+grant select, insert, update, delete on public.user_profiles to authenticated;
+grant select, insert, update, delete on public.delegation_companies to authenticated;
+grant select, insert, update, delete on public.partner_companies to authenticated;
+grant select, insert, update, delete on public.matches to authenticated;
+grant select, insert, update, delete on public.meetings to authenticated;
+grant select, insert, update, delete on public.deals to authenticated;
+grant select, insert, update, delete on public.itinerary_slots to authenticated;
+grant select, insert, update, delete on public.site_visits to authenticated;
+grant select, insert, update, delete on public.site_visit_delegations to authenticated;
+grant select, insert, update, delete on public.liaison_contacts to authenticated;
+grant select, insert, update, delete on public.notifications to authenticated;
+

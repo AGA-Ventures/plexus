@@ -1,0 +1,211 @@
+{
+  "meta": {
+    "siteName": "Plexus",
+    "tagline": "Menghubungkan perniagaan merentasi sempadan."
+  },
+  "nav": {
+    "home": "Laman Utama",
+    "howItWorks": "Cara Ia Berfungsi",
+    "forVendors": "Untuk Vendor",
+    "forBusinesses": "Untuk Pemilik Perniagaan",
+    "pricing": "Harga",
+    "about": "Tentang Kami",
+    "contact": "Hubungi",
+    "login": "Log Masuk"
+  },
+  "hero": {
+    "eyebrow": "Padanan B2B dikuasakan AI",
+    "title": "Hubungan lebih tajam untuk perniagaan rentas sempadan.",
+    "body": "Plexus membantu dewan perniagaan, badan perdagangan dan penganjur acara melancarkan portal padanan perniagaan berjenama yang menukar profil ahli kepada pengenalan, mesyuarat dan peluang yang relevan.",
+    "vendorCta": "Untuk Vendor",
+    "businessCta": "Untuk Pemilik Perniagaan"
+  },
+  "problem": {
+    "title": "Padanan B2B rentas sempadan menjadi sukar apabila prosesnya berada dalam spreadsheet.",
+    "body": "Profil datang dalam format berbeza. Senarai pendek dibuat secara manual. Susulan mesyuarat hilang selepas acara. Plexus mewujudkan satu lapisan operasi untuk profil berstruktur, padanan dibantu AI dan hasil yang boleh diukur.",
+    "points": [
+      "Profil perniagaan yang bersih merentas pasaran dan bahasa.",
+      "Senarai pendek dibantu AI dengan kawalan penganjur.",
+      "Aliran mesyuarat, tandatangan dan susulan dalam satu tempat."
+    ]
+  },
+  "how": {
+    "title": "Cara ia berfungsi",
+    "body": "Laluan ringkas daripada profil kepada susulan komersial yang bermakna.",
+    "steps": [
+      {
+        "title": "Cipta profil",
+        "body": "Perniagaan berkongsi sektor, keupayaan, matlamat dan kriteria rakan kongsi."
+      },
+      {
+        "title": "Terima padanan",
+        "body": "Plexus menyusun peluang yang berpotensi sesuai untuk disemak penganjur."
+      },
+      {
+        "title": "Berhubung & berurusan",
+        "body": "Peserta bertemu, menjejak langkah seterusnya dan menggerakkan peluang ke arah perjanjian."
+      }
+    ]
+  },
+  "portals": {
+    "title": "Tiga portal, satu platform.",
+    "body": "Plexus menyokong model operasi white-label tanpa memecahkan pengalaman kepada terlalu banyak alat.",
+    "items": [
+      {
+        "title": "Super admin",
+        "body": "Keterlihatan Plexus merentas tenant, kualiti pelancaran dan konfigurasi platform."
+      },
+      {
+        "title": "Admin vendor",
+        "body": "Ruang kerja berjenama untuk dewan, persatuan dan penganjur acara."
+      },
+      {
+        "title": "Pemilik perniagaan",
+        "body": "Portal mudah untuk profil, padanan, mesyuarat dan susulan peluang."
+      }
+    ]
+  },
+  "countries": {
+    "title": "Negara aktif",
+    "body": "Bermula dengan Malaysia dan Macau, berkembang ke seluruh Asia melalui model white-label bersama rakan tempatan.",
+    "badges": ["Malaysia", "Macau", "Berkembang di Asia"]
+  },
+  "proof": {
+    "title": "Bukti sosial",
+    "body": "Logo rakan pelancaran dan testimoni akan dipaparkan apabila Plexus bergerak daripada pilot ke pelancaran umum.",
+    "empty": "Ruang bukti pra-pelancaran"
+  },
+  "cta": {
+    "title": "Bawa Plexus kepada ahli anda.",
+    "body": "Lancarkan portal padanan berjenama untuk komuniti perniagaan anda, atau sertai melalui portal vendor yang mengambil bahagian.",
+    "vendor": "White-label dengan Plexus",
+    "business": "Sertai sebagai perniagaan"
+  },
+  "pages": {
+    "for-vendors": {
+      "title": "Padanan B2B white-label untuk vendor.",
+      "body": "Berikan komuniti anda portal berjenama untuk profil ahli, padanan dibantu AI, mesyuarat dan hasil komersial.",
+      "points": [
+        "Lancarkan dengan jenama dan bahasa anda.",
+        "Semak dan luluskan padanan sebelum peserta melihatnya.",
+        "Jejak mesyuarat, tandatangan dan laporan selepas acara."
+      ]
+    },
+    "for-businesses": {
+      "title": "Cari rakan kongsi yang lebih sesuai tanpa kebisingan networking.",
+      "body": "Plexus memberi pemilik perniagaan cara berpandu untuk membina profil, menerima padanan dan menukar pengenalan kepada mesyuarat.",
+      "points": [
+        "Cipta profil perniagaan berstruktur.",
+        "Semak padanan rakan kongsi terpilih.",
+        "Jejak persediaan mesyuarat dan susulan."
+      ]
+    },
+    "how-it-works": {
+      "title": "Daripada profil kepada senarai pendek rakan kongsi.",
+      "body": "Plexus menukar data perniagaan kepada aliran padanan yang jelas.",
+      "points": [
+        "Kumpul data profil yang boleh dibandingkan.",
+        "Skor kesesuaian mengikut sektor, matlamat dan kesiapsiagaan.",
+        "Selaras mesyuarat dan langkah susulan."
+      ]
+    },
+    "pricing": {
+      "title": "Harga untuk vendor.",
+      "body": "Harga MVP kini melalui rundingan sementara rakan pelancaran membentuk pakej.",
+      "points": [
+        "Pakej pilot untuk pelancaran awal.",
+        "Pakej white-label untuk komuniti berulang.",
+        "Sokongan enterprise untuk program pelbagai pasaran."
+      ]
+    },
+    "about": {
+      "title": "Dibina untuk Malaysia, Macau dan koridor perniagaan Asia seterusnya.",
+      "body": "Plexus direka untuk organisasi yang mahu padanan perniagaan rentas sempadan menjadi lebih tersusun dan berorientasikan hasil.",
+      "points": [
+        "Berpangkalan operasi di Malaysia.",
+        "Fokus koridor Macau dan Greater China.",
+        "Model white-label untuk institusi tempatan yang dipercayai."
+      ]
+    },
+    "contact": {
+      "title": "Bercakap dengan Plexus.",
+      "body": "Halaman ini menjadi titik hubungan awam sementara borang lead penuh disiapkan.",
+      "points": [
+        "Kerjasama vendor",
+        "Program pilot",
+        "Onboarding pemilik perniagaan"
+      ]
+    },
+    "blog": {
+      "title": "Blog Plexus",
+      "body": "SEO dan kandungan pemasaran akan berada di sini pada fasa seterusnya.",
+      "points": [
+        "Playbook padanan rentas sempadan",
+        "Nota pasaran Malaysia dan Macau",
+        "Amalan susulan acara"
+      ]
+    },
+    "help": {
+      "title": "Pusat Bantuan",
+      "body": "Soalan lazim dan panduan onboarding akan berada di sini.",
+      "points": [
+        "Mula menggunakan Plexus",
+        "Kesiapsiagaan profil",
+        "Aliran mesyuarat dan susulan"
+      ]
+    }
+  },
+  "legal": {
+    "staticNotice": "Halaman MVP ini sengaja dibuat statik dan sedia untuk dimasukkan salinan undang-undang sebelum pelancaran produksi.",
+    "terms": {
+      "title": "Terma Perkhidmatan",
+      "body": "Terma awam ini ialah placeholder MVP dan perlu disemak sebelum pelancaran produksi."
+    },
+    "privacy": {
+      "title": "Dasar Privasi",
+      "body": "Halaman privasi ini perlu menerangkan cara Plexus mengendalikan data peribadi dan perniagaan."
+    },
+    "cookies": {
+      "title": "Dasar Kuki",
+      "body": "Halaman kuki ini perlu menerangkan kuki penting, analitik dan pilihan."
+    },
+    "dpa": {
+      "title": "Perjanjian Pemprosesan Data",
+      "body": "Placeholder DPA ini disediakan awal untuk kesiapsiagaan Malaysia PDPA dan pengendalian data Macau."
+    }
+  },
+  "footer": {
+    "tagline": "Menghubungkan perniagaan merentasi sempadan.",
+    "platform": "Platform",
+    "company": "Syarikat",
+    "legalSupport": "Undang-undang & Sokongan",
+    "language": "Bahasa",
+    "entityLine": "Plexus Sdn Bhd (SSM: TBD)",
+    "location": "Kuala Lumpur, Malaysia",
+    "copyright": "© {year} Plexus. Hak cipta terpelihara.",
+    "poweredBy": "Dikuasakan oleh Plexus",
+    "social": {
+      "linkedin": "LinkedIn",
+      "facebook": "Facebook"
+    },
+    "platformLinks": [
+      { "label": "Cara Ia Berfungsi", "href": "/how-it-works" },
+      { "label": "Untuk Vendor", "href": "/for-vendors" },
+      { "label": "Untuk Pemilik Perniagaan", "href": "/for-businesses" },
+      { "label": "Harga", "href": "/pricing" },
+      { "label": "Negara Disokong", "href": "/#countries" }
+    ],
+    "companyLinks": [
+      { "label": "Tentang Kami", "href": "/about" },
+      { "label": "Blog", "href": "/blog" },
+      { "label": "Hubungi", "href": "/contact" }
+    ],
+    "legalLinks": [
+      { "label": "Terma Perkhidmatan", "href": "/legal/terms" },
+      { "label": "Dasar Privasi", "href": "/legal/privacy" },
+      { "label": "Dasar Kuki", "href": "/legal/cookies" },
+      { "label": "Perjanjian Pemprosesan Data", "href": "/legal/dpa" },
+      { "label": "Pusat Bantuan", "href": "/help" }
+    ]
+  }
+}

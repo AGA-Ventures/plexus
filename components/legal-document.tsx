@@ -3,6 +3,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import {
+  isChineseLocale,
   isLocaleParam,
   localeLabels,
   locales,
@@ -433,13 +434,13 @@ export async function LegalDocument({
             <span className="flex flex-col leading-tight">
               <span className="text-sm font-semibold">Plexus Connect</span>
               <span className="text-xs text-slate-500 dark:text-slate-400">
-                {locale === "en"
-                  ? "Event legal centre"
-                  : locale === "th"
-                    ? "ศูนย์กฎหมายงาน"
-                    : locale === "zh-Hant"
-                      ? "活動法律中心"
-                      : "活动法律中心"}
+                {locale === "th"
+                  ? "ศูนย์กฎหมายงาน"
+                  : locale === "zh-Hant"
+                    ? "活動法律中心"
+                    : locale === "zh"
+                      ? "活动法律中心"
+                      : "Event legal centre"}
               </span>
             </span>
           </Link>
@@ -460,13 +461,13 @@ export async function LegalDocument({
               className="bg-[#00859a] hover:bg-[#007489]"
             >
               <Link href={`/${locale}/login`}>
-                {locale === "en"
-                  ? "Login"
-                  : locale === "th"
-                    ? "เข้าสู่ระบบ"
-                    : locale === "zh-Hant"
+                {locale === "th"
+                  ? "เข้าสู่ระบบ"
+                  : isChineseLocale(locale)
+                    ? locale === "zh-Hant"
                       ? "登入"
-                      : "登录"}
+                      : "登录"
+                    : "Login"}
               </Link>
             </Button>
           </div>

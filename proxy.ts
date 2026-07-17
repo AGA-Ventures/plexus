@@ -2,11 +2,15 @@ import { type NextRequest, NextResponse } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 
 import { getAppMetadata, getRolePortalPath, isAppRole } from "@/lib/auth"
-import { normalizeLocale } from "@/lib/i18n"
+import { localeParams, normalizeLocale } from "@/lib/i18n"
 import { getSupabaseConfig } from "@/lib/supabase/config"
 
-const protectedRoutePattern =
-  /^\/(?:(en|zh|cn|zh-Hant|zh-hant|zht|zh-tw|th)\/)?(admin|delegation|partner)(?:\/|$)/
+const localeParamPattern = localeParams
+  .map((locale) => locale.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+  .join("|")
+const protectedRoutePattern = new RegExp(
+  `^/(?:(${localeParamPattern})/)?(admin|delegation|partner|compliance)(?:/|$)`
+)
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request })
@@ -37,7 +41,7 @@ export async function proxy(request: NextRequest) {
   }
 
   const locale = normalizeLocale(match[1])
-  const requestedRole = match[2]
+  const requestedRoute = match[2]
 
   const {
     data: { user },
@@ -58,7 +62,13 @@ export async function proxy(request: NextRequest) {
     )
   }
 
-  if (isAppRole(requestedRole) && requestedRole !== metadata.role) {
+  if (requestedRoute === "compliance" && metadata.role !== "admin") {
+    return NextResponse.redirect(
+      new URL(getRolePortalPath(locale, metadata.role), request.url)
+    )
+  }
+
+  if (isAppRole(requestedRoute) && requestedRoute !== metadata.role) {
     return NextResponse.redirect(
       new URL(getRolePortalPath(locale, metadata.role), request.url)
     )

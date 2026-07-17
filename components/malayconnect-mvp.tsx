@@ -45,7 +45,14 @@ import {
   updateMatchStatusAction,
 } from "@/app/actions/plexus"
 import { downloadCsv, downloadIcs } from "@/lib/export"
-import { localeLabels, localeNames, locales, type Locale } from "@/lib/i18n"
+import {
+  isChineseLocale,
+  localeLabels,
+  localeNames,
+  locales,
+  type Locale,
+} from "@/lib/i18n"
+import { supportedMarketNames } from "@/lib/markets"
 import {
   type Announcement,
   type AnnouncementChannel,
@@ -144,6 +151,9 @@ type NavItem = {
     icon: typeof AnalyticsUpIcon
   }>
 }
+type LocalizedLabels = Partial<Record<Locale, string>> & { en: string }
+type PortalCopy = Record<PortalRole, Record<string, string>>
+type UiCopy = Record<string, string>
 
 type ResourceUploadRow = {
   id: string
@@ -158,7 +168,7 @@ type ResourceUploadRow = {
   updated_at: string
 }
 
-const portalCopy = {
+const portalCopy: Partial<Record<Locale, PortalCopy>> & { en: PortalCopy } = {
   en: {
     admin: {
       eyebrow: "AGA organiser control room",
@@ -249,9 +259,9 @@ const portalCopy = {
       primary: "ยืนยันเข้าร่วม",
     },
   },
-} satisfies Record<Locale, Record<PortalRole, Record<string, string>>>
+}
 
-const roleLinks: Array<{ label: Record<Locale, string>; role: PortalRole }> = [
+const roleLinks: Array<{ label: LocalizedLabels; role: PortalRole }> = [
   {
     label: { en: "Admin", zh: "管理员", "zh-Hant": "管理員", th: "ผู้ดูแล" },
     role: "admin",
@@ -276,7 +286,7 @@ const roleLinks: Array<{ label: Record<Locale, string>; role: PortalRole }> = [
   },
 ]
 
-const uiCopy = {
+const uiCopy: Partial<Record<Locale, UiCopy>> & { en: UiCopy } = {
   en: {
     workspaceSubtitle: "Portal workspace",
     dashboard: "Dashboard",
@@ -445,7 +455,25 @@ const uiCopy = {
     logout: "ออกจากระบบ",
     openRolePage: "เปิดหน้า{role}",
   },
-} satisfies Record<Locale, Record<string, string>>
+}
+
+function getUiCopy(locale: Locale): UiCopy {
+  return {
+    ...uiCopy.en,
+    ...(uiCopy[locale] ?? {}),
+  }
+}
+
+function getPortalCopy(locale: Locale, role: PortalRole) {
+  return {
+    ...portalCopy.en[role],
+    ...(portalCopy[locale]?.[role] ?? {}),
+  }
+}
+
+function localizedLabel(labels: LocalizedLabels, locale: Locale) {
+  return labels[locale] ?? labels.en
+}
 
 const thaiText: Record<string, string> = {
   "Live operating picture": "ภาพรวมการดำเนินงานสด",
@@ -725,7 +753,7 @@ function textFor(locale: Locale, en: string, zh: string, th?: string) {
 }
 
 const profileOptionGroups = {
-  countryRegion: ["Malaysia", "Macau", "Other"],
+  countryRegion: [...supportedMarketNames, "Macau", "Other"],
   employeeRange: ["1-10", "11-50", "51-200", "201-500", "500+"],
   annualRevenueRange: [
     "Below USD 1M",
@@ -733,7 +761,21 @@ const profileOptionGroups = {
     "USD 10M-50M",
     "Above USD 50M",
   ],
-  preferredLanguages: ["English", "Mandarin", "Cantonese"],
+  preferredLanguages: [
+    "English",
+    "Mandarin",
+    "Cantonese",
+    "Japanese",
+    "Korean",
+    "Bahasa Malaysia",
+    "Thai",
+    "Bahasa Indonesia",
+    "Filipino",
+    "Vietnamese",
+    "Spanish",
+    "French",
+    "Russian",
+  ],
   industries: [
     "Food & Beverage",
     "Halal Products",
@@ -908,19 +950,23 @@ function getMeetingSlotOptions() {
 }
 
 function localeTag(locale: Locale) {
-  if (locale === "zh-Hant") {
-    return "zh-Hant-TW"
+  const tags: Record<Locale, string> = {
+    en: "en-MY",
+    zh: "zh-CN",
+    "zh-Hant": "zh-Hant-TW",
+    ja: "ja-JP",
+    ko: "ko-KR",
+    ms: "ms-MY",
+    th: "th-TH",
+    id: "id-ID",
+    fil: "fil-PH",
+    vi: "vi-VN",
+    es: "es-MX",
+    fr: "fr-CA",
+    ru: "ru-RU",
   }
 
-  if (locale === "zh") {
-    return "zh-CN"
-  }
-
-  if (locale === "th") {
-    return "th-TH"
-  }
-
-  return "en-MY"
+  return tags[locale]
 }
 
 function formatMeetingSlot(slot: string, locale: Locale) {
@@ -1011,6 +1057,10 @@ function statusLabel(status: string, locale: Locale) {
     return thaiLabels[status] ?? status
   }
 
+  if (!isChineseLocale(locale)) {
+    return status
+  }
+
   const label = labels[status] ?? status
 
   return locale === "zh-Hant" ? toTraditional(label) : label
@@ -1039,6 +1089,10 @@ function categoryLabel(category: ResourceCategory, locale: Locale) {
 
   if (locale === "th") {
     return thaiLabels[category]
+  }
+
+  if (!isChineseLocale(locale)) {
+    return category
   }
 
   return locale === "zh-Hant"
@@ -1072,6 +1126,10 @@ function audienceLabel(
     return thaiLabels[audience]
   }
 
+  if (!isChineseLocale(locale)) {
+    return audience
+  }
+
   return locale === "zh-Hant"
     ? toTraditional(labels[audience])
     : labels[audience]
@@ -1098,11 +1156,15 @@ function channelLabel(channel: AnnouncementChannel, locale: Locale) {
     return thaiLabels[channel]
   }
 
+  if (!isChineseLocale(locale)) {
+    return channel
+  }
+
   return locale === "zh-Hant" ? toTraditional(labels[channel]) : labels[channel]
 }
 
 function adminTabItems(locale: Locale) {
-  const t = uiCopy[locale]
+  const t = getUiCopy(locale)
 
   return [
     { value: "dashboard", label: t.dashboard, icon: AnalyticsUpIcon },
@@ -1135,7 +1197,7 @@ function adminTabItems(locale: Locale) {
 }
 
 function portalTabItems(locale: Locale, profileLabel: string) {
-  const t = uiCopy[locale]
+  const t = getUiCopy(locale)
 
   return [
     { value: "dashboard", label: t.dashboard, icon: AnalyticsUpIcon },
@@ -1148,7 +1210,7 @@ function portalTabItems(locale: Locale, profileLabel: string) {
 }
 
 function formatDateTime(value: string, locale: Locale = "en") {
-  return new Intl.DateTimeFormat(locale === "zh" ? "zh-CN" : "en-MY", {
+  return new Intl.DateTimeFormat(localeTag(locale), {
     dateStyle: "medium",
     timeStyle: "short",
     timeZone: "Asia/Kuala_Lumpur",
@@ -1242,7 +1304,7 @@ export function PlexusConnectMvp({
     (makeBlankCompany("partner") as PartnerCompany)
 
   const metrics = useMemo(() => getMetrics(db), [db])
-  const copy = portalCopy[locale][role]
+  const copy = getPortalCopy(locale, role)
 
   async function applyServerResult(
     action: Promise<{ ok: true; db: LocalDb } | { ok: false; error: string }>,
@@ -1696,7 +1758,7 @@ function DashboardHeader({
   metrics: ReturnType<typeof getMetrics>
   locale: Locale
 }) {
-  const t = uiCopy[locale]
+  const t = getUiCopy(locale)
 
   return (
     <section className="flex flex-col gap-5 rounded-lg border bg-card p-4 sm:p-5">
@@ -1750,7 +1812,7 @@ function OperationalAlert({
   message: string
   locale: Locale
 }) {
-  const t = uiCopy[locale]
+  const t = getUiCopy(locale)
 
   return (
     <Alert>
@@ -1938,6 +2000,13 @@ function AdminPortal(props: {
         <div className="flex flex-col gap-4">
           <DashboardHeader copy={copy} metrics={metrics} locale={locale} />
           <OperationalAlert message={db.notifications[0]} locale={locale} />
+          <div className="flex justify-start">
+            <Button asChild variant="outline">
+              <Link href={`/${locale}/compliance`}>
+                Compliance integrations
+              </Link>
+            </Button>
+          </div>
           <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
             <Card>
               <CardHeader>
@@ -2315,7 +2384,11 @@ function AdminPortal(props: {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <MeetingCalendarView db={db} meetings={db.meetings} locale={locale} />
+            <MeetingCalendarView
+              db={db}
+              meetings={db.meetings}
+              locale={locale}
+            />
             <Separator />
             <SessionList
               db={db}
@@ -2444,7 +2517,7 @@ function DelegationPortal(props: {
 
   return (
     <PortalTabs
-      profileLabel={uiCopy[locale].companyProfile}
+      profileLabel={getUiCopy(locale).companyProfile}
       role={role}
       locale={locale}
       session={session}
@@ -2536,7 +2609,7 @@ function PartnerPortal(props: {
 
   return (
     <PortalTabs
-      profileLabel={uiCopy[locale].partnerProfile}
+      profileLabel={getUiCopy(locale).partnerProfile}
       role={role}
       locale={locale}
       session={session}
@@ -2673,7 +2746,7 @@ function ResponsiveTabsNav({
   session: PortalSession
   logout: () => void
 }) {
-  const t = uiCopy[locale]
+  const t = getUiCopy(locale)
   const navTriggerClass =
     "h-10 w-full justify-start gap-2 rounded-md px-3 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-sidebar-ring/45 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:hover:bg-primary"
   const childTriggerClass =
@@ -2823,9 +2896,11 @@ function SidebarUserAccount({
   session: PortalSession
   logout: () => void
 }) {
-  const t = uiCopy[locale]
-  const roleLabel =
-    roleLinks.find((item) => item.role === role)?.label[locale] ?? session.role
+  const t = getUiCopy(locale)
+  const currentRoleLink = roleLinks.find((item) => item.role === role)
+  const roleLabel = currentRoleLink
+    ? localizedLabel(currentRoleLink.label, locale)
+    : session.role
   const emailName = session.email.split("@")[0] ?? session.email
 
   return (
@@ -2914,7 +2989,7 @@ function SidebarUserAccount({
                   className="h-9 px-2"
                 >
                   <Link href={`/${locale}/${item.role}`}>
-                    {item.label[locale]}
+                    {localizedLabel(item.label, locale)}
                   </Link>
                 </Button>
               ))}
@@ -3568,65 +3643,65 @@ function UserMatches({
 
       <div className="grid gap-4 md:grid-cols-2">
         {matches.map((match) => {
-        const counterpartId =
-          perspective === "delegation" ? match.partnerId : match.delegationId
-        const counterpartName = getCompanyName(db, counterpartId)
-        const isAccepted = match.status === "Accepted"
-        const isScheduled = match.status === "Session Scheduled"
-        return (
-          <Card key={match.id}>
-            <CardHeader>
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <CardTitle>
-                    {counterpartName === "Unknown company"
-                      ? textFor(
-                          locale,
-                          "Company record pending",
-                          "企业记录待补充"
-                        )
-                      : counterpartName}
-                  </CardTitle>
-                  <CardDescription>{match.note}</CardDescription>
+          const counterpartId =
+            perspective === "delegation" ? match.partnerId : match.delegationId
+          const counterpartName = getCompanyName(db, counterpartId)
+          const isAccepted = match.status === "Accepted"
+          const isScheduled = match.status === "Session Scheduled"
+          return (
+            <Card key={match.id}>
+              <CardHeader>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <CardTitle>
+                      {counterpartName === "Unknown company"
+                        ? textFor(
+                            locale,
+                            "Company record pending",
+                            "企业记录待补充"
+                          )
+                        : counterpartName}
+                    </CardTitle>
+                    <CardDescription>{match.note}</CardDescription>
+                  </div>
+                  <Badge variant={statusVariant(match.status)}>
+                    {statusLabel(match.status, locale)}
+                  </Badge>
                 </div>
-                <Badge variant={statusVariant(match.status)}>
-                  {statusLabel(match.status, locale)}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              <Progress value={match.score} />
-              <p className="text-sm text-muted-foreground">
-                {textFor(locale, "Match confidence", "匹配信心")}: {match.score}
-                %
-              </p>
-            </CardContent>
-            <CardFooter className="flex flex-wrap gap-2">
-              {isScheduled || isAccepted ? (
-                <MeetingSlotPickerDialog
-                  match={match}
-                  locale={locale}
-                  isScheduled={isScheduled}
-                  interpreters={availableInterpreters}
-                  onSubmit={onSchedule}
-                />
-              ) : (
-                <Button onClick={() => onStatus(match.id, "Accepted")}>
-                  {textFor(locale, "Accept", "接受")}
-                </Button>
-              )}
-              {!isScheduled ? (
-                <Button
-                  variant="outline"
-                  onClick={() => onStatus(match.id, "Rejected")}
-                >
-                  {textFor(locale, "Request change", "请求调整")}
-                </Button>
-              ) : null}
-            </CardFooter>
-          </Card>
-        )
-      })}
+              </CardHeader>
+              <CardContent className="flex flex-col gap-3">
+                <Progress value={match.score} />
+                <p className="text-sm text-muted-foreground">
+                  {textFor(locale, "Match confidence", "匹配信心")}:{" "}
+                  {match.score}%
+                </p>
+              </CardContent>
+              <CardFooter className="flex flex-wrap gap-2">
+                {isScheduled || isAccepted ? (
+                  <MeetingSlotPickerDialog
+                    match={match}
+                    locale={locale}
+                    isScheduled={isScheduled}
+                    interpreters={availableInterpreters}
+                    onSubmit={onSchedule}
+                  />
+                ) : (
+                  <Button onClick={() => onStatus(match.id, "Accepted")}>
+                    {textFor(locale, "Accept", "接受")}
+                  </Button>
+                )}
+                {!isScheduled ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => onStatus(match.id, "Rejected")}
+                  >
+                    {textFor(locale, "Request change", "请求调整")}
+                  </Button>
+                ) : null}
+              </CardFooter>
+            </Card>
+          )
+        })}
       </div>
     </div>
   )
@@ -5045,8 +5120,7 @@ function InterpreterManagement({
       <CardContent className="flex flex-col gap-4">
         <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
           <Badge variant="outline">
-            {interpreters.length}{" "}
-            {textFor(locale, "interpreters", "位翻译")}
+            {interpreters.length} {textFor(locale, "interpreters", "位翻译")}
           </Badge>
           <Badge variant="outline">
             {availableCount} {textFor(locale, "available", "可用")}
@@ -5103,9 +5177,7 @@ function InterpreterManagement({
                         locale={locale}
                         mode="edit"
                         interpreter={interpreter}
-                        onSubmit={(values) =>
-                          onUpdate(interpreter.id, values)
-                        }
+                        onSubmit={(values) => onUpdate(interpreter.id, values)}
                       />
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -5266,7 +5338,11 @@ function InterpreterFormDialog({
               onChange={(event) =>
                 setForm((current) => ({ ...current, name: event.target.value }))
               }
-              placeholder={textFor(locale, "e.g. Grace Wong", "例如 Grace Wong")}
+              placeholder={textFor(
+                locale,
+                "e.g. Grace Wong",
+                "例如 Grace Wong"
+              )}
             />
           </Field>
           <Field>
@@ -5368,7 +5444,10 @@ function SessionList({
   db: LocalDb
   meetings: Meeting[]
   onComplete?: (meetingId: string) => void
-  onAssignInterpreter?: (meetingId: string, interpreterId: string | null) => void
+  onAssignInterpreter?: (
+    meetingId: string,
+    interpreterId: string | null
+  ) => void
   locale?: Locale
 }) {
   if (!meetings.length) {
@@ -5389,8 +5468,7 @@ function SessionList({
             )
           : undefined
         const assignedInterpreter = db.interpreters.find(
-          (item) =>
-            `${item.name} · ${item.languages}` === meeting.interpreter
+          (item) => `${item.name} · ${item.languages}` === meeting.interpreter
         )
         return (
           <div key={meeting.id} className="rounded-md border p-4">
@@ -5415,12 +5493,8 @@ function SessionList({
                 </p>
                 {requestedInterpreter ? (
                   <p className="text-sm text-muted-foreground">
-                    {textFor(
-                      locale,
-                      "Requester preference",
-                      "请求方偏好"
-                    )}
-                    : {requestedInterpreter.name} ·{" "}
+                    {textFor(locale, "Requester preference", "请求方偏好")}:{" "}
+                    {requestedInterpreter.name} ·{" "}
                     {requestedInterpreter.languages}
                     {assignedInterpreter?.id === requestedInterpreter.id
                       ? ` (${textFor(locale, "confirmed", "已确认")})`

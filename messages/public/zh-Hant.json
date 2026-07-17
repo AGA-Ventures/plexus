@@ -1,0 +1,199 @@
+{
+  "meta": {
+    "siteName": "Plexus",
+    "tagline": "連接跨境商業機會。"
+  },
+  "nav": {
+    "home": "首頁",
+    "howItWorks": "運作方式",
+    "forVendors": "給合作機構",
+    "forBusinesses": "給企業主",
+    "pricing": "價格",
+    "about": "關於我們",
+    "contact": "聯絡",
+    "login": "登入"
+  },
+  "hero": {
+    "eyebrow": "AI 驅動 B2B 商務配對",
+    "title": "讓跨境商務連接更精準。",
+    "body": "Plexus 協助商會、貿易機構與活動主辦方推出自有品牌的商務配對入口，將會員資料轉化為高相關度介紹、會議與商機。",
+    "vendorCta": "給合作機構",
+    "businessCta": "給企業主"
+  },
+  "problem": {
+    "title": "跨境 B2B 配對一旦依賴試算表，就很難延續成果。",
+    "body": "企業資料格式不一，名單整理耗時，會後跟進容易中斷。Plexus 提供一個共同營運層，支援結構化資料、AI 輔助配對與可追蹤成果。",
+    "points": [
+      "跨市場、跨語言的清晰企業資料。",
+      "AI 輔助候選名單，同時保留主辦方審核權。",
+      "會議、簽約與後續行動集中管理。"
+    ]
+  },
+  "how": {
+    "title": "運作方式",
+    "body": "從建立企業資料到有意義的商務後續，流程簡單清晰。",
+    "steps": [
+      {
+        "title": "建立資料",
+        "body": "企業提交產業、能力、目標與理想合作夥伴條件。"
+      },
+      {
+        "title": "獲得配對",
+        "body": "Plexus 排序高契合機會，讓主辦方清楚審核候選名單。"
+      },
+      {
+        "title": "連接與成交",
+        "body": "參與者會面、追蹤下一步，並推動合格機會走向合作。"
+      }
+    ]
+  },
+  "portals": {
+    "title": "三種入口，一個平台。",
+    "body": "Plexus 支援完整白標營運模式，無需把體驗拆散在不同工具中。",
+    "items": [
+      {
+        "title": "Super admin",
+        "body": "Plexus 團隊可查看多租戶、上線品質與平台設定。"
+      },
+      {
+        "title": "合作機構管理台",
+        "body": "商會、協會與活動主辦方可使用自有品牌工作區。"
+      },
+      {
+        "title": "企業主入口",
+        "body": "企業可處理資料、配對、會議與商機後續。"
+      }
+    ]
+  },
+  "countries": {
+    "title": "已啟用市場",
+    "body": "由馬來西亞與澳門開始，透過可信任的本地合作夥伴逐步拓展亞洲。",
+    "badges": ["馬來西亞", "澳門", "拓展亞洲"]
+  },
+  "proof": {
+    "title": "社會證明",
+    "body": "Plexus 從試點走向公開推出後，合作夥伴標誌與見證將展示在此。",
+    "empty": "上線前展示區"
+  },
+  "cta": {
+    "title": "把 Plexus 帶給你的會員。",
+    "body": "為你的商業社群推出自有品牌配對入口，或透過合作機構入口加入。",
+    "vendor": "與 Plexus 白標合作",
+    "business": "以企業身份加入"
+  },
+  "pages": {
+    "for-vendors": {
+      "title": "給合作機構的白標 B2B 配對。",
+      "body": "為你的商會、協會或活動社群提供自有品牌入口，管理會員資料、AI 輔助配對、會議與商務成果。",
+      "points": [
+        "以你的品牌與會員語言上線。",
+        "參與者看到配對前，先由主辦方審核。",
+        "追蹤會議、簽約進度與活動後報告。"
+      ]
+    },
+    "for-businesses": {
+      "title": "減少無效社交，找到更合適的合作夥伴。",
+      "body": "Plexus 協助企業主建立資料、接收相關配對，並把介紹推進到會議與交易。",
+      "points": [
+        "建立結構化企業資料。",
+        "查看精選合作夥伴配對。",
+        "追蹤會議準備與後續行動。"
+      ]
+    },
+    "how-it-works": {
+      "title": "從企業資料到合作名單。",
+      "body": "Plexus 將商業資料轉化為清晰的配對流程。",
+      "points": [
+        "收集可比較的企業資料。",
+        "根據產業、目標與準備度評估契合度。",
+        "協調會議與下一步。"
+      ]
+    },
+    "pricing": {
+      "title": "合作機構價格。",
+      "body": "MVP 階段價格仍以洽談為主，並由上線合作夥伴共同塑造方案。",
+      "points": ["初期試點方案。", "重複社群白標方案。", "多市場項目企業支援。"]
+    },
+    "about": {
+      "title": "為馬來西亞、澳門與下一波亞洲商務走廊而建。",
+      "body": "Plexus 為需要更有結構、更透明、更重視成果的跨境商務配對機構而設計。",
+      "points": [
+        "以馬來西亞為營運起點。",
+        "聚焦澳門與大中華商務走廊。",
+        "為可信任本地機構提供白標模式。"
+      ]
+    },
+    "contact": {
+      "title": "聯絡 Plexus。",
+      "body": "完整潛在客戶表單完成前，此頁可作為公開聯絡入口。",
+      "points": ["合作機構洽談", "試點項目", "企業主 onboarding"]
+    },
+    "blog": {
+      "title": "Plexus Blog",
+      "body": "SEO 與內容行銷將在後續階段放在這裡。",
+      "points": [
+        "跨境配對 playbook",
+        "馬來西亞與澳門市場筆記",
+        "活動後續最佳實務"
+      ]
+    },
+    "help": {
+      "title": "幫助中心",
+      "body": "常見問題與 onboarding 指南將放在這裡。",
+      "points": ["開始使用", "資料準備度", "會議與後續流程"]
+    }
+  },
+  "legal": {
+    "staticNotice": "此 MVP 頁面目前為靜態內容，正式上線前可直接替換為完整法律文本。",
+    "terms": {
+      "title": "服務條款",
+      "body": "此公開條款為 MVP 佔位內容，正式上線前需完成法律審閱。"
+    },
+    "privacy": {
+      "title": "私隱政策",
+      "body": "此頁應說明 Plexus 如何處理支援市場中的個人與商業資料。"
+    },
+    "cookies": {
+      "title": "Cookie 政策",
+      "body": "此頁應說明 Plexus 使用的必要、分析與偏好 Cookie。"
+    },
+    "dpa": {
+      "title": "資料處理協議",
+      "body": "此 DPA 佔位內容為馬來西亞 PDPA 與澳門資料處理準備而提前加入。"
+    }
+  },
+  "footer": {
+    "tagline": "連接跨境商業機會。",
+    "platform": "平台",
+    "company": "公司",
+    "legalSupport": "法律與支援",
+    "language": "語言",
+    "entityLine": "Plexus Sdn Bhd (SSM: TBD)",
+    "location": "馬來西亞吉隆坡",
+    "copyright": "© {year} Plexus. 保留所有權利。",
+    "poweredBy": "Powered by Plexus",
+    "social": {
+      "linkedin": "LinkedIn",
+      "facebook": "Facebook"
+    },
+    "platformLinks": [
+      { "label": "運作方式", "href": "/how-it-works" },
+      { "label": "給合作機構", "href": "/for-vendors" },
+      { "label": "給企業主", "href": "/for-businesses" },
+      { "label": "價格", "href": "/pricing" },
+      { "label": "服務市場", "href": "/#countries" }
+    ],
+    "companyLinks": [
+      { "label": "關於我們", "href": "/about" },
+      { "label": "Blog", "href": "/blog" },
+      { "label": "聯絡", "href": "/contact" }
+    ],
+    "legalLinks": [
+      { "label": "服務條款", "href": "/legal/terms" },
+      { "label": "私隱政策", "href": "/legal/privacy" },
+      { "label": "Cookie 政策", "href": "/legal/cookies" },
+      { "label": "資料處理協議", "href": "/legal/dpa" },
+      { "label": "幫助中心", "href": "/help" }
+    ]
+  }
+}

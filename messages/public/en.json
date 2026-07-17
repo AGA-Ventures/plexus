@@ -1,0 +1,211 @@
+{
+  "meta": {
+    "siteName": "Plexus",
+    "tagline": "Connecting businesses across borders."
+  },
+  "nav": {
+    "home": "Home",
+    "howItWorks": "How It Works",
+    "forVendors": "For Vendors",
+    "forBusinesses": "For Business Owners",
+    "pricing": "Pricing",
+    "about": "About",
+    "contact": "Contact",
+    "login": "Login"
+  },
+  "hero": {
+    "eyebrow": "AI-powered B2B matching",
+    "title": "Sharper connections for cross-border business.",
+    "body": "Plexus helps chambers, trade bodies and event organizers launch branded business-matching portals that turn member profiles into relevant introductions, meetings and deals.",
+    "vendorCta": "For Vendors",
+    "businessCta": "For Business Owners"
+  },
+  "problem": {
+    "title": "Cross-border B2B matching breaks when the process lives in spreadsheets.",
+    "body": "Profiles arrive in different formats. Shortlists are manual. Meeting follow-up disappears after the event. Plexus creates one shared operating layer for structured profiles, AI-assisted matching and measurable outcomes.",
+    "points": [
+      "Clean business profiles across markets and languages.",
+      "AI-assisted shortlists that still keep organizers in control.",
+      "Meeting, signing and follow-up workflows in one place."
+    ]
+  },
+  "how": {
+    "title": "How it works",
+    "body": "A simple path from profile creation to meaningful commercial follow-through.",
+    "steps": [
+      {
+        "title": "Create profile",
+        "body": "Businesses share sector, capabilities, goals and preferred partner criteria."
+      },
+      {
+        "title": "Get matched",
+        "body": "Plexus ranks likely-fit opportunities and gives organizers a clear shortlist to review."
+      },
+      {
+        "title": "Connect & deal",
+        "body": "Participants meet, track next steps and move qualified opportunities toward agreements."
+      }
+    ]
+  },
+  "portals": {
+    "title": "Three portals, one platform.",
+    "body": "Plexus supports the full white-label operating model without splitting the experience across tools.",
+    "items": [
+      {
+        "title": "Super admin",
+        "body": "Plexus team visibility across tenants, rollout quality and platform configuration."
+      },
+      {
+        "title": "Vendor admin",
+        "body": "A branded workspace for chambers, associations and event organizers."
+      },
+      {
+        "title": "Business owner",
+        "body": "A simple portal for profiles, matches, meetings and deal follow-up."
+      }
+    ]
+  },
+  "countries": {
+    "title": "Countries live",
+    "body": "Starting with Malaysia and Macau, expanding across Asia with a white-label model built for local partners.",
+    "badges": ["Malaysia", "Macau", "Expanding across Asia"]
+  },
+  "proof": {
+    "title": "Social proof",
+    "body": "Launch partner logos and testimonials will appear here as Plexus moves from pilot to public rollout.",
+    "empty": "Pre-launch proof area"
+  },
+  "cta": {
+    "title": "Bring Plexus to your members.",
+    "body": "Launch a branded matching portal for your business community, or join through a participating vendor portal.",
+    "vendor": "White-label with Plexus",
+    "business": "Join as a business"
+  },
+  "pages": {
+    "for-vendors": {
+      "title": "White-label B2B matching for vendors.",
+      "body": "Give your chamber, association or event community a branded portal for member profiles, AI-assisted matching, meetings and measurable commercial outcomes.",
+      "points": [
+        "Launch with your brand and member language.",
+        "Review and approve matches before participants see them.",
+        "Track meetings, signing progress and post-event reporting."
+      ]
+    },
+    "for-businesses": {
+      "title": "Find better-fit partners without the networking noise.",
+      "body": "Plexus gives business owners a guided way to create a profile, receive relevant matches and move introductions into meetings and deals.",
+      "points": [
+        "Create a structured business profile.",
+        "Review curated partner matches.",
+        "Track meeting preparation and follow-up."
+      ]
+    },
+    "how-it-works": {
+      "title": "From profile to partner shortlist.",
+      "body": "Plexus turns business data into a clear matching workflow: profile creation, AI-assisted ranking, organizer review and participant follow-through.",
+      "points": [
+        "Collect comparable profile data.",
+        "Score fit across sectors, goals and readiness.",
+        "Coordinate meetings and next steps."
+      ]
+    },
+    "pricing": {
+      "title": "Pricing for vendors.",
+      "body": "MVP pricing is currently by consultation while launch partners shape package tiers.",
+      "points": [
+        "Pilot package for initial vendor launches.",
+        "White-label package for recurring communities.",
+        "Enterprise support for multi-market programs."
+      ]
+    },
+    "about": {
+      "title": "Built for Malaysia, Macau and the next wave of Asian business corridors.",
+      "body": "Plexus is designed for organizations that need cross-border business matching to be more structured, transparent and outcome-driven.",
+      "points": [
+        "Malaysia-first operating base.",
+        "Macau and Greater China trade corridor focus.",
+        "White-label model for trusted local institutions."
+      ]
+    },
+    "contact": {
+      "title": "Talk to Plexus.",
+      "body": "Use this page as the public contact point while the full lead form is being wired up.",
+      "points": [
+        "Vendor partnerships",
+        "Pilot programs",
+        "Business-owner onboarding"
+      ]
+    },
+    "blog": {
+      "title": "Plexus Blog",
+      "body": "SEO and content marketing will live here in a later phase.",
+      "points": [
+        "Cross-border matching playbooks",
+        "Malaysia and Macau market notes",
+        "Event follow-up best practices"
+      ]
+    },
+    "help": {
+      "title": "Help Center",
+      "body": "Frequently asked questions and onboarding guides will live here.",
+      "points": [
+        "Getting started",
+        "Profile readiness",
+        "Meeting and follow-up workflows"
+      ]
+    }
+  },
+  "legal": {
+    "staticNotice": "This MVP page is intentionally static and ready for legal copy to be dropped in before production launch.",
+    "terms": {
+      "title": "Terms of Service",
+      "body": "These public terms are a placeholder for the MVP and should be reviewed before production launch."
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "body": "This privacy page should describe how Plexus handles personal and business data across supported markets."
+    },
+    "cookies": {
+      "title": "Cookie Policy",
+      "body": "This cookie page should describe essential, analytics and preference cookies used by Plexus."
+    },
+    "dpa": {
+      "title": "Data Processing Agreement",
+      "body": "This DPA placeholder is included early for Malaysia PDPA and Macau data-handling readiness."
+    }
+  },
+  "footer": {
+    "tagline": "Connecting businesses across borders.",
+    "platform": "Platform",
+    "company": "Company",
+    "legalSupport": "Legal & Support",
+    "language": "Language",
+    "entityLine": "Plexus Sdn Bhd (SSM: TBD)",
+    "location": "Kuala Lumpur, Malaysia",
+    "copyright": "© {year} Plexus. All rights reserved.",
+    "poweredBy": "Powered by Plexus",
+    "social": {
+      "linkedin": "LinkedIn",
+      "facebook": "Facebook"
+    },
+    "platformLinks": [
+      { "label": "How It Works", "href": "/how-it-works" },
+      { "label": "For Vendors", "href": "/for-vendors" },
+      { "label": "For Business Owners", "href": "/for-businesses" },
+      { "label": "Pricing", "href": "/pricing" },
+      { "label": "Countries We Serve", "href": "/#countries" }
+    ],
+    "companyLinks": [
+      { "label": "About Us", "href": "/about" },
+      { "label": "Blog", "href": "/blog" },
+      { "label": "Contact Us", "href": "/contact" }
+    ],
+    "legalLinks": [
+      { "label": "Terms of Service", "href": "/legal/terms" },
+      { "label": "Privacy Policy", "href": "/legal/privacy" },
+      { "label": "Cookie Policy", "href": "/legal/cookies" },
+      { "label": "Data Processing Agreement", "href": "/legal/dpa" },
+      { "label": "Help Center", "href": "/help" }
+    ]
+  }
+}

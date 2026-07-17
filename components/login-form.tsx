@@ -31,7 +31,9 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 
-const copy = {
+type LoginCopy = Record<string, string>
+
+const copy: Partial<Record<Locale, LoginCopy>> & { en: LoginCopy } = {
   en: {
     title: "Login to Plexus Connect",
     subtitle: "Use the production account created for you in Supabase Auth.",
@@ -80,7 +82,7 @@ const copy = {
     noSignup: "การสมัครด้วยตนเองปิดอยู่สำหรับการเปิดตัวนี้",
     loginProblem: "เข้าสู่ระบบไม่ได้",
   },
-} satisfies Record<Locale, Record<string, string>>
+}
 
 export function LoginForm({ locale }: { locale: Locale }) {
   const router = useRouter()
@@ -88,7 +90,7 @@ export function LoginForm({ locale }: { locale: Locale }) {
     LoginActionState,
     FormData
   >(loginAction, {})
-  const t = copy[locale]
+  const t = { ...copy.en, ...(copy[locale] ?? {}) }
 
   useEffect(() => {
     if (state.error) {

@@ -16,7 +16,7 @@ import {
 import {
   FutureButton,
   PlexusBrand,
-  ShowcaseVideoLink,
+  ShowcaseVideo,
   UiLabel,
   UiSignal,
 } from "@/components/plexus-future-ui"
@@ -37,8 +37,8 @@ const features = [
     description:
       "Upload your company once. PLEXA understands your products, pricing, certifications, ambitions, and relationship history—then prepares every conversation around what matters.",
     signal: "Meeting brief · shared interests · risks · win probability",
-    image: "/app-future/company-brain.png",
-    alt: "An intelligent company profile connected to global business data",
+    image: "/app-future/company-brain-phone-transparent.png",
+    alt: "PLEXUS Company Brain mobile app showing business intelligence features",
     icon: AiBrain01Icon,
   },
   {
@@ -49,8 +49,8 @@ const features = [
     description:
       "Move beyond contact lists. PLEXUS ranks the right buyers, suppliers, and strategic partners by intent, capability, market fit, and trust signals.",
     signal: "Live intent · verified capability · 91% partnership fit",
-    image: "/app-future/plexus-match.png",
-    alt: "Two compatible global companies connecting across a trade network",
+    image: "/app-future/plexus-match-phone-transparent.png",
+    alt: "Plexus Match mobile app ranking verified business partners by fit",
     icon: Globe02Icon,
   },
   {
@@ -61,8 +61,8 @@ const features = [
     description:
       "Everyone speaks naturally in their own language. Live interpretation, transcription, speaker recognition, and cultural context run quietly beneath the meeting.",
     signal: "Chinese ↔ English ↔ Japanese ↔ Korean · live",
-    image: "/app-future/plexus-talk.png",
-    alt: "An international business meeting connected by live translation",
+    image: "/app-future/plexus-talk-phone-transparent.png",
+    alt: "Plexus Talk mobile app providing live multilingual interpretation",
     icon: Mic02Icon,
   },
   {
@@ -73,8 +73,8 @@ const features = [
     description:
       "PLEXA listens for what is missing—not only what is said. It surfaces unresolved objections, delivery questions, compliance gaps, and the next best question in real time.",
     signal: "3 open signals · delivery · MOQ · compliance",
-    image: "/app-future/deal-radar.png",
-    alt: "A business negotiation table monitored by an intelligent deal radar",
+    image: "/app-future/deal-radar-phone-transparent.png",
+    alt: "Deal Radar mobile app surfacing live negotiation risks and questions",
     icon: Radar02Icon,
   },
   {
@@ -85,8 +85,8 @@ const features = [
     description:
       "The moment the meeting ends, decisions become tasks, owners, follow-ups, CRM records, and a shared source of truth that moves the relationship forward.",
     signal: "Decisions · owners · next meeting · CRM updated",
-    image: "/app-future/session-summary.png",
-    alt: "A meeting record organizing itself into actions and follow-ups",
+    image: "/app-future/session-summary-devices-transparent.png",
+    alt: "AI Session Summary synchronized across a web dashboard and mobile app",
     icon: CheckmarkCircle02Icon,
   },
   {
@@ -97,8 +97,8 @@ const features = [
     description:
       "PLEXA drafts the MOU, NDA, cooperation agreement, or partnership proposal from the real conversation—ready for both sides to review, negotiate, and e-sign.",
     signal: "Draft → review → collaborate → e-sign",
-    image: "/app-future/mou-engine.png",
-    alt: "A cross-border agreement assembled from a business conversation",
+    image: "/app-future/mou-engine-web-transparent.png",
+    alt: "AI MOU Engine web app supporting collaborative agreement review and e-signing",
     icon: LicenseDraftIcon,
   },
 ]
@@ -114,7 +114,38 @@ const modules = [
   ["PLEXA", "One AI agent working across every module."],
 ]
 
-const whatsappHref = "https://wa.me/6012677899"
+const roadmapStages = [
+  {
+    label: "Now",
+    title: "AI Trade Assistant",
+    copy: "Meetings, translation, summaries, deal radar, and AI agreements.",
+    image: "/app-future/plexa-digital-bot.png",
+    alt: "PLEXA AI assistant orchestrating connected trade workflows",
+  },
+  {
+    label: "Next",
+    title: "Trusted Trade Network",
+    copy: "Verified business identities, discovery, matching, and referrals.",
+    image: "/app-future/relationship-journey-hero.png",
+    alt: "Verified companies progressing through the connected PLEXUS trade network",
+  },
+  {
+    label: "Then",
+    title: "Trade Operating System",
+    copy: "Projects, compliance, logistics, documentation, and collaboration.",
+    image: "/app-future/session-summary-devices-transparent.png",
+    alt: "PLEXUS trade operating system synchronized across web and mobile",
+  },
+  {
+    label: "Future",
+    title: "Trade Super App",
+    copy: "Marketplace, payments, finance, insurance, and digital contracts.",
+    image: "/app-future/mou-engine-web-transparent.png",
+    alt: "PLEXUS super app completing a collaborative digital agreement",
+  },
+]
+
+const whatsappHref = "https://wa.me/60122677899"
 
 export default function FutureAppPage() {
   return (
@@ -125,10 +156,12 @@ export default function FutureAppPage() {
             <PlexusBrand />
             <span className={styles.agentPill}>PLEXA · AI AGENT</span>
           </div>
-          <FutureButton href={whatsappHref} size="small">
-            Join the future
-            <HugeiconsIcon icon={ArrowUpRight01Icon} size={15} strokeWidth={1.8} />
-          </FutureButton>
+          <div className={styles.headerCta}>
+            <FutureButton href={whatsappHref} size="small">
+              Join the future
+              <HugeiconsIcon icon={ArrowUpRight01Icon} size={15} strokeWidth={1.8} />
+            </FutureButton>
+          </div>
         </div>
       </header>
 
@@ -156,19 +189,14 @@ export default function FutureAppPage() {
 
         <div className={styles.heroVisual}>
           <Image
-            src="/app-future/company-brain.png"
-            alt="PLEXUS global business intelligence system"
+            src="/app-future/plexus-superapp-hand-hero.png"
+            alt="PLEXUS super app held in hand with connected match, meeting, deal, and agreement features"
             fill
             priority
             loading="eager"
             sizes="(max-width: 900px) 100vw, 52vw"
-            className={styles.heroImage}
+            className={`${styles.heroImage} ${styles.heroAppImage}`}
           />
-          <div className={styles.heroBadge}>
-            <span>LIVE SIGNAL</span>
-            <strong>91%</strong>
-            <small>partner fit</small>
-          </div>
           <div className={styles.heroStatus}>
             <HugeiconsIcon icon={SecurityCheckIcon} size={18} strokeWidth={1.7} />
             <div>
@@ -198,8 +226,8 @@ export default function FutureAppPage() {
             signal to the signed trade.
           </p>
         </div>
-        <ShowcaseVideoLink
-          href="/videos/plexus-app-showcase.mp4"
+        <ShowcaseVideo
+          src="/videos/plexus-introduction.mp4"
           poster="/app-future/company-brain.png"
         />
       </section>
@@ -221,7 +249,7 @@ export default function FutureAppPage() {
                   fill
                   loading={index === 0 ? "eager" : "lazy"}
                   sizes="(max-width: 840px) 100vw, 50vw"
-                  className={styles.featureImage}
+                  className={`${styles.featureImage} ${["brain", "matching", "talk", "radar"].includes(feature.id) ? styles.phoneFeatureImage : ""}`}
                 />
                 <div className={styles.imageIndex}>{feature.number}</div>
               </div>
@@ -263,23 +291,57 @@ export default function FutureAppPage() {
         </div>
       </section>
 
+      <section className={styles.plexaAgent}>
+        <div className={styles.plexaVisual}>
+          <Image
+            src="/app-future/plexa-digital-bot.png"
+            alt="PLEXA digital bot managing all six connected global trade features"
+            fill
+            sizes="(max-width: 900px) 100vw, 58vw"
+            className={styles.plexaImage}
+          />
+        </div>
+        <div className={styles.plexaCopy}>
+          <div className={styles.plexaMeta}>
+            <UiLabel>PLEXA · AI Agent</UiLabel>
+            <span>Persistent intelligence</span>
+          </div>
+          <h2>One intelligence across every relationship.</h2>
+          <p>
+            PLEXA carries context from discovery into the meeting, agreement,
+            and execution—so every next action begins with what your business
+            already knows.
+          </p>
+          <div className={styles.agentCapabilities}>
+            <div><b>01</b><span>Understands your company</span><small>Products, capabilities, goals, and history.</small></div>
+            <div><b>02</b><span>Prepares every conversation</span><small>Context, questions, signals, and next moves.</small></div>
+            <div><b>03</b><span>Detects risks and opportunities</span><small>Live intelligence before decisions are made.</small></div>
+            <div><b>04</b><span>Turns decisions into execution</span><small>Actions, agreements, owners, and follow-through.</small></div>
+          </div>
+        </div>
+      </section>
+
       <section id="roadmap" className={styles.roadmap}>
         <div className={styles.roadmapHeader}>
           <UiLabel>The evolution</UiLabel>
           <h2>From an intelligent assistant to a global trade super app.</h2>
         </div>
         <div className={styles.stages}>
-          {[
-            ["Now", "AI Trade Assistant", "Meetings, translation, summaries, deal radar, and AI agreements."],
-            ["Next", "Trusted Trade Network", "Verified business identities, discovery, matching, and referrals."],
-            ["Then", "Trade Operating System", "Projects, compliance, logistics, documentation, and collaboration."],
-            ["Future", "Trade Super App", "Marketplace, payments, finance, insurance, and digital contracts."],
-          ].map(([label, title, copy], index) => (
-            <div className={styles.stage} key={label}>
+          {roadmapStages.map((stage, index) => (
+            <div className={styles.stage} key={stage.label}>
+              <div className={styles.stageVisual}>
+                <Image
+                  src={stage.image}
+                  alt={stage.alt}
+                  fill
+                  sizes="(max-width: 760px) 100vw, 25vw"
+                  className={styles.stageImage}
+                />
+              </div>
               <span className={styles.stageNumber}>{String(index + 1).padStart(2, "0")}</span>
-              <span className={styles.stageLabel}>{label}</span>
-              <h3>{title}</h3>
-              <p>{copy}</p>
+              <span className={styles.stageLabel}>{stage.label}</span>
+              <h3>{stage.title}</h3>
+              <p>{stage.copy}</p>
             </div>
           ))}
         </div>

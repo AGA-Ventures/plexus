@@ -1,5 +1,5 @@
-Upload the final PLEXUS app walkthrough here as:
+The `/app` page uses the PLEXUS introduction video stored here as:
 
-`plexus-app-showcase.mp4`
+`plexus-introduction.mp4`
 
-The `/app` page already links to `/videos/plexus-app-showcase.mp4`.
+It is served publicly at `/videos/plexus-introduction.mp4`.

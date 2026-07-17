@@ -1,8 +1,6 @@
 import type { ReactNode } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { PlayIcon } from "@hugeicons/core-free-icons"
 
 import styles from "./plexus-future-ui.module.css"
 
@@ -53,30 +51,26 @@ export function UiSignal({ children }: { children: ReactNode }) {
   return <div className={styles.signal}>{children}</div>
 }
 
-export function ShowcaseVideoLink({
-  href,
+export function ShowcaseVideo({
+  src,
   poster,
 }: {
-  href: string
+  src: string
   poster: string
 }) {
   return (
-    <a className={styles.videoLink} href={href} aria-label="Play the PLEXUS app showcase video">
-      <Image
-        src={poster}
-        alt="PLEXUS future app video preview"
-        fill
-        sizes="(max-width: 900px) 100vw, 58vw"
-        className={styles.videoPoster}
-      />
-      <span className={styles.videoShade} />
-      <span className={styles.playButton}>
-        <HugeiconsIcon icon={PlayIcon} size={25} strokeWidth={1.8} />
-      </span>
-      <span className={styles.videoCaption}>
-        <strong>PLEXUS app showcase</strong>
-        <small>Video coming soon</small>
-      </span>
-    </a>
+    <div className={styles.videoFrame}>
+      <video
+        className={styles.videoPlayer}
+        controls
+        playsInline
+        preload="metadata"
+        poster={poster}
+        aria-label="PLEXUS introduction video"
+      >
+        <source src={src} type="video/mp4" />
+        Your browser does not support MP4 video playback.
+      </video>
+    </div>
   )
 }

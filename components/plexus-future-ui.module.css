@@ -90,69 +90,19 @@
   line-height: 1.6;
 }
 
-.videoLink {
-  position: relative;
-  display: block;
-  min-height: 430px;
+.videoFrame {
   overflow: hidden;
   border: 1px solid rgba(10, 132, 255, 0.38);
   border-radius: 8px;
   background: #071326;
-  color: white;
 }
 
-.videoPoster {
+.videoPlayer {
+  display: block;
+  width: 100%;
+  min-height: 430px;
+  aspect-ratio: 16 / 9;
   object-fit: cover;
-  transition: transform 400ms ease;
-}
-
-.videoLink:hover .videoPoster {
-  transform: scale(1.025);
-}
-
-.videoShade {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(7, 19, 38, 0.12), rgba(7, 19, 38, 0.78));
-}
-
-.playButton {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  display: grid;
-  width: 68px;
-  height: 68px;
-  place-items: center;
-  transform: translate(-50%, -50%);
-  border: 1px solid rgba(255, 255, 255, 0.75);
-  border-radius: 50%;
-  background: #0a84ff;
-  box-shadow: 0 16px 48px rgba(10, 132, 255, 0.35);
-}
-
-.videoCaption {
-  position: absolute;
-  right: 24px;
-  bottom: 22px;
-  left: 24px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 20px;
-}
-
-.videoCaption strong {
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.videoCaption small {
-  color: #9ba7bb;
-  font-family: var(--font-mono), monospace;
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
 }
 
 @media (max-width: 760px) {
@@ -160,13 +110,7 @@
     width: 142px;
   }
 
-  .videoLink {
+  .videoPlayer {
     min-height: 320px;
-  }
-
-  .videoCaption {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 6px;
   }
 }

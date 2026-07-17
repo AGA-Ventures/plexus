@@ -1,6 +1,5 @@
 import type { Metadata } from "next"
 import Image from "next/image"
-import Link from "next/link"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   ArrowUpRight01Icon,
@@ -14,6 +13,13 @@ import {
   SecurityCheckIcon,
 } from "@hugeicons/core-free-icons"
 
+import {
+  FutureButton,
+  PlexusBrand,
+  ShowcaseVideoLink,
+  UiLabel,
+  UiSignal,
+} from "@/components/plexus-future-ui"
 import styles from "./styles.module.css"
 
 export const metadata: Metadata = {
@@ -108,25 +114,21 @@ const modules = [
   ["PLEXA", "One AI agent working across every module."],
 ]
 
+const whatsappHref = "https://wa.me/6012677899"
+
 export default function FutureAppPage() {
   return (
     <main className={styles.page}>
       <header className={styles.header}>
         <div className={styles.nav}>
-          <Link href="/app" className={styles.brand} aria-label="PLEXUS future app home">
-            <span className={styles.brandDot} />
-            <span>PLEXUS</span>
+          <div className={styles.brandGroup}>
+            <PlexusBrand />
             <span className={styles.agentPill}>PLEXA · AI AGENT</span>
-          </Link>
-          <nav className={styles.navLinks} aria-label="Future app sections">
-            <a href="#experience">Experience</a>
-            <a href="#platform">Platform</a>
-            <a href="#roadmap">Roadmap</a>
-          </nav>
-          <Link href="/contact" className={styles.navCta}>
+          </div>
+          <FutureButton href={whatsappHref} size="small">
             Join the future
             <HugeiconsIcon icon={ArrowUpRight01Icon} size={15} strokeWidth={1.8} />
-          </Link>
+          </FutureButton>
         </div>
       </header>
 
@@ -144,10 +146,10 @@ export default function FutureAppPage() {
             experience—with PLEXA working across it all.
           </p>
           <div className={styles.heroActions}>
-            <a href="#experience" className={styles.primaryButton}>
+            <FutureButton href={whatsappHref}>
               Explore the future app
               <HugeiconsIcon icon={ArrowUpRight01Icon} size={17} strokeWidth={1.8} />
-            </a>
+            </FutureButton>
             <span className={styles.heroNote}>Concept vision · 2026–2028</span>
           </div>
         </div>
@@ -187,17 +189,19 @@ export default function FutureAppPage() {
         </div>
       </section>
 
-      <section className={styles.promise}>
-        <div>
-          <span className={styles.sectionKicker}>The connected journey</span>
-          <h2>From first signal to signed trade.</h2>
+      <section className={styles.videoShowcase}>
+        <div className={styles.videoIntro}>
+          <UiLabel>See the connected journey</UiLabel>
+          <h2>Watch the future app in motion.</h2>
+          <p>
+            This video space is ready for your PLEXUS walkthrough—from the first
+            signal to the signed trade.
+          </p>
         </div>
-        <p>
-          A super app is not a collection of tools. It is one continuous context:
-          every signal learned in discovery makes the meeting smarter, every
-          decision makes the agreement faster, and every outcome strengthens the
-          network.
-        </p>
+        <ShowcaseVideoLink
+          href="/videos/plexus-app-showcase.mp4"
+          poster="/app-future/company-brain.png"
+        />
       </section>
 
       <section id="experience" className={styles.features}>
@@ -215,6 +219,7 @@ export default function FutureAppPage() {
                   src={feature.image}
                   alt={feature.alt}
                   fill
+                  loading={index === 0 ? "eager" : "lazy"}
                   sizes="(max-width: 840px) 100vw, 50vw"
                   className={styles.featureImage}
                 />
@@ -229,7 +234,7 @@ export default function FutureAppPage() {
                 </div>
                 <h2>{feature.title}</h2>
                 <p>{feature.description}</p>
-                <div className={styles.signal}>{feature.signal}</div>
+                <UiSignal>{feature.signal}</UiSignal>
               </div>
             </article>
           )
@@ -238,7 +243,7 @@ export default function FutureAppPage() {
 
       <section id="platform" className={styles.platform}>
         <div className={styles.platformIntro}>
-          <span className={styles.sectionKicker}>One system, built in layers</span>
+          <UiLabel>One system, built in layers</UiLabel>
           <h2>The operating system underneath global business.</h2>
           <p>
             Start with the next best partner. Stay through the meeting, agreement,
@@ -260,7 +265,7 @@ export default function FutureAppPage() {
 
       <section id="roadmap" className={styles.roadmap}>
         <div className={styles.roadmapHeader}>
-          <span className={styles.sectionKicker}>The evolution</span>
+          <UiLabel>The evolution</UiLabel>
           <h2>From an intelligent assistant to a global trade super app.</h2>
         </div>
         <div className={styles.stages}>
@@ -282,23 +287,20 @@ export default function FutureAppPage() {
 
       <section className={styles.cta}>
         <HugeiconsIcon icon={Building03Icon} size={28} strokeWidth={1.4} />
-        <span className={styles.sectionKicker}>Built for business without borders</span>
+        <UiLabel>Built for business without borders</UiLabel>
         <h2>The next trade relationship could begin with one signal.</h2>
         <p>
           PLEXUS is building the intelligent infrastructure that carries it all
           the way to execution.
         </p>
-        <Link href="/contact" className={styles.primaryButton}>
+        <FutureButton href={whatsappHref}>
           Request a future walkthrough
           <HugeiconsIcon icon={ArrowUpRight01Icon} size={17} strokeWidth={1.8} />
-        </Link>
+        </FutureButton>
       </section>
 
       <footer className={styles.footer}>
-        <div className={styles.brand}>
-          <span className={styles.brandDot} />
-          <span>PLEXUS</span>
-        </div>
+        <PlexusBrand compact />
         <span>From first handshake to signed trade.</span>
         <span>© 2026 PLEXUS</span>
       </footer>

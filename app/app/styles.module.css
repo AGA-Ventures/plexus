@@ -443,6 +443,21 @@
   max-width: 500px;
 }
 
+.sessionLabel {
+  display: inline-flex;
+  margin-bottom: 18px;
+  border: 1px solid rgba(10, 132, 255, 0.4);
+  border-radius: 999px;
+  background: rgba(10, 132, 255, 0.1);
+  padding: 8px 12px;
+  color: #9acbff;
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 .featureMeta {
   display: flex;
   align-items: center;

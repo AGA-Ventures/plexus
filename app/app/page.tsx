@@ -32,6 +32,7 @@ const features = [
   {
     id: "brain",
     number: "01",
+    session: "Session 01 · Prepare",
     phase: "Before the meeting",
     title: "Company Brain",
     description:
@@ -44,6 +45,7 @@ const features = [
   {
     id: "matching",
     number: "02",
+    session: "Session 02 · Discover",
     phase: "Discover opportunity",
     title: "Plexus Match",
     description:
@@ -56,11 +58,12 @@ const features = [
   {
     id: "talk",
     number: "03",
+    session: "Session 03 · Meet",
     phase: "Meet without borders",
     title: "Plexus Talk",
     description:
       "Everyone speaks naturally in their own language. Live interpretation, transcription, speaker recognition, and cultural context run quietly beneath the meeting.",
-    signal: "Chinese ↔ English ↔ Japanese ↔ Korean · live",
+    signal: "Real-time multilingual interpretation · across supported languages",
     image: "/app-future/plexus-talk-phone-transparent.png",
     alt: "Plexus Talk mobile app providing live multilingual interpretation",
     icon: Mic02Icon,
@@ -68,11 +71,12 @@ const features = [
   {
     id: "radar",
     number: "04",
+    session: "Session 04 · Understand",
     phase: "Intelligence in the room",
     title: "Deal Radar",
     description:
-      "PLEXA listens for what is missing—not only what is said. It surfaces unresolved objections, delivery questions, compliance gaps, and the next best question in real time.",
-    signal: "3 open signals · delivery · MOQ · compliance",
+      "During the meeting, PLEXA listens for what is missing—not only what is said. It surfaces unresolved objections, delivery questions, compliance gaps, and the next best question in real time—before the meeting recap is created.",
+    signal: "Live meeting intelligence · delivery · MOQ · compliance",
     image: "/app-future/deal-radar-phone-transparent.png",
     alt: "Deal Radar mobile app surfacing live negotiation risks and questions",
     icon: Radar02Icon,
@@ -80,25 +84,27 @@ const features = [
   {
     id: "summary",
     number: "05",
+    session: "Session 05 · Act",
     phase: "Turn talk into action",
-    title: "AI Session Summary",
+    title: "Plexus Action Brief",
     description:
-      "The moment the meeting ends, decisions become tasks, owners, follow-ups, CRM records, and a shared source of truth that moves the relationship forward.",
-    signal: "Decisions · owners · next meeting · CRM updated",
+      "The moment the meeting ends, decisions become a clear task list with people responsible, follow-ups, CRM records, and a shared source of truth that moves the relationship forward.",
+    signal: "Decisions · task list · people responsible · follow-ups · CRM updates",
     image: "/app-future/session-summary-devices-transparent.png",
-    alt: "AI Session Summary synchronized across a web dashboard and mobile app",
+    alt: "Plexus Action Brief synchronized across a web dashboard and mobile app",
     icon: CheckmarkCircle02Icon,
   },
   {
     id: "mou",
     number: "06",
+    session: "Session 06 · Agree",
     phase: "From intent to agreement",
-    title: "AI MOU Engine",
+    title: "Plexus Agreement Studio",
     description:
       "PLEXA drafts the MOU, NDA, cooperation agreement, or partnership proposal from the real conversation—ready for both sides to review, negotiate, and e-sign.",
     signal: "Draft → review → collaborate → e-sign",
     image: "/app-future/mou-engine-web-transparent.png",
-    alt: "AI MOU Engine web app supporting collaborative agreement review and e-signing",
+    alt: "Plexus Agreement Studio supporting collaborative document review and e-signing",
     icon: LicenseDraftIcon,
   },
 ]
@@ -222,8 +228,8 @@ export default function FutureAppPage() {
           <UiLabel>See the connected journey</UiLabel>
           <h2>Watch the future app in motion.</h2>
           <p>
-            This video space is ready for your PLEXUS walkthrough—from the first
-            signal to the signed trade.
+            Follow the complete PLEXUS journey—from discovering the right partner
+            to meeting, deciding, and signing the agreement.
           </p>
         </div>
         <ShowcaseVideo
@@ -254,6 +260,7 @@ export default function FutureAppPage() {
                 <div className={styles.imageIndex}>{feature.number}</div>
               </div>
               <div className={styles.featureCopy}>
+                <div className={styles.sessionLabel}>{feature.session}</div>
                 <div className={styles.featureMeta}>
                   <span className={styles.iconBox}>
                     <HugeiconsIcon icon={Icon} size={21} strokeWidth={1.6} />

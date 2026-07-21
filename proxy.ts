@@ -13,9 +13,17 @@ const protectedRoutePattern = new RegExp(
 )
 
 export async function proxy(request: NextRequest) {
+  const match = request.nextUrl.pathname.match(protectedRoutePattern)
+
+  // Public pages do not need an authenticated Supabase session. Keeping this
+  // before the environment lookup prevents a missing auth configuration from
+  // taking down the entire public website.
+  if (!match) {
+    return NextResponse.next({ request })
+  }
+
   let response = NextResponse.next({ request })
   const { url, publishableKey } = getSupabaseConfig()
-
   const supabase = createServerClient(url, publishableKey, {
     cookies: {
       getAll() {
@@ -32,13 +40,6 @@ export async function proxy(request: NextRequest) {
       },
     },
   })
-
-  const match = request.nextUrl.pathname.match(protectedRoutePattern)
-
-  if (!match) {
-    await supabase.auth.getUser()
-    return response
-  }
 
   const locale = normalizeLocale(match[1])
   const requestedRoute = match[2]

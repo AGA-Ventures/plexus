@@ -5,6 +5,12 @@ import { z } from "zod"
 import type { AppRole } from "@/lib/auth"
 import { validateAuthenticatedUser } from "@/lib/authorization"
 import { matchNoteFromScore, scoreMatch } from "@/lib/matching"
+import { ensureAutomaticMeetingAfterAcceptance } from "@/lib/meeting-automation"
+import {
+  createMeeting,
+  meetingProviders,
+  type MeetingProvider,
+} from "@/lib/meetings"
 import { loadPlexusDb } from "@/lib/plexus-data"
 import type {
   Announcement,
@@ -45,13 +51,6 @@ const matchStatusSchema = z.enum([
   "Rejected",
   "Session Scheduled",
 ])
-const meetingStatusSchema = z.enum([
-  "Scheduled",
-  "Live",
-  "Completed",
-  "Cancelled",
-])
-const platformSchema = z.enum(["Zoom", "VooV"])
 const dealStatusSchema = z.enum([
   "Under Discussion",
   "Agreement Reached",
@@ -579,13 +578,93 @@ export async function updateMatchStatusAction(
     return { ok: false, error: "Invalid match status update." }
   }
 
-  return runMutation(
-    async ({ supabase }) =>
-      await supabase
+  return runMutation(async ({ supabase, identity, userRole }) => {
+    if (userRole === "vendor") {
+      if (!["Accepted", "Rejected"].includes(parsed.data)) {
+        return {
+          error: {
+            message: "Vendors can only accept or request a change.",
+          },
+        }
+      }
+
+      const acceptedAtField =
+        identity.vendorType === "delegation"
+          ? "delegation_accepted_at"
+          : "partner_accepted_at"
+
+      const decisionResult = await supabase
         .from("matches")
-        .update({ status: parsed.data })
+        .update({
+          [acceptedAtField]:
+            parsed.data === "Accepted" ? new Date().toISOString() : null,
+          ...(parsed.data === "Rejected"
+            ? { status: "Rejected" as const }
+            : {}),
+        })
         .eq("id", matchId)
-  )
+        .select(
+          "id, admin_id, status, delegation_accepted_at, partner_accepted_at"
+        )
+        .maybeSingle()
+
+      if (decisionResult.error) {
+        return decisionResult
+      }
+
+      const match = decisionResult.data
+
+      if (!match) {
+        return {
+          error: {
+            message: "The selected match is not available to this Vendor.",
+          },
+        }
+      }
+
+      if (
+        parsed.data === "Accepted" &&
+        match.status === "Accepted" &&
+        match.delegation_accepted_at &&
+        match.partner_accepted_at
+      ) {
+        await ensureAutomaticMeetingAfterAcceptance({
+          matchId: match.id,
+          adminId: match.admin_id,
+          actor: {
+            userId: identity.userId,
+            role: identity.role,
+          },
+        })
+      }
+
+      return decisionResult
+    }
+
+    if (["Accepted", "Session Scheduled"].includes(parsed.data)) {
+      return {
+        error: {
+          message:
+            parsed.data === "Accepted"
+              ? "Each Vendor must record its own acceptance."
+              : "Create the protected provider meeting to schedule the session.",
+        },
+      }
+    }
+
+    return await supabase
+      .from("matches")
+      .update({
+        status: parsed.data,
+        ...(parsed.data === "Proposed" || parsed.data === "Rejected"
+          ? {
+              delegation_accepted_at: null,
+              partner_accepted_at: null,
+            }
+          : {}),
+      })
+      .eq("id", matchId)
+  })
 }
 
 export async function scheduleMeetingAction(
@@ -618,7 +697,9 @@ export async function scheduleMeetingAction(
   return runMutation(async ({ supabase, identity, userRole }) => {
     const matchResult = await supabase
       .from("matches")
-      .select("delegation_company_id, partner_company_id, status")
+      .select(
+        "delegation_company_id, partner_company_id, status, delegation_accepted_at, partner_accepted_at"
+      )
       .eq("id", matchId)
       .single()
 
@@ -645,12 +726,16 @@ export async function scheduleMeetingAction(
     }
 
     if (
-      userRole === "vendor" &&
-      !["Accepted", "Session Scheduled"].includes(match.status)
+      !match.delegation_accepted_at ||
+      !match.partner_accepted_at ||
+      match.status !== "Accepted"
     ) {
       return {
         error: {
-          message: "Accept the match before requesting a meeting.",
+          message:
+            match.status === "Session Scheduled"
+              ? "The protected meeting has already been created."
+              : "Both Vendors must accept before requesting a meeting.",
         },
       }
     }
@@ -692,25 +777,16 @@ export async function scheduleMeetingAction(
       return existingMeeting
     }
 
-    const matchUpdate = await supabase
-      .from("matches")
-      .update({ status: "Session Scheduled" })
-      .eq("id", matchId)
-
-    if (matchUpdate.error) {
-      return matchUpdate
-    }
-
     const startsAt = meetingSlots[0] ?? "2026-07-15T11:00:00+08:00"
     const interpreterNote = requestedInterpreter
       ? ` Preferred interpreter: ${requestedInterpreter.name} (${requestedInterpreter.languages}) — admin to confirm.`
       : ""
     const summary =
       (meetingSlots.length > 0
-        ? `Participant selected preferred 1-hour working-day slots: ${meetingSlots.join(", ")}. Admin should confirm one slot and replace the placeholder with the final Zoom/VooV session.`
+        ? `Participant selected preferred 1-hour working-day slots: ${meetingSlots.join(", ")}. Admin should confirm one slot and replace the placeholder with the final Zoom/Lark session.`
         : userRole === "admin" || userRole === "superadmin"
-          ? "Admin scheduled production session. Replace with Zoom/VooV API after workflow confirmation."
-          : "Participant requested a meeting after accepting the match. Admin can replace this placeholder with a confirmed Zoom/VooV slot.") +
+          ? "Admin recorded a meeting request. Create the protected Zoom/Lark session after both Vendors accept."
+          : "Participant requested a meeting after both Vendors accepted. Admin must create the protected Zoom/Lark session.") +
       interpreterNote
 
     if ((existingMeeting.data ?? []).length > 0) {
@@ -719,6 +795,8 @@ export async function scheduleMeetingAction(
         .update({
           starts_at: startsAt,
           duration_minutes: 60,
+          platform: "Pending",
+          link: "",
           requested_interpreter_id: interpreterId,
           summary,
           status: "Scheduled",
@@ -731,8 +809,8 @@ export async function scheduleMeetingAction(
       match_id: matchId,
       starts_at: startsAt,
       duration_minutes: 60,
-      platform: "VooV",
-      link: `https://meeting.tencent.com/dm/${meetingId}`,
+      platform: "Pending",
+      link: "",
       interpreter: "To be confirmed",
       requested_interpreter_id: interpreterId,
       host: "Sarah Lim",
@@ -740,6 +818,98 @@ export async function scheduleMeetingAction(
       summary,
     })
   })
+}
+
+export async function createProviderMeetingAction(input: {
+  matchId: string
+  provider: MeetingProvider
+}): Promise<ActionResult> {
+  const parsed = z
+    .object({
+      matchId: uuidSchema,
+      provider: z.enum(meetingProviders),
+    })
+    .safeParse(input)
+
+  if (!parsed.success) {
+    return { ok: false, error: "Choose a valid match and meeting provider." }
+  }
+
+  return runMutation(
+    async ({ supabase, identity, userRole }) => {
+      const matchResult = await supabase
+        .from("matches")
+        .select(
+          "id, admin_id, status, delegation_accepted_at, partner_accepted_at"
+        )
+        .eq("id", parsed.data.matchId)
+        .maybeSingle()
+
+      if (matchResult.error || !matchResult.data) {
+        return {
+          error: { message: "The selected match is not available." },
+        }
+      }
+
+      if (
+        userRole === "admin" &&
+        identity.adminId !== matchResult.data.admin_id
+      ) {
+        return {
+          error: { message: "You cannot create a meeting for this tenant." },
+        }
+      }
+
+      if (
+        !matchResult.data.delegation_accepted_at ||
+        !matchResult.data.partner_accepted_at ||
+        !["Accepted", "Session Scheduled"].includes(matchResult.data.status)
+      ) {
+        return {
+          error: {
+            message: "Both Vendors must accept before creating a meeting.",
+          },
+        }
+      }
+
+      const preferenceResult = await supabase
+        .from("meetings")
+        .select("starts_at, duration_minutes")
+        .eq("match_id", parsed.data.matchId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (preferenceResult.error) {
+        return {
+          error: { message: "Unable to read the meeting preferences." },
+        }
+      }
+
+      try {
+        await createMeeting({
+          matchId: parsed.data.matchId,
+          adminId: matchResult.data.admin_id,
+          provider: parsed.data.provider,
+          topic: "Plexus business matching meeting",
+          durationMinutes: preferenceResult.data?.duration_minutes ?? 60,
+          startsAt: preferenceResult.data?.starts_at
+            ? new Date(preferenceResult.data.starts_at)
+            : undefined,
+        })
+      } catch (error) {
+        return {
+          error: {
+            message:
+              error instanceof Error
+                ? error.message
+                : "The meeting provider could not create the meeting.",
+          },
+        }
+      }
+    },
+    { role: "admin" }
+  )
 }
 
 function isValidMeetingSlot(value: string) {
@@ -1054,52 +1224,6 @@ export async function updateCompanyProfileAction(
       })
       .eq("id", id)
   })
-}
-
-export async function createMeetingAction(input: {
-  matchId: string
-  startsAt: string
-  duration: number
-  platform: Meeting["platform"]
-  link: string
-  interpreter: string
-  host: string
-  status: Meeting["status"]
-  summary: string
-}): Promise<ActionResult> {
-  const parsed = z
-    .object({
-      matchId: uuidSchema,
-      startsAt: z.iso.datetime({ offset: true }),
-      duration: z.number().int().min(5).max(480),
-      platform: platformSchema,
-      link: z.url(),
-      interpreter: z.string().trim().min(1),
-      host: z.string().trim().min(1),
-      status: meetingStatusSchema,
-      summary: z.string().trim().min(1),
-    })
-    .safeParse(input)
-
-  if (!parsed.success) {
-    return { ok: false, error: "Check the meeting fields and try again." }
-  }
-
-  return runMutation(
-    async ({ supabase }) =>
-      await supabase.from("meetings").insert({
-        match_id: parsed.data.matchId,
-        starts_at: parsed.data.startsAt,
-        duration_minutes: parsed.data.duration,
-        platform: parsed.data.platform,
-        link: parsed.data.link,
-        interpreter: parsed.data.interpreter,
-        host: parsed.data.host,
-        status: parsed.data.status,
-        summary: parsed.data.summary,
-      }),
-    { role: "admin" }
-  )
 }
 
 export async function sendAnnouncementAction(input: {

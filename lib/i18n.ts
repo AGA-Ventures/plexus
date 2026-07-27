@@ -47,6 +47,8 @@ export const localeParams = [
 export type Locale = (typeof locales)[number]
 export type LocaleParam = (typeof localeParams)[number]
 
+export const protectedPortalLocales = ["en", "zh", "zh-Hant", "th"] as const
+
 export const localeLabels: Record<Locale, string> = {
   en: "EN",
   zh: "中文",

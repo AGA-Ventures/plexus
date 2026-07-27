@@ -69,6 +69,8 @@ type MatchRow = {
   status: Match["status"]
   score: number
   note: string
+  delegation_accepted_at: string | null
+  partner_accepted_at: string | null
 }
 
 type InterpreterRow = {
@@ -176,6 +178,7 @@ export type PortalSession = {
   tenantName?: string
   tenantSupportEmail?: string
   tenantPrimaryColor?: string
+  tenantLogoUrl?: string
 }
 
 function assertRows<T>(
@@ -382,6 +385,8 @@ export async function loadPlexusDb(supabase: DbClient): Promise<LocalDb> {
       status: row.status,
       score: row.score,
       note: row.note,
+      delegationAcceptedAt: row.delegation_accepted_at,
+      partnerAcceptedAt: row.partner_accepted_at,
     })),
     interpreters: interpreterRows.map((row) => ({
       id: row.id,

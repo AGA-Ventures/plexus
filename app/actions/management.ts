@@ -3,13 +3,18 @@
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
+import { isActiveAdminRecoveryAccount } from "@/lib/admin-password-recovery"
 import { getAuthenticatedIdentity } from "@/lib/authorization"
 import type { Locale } from "@/lib/i18n"
+import { retryAutomaticMeetingCreation } from "@/lib/meeting-automation"
 import {
-  type TenantStatus,
-  type VendorStatus,
-} from "@/lib/management-data"
+  getPasswordRecoveryRedirectUrl,
+  resolvePasswordRecoveryOrigin,
+} from "@/lib/password-recovery"
+import { type TenantStatus, type VendorStatus } from "@/lib/management-data"
+import { hasMatchingPasswordConfirmation } from "@/lib/password-confirmation"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import { createSupabaseServerClient } from "@/lib/supabase/server"
 
 export type ManagementActionResult = {
   ok: boolean
@@ -22,20 +27,33 @@ const tenantStatusSchema = z.enum(["active", "suspended", "archived"])
 const vendorStatusSchema = z.enum(["active", "suspended", "archived"])
 const vendorTypeSchema = z.enum(["delegation", "partner"])
 
-const createAdminSchema = z.object({
-  locale: localeSchema,
-  tenantName: z.string().trim().min(2).max(120),
-  tenantSlug: z
-    .string()
-    .trim()
-    .min(2)
-    .max(80)
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-  supportEmail: z.email().trim(),
-  displayName: z.string().trim().min(2).max(120),
-  email: z.email().trim(),
-  temporaryPassword: z.string().min(12).max(128),
-})
+const createAdminSchema = z
+  .object({
+    locale: localeSchema,
+    tenantName: z.string().trim().min(2).max(120),
+    tenantSlug: z
+      .string()
+      .trim()
+      .min(2)
+      .max(80)
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+    supportEmail: z.email().trim(),
+    displayName: z.string().trim().min(2).max(120),
+    email: z.email().trim(),
+    temporaryPassword: z.string().min(12).max(128),
+    confirmTemporaryPassword: z.string().min(12).max(128),
+  })
+  .refine(
+    (value) =>
+      hasMatchingPasswordConfirmation(
+        value.temporaryPassword,
+        value.confirmTemporaryPassword
+      ),
+    {
+      message: "Temporary passwords do not match.",
+      path: ["confirmTemporaryPassword"],
+    }
+  )
 
 const createVendorSchema = z.object({
   locale: localeSchema,
@@ -58,6 +76,15 @@ const updateTenantSchema = z.object({
     .string()
     .trim()
     .regex(/^#[0-9a-f]{6}$/i, "Enter a six-digit hex color."),
+  logoUrl: z
+    .string()
+    .trim()
+    .max(500)
+    .refine(
+      (value) =>
+        value === "" || value.startsWith("/") || value.startsWith("https://"),
+      "Use an HTTPS URL or a public path beginning with /."
+    ),
 })
 
 const updateVendorSchema = z.object({
@@ -73,6 +100,10 @@ const updatePlatformSettingSchema = z.object({
   locale: localeSchema,
   settingId: uuidSchema,
   value: z.string().trim().max(20_000),
+})
+const retryMeetingCreationSchema = z.object({
+  locale: localeSchema,
+  jobId: uuidSchema,
 })
 
 function actionError(error: unknown) {
@@ -200,10 +231,7 @@ export async function createVendorAccountAction(
     const authorization = await requireOperator()
     const { identity, supabase } = authorization
 
-    if (
-      identity.role === "admin" &&
-      identity.adminId !== parsed.data.adminId
-    ) {
+    if (identity.role === "admin" && identity.adminId !== parsed.data.adminId) {
       return {
         ok: false,
         error: "Admins can create Vendors only in their own tenant.",
@@ -217,10 +245,7 @@ export async function createVendorAccountAction(
         .eq("setting_key", "vendor_account_provisioning")
         .maybeSingle()
 
-      if (
-        permissionResult.error ||
-        permissionResult.data?.value !== true
-      ) {
+      if (permissionResult.error || permissionResult.data?.value !== true) {
         return {
           ok: false,
           error: "Vendor account provisioning is disabled by Plexus.",
@@ -372,6 +397,115 @@ export async function setTenantStatusAction(input: {
   }
 }
 
+export async function sendAdminPasswordResetAction(input: {
+  locale: Locale
+  userId: string
+}): Promise<ManagementActionResult> {
+  const parsed = z
+    .object({
+      locale: localeSchema,
+      userId: uuidSchema,
+    })
+    .safeParse(input)
+
+  if (!parsed.success) {
+    return { ok: false, error: "Invalid Admin password-recovery request." }
+  }
+
+  try {
+    const authorization = await requireOperator()
+
+    if (authorization.identity.role !== "superadmin") {
+      return {
+        ok: false,
+        error: "Only Superadmins can send Admin recovery links.",
+      }
+    }
+
+    const profileResult = await authorization.supabase
+      .from("user_profiles")
+      .select("id, email, role, admin_id, active")
+      .eq("id", parsed.data.userId)
+      .maybeSingle()
+
+    const profile = profileResult.data
+
+    if (profileResult.error || !isActiveAdminRecoveryAccount(profile)) {
+      return {
+        ok: false,
+        error: "Select an active Admin account in your permitted scope.",
+      }
+    }
+
+    const tenantResult = await authorization.supabase
+      .from("admin_tenants")
+      .select("id, slug")
+      .eq("id", profile.admin_id)
+      .maybeSingle()
+
+    if (tenantResult.error || !tenantResult.data) {
+      return {
+        ok: false,
+        error: "The Admin tenant could not be verified.",
+      }
+    }
+
+    const adminClient = createSupabaseAdminClient()
+    const auditResult = await adminClient.from("audit_events").insert({
+      actor_user_id: authorization.identity.userId,
+      actor_role: authorization.identity.role,
+      action: "request_password_recovery",
+      target_table: "user_profiles",
+      target_id: profile.id,
+      admin_id: profile.admin_id,
+      before_values: null,
+      after_values: {
+        delivery: "email_link",
+        tenant_slug: tenantResult.data.slug,
+      },
+    })
+
+    if (auditResult.error) {
+      return {
+        ok: false,
+        error:
+          "The recovery request could not be audited, so no email was sent.",
+      }
+    }
+
+    const origin = resolvePasswordRecoveryOrigin({
+      productionUrl: process.env.VERCEL_PROJECT_PRODUCTION_URL,
+      siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+    })
+    const redirectTo = getPasswordRecoveryRedirectUrl({
+      origin,
+      locale: parsed.data.locale,
+      tenantSlug: tenantResult.data.slug,
+    })
+    const supabase = await createSupabaseServerClient()
+    const resetResult = await supabase.auth.resetPasswordForEmail(
+      profile.email,
+      { redirectTo }
+    )
+
+    if (resetResult.error) {
+      console.warn("Supabase Admin password recovery request failed.", {
+        code: resetResult.error.code,
+        status: resetResult.error.status,
+      })
+      return {
+        ok: false,
+        error:
+          "The recovery email could not be sent. Check the Auth email service and try again.",
+      }
+    }
+
+    return { ok: true }
+  } catch (error) {
+    return actionError(error)
+  }
+}
+
 export async function updateTenantProfileAction(
   input: unknown
 ): Promise<ManagementActionResult> {
@@ -397,6 +531,7 @@ export async function updateTenantProfileAction(
         name: parsed.data.name,
         support_email: parsed.data.supportEmail,
         primary_color: parsed.data.primaryColor,
+        logo_url: parsed.data.logoUrl,
       })
       .eq("id", parsed.data.tenantId)
       .select("id")
@@ -692,24 +827,26 @@ export async function transferVendorAction(input: {
       return { ok: false, error: "Only Superadmins can transfer Vendors." }
     }
 
-    const [vendorResult, destinationResult, profilesResult] = await Promise.all([
-      authorization.supabase
-        .from("vendor_companies")
-        .select("admin_id, vendor_type")
-        .eq("id", parsed.data.vendorId)
-        .single(),
-      authorization.supabase
-        .from("admin_tenants")
-        .select("id")
-        .eq("id", parsed.data.destinationAdminId)
-        .eq("status", "active")
-        .maybeSingle(),
-      authorization.supabase
-        .from("user_profiles")
-        .select("id")
-        .eq("vendor_company_id", parsed.data.vendorId)
-        .eq("role", "vendor"),
-    ])
+    const [vendorResult, destinationResult, profilesResult] = await Promise.all(
+      [
+        authorization.supabase
+          .from("vendor_companies")
+          .select("admin_id, vendor_type")
+          .eq("id", parsed.data.vendorId)
+          .single(),
+        authorization.supabase
+          .from("admin_tenants")
+          .select("id")
+          .eq("id", parsed.data.destinationAdminId)
+          .eq("status", "active")
+          .maybeSingle(),
+        authorization.supabase
+          .from("user_profiles")
+          .select("id")
+          .eq("vendor_company_id", parsed.data.vendorId)
+          .eq("role", "vendor"),
+      ]
+    )
 
     if (vendorResult.error) {
       return { ok: false, error: vendorResult.error.message }
@@ -750,13 +887,10 @@ export async function transferVendorAction(input: {
       }
     }
 
-    const transferResult = await authorization.supabase.rpc(
-      "transfer_vendor",
-      {
-        p_vendor_id: parsed.data.vendorId,
-        p_destination_admin_id: parsed.data.destinationAdminId,
-      }
-    )
+    const transferResult = await authorization.supabase.rpc("transfer_vendor", {
+      p_vendor_id: parsed.data.vendorId,
+      p_destination_admin_id: parsed.data.destinationAdminId,
+    })
 
     if (transferResult.error) {
       for (const userId of profileIds) {
@@ -820,6 +954,49 @@ export async function updatePlatformSettingAction(
     }
 
     refreshManagement(parsed.data.locale)
+    return { ok: true }
+  } catch (error) {
+    return actionError(error)
+  }
+}
+
+export async function retryMeetingCreationAction(
+  input: unknown
+): Promise<ManagementActionResult> {
+  const parsed = retryMeetingCreationSchema.safeParse(input)
+
+  if (!parsed.success) {
+    return { ok: false, error: "Choose a valid meeting creation incident." }
+  }
+
+  try {
+    const authorization = await requireOperator()
+
+    if (authorization.identity.role !== "superadmin") {
+      return {
+        ok: false,
+        error: "Only Superadmins can retry critical meeting incidents.",
+      }
+    }
+
+    const state = await retryAutomaticMeetingCreation({
+      jobId: parsed.data.jobId,
+      actor: {
+        userId: authorization.identity.userId,
+        role: authorization.identity.role,
+      },
+    })
+
+    refreshManagement(parsed.data.locale)
+
+    if (state === "failed") {
+      return {
+        ok: false,
+        error:
+          "The provider retry failed. The incident remains critical for Superadmin review.",
+      }
+    }
+
     return { ok: true }
   } catch (error) {
     return actionError(error)

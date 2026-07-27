@@ -47,7 +47,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { TenantProfileDialog } from "@/components/tenant-profile-dialog"
 import { VendorDirectoryDialog } from "@/components/vendor-directory-dialog"
 
 type Props = {
@@ -180,14 +179,6 @@ export function AdminVendorConsole({
             <Button asChild variant="outline">
               <Link href={`/${locale}/admin`}>Back to operations</Link>
             </Button>
-            <TenantProfileDialog
-              locale={locale}
-              tenantId={tenant.id}
-              initialName={tenant.name}
-              initialSupportEmail={tenant.support_email}
-              initialPrimaryColor={tenant.primary_color}
-              triggerLabel="Tenant settings"
-            />
             <AdminVendorProvision
               locale={locale}
               adminId={tenant.id}

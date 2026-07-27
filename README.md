@@ -1,97 +1,102 @@
 # Plexus Connect
 
-Supabase-backed multi-tenant operations platform for Malaysia–China/Macao
-business matching.
+Plexus is a multilingual, multi-tenant business operations superapp for
+Malaysia–China/Macao matching, onboarding, meetings, deals, event operations,
+communications, resources, and compliance.
 
-## Project orientation
-
-Run this before development or deployment to see the current branch, commit,
-push destination, Supabase link, local environment target, and Vercel link:
+## Start here
 
 ```bash
+nvm use
+npm ci
+cp .env.example .env.local
+npm run setup:repo
 npm run whereami
+npm run dev
 ```
 
-- [Development workflow](DEVELOPMENT.md)
-- [Deployment workflow](DEPLOYMENT.md)
-- [Current project state](PROJECT_STATUS.md)
-- [Dated change history](CHANGELOG.md)
+`npm run whereami` shows the active Git branch, push destination, Supabase
+target, local environment state, Vercel project, and change log.
 
-## Workspaces
+## Documentation
 
-- `/en/superadmin` — Plexus platform control center across all Admin tenants.
-- `/en/admin` — tenant-scoped operations and Vendor management.
-- `/en/vendor` — unified end-user workspace for delegation and partner Vendors.
-- `/en/login` — shared login that routes users by trusted role.
+The [documentation hub](docs/README.md) is the repository operating system.
+Use these entry points:
 
-`/delegation` and `/partner` are compatibility redirects to `/vendor`; they are
-Vendor subtypes, not authorization roles. Localized `zh`, `zh-Hant`, and `th`
-routes are supported, and `cn` aliases to `zh`.
+- [Product vision and scope](docs/product/vision-and-scope.md)
+- [Capability map](docs/product/capability-map.md)
+- [System architecture](docs/architecture/system-overview.md)
+- [Database schema](docs/architecture/database-schema.md)
+- [Routes and access model](docs/architecture/routes-and-access.md)
+- [Developer setup](docs/development/setup.md)
+- [Development workflow](docs/development/workflow.md)
+- [Project operating model](docs/project-management/operating-model.md)
+- [Roadmap and backlog](docs/project-management/roadmap.md)
+- [Testing strategy](docs/quality/testing.md)
+- [Deployment runbook](docs/operations/deployment.md)
+- [Security model](docs/security/authorization-and-data-security.md)
+- [Current project status](docs/reference/project-status.md)
+- [Change history](CHANGELOG.md)
 
-## Supabase
+See [CONTRIBUTING.md](CONTRIBUTING.md) before changing code, schema,
+configuration, or documentation.
 
-Copy `.env.example` to `.env.local`. Browser code uses only the URL and
-publishable key. Trusted account provisioning additionally requires the
-server-only `SUPABASE_SECRET_KEY` (`sb_secret_...`). Never expose it through a
-`NEXT_PUBLIC_` variable.
+## Platform workspaces
 
-The canonical model and RLS policies live in:
+| Workspace         | Route                     | Purpose                                        |
+| ----------------- | ------------------------- | ---------------------------------------------- |
+| Shared login      | `/[locale]/login`         | Email/password authentication and role routing |
+| Superadmin        | `/[locale]/superadmin`    | Platform and cross-tenant control              |
+| Admin             | `/[locale]/admin`         | Tenant operations                              |
+| Vendor management | `/[locale]/admin/vendors` | Tenant-scoped Vendor provisioning              |
+| Vendor            | `/[locale]/vendor`        | Delegation and Partner Vendor workspace        |
+| Compliance        | `/[locale]/compliance`    | Protected compliance operations                |
 
-```txt
-supabase/migrations/20260727080418_three_tier_tenant_authorization.sql
-```
+Vendor types `delegation` and `partner` are subtypes of the `vendor` role.
+Legacy subtype routes redirect to the unified Vendor workspace. Supported
+locales are `en`, `zh`, `zh-Hant`, and `th`; `cn` aliases to `zh`.
 
-Authorization uses only `app_metadata`:
+## Secure Zoom and Lark meeting links
 
-```json
-{ "role": "superadmin" }
-```
+Meeting creation is allowed only after the Delegation Vendor and Partner Vendor
+have each accepted the match. The second acceptance automatically creates the
+configured Zoom or Lark meeting, and Plexus shares only an expiring
+`NEXT_PUBLIC_APP_URL/m/<opaque-slug>` link. The raw provider join URL remains in
+a server-only, RLS-locked table. A provider failure preserves the agreement and
+raises a sanitized critical incident for Superadmin retry.
 
-```json
-{ "role": "admin", "admin_id": "<admin-tenant-uuid>" }
-```
+Release setup:
 
-```json
-{
-  "role": "vendor",
-  "admin_id": "<admin-tenant-uuid>",
-  "vendor_company_id": "<vendor-company-uuid>",
-  "vendor_type": "delegation"
-}
-```
+1. Add the Supabase, Zoom, Lark, and `NEXT_PUBLIC_APP_URL` variables from
+   `.env.example` to the appropriate Vercel environments.
+2. Apply `supabase/migrations/20260727182004_secure_mutual_meeting_links.sql`
+   and `20260727191200_automatic_meeting_critical_incidents.sql` before
+   deploying the dependent application code.
+3. While signed in as a Superadmin, visit `/api/lark/login` once and approve
+   the platform Lark host authorization.
+4. Accept from each Vendor to trigger the default provider automatically, or
+   call `POST /api/meetings` with an accepted match for controlled recovery:
 
-The Vendor subtype may be `delegation` or `partner`. Claims must exactly match
-an active `user_profiles` row and active tenant/company binding. Invalid or
-stale bindings fail closed in login, routes, server actions, and RLS.
+   ```json
+   {
+     "matchId": "<match-uuid>",
+     "provider": "zoom",
+     "topic": "Partner introduction",
+     "durationMinutes": 60
+   }
+   ```
 
-Superadmins are never created through public signup or seed SQL. Bootstrap the
-first approved operator with the guarded command below, or an Auth Admin API
-request that supplies the complete trusted `app_metadata` during user creation.
-Then use the Superadmin control center for Admin and Vendor provisioning.
+The API response contains `shareUrl` and `expiresAt`; it never contains the raw
+provider URL or a Zoom host URL.
 
-Production public signup must remain disabled in Supabase Auth. Account creation
-uses only the server-only Auth Admin API; login, route protection, server
-actions, profile bindings, and RLS all reject missing or invalid trusted claims.
-
-With the server secret and approved operator details in `.env.local`, the
-trusted one-time bootstrap command is:
+## Required verification
 
 ```bash
-npm run bootstrap:superadmin
-```
-
-The command refuses to create another Superadmin by default and never prints
-the password.
-
-## Verification
-
-```bash
-npm run lint
-npm run typecheck
-npm run test:unit
-npm run build
+npm run docs:check
+npm run verify:release
 npm run test:e2e
 ```
 
-For authenticated browser tests, configure the `E2E_SUPERADMIN_*`,
-`E2E_ADMIN_*`, and `E2E_VENDOR_*` variables documented in `.env.example`.
+The release gate verifies documentation links, approved deployment targets,
+production dependencies, lint, TypeScript, unit tests, and the Next.js
+production build.

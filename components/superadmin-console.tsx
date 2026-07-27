@@ -13,8 +13,13 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import {
   AddIcon,
   AnalyticsUpIcon,
+  Alert02Icon,
+  Audit01Icon,
   Building01Icon,
   Logout03Icon,
+  Menu01Icon,
+  ResetPasswordIcon,
+  Settings01Icon,
   ShieldUserIcon,
   UserGroupIcon,
 } from "@hugeicons/core-free-icons"
@@ -24,6 +29,8 @@ import { logoutAction } from "@/app/actions/auth"
 import {
   createAdminAccountAction,
   createVendorAccountAction,
+  retryMeetingCreationAction,
+  sendAdminPasswordResetAction,
   setAccountActiveAction,
   setTenantStatusAction,
   setVendorStatusAction,
@@ -31,19 +38,27 @@ import {
   transferVendorAction,
   type ManagementActionResult,
 } from "@/app/actions/management"
+import { isActiveAdminRecoveryAccount } from "@/lib/admin-password-recovery"
 import type { AuthenticatedIdentity } from "@/lib/authorization"
 import type { Locale } from "@/lib/i18n"
+import { hasMatchingPasswordConfirmation } from "@/lib/password-confirmation"
 import type {
   AdminTenant,
   AuditEvent,
   ManagedAccount,
   ManagedVendor,
+  MeetingCreationIncident,
   PlatformSetting,
   TenantOperationalCount,
   TenantStatus,
   VendorStatus,
 } from "@/lib/management-data"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import {
+  Alert,
+  AlertAction,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -66,6 +81,14 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+import {
   Table,
   TableBody,
   TableCell,
@@ -86,6 +109,7 @@ type Props = {
   vendors: ManagedVendor[]
   accounts: ManagedAccount[]
   auditEvents: AuditEvent[]
+  meetingCreationIncidents: MeetingCreationIncident[]
   operations: {
     matches: TenantOperationalCount[]
     meetings: TenantOperationalCount[]
@@ -97,6 +121,16 @@ type Props = {
 const fieldClass =
   "h-8 w-full rounded-md border border-input bg-transparent px-2 text-xs outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
 
+const superadminNavItems = [
+  { value: "admins", label: "Admin tenants", icon: Building01Icon },
+  { value: "vendors", label: "Vendors", icon: UserGroupIcon },
+  { value: "accounts", label: "Accounts", icon: ShieldUserIcon },
+  { value: "reporting", label: "Reporting", icon: AnalyticsUpIcon },
+  { value: "incidents", label: "Critical incidents", icon: Alert02Icon },
+  { value: "settings", label: "Platform settings", icon: Settings01Icon },
+  { value: "audit", label: "Audit events", icon: Audit01Icon },
+]
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-MY", {
     dateStyle: "medium",
@@ -105,9 +139,9 @@ function formatDate(value: string) {
 }
 
 function labelStatus(status: string) {
-  return status.replaceAll("_", " ").replace(/^\w/, (letter) =>
-    letter.toUpperCase()
-  )
+  return status
+    .replaceAll("_", " ")
+    .replace(/^\w/, (letter) => letter.toUpperCase())
 }
 
 function statusBadge(status: string) {
@@ -148,15 +182,14 @@ function MetricCard({
           <HugeiconsIcon icon={icon} strokeWidth={1.7} />
         </div>
       </CardHeader>
-      <CardFooter className="text-xs text-muted-foreground">{detail}</CardFooter>
+      <CardFooter className="text-xs text-muted-foreground">
+        {detail}
+      </CardFooter>
     </Card>
   )
 }
 
-function NativeSelect({
-  children,
-  ...props
-}: React.ComponentProps<"select">) {
+function NativeSelect({ children, ...props }: React.ComponentProps<"select">) {
   return (
     <select className={fieldClass} {...props}>
       {children}
@@ -174,15 +207,47 @@ function CreateAdminDialog({
   onSubmit: (form: FormData) => void
 }) {
   const [open, setOpen] = useState(false)
+  const [temporaryPassword, setTemporaryPassword] = useState("")
+  const [confirmTemporaryPassword, setConfirmTemporaryPassword] = useState("")
+  const [confirmTouched, setConfirmTouched] = useState(false)
+  const passwordsMatch = hasMatchingPasswordConfirmation(
+    temporaryPassword,
+    confirmTemporaryPassword
+  )
+  const showPasswordMismatch =
+    confirmTouched &&
+    confirmTemporaryPassword.length > 0 &&
+    temporaryPassword !== confirmTemporaryPassword
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    onSubmit(new FormData(event.currentTarget))
+
+    const form = new FormData(event.currentTarget)
+
+    if (
+      form.get("temporaryPassword") !== form.get("confirmTemporaryPassword")
+    ) {
+      setConfirmTouched(true)
+      return
+    }
+
+    onSubmit(form)
     setOpen(false)
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen)
+
+        if (!nextOpen) {
+          setTemporaryPassword("")
+          setConfirmTemporaryPassword("")
+          setConfirmTouched(false)
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <Button disabled={disabled || pending}>
           <HugeiconsIcon icon={AddIcon} data-icon="inline-start" />
@@ -193,7 +258,8 @@ function CreateAdminDialog({
         <DialogHeader>
           <DialogTitle>Create Admin tenant and account</DialogTitle>
           <DialogDescription>
-            Creates the tenant, trusted Auth claims, and its first Admin profile.
+            Creates the tenant, trusted Auth claims, and its first Admin
+            profile.
           </DialogDescription>
         </DialogHeader>
         <form className="grid gap-4" onSubmit={submit}>
@@ -214,8 +280,21 @@ function CreateAdminDialog({
             </div>
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="supportEmail">Support email</Label>
-            <Input id="supportEmail" name="supportEmail" type="email" required />
+            <Label htmlFor="supportEmail">Support email (public contact)</Label>
+            <Input
+              id="supportEmail"
+              name="supportEmail"
+              type="email"
+              aria-describedby="supportEmailDescription"
+              required
+            />
+            <p
+              id="supportEmailDescription"
+              className="text-xs text-muted-foreground"
+            >
+              Shown to tenant users for login and account help. A shared inbox
+              such as support@company.com is recommended.
+            </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="grid gap-1.5">
@@ -223,26 +302,85 @@ function CreateAdminDialog({
               <Input id="adminName" name="displayName" required minLength={2} />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="adminEmail">Admin email</Label>
-              <Input id="adminEmail" name="email" type="email" required />
+              <Label htmlFor="adminEmail">Admin email (login account)</Label>
+              <Input
+                id="adminEmail"
+                name="email"
+                type="email"
+                aria-describedby="adminEmailDescription"
+                required
+              />
+              <p
+                id="adminEmailDescription"
+                className="text-xs text-muted-foreground"
+              >
+                Private sign-in and password-recovery email for the first Admin.
+              </p>
             </div>
           </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="adminPassword">Temporary password</Label>
-            <Input
-              id="adminPassword"
-              name="temporaryPassword"
-              type="password"
-              minLength={12}
-              autoComplete="new-password"
-              required
-            />
-            <p className="text-xs text-muted-foreground">
-              Minimum 12 characters. Share it through an approved secure channel.
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-1.5">
+              <Label htmlFor="adminPassword">Temporary password</Label>
+              <Input
+                id="adminPassword"
+                name="temporaryPassword"
+                type="password"
+                minLength={12}
+                autoComplete="new-password"
+                value={temporaryPassword}
+                onChange={(event) => setTemporaryPassword(event.target.value)}
+                required
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="confirmAdminPassword">
+                Confirm temporary password
+              </Label>
+              <Input
+                id="confirmAdminPassword"
+                name="confirmTemporaryPassword"
+                type="password"
+                minLength={12}
+                autoComplete="new-password"
+                value={confirmTemporaryPassword}
+                onChange={(event) =>
+                  setConfirmTemporaryPassword(event.target.value)
+                }
+                onBlur={() => setConfirmTouched(true)}
+                aria-invalid={showPasswordMismatch}
+                aria-describedby="adminPasswordDescription adminPasswordMatch"
+                required
+              />
+            </div>
+            <p
+              id="adminPasswordDescription"
+              className="text-xs text-muted-foreground sm:col-span-2"
+            >
+              Minimum 12 characters. Share it through an approved secure
+              channel.
+            </p>
+            <p
+              id="adminPasswordMatch"
+              className={
+                showPasswordMismatch
+                  ? "text-xs text-destructive sm:col-span-2"
+                  : passwordsMatch
+                    ? "text-xs text-emerald-500 sm:col-span-2 dark:text-emerald-400"
+                    : "text-xs text-muted-foreground sm:col-span-2"
+              }
+              aria-live="polite"
+            >
+              {showPasswordMismatch
+                ? "Passwords do not match. Enter the same temporary password twice."
+                : passwordsMatch
+                  ? "Passwords match."
+                  : "Enter the same temporary password again to confirm it."}
             </p>
           </div>
           <DialogFooter>
-            <Button type="submit">Create tenant and Admin</Button>
+            <Button type="submit" disabled={pending || !passwordsMatch}>
+              Create tenant and Admin
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -455,8 +593,158 @@ function MobileRecord({
           {status ? statusBadge(status) : null}
         </div>
       </CardHeader>
-      {children ? <CardContent className="grid gap-3">{children}</CardContent> : null}
+      {children ? (
+        <CardContent className="grid gap-3">{children}</CardContent>
+      ) : null}
     </Card>
+  )
+}
+
+function AdminRecoveryButton({
+  account,
+  pending,
+  provisioningConfigured,
+  mobile = false,
+  onSend,
+}: {
+  account?: ManagedAccount
+  pending: boolean
+  provisioningConfigured: boolean
+  mobile?: boolean
+  onSend: (account: ManagedAccount) => void
+}) {
+  const eligible = isActiveAdminRecoveryAccount(account)
+
+  return (
+    <Button
+      className={mobile ? "w-full" : undefined}
+      variant="outline"
+      disabled={pending || !provisioningConfigured || !eligible}
+      title={
+        eligible
+          ? `Send a secure recovery link to ${account.email}`
+          : "No active Admin account is available for this tenant."
+      }
+      onClick={() => {
+        if (eligible) {
+          onSend(account)
+        }
+      }}
+    >
+      <HugeiconsIcon icon={ResetPasswordIcon} data-icon="inline-start" />
+      {mobile ? "Send Admin reset link" : "Send reset link"}
+    </Button>
+  )
+}
+
+function SuperadminTabsNav({
+  activeValue,
+  session,
+}: {
+  activeValue: string
+  session: AuthenticatedIdentity
+}) {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const activeLabel =
+    superadminNavItems.find((item) => item.value === activeValue)?.label ??
+    superadminNavItems[0].label
+  const navTriggerClass =
+    "h-10 w-full justify-start gap-2 rounded-md px-3 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-sidebar-ring/45 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:hover:bg-primary"
+
+  function renderNavItems(onNavigate?: () => void) {
+    return superadminNavItems.map((item) => (
+      <TabsTrigger
+        key={item.value}
+        value={item.value}
+        className={navTriggerClass}
+        onClick={onNavigate}
+      >
+        <HugeiconsIcon icon={item.icon} strokeWidth={1.7} className="size-4" />
+        {item.label}
+      </TabsTrigger>
+    ))
+  }
+
+  return (
+    <>
+      <aside className="hidden self-stretch lg:block">
+        <div className="sticky top-4 flex min-h-[32rem] flex-col rounded-lg border border-sidebar-border bg-sidebar p-3 text-sidebar-foreground shadow-sm">
+          <div className="mb-3 rounded-md border border-sidebar-border bg-background/70 px-3 py-2">
+            <p className="text-xs font-semibold text-sidebar-foreground">
+              Plexus Platform
+            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Superadmin workspace
+            </p>
+          </div>
+          <TabsList
+            aria-label="Superadmin navigation"
+            className="h-auto w-full flex-col items-stretch gap-1 bg-transparent p-0"
+          >
+            {renderNavItems()}
+          </TabsList>
+          <div className="mt-auto rounded-md border border-sidebar-border bg-background/70 px-3 py-2.5">
+            <p className="truncate text-xs font-medium text-sidebar-foreground">
+              {session.displayName}
+            </p>
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+              {session.email}
+            </p>
+          </div>
+        </div>
+      </aside>
+
+      <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+        <div className="sticky top-3 z-30 flex items-center gap-3 rounded-lg border border-sidebar-border bg-sidebar/95 p-2.5 text-sidebar-foreground shadow-sm backdrop-blur-sm lg:hidden">
+          <div className="min-w-0 flex-1 px-1.5">
+            <p className="truncate text-xs font-semibold text-sidebar-foreground">
+              Plexus Platform
+            </p>
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+              {activeLabel}
+            </p>
+          </div>
+          <SheetTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-10 shrink-0 gap-2 border-sidebar-border bg-background/80 px-3 text-sidebar-foreground"
+              aria-label={`Menu: ${activeLabel}`}
+            >
+              <HugeiconsIcon
+                icon={Menu01Icon}
+                strokeWidth={1.8}
+                className="size-4"
+              />
+              Menu
+            </Button>
+          </SheetTrigger>
+        </div>
+        <SheetContent
+          side="left"
+          className="w-[min(86vw,20rem)] border-sidebar-border bg-sidebar p-0 text-sidebar-foreground"
+        >
+          <SheetHeader className="border-b border-sidebar-border px-5 py-4">
+            <SheetTitle className="text-sidebar-foreground">
+              Plexus Platform
+            </SheetTitle>
+            <SheetDescription>Superadmin workspace</SheetDescription>
+          </SheetHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+            <p className="mb-2 px-3 text-[0.6875rem] font-medium tracking-wide text-muted-foreground uppercase">
+              Navigation
+            </p>
+            <TabsList
+              aria-label="Superadmin navigation"
+              className="h-auto w-full flex-col items-stretch gap-1 bg-transparent p-0"
+            >
+              {renderNavItems(() => setMobileNavOpen(false))}
+            </TabsList>
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   )
 }
 
@@ -469,6 +757,7 @@ export function SuperadminConsole(props: Props) {
     vendors,
     accounts,
     auditEvents,
+    meetingCreationIncidents,
     operations,
     platformSettings,
   } = props
@@ -478,13 +767,15 @@ export function SuperadminConsole(props: Props) {
   const [tenantFilter, setTenantFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("all")
   const [auditSearch, setAuditSearch] = useState("")
+  const [activeTab, setActiveTab] = useState("admins")
 
   const tenantNames = useMemo(
     () => new Map(tenants.map((tenant) => [tenant.id, tenant.name])),
     [tenants]
   )
   const filteredVendors = vendors.filter((vendor) => {
-    const text = `${vendor.name_en} ${vendor.name_cn} ${vendor.sector}`.toLowerCase()
+    const text =
+      `${vendor.name_en} ${vendor.name_cn} ${vendor.sector}`.toLowerCase()
     return (
       text.includes(vendorSearch.toLowerCase()) &&
       (tenantFilter === "all" || vendor.admin_id === tenantFilter) &&
@@ -499,6 +790,22 @@ export function SuperadminConsole(props: Props) {
   const activeTenants = tenants.filter((tenant) => tenant.status === "active")
   const activeVendors = vendors.filter((vendor) => vendor.status === "active")
   const suspendedAccounts = accounts.filter((account) => !account.active)
+  const adminAccountsByTenant = useMemo(() => {
+    const byTenant = new Map<string, ManagedAccount>()
+
+    for (const account of accounts) {
+      if (account.role !== "admin" || !account.admin_id) {
+        continue
+      }
+
+      const current = byTenant.get(account.admin_id)
+      if (!current || (!current.active && account.active)) {
+        byTenant.set(account.admin_id, account)
+      }
+    }
+
+    return byTenant
+  }, [accounts])
 
   function runAction(
     action: () => Promise<ManagementActionResult>,
@@ -526,6 +833,7 @@ export function SuperadminConsole(props: Props) {
           displayName: form.get("displayName"),
           email: form.get("email"),
           temporaryPassword: form.get("temporaryPassword"),
+          confirmTemporaryPassword: form.get("confirmTemporaryPassword"),
         }),
       "Admin tenant and account created."
     )
@@ -546,6 +854,28 @@ export function SuperadminConsole(props: Props) {
           temporaryPassword: form.get("temporaryPassword"),
         }),
       "Vendor company and account created."
+    )
+  }
+
+  function sendAdminRecoveryLink(account: ManagedAccount) {
+    runAction(
+      () =>
+        sendAdminPasswordResetAction({
+          locale,
+          userId: account.id,
+        }),
+      `Password reset link sent to ${account.email}.`
+    )
+  }
+
+  function retryMeetingCreation(incident: MeetingCreationIncident) {
+    runAction(
+      () =>
+        retryMeetingCreationAction({
+          locale,
+          jobId: incident.id,
+        }),
+      "Meeting created and the critical incident was resolved."
     )
   }
 
@@ -592,9 +922,33 @@ export function SuperadminConsole(props: Props) {
             <AlertTitle>Account provisioning is locked</AlertTitle>
             <AlertDescription>
               Set the server-only <code>SUPABASE_SECRET_KEY</code> to enable
-              account creation, suspension, restoration, and Vendor transfers.
-              Directory and reporting access remain available.
+              account creation, recovery links, suspension, restoration, and
+              Vendor transfers. Directory and reporting access remain available.
             </AlertDescription>
+          </Alert>
+        ) : null}
+
+        {meetingCreationIncidents.length ? (
+          <Alert variant="destructive" className="py-3">
+            <HugeiconsIcon icon={Alert02Icon} />
+            <AlertTitle>
+              Critical: {meetingCreationIncidents.length} meeting creation{" "}
+              {meetingCreationIncidents.length === 1 ? "failure" : "failures"}
+            </AlertTitle>
+            <AlertDescription>
+              Vendor agreement was preserved, but Plexus could not create the
+              provider meeting. Review the sanitized incident and retry after
+              correcting provider availability or authorization.
+            </AlertDescription>
+            <AlertAction>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => setActiveTab("incidents")}
+              >
+                Review
+              </Button>
+            </AlertAction>
           </Alert>
         ) : null}
 
@@ -629,19 +983,18 @@ export function SuperadminConsole(props: Props) {
           />
         </div>
 
-        <Tabs defaultValue="admins" className="min-w-0">
-          <div className="overflow-x-auto pb-1">
-            <TabsList className="min-w-max">
-              <TabsTrigger value="admins">Admin tenants</TabsTrigger>
-              <TabsTrigger value="vendors">Vendors</TabsTrigger>
-              <TabsTrigger value="accounts">Accounts</TabsTrigger>
-              <TabsTrigger value="reporting">Reporting</TabsTrigger>
-              <TabsTrigger value="settings">Platform settings</TabsTrigger>
-              <TabsTrigger value="audit">Audit events</TabsTrigger>
-            </TabsList>
-          </div>
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          orientation="vertical"
+          className="flex-col gap-4 lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start"
+        >
+          <SuperadminTabsNav activeValue={activeTab} session={session} />
 
-          <TabsContent value="admins" className="grid gap-4">
+          <TabsContent
+            value="admins"
+            className="grid min-w-0 gap-4 lg:col-start-2 lg:row-start-1"
+          >
             <Card>
               <CardHeader className="gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
@@ -689,13 +1042,20 @@ export function SuperadminConsole(props: Props) {
                           <TableCell>{statusBadge(tenant.status)}</TableCell>
                           <TableCell>{formatDate(tenant.created_at)}</TableCell>
                           <TableCell>
-                            <div className="flex justify-end gap-2">
+                            <div className="flex flex-wrap justify-end gap-2">
                               <TenantProfileDialog
                                 locale={locale}
                                 tenantId={tenant.id}
                                 initialName={tenant.name}
                                 initialSupportEmail={tenant.support_email}
                                 initialPrimaryColor={tenant.primary_color}
+                                initialLogoUrl={tenant.logo_url}
+                              />
+                              <AdminRecoveryButton
+                                account={adminAccountsByTenant.get(tenant.id)}
+                                pending={pending}
+                                provisioningConfigured={provisioningConfigured}
+                                onSend={sendAdminRecoveryLink}
                               />
                               <StatusControl
                                 value={tenant.status}
@@ -736,6 +1096,13 @@ export function SuperadminConsole(props: Props) {
                         }{" "}
                         Vendors · created {formatDate(tenant.created_at)}
                       </p>
+                      <AdminRecoveryButton
+                        account={adminAccountsByTenant.get(tenant.id)}
+                        pending={pending}
+                        provisioningConfigured={provisioningConfigured}
+                        mobile
+                        onSend={sendAdminRecoveryLink}
+                      />
                       <StatusControl
                         value={tenant.status}
                         options={["active", "suspended", "archived"]}
@@ -758,6 +1125,7 @@ export function SuperadminConsole(props: Props) {
                         initialName={tenant.name}
                         initialSupportEmail={tenant.support_email}
                         initialPrimaryColor={tenant.primary_color}
+                        initialLogoUrl={tenant.logo_url}
                         triggerLabel="Edit tenant profile"
                       />
                     </MobileRecord>
@@ -767,7 +1135,10 @@ export function SuperadminConsole(props: Props) {
             </Card>
           </TabsContent>
 
-          <TabsContent value="vendors" className="grid gap-4">
+          <TabsContent
+            value="vendors"
+            className="grid min-w-0 gap-4 lg:col-start-2 lg:row-start-1"
+          >
             <Card>
               <CardHeader className="gap-3 lg:flex-row lg:items-end lg:justify-between">
                 <div>
@@ -897,10 +1268,7 @@ export function SuperadminConsole(props: Props) {
                       subtitle={`${tenantNames.get(vendor.admin_id) ?? "Unknown Admin"} · ${labelStatus(vendor.vendor_type)} · ${vendor.sector}`}
                       status={vendor.status}
                     >
-                      <VendorDirectoryDialog
-                        locale={locale}
-                        vendor={vendor}
-                      />
+                      <VendorDirectoryDialog locale={locale} vendor={vendor} />
                       <StatusControl
                         value={vendor.status}
                         options={["active", "suspended", "archived"]}
@@ -940,7 +1308,10 @@ export function SuperadminConsole(props: Props) {
             </Card>
           </TabsContent>
 
-          <TabsContent value="accounts">
+          <TabsContent
+            value="accounts"
+            className="min-w-0 lg:col-start-2 lg:row-start-1"
+          >
             <Card>
               <CardHeader>
                 <CardTitle>Account and role bindings</CardTitle>
@@ -979,19 +1350,21 @@ export function SuperadminConsole(props: Props) {
                           </TableCell>
                           <TableCell>
                             {account.admin_id
-                              ? tenantNames.get(account.admin_id) ?? "Unknown"
+                              ? (tenantNames.get(account.admin_id) ?? "Unknown")
                               : "Platform-wide"}
                           </TableCell>
                           <TableCell>
                             {account.vendor_company_id
-                              ? vendors.find(
+                              ? (vendors.find(
                                   (vendor) =>
                                     vendor.id === account.vendor_company_id
-                                )?.name_en ?? account.vendor_company_id
+                                )?.name_en ?? account.vendor_company_id)
                               : "—"}
                           </TableCell>
                           <TableCell>
-                            {statusBadge(account.active ? "active" : "suspended")}
+                            {statusBadge(
+                              account.active ? "active" : "suspended"
+                            )}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
@@ -1053,7 +1426,8 @@ export function SuperadminConsole(props: Props) {
                     >
                       <p className="text-xs text-muted-foreground">
                         {account.admin_id
-                          ? tenantNames.get(account.admin_id) ?? "Unknown Admin"
+                          ? (tenantNames.get(account.admin_id) ??
+                            "Unknown Admin")
                           : "Platform-wide account"}
                       </p>
                       <Button
@@ -1104,7 +1478,10 @@ export function SuperadminConsole(props: Props) {
             </Card>
           </TabsContent>
 
-          <TabsContent value="reporting">
+          <TabsContent
+            value="reporting"
+            className="min-w-0 lg:col-start-2 lg:row-start-1"
+          >
             <Card>
               <CardHeader>
                 <CardTitle>Cross-tenant operations</CardTitle>
@@ -1143,7 +1520,9 @@ export function SuperadminConsole(props: Props) {
                       <CardContent className="grid grid-cols-2 gap-3 text-xs">
                         <div>
                           <p className="text-muted-foreground">Vendors</p>
-                          <p className="text-lg font-semibold">{tenantVendors}</p>
+                          <p className="text-lg font-semibold">
+                            {tenantVendors}
+                          </p>
                         </div>
                         <div>
                           <p className="text-muted-foreground">Matches</p>
@@ -1165,7 +1544,77 @@ export function SuperadminConsole(props: Props) {
             </Card>
           </TabsContent>
 
-          <TabsContent value="settings">
+          <TabsContent
+            value="incidents"
+            className="min-w-0 lg:col-start-2 lg:row-start-1"
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle>Critical meeting incidents</CardTitle>
+                <CardDescription>
+                  Automatic meeting creation failures requiring Superadmin
+                  attention. Provider credentials, tokens, and raw responses are
+                  never shown here.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-3">
+                {meetingCreationIncidents.length ? (
+                  meetingCreationIncidents.map((incident) => (
+                    <div
+                      key={incident.id}
+                      className="grid gap-3 rounded-md border border-destructive/35 bg-destructive/5 p-4"
+                    >
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant="destructive">Critical</Badge>
+                            <Badge variant="outline">
+                              {incident.provider.toUpperCase()}
+                            </Badge>
+                            <span className="text-sm font-medium">
+                              {tenantNames.get(incident.admin_id) ??
+                                "Unknown tenant"}
+                            </span>
+                          </div>
+                          <p className="mt-2 text-sm">
+                            {incident.failure_summary}
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {labelStatus(incident.failure_code)} · Attempt{" "}
+                            {incident.attempt_count} ·{" "}
+                            {formatDate(incident.last_attempt_at)}
+                          </p>
+                        </div>
+                        <Button
+                          variant="destructive"
+                          disabled={pending || incident.attempt_count >= 20}
+                          onClick={() => retryMeetingCreation(incident)}
+                        >
+                          Retry meeting creation
+                        </Button>
+                      </div>
+                      <p className="text-xs break-all text-muted-foreground">
+                        Match: {incident.match_id}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-md border border-dashed p-6 text-center">
+                    <p className="font-medium">No critical meeting incidents</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Automatic provider creation is operating without
+                      unresolved failures.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent
+            value="settings"
+            className="min-w-0 lg:col-start-2 lg:row-start-1"
+          >
             <Card>
               <CardHeader>
                 <CardTitle>Platform settings</CardTitle>
@@ -1186,12 +1635,16 @@ export function SuperadminConsole(props: Props) {
             </Card>
           </TabsContent>
 
-          <TabsContent value="audit">
+          <TabsContent
+            value="audit"
+            className="min-w-0 lg:col-start-2 lg:row-start-1"
+          >
             <Card>
               <CardHeader>
                 <CardTitle>Audit events</CardTitle>
                 <CardDescription>
-                  Append-only history for tenant, Vendor, account, and transfer changes.
+                  Append-only history for tenant, Vendor, account, and transfer
+                  changes.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4">
@@ -1228,7 +1681,8 @@ export function SuperadminConsole(props: Props) {
                         <p className="break-all">
                           Target: {event.target_id ?? "—"} · Tenant:{" "}
                           {event.admin_id
-                            ? tenantNames.get(event.admin_id) ?? event.admin_id
+                            ? (tenantNames.get(event.admin_id) ??
+                              event.admin_id)
                             : "Platform"}
                         </p>
                         <pre className="max-h-72 overflow-auto rounded bg-muted p-3 text-[11px]">

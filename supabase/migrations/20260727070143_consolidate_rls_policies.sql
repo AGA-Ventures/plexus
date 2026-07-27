@@ -244,4 +244,3 @@ create policy "admin updates notifications"
 create policy "admin deletes notifications"
   on public.notifications for delete to authenticated
   using (public.current_app_role() = 'admin');
-

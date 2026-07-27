@@ -15,7 +15,9 @@ import {
   CheckmarkCircle02Icon,
   Download01Icon,
   File01Icon,
+  Menu01Icon,
   QrCodeIcon,
+  ShieldUserIcon,
   TranslationIcon,
   Upload01Icon,
   UserGroupIcon,
@@ -75,6 +77,8 @@ import { scoreMatch } from "@/lib/matching"
 import type { PortalSession } from "@/lib/plexus-data"
 import { cn } from "@/lib/utils"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AdminVendorProvision } from "@/components/admin-vendor-provision"
+import { TenantProfileDialog } from "@/components/tenant-profile-dialog"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -125,6 +129,14 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 import {
   Table,
   TableBody,
@@ -289,6 +301,8 @@ const roleLinks: Array<{ label: LocalizedLabels; role: PortalRole }> = [
 const uiCopy: Partial<Record<Locale, UiCopy>> & { en: UiCopy } = {
   en: {
     workspaceSubtitle: "Portal workspace",
+    menu: "Menu",
+    navigation: "Navigation",
     dashboard: "Dashboard",
     companies: "Companies",
     delegation: "Delegation",
@@ -332,6 +346,8 @@ const uiCopy: Partial<Record<Locale, UiCopy>> & { en: UiCopy } = {
   },
   zh: {
     workspaceSubtitle: "门户工作台",
+    menu: "菜单",
+    navigation: "导航",
     dashboard: "仪表板",
     companies: "企业",
     delegation: "代表团",
@@ -373,6 +389,8 @@ const uiCopy: Partial<Record<Locale, UiCopy>> & { en: UiCopy } = {
   },
   "zh-Hant": {
     workspaceSubtitle: "門戶工作台",
+    menu: "選單",
+    navigation: "導覽",
     dashboard: "儀表板",
     companies: "企業",
     delegation: "代表團",
@@ -414,6 +432,8 @@ const uiCopy: Partial<Record<Locale, UiCopy>> & { en: UiCopy } = {
   },
   th: {
     workspaceSubtitle: "พื้นที่ทำงานพอร์ทัล",
+    menu: "เมนู",
+    navigation: "การนำทาง",
     dashboard: "แดชบอร์ด",
     companies: "บริษัท",
     delegation: "คณะผู้แทน",
@@ -1999,8 +2019,42 @@ function AdminPortal(props: {
       <TabsContent value="dashboard" className="min-w-0">
         <div className="flex flex-col gap-4">
           <DashboardHeader copy={copy} metrics={metrics} locale={locale} />
+          <Alert>
+            <Icon icon={ShieldUserIcon} />
+            <AlertTitle>
+              {textFor(locale, "Tenant-scoped Admin view", "租户范围管理员视图")}
+            </AlertTitle>
+            <AlertDescription>
+              {textFor(
+                locale,
+                "Every table below is restricted to Vendors and operations assigned to your Admin tenant. Other Admin tenants are blocked by row-level security.",
+                "下方每个表格仅显示分配给您管理员租户的供应商与运营数据；其他管理员租户由行级安全策略隔离。"
+              )}
+            </AlertDescription>
+          </Alert>
           <OperationalAlert message={db.notifications[0]} locale={locale} />
-          <div className="flex justify-start">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Button asChild variant="outline">
+              <Link href={`/${locale}/admin/vendors`}>
+                Manage Vendor accounts
+              </Link>
+            </Button>
+            {session.adminId ? (
+              <>
+                <AdminVendorProvision
+                  locale={locale}
+                  adminId={session.adminId}
+                />
+                <TenantProfileDialog
+                  locale={locale}
+                  tenantId={session.adminId}
+                  initialName={session.tenantName}
+                  initialSupportEmail={session.tenantSupportEmail}
+                  initialPrimaryColor={session.tenantPrimaryColor}
+                  triggerLabel="Tenant settings"
+                />
+              </>
+            ) : null}
             <Button asChild variant="outline">
               <Link href={`/${locale}/compliance`}>
                 Compliance integrations
@@ -2693,15 +2747,19 @@ function PortalTabs({
   logout: () => void
 }) {
   const items = portalTabItems(locale, profileLabel)
+  const [activeTab, setActiveTab] = useState("dashboard")
 
   return (
     <Tabs
-      defaultValue="dashboard"
+      value={activeTab}
+      onValueChange={setActiveTab}
       orientation="vertical"
       className="flex-col gap-4 lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start"
     >
       <ResponsiveTabsNav
         items={items}
+        activeValue={activeTab}
+        onValueChange={setActiveTab}
         role={role}
         locale={locale}
         session={session}
@@ -2752,6 +2810,16 @@ function ResponsiveTabsNav({
   const childTriggerClass =
     "h-8 w-full justify-start gap-2 rounded-md px-3 pl-8 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[state=active]:bg-sidebar-accent data-[state=active]:text-sidebar-accent-foreground data-[state=active]:shadow-none"
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const activeLabel =
+    items
+      .flatMap((item) => [
+        { value: item.value, label: item.label },
+        ...(item.children ?? []),
+      ])
+      .find((item) => item.value === activeValue)?.label ??
+    items[0]?.label ??
+    t.navigation
 
   function isGroupOpen(item: NavItem) {
     const isActive =
@@ -2759,7 +2827,7 @@ function ResponsiveTabsNav({
     return openGroups[item.value] ?? isActive
   }
 
-  function renderNavItems() {
+  function renderNavItems(onNavigate?: () => void) {
     return items.map((item) => {
       if (!item.children) {
         return (
@@ -2767,6 +2835,7 @@ function ResponsiveTabsNav({
             key={item.value}
             value={item.value}
             className={navTriggerClass}
+            onClick={onNavigate}
           >
             <HugeiconsIcon
               icon={item.icon}
@@ -2822,7 +2891,10 @@ function ResponsiveTabsNav({
                   key={child.value}
                   value={child.value}
                   className={childTriggerClass}
-                  onClick={() => onValueChange?.(child.value)}
+                  onClick={() => {
+                    onValueChange?.(child.value)
+                    onNavigate?.()
+                  }}
                 >
                   <HugeiconsIcon
                     icon={child.icon}
@@ -2862,25 +2934,63 @@ function ResponsiveTabsNav({
           />
         </div>
       </aside>
-      <div className="rounded-lg border border-sidebar-border bg-sidebar p-3 text-sidebar-foreground shadow-sm lg:hidden">
-        <div className="rounded-md border border-sidebar-border bg-background/70 px-3 py-2">
-          <p className="text-xs font-semibold text-sidebar-foreground">
-            Plexus Connect
-          </p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {t.workspaceSubtitle}
-          </p>
+      <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+        <div className="sticky top-3 z-30 flex items-center gap-3 rounded-lg border border-sidebar-border bg-sidebar/95 p-2.5 text-sidebar-foreground shadow-sm backdrop-blur-sm lg:hidden">
+          <div className="min-w-0 flex-1 px-1.5">
+            <p className="truncate text-xs font-semibold text-sidebar-foreground">
+              Plexus Connect
+            </p>
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+              {activeLabel}
+            </p>
+          </div>
+          <SheetTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-10 shrink-0 gap-2 border-sidebar-border bg-background/80 px-3 text-sidebar-foreground"
+              aria-label={`${t.menu}: ${activeLabel}`}
+            >
+              <HugeiconsIcon
+                icon={Menu01Icon}
+                strokeWidth={1.8}
+                className="size-4"
+              />
+              {t.menu}
+            </Button>
+          </SheetTrigger>
         </div>
-        <TabsList className="mt-3 h-auto w-full flex-col items-stretch gap-1 bg-transparent p-0">
-          {renderNavItems()}
-        </TabsList>
-        <SidebarUserAccount
-          role={role}
-          locale={locale}
-          session={session}
-          logout={logout}
-        />
-      </div>
+        <SheetContent
+          side="left"
+          className="w-[min(86vw,20rem)] border-sidebar-border bg-sidebar p-0 text-sidebar-foreground"
+        >
+          <SheetHeader className="border-b border-sidebar-border px-5 py-4">
+            <SheetTitle className="text-sidebar-foreground">
+              Plexus Connect
+            </SheetTitle>
+            <SheetDescription>{t.workspaceSubtitle}</SheetDescription>
+          </SheetHeader>
+          <div className="flex min-h-0 flex-1 flex-col">
+            <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+              <p className="mb-2 px-3 text-[0.6875rem] font-medium tracking-wide text-muted-foreground uppercase">
+                {t.navigation}
+              </p>
+              <TabsList className="h-auto w-full flex-col items-stretch gap-1 bg-transparent p-0">
+                {renderNavItems(() => setMobileNavOpen(false))}
+              </TabsList>
+            </div>
+            <div className="border-t border-sidebar-border p-3 pt-0">
+              <SidebarUserAccount
+                role={role}
+                locale={locale}
+                session={session}
+                logout={logout}
+              />
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   )
 }
@@ -2898,6 +3008,7 @@ function SidebarUserAccount({
 }) {
   const t = getUiCopy(locale)
   const currentRoleLink = roleLinks.find((item) => item.role === role)
+  const workspaceRoute = session.role
   const roleLabel = currentRoleLink
     ? localizedLabel(currentRoleLink.label, locale)
     : session.role
@@ -2971,37 +3082,23 @@ function SidebarUserAccount({
                   asChild
                   className="w-full"
                 >
-                  <Link href={`/${item}/${role}`}>{localeLabels[item]}</Link>
+                  <Link href={`/${item}/${workspaceRoute}`}>
+                    {localeLabels[item]}
+                  </Link>
                 </ToggleGroupItem>
               ))}
             </ToggleGroup>
           </div>
-          <div className="grid gap-2">
-            <p className="text-xs font-medium text-muted-foreground">
-              {t.portalAccess}
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              {roleLinks.map((item) => (
-                <Button
-                  key={item.role}
-                  asChild
-                  variant={item.role === role ? "default" : "outline"}
-                  className="h-9 px-2"
-                >
-                  <Link href={`/${locale}/${item.role}`}>
-                    {localizedLabel(item.label, locale)}
-                  </Link>
-                </Button>
-              ))}
-            </div>
-          </div>
+          {session.adminId ? (
+            <InfoTile label="Tenant ID" value={session.adminId} />
+          ) : null}
         </div>
         <DialogFooter className="gap-2 sm:justify-between">
           <Button variant="outline" onClick={logout}>
             {t.logout}
           </Button>
           <Button asChild>
-            <Link href={`/${locale}/${role}`}>
+            <Link href={`/${locale}/${workspaceRoute}`}>
               {t.openRolePage.replace("{role}", roleLabel)}
             </Link>
           </Button>
@@ -4107,74 +4204,134 @@ function CompanyTable({
           {textFor(locale, "Export CSV", "导出 CSV")}
         </Button>
       </CardHeader>
-      <CardContent className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{textFor(locale, "Company", "企业")}</TableHead>
-              <TableHead>{textFor(locale, "Sector", "行业")}</TableHead>
-              <TableHead>{textFor(locale, "Status", "状态")}</TableHead>
-              <TableHead>{textFor(locale, "Profile", "资料")}</TableHead>
-              <TableHead>{textFor(locale, "Actions", "操作")}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {companies.map((company) => (
-              <TableRow key={company.id}>
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarFallback>
-                        {getInitials(company.nameEn)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-44">
-                      <p className="font-medium">{company.nameEn}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {company.nameCn}
-                      </p>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell>{company.sector}</TableCell>
-                <TableCell>
-                  <Badge variant={statusVariant(company.status)}>
-                    {statusLabel(company.status, locale)}
-                  </Badge>
-                </TableCell>
-                <TableCell>{company.profileComplete}%</TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-2">
-                    <CompanyDialog
-                      kind={kind}
-                      mode="view"
-                      company={company}
-                      locale={locale}
-                    >
-                      <Button variant="outline">
-                        {textFor(locale, "View", "查看")}
-                      </Button>
-                    </CompanyDialog>
-                    <CompanyDialog
-                      kind={kind}
-                      mode="edit"
-                      company={company}
-                      onSave={onSave}
-                      locale={locale}
-                    >
-                      <Button>{textFor(locale, "Edit", "编辑")}</Button>
-                    </CompanyDialog>
-                    <DeleteCompanyDialog
-                      company={company}
-                      locale={locale}
-                      onConfirm={() => onDelete(company)}
-                    />
-                  </div>
-                </TableCell>
+      <CardContent>
+        <div className="hidden overflow-x-auto md:block">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{textFor(locale, "Company", "企业")}</TableHead>
+                <TableHead>{textFor(locale, "Sector", "行业")}</TableHead>
+                <TableHead>{textFor(locale, "Status", "状态")}</TableHead>
+                <TableHead>{textFor(locale, "Profile", "资料")}</TableHead>
+                <TableHead>{textFor(locale, "Actions", "操作")}</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {companies.map((company) => (
+                <TableRow key={company.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar>
+                        <AvatarFallback>
+                          {getInitials(company.nameEn)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-44">
+                        <p className="font-medium">{company.nameEn}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {company.nameCn}
+                        </p>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>{company.sector}</TableCell>
+                  <TableCell>
+                    <Badge variant={statusVariant(company.status)}>
+                      {statusLabel(company.status, locale)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>{company.profileComplete}%</TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-2">
+                      <CompanyDialog
+                        kind={kind}
+                        mode="view"
+                        company={company}
+                        locale={locale}
+                      >
+                        <Button variant="outline">
+                          {textFor(locale, "View", "查看")}
+                        </Button>
+                      </CompanyDialog>
+                      <CompanyDialog
+                        kind={kind}
+                        mode="edit"
+                        company={company}
+                        onSave={onSave}
+                        locale={locale}
+                      >
+                        <Button>{textFor(locale, "Edit", "编辑")}</Button>
+                      </CompanyDialog>
+                      <DeleteCompanyDialog
+                        company={company}
+                        locale={locale}
+                        onConfirm={() => onDelete(company)}
+                      />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="grid gap-3 md:hidden">
+          {companies.map((company) => (
+            <div key={company.id} className="rounded-md border p-3">
+              <div className="flex items-start gap-3">
+                <Avatar>
+                  <AvatarFallback>{getInitials(company.nameEn)}</AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{company.nameEn}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {company.nameCn || company.sector}
+                  </p>
+                </div>
+                <Badge variant={statusVariant(company.status)}>
+                  {statusLabel(company.status, locale)}
+                </Badge>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
+                <InfoTile
+                  label={textFor(locale, "Sector", "行业")}
+                  value={company.sector}
+                />
+                <InfoTile
+                  label={textFor(locale, "Profile", "资料")}
+                  value={`${company.profileComplete}%`}
+                />
+              </div>
+              <div className="mt-3 grid grid-cols-3 gap-2">
+                <CompanyDialog
+                  kind={kind}
+                  mode="view"
+                  company={company}
+                  locale={locale}
+                >
+                  <Button className="w-full" variant="outline">
+                    {textFor(locale, "View", "查看")}
+                  </Button>
+                </CompanyDialog>
+                <CompanyDialog
+                  kind={kind}
+                  mode="edit"
+                  company={company}
+                  onSave={onSave}
+                  locale={locale}
+                >
+                  <Button className="w-full">
+                    {textFor(locale, "Edit", "编辑")}
+                  </Button>
+                </CompanyDialog>
+                <DeleteCompanyDialog
+                  company={company}
+                  locale={locale}
+                  onConfirm={() => onDelete(company)}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
       </CardContent>
     </Card>
   )

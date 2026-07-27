@@ -3,7 +3,12 @@ import "server-only"
 import { redirect } from "next/navigation"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
-import { getAppMetadata, getRolePortalPath, type AppRole } from "@/lib/auth"
+import {
+  getRolePortalPath,
+  type AppRole,
+  type VendorType,
+} from "@/lib/auth"
+import { validateAuthenticatedUser } from "@/lib/authorization"
 import type { Locale } from "@/lib/i18n"
 import { seedDb } from "@/lib/local-db"
 import type {
@@ -163,7 +168,14 @@ type ResourceRow = {
 export type PortalSession = {
   userId: string
   email: string
+  displayName: string
   role: AppRole
+  adminId?: string
+  vendorCompanyId?: string
+  vendorType?: VendorType
+  tenantName?: string
+  tenantSupportEmail?: string
+  tenantPrimaryColor?: string
 }
 
 function assertRows<T>(
@@ -463,7 +475,7 @@ export async function loadPlexusDb(supabase: DbClient): Promise<LocalDb> {
 
 export async function getProtectedPortalData(
   locale: Locale,
-  expectedRole: AppRole
+  expectedRole: AppRole | AppRole[]
 ) {
   const supabase = await createSupabaseServerClient()
   const {
@@ -474,23 +486,21 @@ export async function getProtectedPortalData(
     redirect(`/${locale}/login`)
   }
 
-  const metadata = getAppMetadata(user)
+  const authorization = await validateAuthenticatedUser(supabase, user)
 
-  if (!metadata.role) {
+  if (!authorization.ok) {
     redirect(`/${locale}/unauthorized`)
   }
 
-  if (metadata.role !== expectedRole) {
-    redirect(getRolePortalPath(locale, metadata.role))
+  const allowedRoles = Array.isArray(expectedRole) ? expectedRole : [expectedRole]
+
+  if (!allowedRoles.includes(authorization.identity.role)) {
+    redirect(getRolePortalPath(locale, authorization.identity.role))
   }
 
   return {
     db: await loadPlexusDb(supabase),
-    session: {
-      userId: user.id,
-      email: user.email ?? "",
-      role: metadata.role,
-    } satisfies PortalSession,
+    session: authorization.identity satisfies PortalSession,
   }
 }
 
@@ -499,9 +509,14 @@ export async function getLoginRedirect(locale: Locale) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  const metadata = getAppMetadata(user)
 
-  if (metadata.role) {
-    redirect(getRolePortalPath(locale, metadata.role))
+  if (!user) {
+    return
+  }
+
+  const authorization = await validateAuthenticatedUser(supabase, user)
+
+  if (authorization.ok) {
+    redirect(getRolePortalPath(locale, authorization.identity.role))
   }
 }

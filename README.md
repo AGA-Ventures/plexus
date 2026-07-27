@@ -1,65 +1,97 @@
 # Plexus Connect
 
-Supabase-backed MVP for the Plexus Connect Malaysia-China/Macao business matching platform.
+Supabase-backed multi-tenant operations platform for Malaysia–China/Macao
+business matching.
 
-## Routes
+## Project orientation
 
-- `/login`, `/en/login`, `/zh/login` - Supabase Auth login.
-- `/en/admin` and `/zh/admin` - AGA admin portal for companies, matching, meetings, signing, on-site operations and reports.
-- `/en/delegation` and `/zh/delegation` - Chinese/Macao delegation company portal.
-- `/en/partner` and `/zh/partner` - Malaysian partner portal.
-
-`/cn/...` is accepted as a Chinese alias. Unprefixed routes redirect to the English portal equivalents.
-
-## Supabase launch mode
-
-The app is configured for the `plexus-production` Supabase project:
-
-```txt
-https://rlstdzocgxsalvzayfir.supabase.co
-```
-
-Copy `.env.example` to `.env.local` for local development. Only the Supabase URL and publishable key are used in app code.
-
-Schema, RLS policies, explicit Data API grants and starter seed data live in:
-
-```txt
-supabase/migrations/20260624000000_plexus_production_launch.sql
-```
-
-## Auth users
-
-Phase one does not allow self-signup. Create users in the Supabase Dashboard and set `app_metadata`.
-
-Admin:
-
-```json
-{ "role": "admin" }
-```
-
-Delegation:
-
-```json
-{
-  "role": "delegation",
-  "delegation_company_id": "00000000-0000-4000-8000-000000000001"
-}
-```
-
-Partner:
-
-```json
-{
-  "role": "partner",
-  "partner_company_id": "00000000-0000-4000-8000-000000001001"
-}
-```
-
-## Commands
+Run this before development or deployment to see the current branch, commit,
+push destination, Supabase link, local environment target, and Vercel link:
 
 ```bash
-npm run dev
+npm run whereami
+```
+
+- [Development workflow](DEVELOPMENT.md)
+- [Deployment workflow](DEPLOYMENT.md)
+- [Current project state](PROJECT_STATUS.md)
+- [Dated change history](CHANGELOG.md)
+
+## Workspaces
+
+- `/en/superadmin` — Plexus platform control center across all Admin tenants.
+- `/en/admin` — tenant-scoped operations and Vendor management.
+- `/en/vendor` — unified end-user workspace for delegation and partner Vendors.
+- `/en/login` — shared login that routes users by trusted role.
+
+`/delegation` and `/partner` are compatibility redirects to `/vendor`; they are
+Vendor subtypes, not authorization roles. Localized `zh`, `zh-Hant`, and `th`
+routes are supported, and `cn` aliases to `zh`.
+
+## Supabase
+
+Copy `.env.example` to `.env.local`. Browser code uses only the URL and
+publishable key. Trusted account provisioning additionally requires the
+server-only `SUPABASE_SECRET_KEY` (`sb_secret_...`). Never expose it through a
+`NEXT_PUBLIC_` variable.
+
+The canonical model and RLS policies live in:
+
+```txt
+supabase/migrations/20260727080418_three_tier_tenant_authorization.sql
+```
+
+Authorization uses only `app_metadata`:
+
+```json
+{ "role": "superadmin" }
+```
+
+```json
+{ "role": "admin", "admin_id": "<admin-tenant-uuid>" }
+```
+
+```json
+{
+  "role": "vendor",
+  "admin_id": "<admin-tenant-uuid>",
+  "vendor_company_id": "<vendor-company-uuid>",
+  "vendor_type": "delegation"
+}
+```
+
+The Vendor subtype may be `delegation` or `partner`. Claims must exactly match
+an active `user_profiles` row and active tenant/company binding. Invalid or
+stale bindings fail closed in login, routes, server actions, and RLS.
+
+Superadmins are never created through public signup or seed SQL. Bootstrap the
+first approved operator with the guarded command below, or an Auth Admin API
+request that supplies the complete trusted `app_metadata` during user creation.
+Then use the Superadmin control center for Admin and Vendor provisioning.
+
+Production public signup must remain disabled in Supabase Auth. Account creation
+uses only the server-only Auth Admin API; login, route protection, server
+actions, profile bindings, and RLS all reject missing or invalid trusted claims.
+
+With the server secret and approved operator details in `.env.local`, the
+trusted one-time bootstrap command is:
+
+```bash
+npm run bootstrap:superadmin
+```
+
+The command refuses to create another Superadmin by default and never prints
+the password.
+
+## Verification
+
+```bash
 npm run lint
 npm run typecheck
+npm run test:unit
 npm run build
+npm run test:e2e
 ```
+
+For authenticated browser tests, configure the `E2E_SUPERADMIN_*`,
+`E2E_ADMIN_*`, and `E2E_VENDOR_*` variables documented in `.env.example`.

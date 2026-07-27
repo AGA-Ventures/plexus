@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 
-import { getAppMetadata } from "@/lib/auth"
-import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { getAuthenticatedIdentity } from "@/lib/authorization"
 
 const resourceSchema = z.object({
   title: z.string().trim().min(3).max(120),
@@ -20,23 +19,28 @@ const visibilitySchema = z.object({
 })
 
 async function getAdminClient() {
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
+  const authorization = await getAuthenticatedIdentity()
 
-  if (error || !user) {
+  if (!authorization.ok) {
     return {
-      error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+      error: NextResponse.json(
+        { error: authorization.error },
+        { status: 401 }
+      ),
     }
   }
 
-  if (getAppMetadata(user).role !== "admin") {
+  if (
+    authorization.identity.role !== "admin" ||
+    !authorization.identity.adminId
+  ) {
     return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) }
   }
 
-  return { supabase }
+  return {
+    supabase: authorization.supabase,
+    identity: authorization.identity,
+  }
 }
 
 export async function POST(request: Request) {
@@ -67,6 +71,7 @@ export async function POST(request: Request) {
       audience: parsed.data.audience,
       visible_to_delegation: parsed.data.visibleToDelegation,
       notes: parsed.data.notes,
+      admin_id: auth.identity.adminId,
     })
     .select("*")
     .single()

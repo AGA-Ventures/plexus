@@ -24,12 +24,17 @@ export default async function LocaleUnauthorizedPage({
         <CardHeader>
           <CardTitle>Account setup required</CardTitle>
           <CardDescription>
-            This Supabase account is signed in, but it has no launch role in app metadata.
+            This account is signed in, but its trusted role or tenant binding is
+            missing, inactive, or inconsistent.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Ask an admin to set one of: admin, delegation, or partner.
+            Ask an authorized operator to verify the account profile and trusted
+            claims. Admin accounts require an active <code>admin_id</code>;
+            Vendor accounts require matching <code>admin_id</code>,{" "}
+            <code>vendor_company_id</code>, and <code>vendor_type</code>{" "}
+            bindings.
           </p>
         </CardContent>
         <CardFooter>
@@ -41,4 +46,3 @@ export default async function LocaleUnauthorizedPage({
     </main>
   )
 }
-

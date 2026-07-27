@@ -1,0 +1,269 @@
+import "server-only"
+
+import { redirect } from "next/navigation"
+
+import type { AppRole, VendorType } from "@/lib/auth"
+import { getAuthenticatedIdentity } from "@/lib/authorization"
+import type { Locale } from "@/lib/i18n"
+import { hasSupabaseAdminSecret } from "@/lib/supabase/admin"
+
+export type TenantStatus = "active" | "suspended" | "archived"
+export type VendorStatus = "active" | "suspended" | "archived"
+
+export type AdminTenant = {
+  id: string
+  slug: string
+  name: string
+  status: TenantStatus
+  support_email: string
+  logo_url: string
+  primary_color: string
+  created_at: string
+  updated_at: string
+}
+
+export type ManagedVendor = {
+  id: string
+  admin_id: string
+  vendor_type: VendorType
+  name_en: string
+  name_cn: string
+  sector: string
+  status: VendorStatus
+  created_at: string
+  updated_at: string
+}
+
+export type ManagedAccount = {
+  id: string
+  display_name: string
+  email: string
+  role: AppRole
+  admin_id: string | null
+  vendor_company_id: string | null
+  vendor_type: VendorType | null
+  active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type AuditEvent = {
+  id: string
+  actor_user_id: string | null
+  actor_role: AppRole | null
+  action: string
+  target_table: string
+  target_id: string | null
+  admin_id: string | null
+  request_id: string | null
+  before_values: Record<string, unknown> | null
+  after_values: Record<string, unknown> | null
+  created_at: string
+}
+
+export type TenantOperationalCount = {
+  admin_id: string
+}
+
+export type PlatformSetting = {
+  id: string
+  setting_key: string
+  category: "plans" | "permissions" | "reference" | "operations"
+  value: unknown
+  description: string
+  updated_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+function rowsOrThrow<T>(
+  data: T[] | null,
+  error: { message: string } | null,
+  label: string
+) {
+  if (error) {
+    throw new Error(`${label}: ${error.message}`)
+  }
+
+  return data ?? []
+}
+
+export async function getSuperadminManagementData(locale: Locale) {
+  const authorization = await getAuthenticatedIdentity()
+
+  if (!authorization.ok) {
+    redirect(`/${locale}/login`)
+  }
+
+  if (authorization.identity.role !== "superadmin") {
+    redirect(`/${locale}/${authorization.identity.role}`)
+  }
+
+  const supabase = authorization.supabase
+  const [
+    tenantsResult,
+    vendorsResult,
+    accountsResult,
+    auditResult,
+    matchesResult,
+    meetingsResult,
+    dealsResult,
+    settingsResult,
+  ] = await Promise.all([
+    supabase
+      .from("admin_tenants")
+      .select("*")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("vendor_companies")
+      .select("*")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("user_profiles")
+      .select(
+        "id, display_name, email, role, admin_id, vendor_company_id, vendor_type, active, created_at, updated_at"
+      )
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("audit_events")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(200),
+    supabase.from("matches").select("admin_id"),
+    supabase.from("meetings").select("admin_id"),
+    supabase.from("deals").select("admin_id"),
+    supabase
+      .from("platform_settings")
+      .select("*")
+      .order("category", { ascending: true })
+      .order("setting_key", { ascending: true }),
+  ])
+
+  return {
+    session: authorization.identity,
+    provisioningConfigured: hasSupabaseAdminSecret(),
+    tenants: rowsOrThrow<AdminTenant>(
+      tenantsResult.data,
+      tenantsResult.error,
+      "Load Admin tenants"
+    ),
+    vendors: rowsOrThrow<ManagedVendor>(
+      vendorsResult.data,
+      vendorsResult.error,
+      "Load Vendors"
+    ),
+    accounts: rowsOrThrow<ManagedAccount>(
+      accountsResult.data,
+      accountsResult.error,
+      "Load accounts"
+    ),
+    auditEvents: rowsOrThrow<AuditEvent>(
+      auditResult.data,
+      auditResult.error,
+      "Load audit events"
+    ),
+    platformSettings: rowsOrThrow<PlatformSetting>(
+      settingsResult.data,
+      settingsResult.error,
+      "Load platform settings"
+    ),
+    operations: {
+      matches: rowsOrThrow<TenantOperationalCount>(
+        matchesResult.data,
+        matchesResult.error,
+        "Load match reporting"
+      ),
+      meetings: rowsOrThrow<TenantOperationalCount>(
+        meetingsResult.data,
+        meetingsResult.error,
+        "Load meeting reporting"
+      ),
+      deals: rowsOrThrow<TenantOperationalCount>(
+        dealsResult.data,
+        dealsResult.error,
+        "Load deal reporting"
+      ),
+    },
+  }
+}
+
+export async function getAdminManagementData(locale: Locale) {
+  const authorization = await getAuthenticatedIdentity()
+
+  if (!authorization.ok) {
+    redirect(`/${locale}/login`)
+  }
+
+  if (
+    authorization.identity.role !== "admin" ||
+    !authorization.identity.adminId
+  ) {
+    redirect(`/${locale}/${authorization.identity.role}`)
+  }
+
+  const supabase = authorization.supabase
+  const [
+    tenantResult,
+    vendorsResult,
+    accountsResult,
+    auditResult,
+    provisioningPermissionResult,
+  ] =
+    await Promise.all([
+      supabase
+        .from("admin_tenants")
+        .select("*")
+        .eq("id", authorization.identity.adminId)
+        .single(),
+      supabase
+        .from("vendor_companies")
+        .select("*")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("user_profiles")
+        .select(
+          "id, display_name, email, role, admin_id, vendor_company_id, vendor_type, active, created_at, updated_at"
+        )
+        .eq("role", "vendor")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("audit_events")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(100),
+      supabase
+        .from("platform_settings")
+        .select("value")
+        .eq("setting_key", "vendor_account_provisioning")
+        .maybeSingle(),
+    ])
+
+  if (tenantResult.error || !tenantResult.data) {
+    throw new Error(
+      `Load Admin tenant: ${tenantResult.error?.message ?? "Not found"}`
+    )
+  }
+
+  return {
+    session: authorization.identity,
+    provisioningConfigured: hasSupabaseAdminSecret(),
+    vendorProvisioningEnabled:
+      provisioningPermissionResult.data?.value === true,
+    tenant: tenantResult.data as AdminTenant,
+    vendors: rowsOrThrow<ManagedVendor>(
+      vendorsResult.data,
+      vendorsResult.error,
+      "Load tenant Vendors"
+    ),
+    accounts: rowsOrThrow<ManagedAccount>(
+      accountsResult.data,
+      accountsResult.error,
+      "Load tenant Vendor accounts"
+    ),
+    auditEvents: rowsOrThrow<AuditEvent>(
+      auditResult.data,
+      auditResult.error,
+      "Load tenant audit events"
+    ),
+  }
+}

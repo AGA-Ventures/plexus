@@ -1,20 +1,60 @@
 # MalayConnect MVP Phase One Testing
 
-Review date: 2026-06-24
+Review date: 2026-07-27
+
+## Three-Tier Authorization Verification
+
+The `business.md` authorization model is implemented with the canonical roles
+`superadmin`, `admin`, and `vendor`. Delegation and Partner are Vendor subtypes,
+not additional authorization roles.
+
+Production verification completed on 2026-07-27:
+
+- Public signup is disabled; a direct signup attempt is rejected by Supabase
+  Auth.
+- The shared `/[locale]/login` page routes each valid account to
+  `/superadmin`, `/admin`, or `/vendor` from trusted `app_metadata`.
+- All 19 exposed business tables have RLS enabled and no `anon` table grants.
+- The Supabase security advisor reports zero findings.
+- All 16 transactional pgTAP assertions pass, including Admin tenant isolation,
+  Vendor company isolation, malformed-claim denial, Superadmin visibility,
+  audited Vendor transfer, append-only audit history, stale-token suspension,
+  and protection against direct authorization-binding changes.
+- `npm run lint`, `npm run typecheck`, `npm run test:unit`, and
+  `npm run build` pass. The unit suite contains 25 passing tests.
+- The desktop Chrome and Pixel 7 Playwright projects pass all public-route,
+  responsive login, overflow, and live Superadmin checks: 22 passed and 12
+  credential-dependent Admin/Vendor checks skipped.
+- A real signed-in Admin session was verified against `/en/admin` and
+  `/en/admin/vendors`, including the tenant-scoped Vendor provisioning dialog.
+- The Admin phone layout uses a compact toolbar and drawer; management tables
+  switch to mobile record cards.
+
+The remaining release acceptance action is to provision the first real Vendor
+account and run the committed Vendor credential tests with
+`E2E_VENDOR_EMAIL` and `E2E_VENDOR_PASSWORD`. Do not add shared or undocumented
+sample accounts to production.
 
 ## Executive Status
 
-The MVP is demo-ready for phase-one stakeholder review, but it is not production-level yet.
+The MVP uses Supabase Auth, trusted server-side provisioning, strict database
+bindings, and RLS for its three-level authorization model. The authorization
+and mobile-navigation work is ready for controlled phase-one delivery. Public
+release still requires a real Vendor credential test and the non-authorization
+integration checks listed below.
 
-The three core MVP routes all build and respond from the production server:
+The canonical role routes all build and respond from the production server:
 
 | Route | Status | Notes |
 | --- | --- | --- |
-| `/en/admin` | Pass | Admin portal loads from production build. |
-| `/en/delegation` | Pass | Delegation portal loads from production build. |
-| `/en/partner` | Pass | Partner portal loads from production build. |
+| `/en/superadmin` | Pass | Platform-wide tenant, Vendor, account, reporting, settings, and audit console. |
+| `/en/admin` | Pass | Tenant-scoped Admin operations portal. |
+| `/en/admin/vendors` | Pass | Tenant-scoped Vendor and account management. |
+| `/en/vendor` | Pass | Unified Vendor portal for Delegation and Partner subtypes. |
 
-The localized Chinese routes also respond, and `/cn/...` is accepted as a Chinese alias. Unprefixed routes such as `/admin`, `/delegation`, and `/partner` redirect to their English equivalents.
+The localized Chinese routes also respond, and `/cn/...` is accepted as a
+Chinese alias. Legacy Delegation and Partner routes resolve through the unified
+Vendor authorization flow.
 
 ## Tests Run
 
@@ -70,34 +110,38 @@ Observed result:
 
 These items block a true production launch:
 
-1. Authentication is demo-only.
-   The shared passcode is public in the UI and stored in client code. Portal routes are directly accessible without a verified server session.
+1. A real Vendor account has not yet completed credentialed browser acceptance.
+   Provision it from the Admin or Superadmin console, then run the committed
+   Vendor E2E checks. Self-signup remains intentionally disabled.
 
-2. Authorization is not enforced.
-   Users can switch between Admin, Delegation, and Partner routes from the UI. Production needs server-side role checks and tenant/company scoping.
+2. Operational integrations are incomplete.
+   Core portal data is persisted in Supabase, but meeting, email, QR, document, notification, and audit workflows still need production integrations.
 
-3. Data persistence is browser-local only.
-   Operational data is stored in `localStorage`, so data is per browser, not shared, auditable, recoverable, or backed up.
+3. Operational workflows need broader business-rule and audit coverage.
+   Privileged tenant, Vendor, account, transfer, and platform-setting changes
+   are audited. Matching, attendance, meeting, and deal workflow coverage still
+   needs release sign-off.
 
-4. Forms do not have production validation.
-   Company, matching, attendance, meeting, and deal updates need server-side validation, schema checks, audit logs, and permission checks.
-
-5. Meeting, email, QR, document, and notification flows are mocked.
+4. Meeting, email, QR, document, and notification flows are mocked.
    Links, MOU documents, notifications, and QR codes are demo placeholders, not integrated with production services.
 
-6. Security hardening is incomplete.
-   Add CSP/security headers, rate limits, session expiry, secret management, CSRF-safe mutation paths, and a privacy review for contact data.
+5. Edge and privacy controls still need release sign-off.
+   Confirm CSP/security headers, rate limits, deployment secret management,
+   retention, and the contact-data privacy review.
 
-7. Error and empty-state coverage is not production complete.
+6. Error and empty-state coverage is not production complete.
    The app relies on framework defaults for 404/error handling and needs custom `not-found`, `error`, and `global-error` coverage.
 
-8. Test automation is missing.
-   There is no committed Playwright/Cypress E2E suite, no CI test gate, and no accessibility or visual regression checks.
+7. Complete the remaining cross-browser and quality checks.
+   Test current Safari and Edge and record Lighthouse or equivalent results.
 
-9. Observability is missing.
+7. Test automation is credential-gated.
+   A Playwright suite is committed, but there is no CI test gate and authenticated coverage requires Supabase credentials.
+
+8. Observability is missing.
    Add production analytics, error reporting, uptime monitoring, and Core Web Vitals reporting.
 
-10. SEO and deployment assets are minimal.
+9. SEO and deployment assets are minimal.
     Metadata exists, but production should add finalized titles/descriptions, icons, robots/sitemap policy, preview images, and canonical locale behavior.
 
 ## What Must Be Done Today For Go-Live
@@ -105,19 +149,19 @@ These items block a true production launch:
 Minimum realistic path for a controlled MVP go-live today:
 
 1. Decide launch mode.
-   If this is a private stakeholder demo, keep it as MVP demo and restrict access at the deployment level. If this is public production, do not launch until authentication, authorization, and database persistence are done.
+   If this is a private stakeholder demo, keep it as a controlled MVP. If this is public production, do not launch until the remaining integrations, audit logging, and deployment security controls are done.
 
-2. Add access protection before sharing the URL.
-   Use platform password protection, private deployment, basic auth, or managed auth. Do not rely on the visible `demo2026` passcode.
+2. Verify Supabase access before sharing the URL.
+   Confirm the migrations are applied, email confirmation is configured, and admin/delegation/partner credentials use the required `app_metadata` bindings.
 
-3. Replace or clearly label demo data behavior.
-   Confirm with stakeholders that all changes are browser-local and can be reset. For any real user data, move storage to a production database first.
+3. Replace or clearly label mocked integrations.
+   Confirm with stakeholders which meeting, notification, document, QR, and compliance flows are still demo placeholders.
 
 4. Run final production checks.
    Run `npm run lint`, `npm run typecheck`, `npm run build`, start the production server, and smoke-test `/en/admin`, `/en/delegation`, `/en/partner`, `/zh/admin`, `/zh/delegation`, and `/zh/partner`.
 
 5. Perform manual acceptance testing.
-   Test login, route redirects, role navigation, company CRUD, matching, meeting scheduling, MOU status update, attendance confirmation, itinerary publishing, LocalDB reset, and mobile layout.
+   Test login, route redirects, role navigation, company CRUD, matching, meeting scheduling, MOU status update, attendance confirmation, itinerary publishing, and mobile layout.
 
 6. Deploy to a staging/preview URL first.
    Verify the same smoke tests on the deployed URL before pointing any live domain to it.
@@ -130,9 +174,10 @@ Minimum realistic path for a controlled MVP go-live today:
 ### Login
 
 - Open `/en/login`.
-- Select Admin and submit with an incorrect passcode; expect an error toast.
-- Submit with `demo2026`; expect redirect to `/en/admin`.
-- Repeat for Delegation and Partner accounts.
+- Submit an invalid email/password; expect an error message.
+- Submit the Supabase admin credentials; expect redirect to `/en/admin`.
+- Submit the delegation credentials; expect redirect to `/en/delegation`.
+- Submit the partner credentials; expect redirect to `/en/partner`.
 - Repeat `/zh/login` for Chinese copy.
 
 ### Admin Portal
@@ -148,12 +193,11 @@ Minimum realistic path for a controlled MVP go-live today:
 - Update MOU/deal status.
 - Confirm partner check-in.
 - Toggle itinerary publish status.
-- Reset LocalDB and confirm seed data returns.
 
 ### Delegation Portal
 
 - Open `/en/delegation`.
-- Switch selected delegation company.
+- Verify the account is linked to the expected delegation company.
 - Verify profile, matches, meetings, MOU, and itinerary content.
 - Accept or reject a proposed match.
 - Save profile readiness.
@@ -162,7 +206,7 @@ Minimum realistic path for a controlled MVP go-live today:
 ### Partner Portal
 
 - Open `/en/partner`.
-- Switch selected partner company.
+- Verify the account is linked to the expected partner company.
 - Verify profile, matches, meetings, MOU, attendance, and on-site content.
 - Accept or reject a match.
 - Confirm attendance and verify QR status updates.
@@ -187,10 +231,9 @@ Minimum realistic path for a controlled MVP go-live today:
 
 ## Recommended Automated Test Setup
 
-Add Playwright before production release:
+Run the committed Playwright suite before production release:
 
 ```bash
-npm init playwright
 npm run build
 npm run start
 npx playwright test
@@ -199,15 +242,17 @@ npx playwright test
 Recommended E2E coverage:
 
 - Route availability and redirects.
-- Login happy path and invalid passcode.
+- Login happy path and invalid credentials.
 - Admin company CRUD.
 - Admin match creation and duplicate prevention.
 - Meeting scheduling and completion.
 - Delegation match acceptance/rejection.
 - Partner attendance confirmation.
-- LocalDB reset.
 - Mobile viewport smoke test for all three portal routes.
 
 ## Current Decision
 
-Ship today only as a controlled private MVP demo. Do not treat this as public production until real auth, role-based authorization, shared persistent storage, production integrations, automated E2E tests, and deployment security controls are in place.
+Ship only as a controlled phase-one MVP. The three-tier authorization and mobile
+Admin navigation are verified. Do not treat it as a public release until the
+real Vendor credential test, operational integrations, cross-browser checks,
+and deployment/privacy controls are signed off.

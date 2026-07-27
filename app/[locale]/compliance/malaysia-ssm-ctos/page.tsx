@@ -22,7 +22,7 @@ export default async function MalaysiaChecksPage({
   }
 
   const normalizedLocale = normalizeLocale(locale)
-  await getProtectedPortalData(normalizedLocale, "admin")
+  await getProtectedPortalData(normalizedLocale, ["superadmin", "admin"])
 
   return <ComplianceConsole locale={normalizedLocale} view="malaysia" />
 }

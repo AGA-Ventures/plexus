@@ -23,7 +23,7 @@ export default async function CompliancePage({
   }
 
   const normalizedLocale = normalizeLocale(locale)
-  await getProtectedPortalData(normalizedLocale, "admin")
+  await getProtectedPortalData(normalizedLocale, ["superadmin", "admin"])
 
   return <ComplianceConsole locale={normalizedLocale} view="overview" />
 }

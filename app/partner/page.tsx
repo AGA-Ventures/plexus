@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
 
 export default function PartnerPage() {
-  redirect("/en/partner")
+  redirect("/en/vendor")
 }

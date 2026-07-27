@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 
-import { getAppMetadata } from "@/lib/auth"
-import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { getAuthenticatedIdentity } from "@/lib/authorization"
 
 const bucketName = "event-resources"
 const maxUploadBytes = 15 * 1024 * 1024
@@ -24,23 +23,28 @@ const uploadSchema = z.object({
 })
 
 async function getAdminClient() {
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
+  const authorization = await getAuthenticatedIdentity()
 
-  if (error || !user) {
+  if (!authorization.ok) {
     return {
-      error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+      error: NextResponse.json(
+        { error: authorization.error },
+        { status: 401 }
+      ),
     }
   }
 
-  if (getAppMetadata(user).role !== "admin") {
+  if (
+    authorization.identity.role !== "admin" ||
+    !authorization.identity.adminId
+  ) {
     return { error: NextResponse.json({ error: "Forbidden" }, { status: 403 }) }
   }
 
-  return { supabase }
+  return {
+    supabase: authorization.supabase,
+    identity: authorization.identity,
+  }
 }
 
 function sanitizeFileName(fileName: string) {
@@ -110,7 +114,7 @@ export async function POST(request: Request) {
 
   const resourceId = crypto.randomUUID()
   const safeName = sanitizeFileName(file.name)
-  const storagePath = `materials/${resourceId}-${safeName}`
+  const storagePath = `${auth.identity.adminId}/materials/${resourceId}-${safeName}`
   const fileUrl = `/api/resources/${resourceId}/file`
 
   const uploadResult = await auth.supabase.storage
@@ -139,6 +143,7 @@ export async function POST(request: Request) {
       audience: parsed.data.audience,
       visible_to_delegation: parsed.data.visibleToDelegation,
       notes: parsed.data.notes,
+      admin_id: auth.identity.adminId,
     })
     .select("*")
     .single()

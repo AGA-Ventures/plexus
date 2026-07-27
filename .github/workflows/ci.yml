@@ -24,6 +24,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify deployment targets
+        run: npm run verify:targets
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=critical
+
       - name: Lint
         run: npm run lint
 

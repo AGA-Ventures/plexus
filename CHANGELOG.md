@@ -6,6 +6,13 @@ reviewed together.
 
 ## Unreleased
 
+### 2026-07-28
+
+- Added a current-state application feature guide covering the Superadmin,
+  Admin, Delegation Vendor, and Partner Vendor layers, with permission
+  matrices, use-case diagrams, routes, authorization boundaries, and explicit
+  live/controlled/adapter/simulation status.
+
 ### 2026-07-27
 
 - Reorganized project knowledge into a layered `docs/` operating system for

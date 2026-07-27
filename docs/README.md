@@ -8,6 +8,7 @@ delivery, security, and production operations.
 | Layer              | Questions answered                                      | Entry point                                                                    |
 | ------------------ | ------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | Product            | Why Plexus exists and what it should do                 | [Vision and scope](product/vision-and-scope.md)                                |
+| Role guide         | What each role can do and how workflows connect         | [Features by role and use case](product/features-by-role-and-use-cases.md)     |
 | Capabilities       | Which superapp modules exist or are planned             | [Capability map](product/capability-map.md)                                    |
 | Architecture       | How modules, routes, identity, and data fit together    | [System overview](architecture/system-overview.md)                             |
 | Database           | What the live Supabase schema contains                  | [Database schema](architecture/database-schema.md)                             |

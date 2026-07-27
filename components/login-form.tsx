@@ -225,7 +225,7 @@ export function LoginForm({
           </div>
         </section>
 
-        <Card className="w-full gap-0 justify-self-end rounded-[1.65rem] bg-[#8a73b2]/72 py-0 text-white shadow-[0_28px_80px_rgba(16,8,47,0.34)] ring-1 ring-white/16 backdrop-blur-xl">
+        <Card className="w-full gap-0 justify-self-end rounded-[1.65rem] bg-white/[0.07] py-0 text-white shadow-[0_30px_90px_rgba(1,5,24,0.52)] ring-1 ring-white/20 backdrop-blur-[32px] backdrop-saturate-150">
           <CardHeader className="gap-2 px-6 pt-7 pb-5 sm:px-8 sm:pt-8">
             <div className="mb-1 flex size-10 items-center justify-center rounded-xl bg-white/12 text-white ring-1 ring-white/16">
               <HugeiconsIcon icon={ShieldUserIcon} strokeWidth={1.7} />

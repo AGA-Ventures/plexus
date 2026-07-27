@@ -8,6 +8,8 @@ reviewed together.
 
 ### 2026-07-28
 
+- Refined the login form surface into a more transparent glass panel with
+  stronger backdrop blur, subtle neutral tinting, and lighter edge definition.
 - Replaced the generic login ribbon with original ImageGen artwork derived
   directly from the Plexus X mark, using its electric-blue, cyan, and gold
   connection motif.

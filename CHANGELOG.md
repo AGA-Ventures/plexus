@@ -8,6 +8,9 @@ reviewed together.
 
 ### 2026-07-28
 
+- Replaced the generic login ribbon with original ImageGen artwork derived
+  directly from the Plexus X mark, using its electric-blue, cyan, and gold
+  connection motif.
 - Redesigned login as a responsive Plexus superapp experience, removed exposed
   infrastructure and route details, and added server-resolved white-label Admin
   tenant branding with tenant-bound sign-in validation.

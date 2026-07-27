@@ -187,7 +187,7 @@ export function LoginForm({
       style={loginStyle}
     >
       <Image
-        src="/login-superapp-ribbon.webp"
+        src="/login-plexus-network-x.webp"
         alt=""
         fill
         priority

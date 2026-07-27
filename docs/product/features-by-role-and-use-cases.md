@@ -60,7 +60,9 @@ the Admin operations portal.
 
 All roles use the same email/password login. Trusted Supabase Auth
 `app_metadata` determines the role and bindings, after which the user is sent
-to the correct workspace. Public self-signup is disabled.
+to the correct workspace. All roles can request a self-service recovery email,
+set a new password through a verified Supabase session, and return to the
+correct tenant-branded login. Public self-signup is disabled.
 
 ## Use-case overview
 
@@ -135,6 +137,7 @@ flowchart LR
 | Capability | Superadmin | Admin | Vendor |
 | --- | --- | --- | --- |
 | Shared login, role routing, logout | Own account | Own account | Own account |
+| Self-service password recovery | Own account | Own account | Own account |
 | Admin tenant creation | All tenants | No | No |
 | Tenant profile and branding | Every tenant | Own tenant | View applied workspace context |
 | Tenant activation, suspension, archiving | Every tenant | No | No |
@@ -188,8 +191,9 @@ where a shared Server Action supports more than one role.
 - View the number of Vendors assigned to each tenant.
 - Roll back partial provisioning when a later creation step fails.
 
-Temporary password delivery is a controlled manual process. Invitation,
-password setup, and recovery email flows are planned.
+Temporary password delivery remains a controlled manual process.
+Self-service password recovery is live; invitation and first-time password
+setup flows are planned.
 
 ### Global Vendor governance
 
@@ -534,6 +538,9 @@ flowchart LR
 | Route | Access | Purpose |
 | --- | --- | --- |
 | `/[locale]/login` | Public | Shared login and role-directed routing |
+| `/[locale]/forgot-password` | Public | Generic password-recovery email request |
+| `/auth/callback` | Public | Supabase PKCE code exchange for a recovery session |
+| `/[locale]/reset-password` | Recovery session | Set a new password for the recovered account |
 | `/[locale]/superadmin` | Superadmin | Platform control center |
 | `/[locale]/admin` | Admin | Tenant operations portal |
 | `/[locale]/admin/vendors` | Admin | Tenant Vendor and Vendor-account management |
@@ -599,8 +606,8 @@ flowchart TD
 The following are not complete production features:
 
 - Public signup.
-- Invitation email, password setup, password recovery, and automated credential
-  delivery.
+- Invitation email, first-time password setup, automated credential delivery,
+  and production SMTP/email branding.
 - Production Zoom/VooV meeting creation and reconciliation.
 - Production email and push-notification delivery.
 - Secure MOU upload, collaborative review, e-signature, and document lifecycle.

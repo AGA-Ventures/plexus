@@ -2,7 +2,7 @@
 
 **Owner:** Engineering and release owner
 **Review trigger:** New workflow, test layer, release evidence, or quality gap
-**Last reviewed:** 2026-07-27
+**Last reviewed:** 2026-07-28
 
 ## Test layers
 
@@ -39,6 +39,9 @@ npm run test:e2e
 | Scenario                             | Expected                         |
 | ------------------------------------ | -------------------------------- |
 | Unauthenticated protected route      | Redirect to localized login      |
+| Password recovery request            | Generic response for valid email |
+| Invalid or expired recovery callback | Return to recovery request       |
+| Unauthenticated password update      | Reject and request a new link    |
 | Invalid/malformed trusted claims     | Deny and sign out                |
 | Inactive profile                     | Deny                             |
 | Inactive tenant/Vendor               | Deny                             |

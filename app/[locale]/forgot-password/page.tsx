@@ -1,42 +1,36 @@
 import { notFound } from "next/navigation"
 
-import { LoginForm } from "@/components/login-form"
-import { getLoginBranding } from "@/lib/login-branding"
-import { getLoginRedirect } from "@/lib/plexus-data"
+import { ForgotPasswordForm } from "@/components/password-recovery-form"
 import { isLocaleParam, normalizeLocale } from "@/lib/i18n"
+import { getLoginBranding } from "@/lib/login-branding"
 
-export default async function LocaleLoginPage({
+export default async function ForgotPasswordPage({
   params,
   searchParams,
 }: {
   params: Promise<{ locale: string }>
   searchParams: Promise<{
-    passwordUpdated?: string | string[]
+    error?: string | string[]
     tenant?: string | string[]
   }>
 }) {
   const { locale } = await params
-  const { passwordUpdated, tenant } = await searchParams
+  const { error, tenant } = await searchParams
 
   if (!isLocaleParam(locale)) {
     notFound()
   }
 
   const normalizedLocale = normalizeLocale(locale)
-  await getLoginRedirect(normalizedLocale)
   const branding = await getLoginBranding(
     Array.isArray(tenant) ? tenant[0] : tenant
   )
 
   return (
-    <LoginForm
+    <ForgotPasswordForm
       locale={normalizedLocale}
       branding={branding}
-      passwordUpdated={
-        (Array.isArray(passwordUpdated)
-          ? passwordUpdated[0]
-          : passwordUpdated) === "1"
-      }
+      invalidLink={(Array.isArray(error) ? error[0] : error) === "invalid-link"}
     />
   )
 }

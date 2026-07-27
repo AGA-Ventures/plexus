@@ -8,6 +8,9 @@ reviewed together.
 
 ### 2026-07-28
 
+- Added tenant-aware self-service password recovery with a generic public
+  response, Supabase PKCE callback exchange, verified password update, and
+  return to the branded login.
 - Refined the login form surface into a more transparent glass panel with
   stronger backdrop blur, subtle neutral tinting, and lighter edge definition.
 - Replaced the generic login ribbon with original ImageGen artwork derived

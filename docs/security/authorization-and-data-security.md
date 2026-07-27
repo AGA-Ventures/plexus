@@ -92,7 +92,10 @@ policy summary.
 - Provisioning uses the Auth Admin API and exact relational bindings.
 - Partial failures roll back created Auth/database records.
 - Temporary password delivery remains a controlled risk until invitation and
-  recovery flows are implemented.
+  first-time password setup flows are implemented.
+- Public password-recovery requests return a generic response, the callback
+  rejects non-reset destinations, and the password mutation requires a
+  verified Supabase user session.
 
 ## Storage
 

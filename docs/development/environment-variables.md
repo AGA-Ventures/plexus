@@ -2,7 +2,7 @@
 
 **Owner:** Engineering and operations
 **Review trigger:** Environment variable addition, removal, or scope change
-**Last reviewed:** 2026-07-27
+**Last reviewed:** 2026-07-28
 
 `.env.example` is the machine-readable variable inventory. This document
 explains ownership and scope; it never contains real secrets.
@@ -14,7 +14,7 @@ explains ownership and scope; it never contains real secrets.
 | `NEXT_PUBLIC_SUPABASE_URL`             | Yes             | Required         | Required | Required    | Approved Supabase API URL                        |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes             | Required         | Required | Required    | Public client key; RLS is the boundary           |
 | `SUPABASE_SECRET_KEY`                  | No              | Privileged tasks | No       | Required    | Auth Admin API and privileged account operations |
-| `NEXT_PUBLIC_SITE_URL`                 | Yes             | Optional         | Optional | Recommended | Canonical public origin for links/metadata       |
+| `NEXT_PUBLIC_SITE_URL`                 | Yes             | Optional         | Optional | Recommended | Canonical origin for recovery links and metadata |
 
 ## Bootstrap and test variables
 

@@ -1,6 +1,7 @@
 "use client"
 
 import Image from "next/image"
+import Link from "next/link"
 import { useActionState, useEffect, useState, type CSSProperties } from "react"
 import { useRouter } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
@@ -19,6 +20,7 @@ import { toast } from "sonner"
 
 import { loginAction, type LoginActionState } from "@/app/actions/auth"
 import type { Locale } from "@/lib/i18n"
+import { getForgotPasswordPath } from "@/lib/password-recovery"
 import type { LoginBranding } from "@/lib/tenant-login"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
@@ -62,6 +64,8 @@ const copy: Partial<Record<Locale, LoginCopy>> & { en: LoginCopy } = {
     submitting: "Signing in...",
     success: "Logged in. Opening your workspace.",
     secureAccess: "Protected workspace access",
+    forgotPassword: "Forgot password?",
+    passwordUpdated: "Password updated. Sign in with your new password.",
     supportQuestion: "Need help accessing your account?",
     supportAction: "Contact support",
     supportFallback: "Contact your workspace administrator.",
@@ -87,6 +91,8 @@ const copy: Partial<Record<Locale, LoginCopy>> & { en: LoginCopy } = {
     submitting: "登录中...",
     success: "登录成功，正在打开工作台。",
     secureAccess: "受保护的工作台访问",
+    forgotPassword: "忘记密码？",
+    passwordUpdated: "密码已更新，请使用新密码登录。",
     supportQuestion: "无法访问账号？",
     supportAction: "联系支持",
     supportFallback: "请联系您的工作台管理员。",
@@ -112,6 +118,8 @@ const copy: Partial<Record<Locale, LoginCopy>> & { en: LoginCopy } = {
     submitting: "登入中...",
     success: "登入成功，正在開啟工作台。",
     secureAccess: "受保護的工作台存取",
+    forgotPassword: "忘記密碼？",
+    passwordUpdated: "密碼已更新，請使用新密碼登入。",
     supportQuestion: "無法存取帳號？",
     supportAction: "聯絡支援",
     supportFallback: "請聯絡您的工作台管理員。",
@@ -138,6 +146,8 @@ const copy: Partial<Record<Locale, LoginCopy>> & { en: LoginCopy } = {
     submitting: "กำลังเข้าสู่ระบบ...",
     success: "เข้าสู่ระบบแล้ว กำลังเปิดพื้นที่ทำงาน",
     secureAccess: "การเข้าถึงพื้นที่ทำงานที่ได้รับการปกป้อง",
+    forgotPassword: "ลืมรหัสผ่าน?",
+    passwordUpdated: "อัปเดตรหัสผ่านแล้ว โปรดเข้าสู่ระบบด้วยรหัสผ่านใหม่",
     supportQuestion: "ต้องการความช่วยเหลือในการเข้าถึงบัญชี?",
     supportAction: "ติดต่อฝ่ายสนับสนุน",
     supportFallback: "ติดต่อผู้ดูแลพื้นที่ทำงานของคุณ",
@@ -149,9 +159,11 @@ const copy: Partial<Record<Locale, LoginCopy>> & { en: LoginCopy } = {
 export function LoginForm({
   locale,
   branding,
+  passwordUpdated = false,
 }: {
   locale: Locale
   branding: LoginBranding
+  passwordUpdated?: boolean
 }) {
   const router = useRouter()
   const [passwordVisible, setPasswordVisible] = useState(false)
@@ -165,6 +177,7 @@ export function LoginForm({
     "{name}",
     branding.name
   )
+  const forgotPasswordPath = getForgotPasswordPath(locale, branding.slug)
   const loginStyle = {
     "--login-accent": branding.primaryColor,
     "--login-accent-foreground": branding.accentForeground,
@@ -179,7 +192,18 @@ export function LoginForm({
       toast.success(t.success)
       router.push(state.redirectTo)
     }
-  }, [router, state.error, state.redirectTo, t.success])
+
+    if (passwordUpdated) {
+      toast.success(t.passwordUpdated)
+    }
+  }, [
+    passwordUpdated,
+    router,
+    state.error,
+    state.redirectTo,
+    t.passwordUpdated,
+    t.success,
+  ])
 
   return (
     <main
@@ -278,12 +302,20 @@ export function LoginForm({
                 </Field>
 
                 <Field className="gap-2">
-                  <FieldLabel
-                    htmlFor="password"
-                    className="text-xs font-medium text-white/82"
-                  >
-                    {t.password}
-                  </FieldLabel>
+                  <div className="flex items-center justify-between gap-3">
+                    <FieldLabel
+                      htmlFor="password"
+                      className="text-xs font-medium text-white/82"
+                    >
+                      {t.password}
+                    </FieldLabel>
+                    <Link
+                      href={forgotPasswordPath}
+                      className="text-xs font-medium text-white/70 underline-offset-4 transition hover:text-white hover:underline focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                    >
+                      {t.forgotPassword}
+                    </Link>
+                  </div>
                   <div className="relative">
                     <HugeiconsIcon
                       icon={LockPasswordIcon}
@@ -340,6 +372,16 @@ export function LoginForm({
                     <span>{t.secureAccess}</span>
                   </div>
                 </div>
+
+                {passwordUpdated ? (
+                  <Alert
+                    aria-live="polite"
+                    className="border-cyan-200/20 bg-cyan-950/25 text-cyan-50"
+                  >
+                    <HugeiconsIcon icon={ShieldUserIcon} strokeWidth={1.7} />
+                    <AlertTitle>{t.passwordUpdated}</AlertTitle>
+                  </Alert>
+                ) : null}
 
                 {state.error ? (
                   <Alert

@@ -2,7 +2,7 @@
 
 **Owner:** Product and engineering leads
 **Review trigger:** Capability delivery, retirement, or production-readiness change
-**Last reviewed:** 2026-07-27
+**Last reviewed:** 2026-07-28
 
 ## Status definitions
 
@@ -20,7 +20,8 @@
 | Identity         | Shared email/password login and logout          | Live            | Supabase Auth, `app/actions/auth.ts` |
 | Identity         | Superadmin/Admin/Vendor route isolation         | Live            | `proxy.ts`, `lib/authorization.ts`   |
 | Identity         | Admin and Vendor account provisioning           | Controlled      | Auth Admin API, management actions   |
-| Identity         | Invitation email, password setup, recovery      | Planned         | Supabase Auth email flow             |
+| Identity         | Self-service password recovery                  | Controlled      | Supabase Auth email and PKCE flow    |
+| Identity         | Invitation email and first-time password setup  | Planned         | Supabase Auth email flow             |
 | Tenancy          | Admin tenant lifecycle and branding             | Live            | `admin_tenants`, Superadmin console  |
 | Tenancy          | Vendor ownership and cross-tenant transfer      | Live            | `vendor_companies`, audited RPC      |
 | Onboarding       | Delegation and Partner company profiles         | Live            | subtype tables and Vendor workspace  |

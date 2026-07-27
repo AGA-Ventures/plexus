@@ -42,6 +42,35 @@ tenant. It rejects Superadmins and accounts belonging to any other tenant. The
 tenant slug is presentation and validation context only; it never grants a
 role, tenant, or company scope.
 
+## Password recovery
+
+All roles can use the tenant-aware **Forgot password?** link:
+
+1. `/{locale}/forgot-password` accepts an email address and always returns the
+   same generic success response for valid email syntax.
+2. Supabase Auth sends the recovery email without the application querying or
+   revealing whether the account exists.
+3. `/auth/callback` exchanges the one-time PKCE code for a cookie-backed
+   recovery session. The callback accepts only localized
+   `/{locale}/reset-password` destinations, preventing an open redirect.
+4. `/{locale}/reset-password` requires a verified Supabase user session and
+   updates only that signed-in Auth user's password.
+5. The recovery session is signed out after the update, and the user returns
+   to the matching tenant login to authenticate with the new password.
+
+Production email delivery requires the approved application origin in
+Supabase Auth Site URL/redirect settings and a production SMTP provider for
+external Admin and Vendor recipients.
+
+## Canonical public auth routes
+
+| Route                       | Session requirement | Purpose                               |
+| --------------------------- | ------------------- | ------------------------------------- |
+| `/[locale]/login`           | None                | Shared role-directed login            |
+| `/[locale]/forgot-password` | None                | Generic recovery-email request        |
+| `/auth/callback`            | One-time Auth code  | PKCE recovery-session exchange        |
+| `/[locale]/reset-password`  | Recovered user      | Update the recovered account password |
+
 ## Canonical protected routes
 
 | Route                       | Allowed role      | Scope                               |
@@ -105,8 +134,9 @@ active Vendor company.
 6. Create the exact active `user_profiles` binding.
 7. Roll back partial records on failure and audit the change.
 
-The Admin currently supplies the Vendor's login email and password. Invitation,
-password-setup, and recovery email flows remain planned work.
+The Admin currently supplies the Vendor's initial login email and temporary
+password. Self-service recovery is available after provisioning; invitation
+and first-time password-setup flows remain planned work.
 
 ## Enforcement layers
 

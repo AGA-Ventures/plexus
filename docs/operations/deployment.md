@@ -2,7 +2,7 @@
 
 **Owner:** Release owner
 **Review trigger:** Hosting, target, environment, branch, or release change
-**Last reviewed:** 2026-07-27
+**Last reviewed:** 2026-07-28
 
 The machine-readable destinations are in `.deployment-targets.json`. Release
 scripts fail closed when the checkout points elsewhere.
@@ -84,7 +84,10 @@ worktree rather than stashing, overwriting, or committing that work.
 - `SUPABASE_SECRET_KEY` exists only in Production.
 - Local development uses `.env.local`.
 - Set `NEXT_PUBLIC_SITE_URL` when a canonical branded domain is established.
-- Configure the exact Site URL and allowed redirects in Supabase Auth.
+- Configure the exact Site URL and `/auth/callback` redirects for local,
+  Preview, and Production origins in Supabase Auth.
+- Configure production SMTP and verify that password-recovery email reaches an
+  external Admin/Vendor address before broad release.
 - Run `npm run verify:deploy` after Vercel Git/environment changes.
 
 See [Environment variables](../development/environment-variables.md).
@@ -94,6 +97,8 @@ See [Environment variables](../development/environment-variables.md).
 ```bash
 curl -I https://production.example/
 curl -I https://production.example/en/login
+curl -I https://production.example/en/forgot-password
+curl -I https://production.example/en/reset-password
 curl -I https://production.example/en/admin
 curl -I https://production.example/en/superadmin
 curl -I https://production.example/en/vendor

@@ -2,7 +2,7 @@
 
 **Owner:** Operations/release owner
 **Review trigger:** Support process, provider, monitoring, or operational change
-**Last reviewed:** 2026-07-27
+**Last reviewed:** 2026-07-28
 
 ## System endpoints
 
@@ -58,8 +58,26 @@ Use Superadmin or the owning Admin. Confirm:
 - Secure email/password delivery.
 - Successful first login and profile save.
 
-Until invitation/recovery is implemented, credential delivery is a controlled
-manual process and must not use public chat or repository files.
+Until invitation and first-time password setup are implemented, initial
+credential delivery is a controlled manual process and must not use public
+chat or repository files.
+
+### Password recovery
+
+Users request recovery from the tenant-aware login page. The public response
+is deliberately generic so it does not reveal whether an account exists.
+Supabase exchanges the one-time email code at `/auth/callback`; only the
+recovered user session can update its password, after which the session signs
+out and returns to login.
+
+Before enabling recovery for a production cohort:
+
+- Set the exact Supabase Auth Site URL and allow the approved
+  `/auth/callback` origins.
+- Configure production SMTP; do not rely on the restricted default sender for
+  external Admin or Vendor recipients.
+- Send a recovery email to an approved test account and verify link exchange,
+  password update, forced re-login, and tenant branding.
 
 ### Suspend or restore
 

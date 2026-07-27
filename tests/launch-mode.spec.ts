@@ -95,6 +95,29 @@ test.describe("three-tier route protection", () => {
     await expect(page).toHaveURL(/\/en\/login/)
   })
 
+  test("offers self-service password recovery without a valid session", async ({
+    page,
+  }) => {
+    await page.goto("/en/login")
+    await page.getByRole("link", { name: "Forgot password?" }).click()
+    await expect(page).toHaveURL(/\/en\/forgot-password$/)
+    await expect(
+      page.getByRole("heading", { name: "Reset your password" })
+    ).toBeVisible()
+    await expect(page.getByLabel("Email")).toBeVisible()
+    await expect(
+      page.getByRole("button", { name: "Send recovery link" })
+    ).toBeVisible()
+
+    await page.goto("/en/reset-password")
+    await expect(
+      page.getByText("Recovery link unavailable", { exact: true })
+    ).toBeVisible()
+    await expect(
+      page.getByRole("link", { name: "Request a new recovery link" })
+    ).toBeVisible()
+  })
+
   test("does not expose protected portal paths on missing pages", async ({
     page,
   }) => {

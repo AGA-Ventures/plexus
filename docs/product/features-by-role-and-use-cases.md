@@ -152,8 +152,8 @@ flowchart LR
 | Operational tenant reporting                             | Cross-tenant totals                                 | Full own-tenant dashboard and reports                                      | Own-company summaries                                              |
 | Delegation and Partner records                           | Platform directory/reporting                        | Create, view, update, and delete within own tenant                         | Update own registration profile                                    |
 | Match discovery                                          | No dedicated Superadmin UI                          | Manages own-tenant matching board                                          | Opposite-subtype directory; limited fields only                    |
-| Match status and scoring                                 | No dedicated Superadmin UI                          | Propose, score, assign, and update own-tenant matches                      | Request, accept, reject/request change for own matches             |
-| Meetings                                                 | Cross-tenant reporting                              | Schedule, view calendar, join, complete, and assign interpreters           | Request preferred times, join own meetings, export calendar invite |
+| Match status and scoring                                 | No dedicated Superadmin UI                          | Propose, score, and operate own-tenant matches                             | Request and record only its own acceptance/change decision         |
+| Meetings                                                 | Cross-tenant reporting                              | Create protected Zoom/Lark links after both accept; operate own sessions   | After mutual acceptance, request times and join through Plexus     |
 | Interpreter roster                                       | No dedicated Superadmin UI                          | Create, edit, set availability, delete, and assign                         | Request an available preferred interpreter                         |
 | MOU/deal tracking                                        | Cross-tenant reporting                              | Track status, signatory check, mark signed, preview/download available PDF | View own MOU status and preview/download available PDF             |
 | Communications                                           | No dedicated Superadmin UI                          | Create targeted announcements and in-app notifications                     | View applicable operational notifications                          |
@@ -337,7 +337,8 @@ workflows. Use the Vendor provisioning control when the company needs a login.
 - View predicted fit percentages.
 - Assign a Partner to create a proposed match.
 - Track `Proposed`, `Accepted`, `Rejected`, and `Session Scheduled` states.
-- Update match state and schedule a meeting.
+- Wait for each participating Vendor to record its own acceptance before
+  scheduling a meeting; Admins cannot accept on a Vendor's behalf.
 - Prevent duplicate Vendor-requested matches.
 
 The score is an operational matching aid, not an autonomous approval or due
@@ -345,21 +346,23 @@ diligence decision.
 
 ### Meetings and interpreters
 
-**Status: Live data model / Adapter provider**
+**Status: Live data model / Adapter deployment pending**
 
 - View meetings in calendar and session-list formats.
 - Review company pair, date/time, duration, platform, host, interpreter,
   meeting status, agreement status, and summary.
 - Export the tenant meeting calendar as an `.ics` file.
-- Join a stored Zoom or VooV link.
+- Create Zoom or Lark meetings only after both Vendors accept.
+- Join through an opaque Plexus link; never display the provider URL.
 - Mark a meeting complete and save the current fixed completion summary.
 - Create, edit, set availability for, and delete interpreters.
 - Review Vendor interpreter preferences and assign or clear the confirmed
   interpreter.
 
-Meeting links are currently pre-generated placeholders. Production Zoom/VooV
-creation, rescheduling, cancellation, reminders, and provider reconciliation
-remain adapter work.
+Provider creation and the secure link gate are implemented in source. The
+Vercel credential setup, migration application, one-time Lark authorization,
+and live Zoom/Lark smoke tests remain release steps. Provider rescheduling,
+cancellation, reminders, reconciliation, and audited retry remain future work.
 
 ### MOU and deal tracking
 
@@ -481,19 +484,21 @@ profile document.
 - Request a match and receive a calculated fit score and note.
 - Prevent duplicate requests for the same company pair.
 - Review own matches and match confidence.
-- Accept a proposed match or use **Request change**, which currently records
-  the `Rejected` state.
+- Record only its own acceptance. The match remains `Proposed` until the other
+  participating Vendor also accepts.
+- Use **Request change**, which records the `Rejected` state and clears the
+  requesting Vendor's acceptance.
 
 #### Meeting request and participation
 
-**Status: Live preferences / Adapter provider**
+**Status: Live preferences / Adapter deployment pending**
 
-- Request a meeting only after the match is accepted.
+- Request a meeting only after both participating Vendors accept.
 - Select 3 to 6 future, one-hour weekday preferences.
 - Optionally request an available interpreter.
 - Let the Admin confirm the final time and interpreter.
 - View own scheduled meetings and stored summaries.
-- Open the stored meeting link.
+- Open the expiring Plexus link without receiving the raw provider URL.
 - Download an individual `.ics` calendar invitation.
 
 #### MOU access
@@ -544,11 +549,11 @@ flowchart LR
     A --> P["Vendor completes<br/>company profile"]
     P --> D["Vendor discovers<br/>opposite subtype"]
     D --> M["Vendor or Admin<br/>proposes match"]
-    M --> C{"Match accepted?"}
+    M --> C{"Both Vendors accepted?"}
     C -- "No" --> R["Reject / request change"]
     C -- "Yes" --> T["Vendor submits time<br/>and interpreter preferences"]
     T --> F["Admin confirms meeting<br/>and interpreter"]
-    F --> J["Both Vendors join<br/>stored meeting link"]
+    F --> J["Both Vendors join<br/>protected Plexus link"]
     J --> O["Admin records completion<br/>and MOU status"]
     O --> E["Admin publishes itinerary,<br/>resources and event operations"]
     E --> X["Partner confirms attendance;<br/>Admin checks in guest"]
@@ -634,7 +639,8 @@ The following are not complete production features:
 - Public signup.
 - Invitation email, first-time password setup, automated credential delivery,
   and production SMTP/email branding.
-- Production Zoom/VooV meeting creation and reconciliation.
+- Production rollout and smoke verification of Zoom/Lark creation; provider
+  update, cancellation, retry, and reconciliation.
 - Production email and push-notification delivery.
 - Secure MOU upload, collaborative review, e-signature, and document lifecycle.
 - Production-secure QR generation and scanning.

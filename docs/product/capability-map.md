@@ -28,7 +28,7 @@
 | Discovery        | Opposite-subtype candidate directory            | Live            | `match_candidate_directory`          |
 | Matching         | Match request, decision, score, and status      | Live            | `matches`                            |
 | Meetings         | Scheduling and meeting state                    | Live            | `meetings`                           |
-| Meetings         | External meeting provider automation            | Adapter         | Provider link fields                 |
+| Meetings         | External meeting provider automation            | Adapter         | Zoom/Lark server adapters; deploy pending |
 | Deals            | Deal/MOU state and signatory checks             | Live            | `deals`                              |
 | Deals            | E-signature and document lifecycle              | Adapter         | Document reference fields            |
 | Event operations | Itineraries, site visits, liaison, interpreters | Live            | Tenant-scoped operational tables     |

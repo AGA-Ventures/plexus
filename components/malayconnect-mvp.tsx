@@ -38,6 +38,7 @@ import {
   confirmAttendanceAction,
   createCompanyAction,
   createInterpreterAction,
+  createProviderMeetingAction,
   createResourceAction,
   deleteCompanyAction,
   deleteInterpreterAction,
@@ -569,8 +570,8 @@ const thaiText: Record<string, string> = {
   Accept: "ยอมรับ",
   Schedule: "จัดตาราง",
   "Online meeting scheduler": "ตัวจัดตารางประชุมออนไลน์",
-  "Zoom and VooV links are pre-generated and stored in Supabase for launch tracking.":
-    "ลิงก์ Zoom และ VooV ถูกสร้างไว้ล่วงหน้าและจัดเก็บใน Supabase เพื่อติดตามช่วงเปิดตัว",
+  "Zoom and Lark links are protected by Plexus and created only after both Vendors accept.":
+    "ลิงก์ Zoom และ Lark ได้รับการปกป้องโดย Plexus และสร้างขึ้นหลังจากผู้ขายทั้งสองฝ่ายยอมรับแล้วเท่านั้น",
   "Calendar days": "วันในปฏิทิน",
   "Meetings tracked": "ประชุมที่ติดตาม",
   "Agreement reached": "บรรลุข้อตกลง",
@@ -1424,7 +1425,14 @@ export function PlexusConnectMvp({
   ) {
     void applyServerResult(
       scheduleMeetingAction(match.id, requestedSlots, requestedInterpreterId),
-      "Meeting requested with a pre-generated join link."
+      "Meeting preferences saved for Admin confirmation."
+    )
+  }
+
+  function createProviderMeeting(match: Match, provider: "zoom" | "lark") {
+    void applyServerResult(
+      createProviderMeetingAction({ matchId: match.id, provider }),
+      `${provider === "zoom" ? "Zoom" : "Lark"} meeting created with a protected join link.`
     )
   }
 
@@ -1656,8 +1664,7 @@ export function PlexusConnectMvp({
             updateManagedCompany={updateManagedCompany}
             deleteManagedCompany={deleteManagedCompany}
             addMatch={addMatch}
-            updateMatchStatus={updateMatchStatus}
-            scheduleMeeting={scheduleMeeting}
+            createProviderMeeting={createProviderMeeting}
             completeMeeting={completeMeeting}
             assignMeetingInterpreter={assignMeetingInterpreter}
             createInterpreter={createInterpreter}
@@ -1876,12 +1883,7 @@ function AdminPortal(props: {
   updateManagedCompany: (kind: CompanyKind, values: ManagedCompany) => void
   deleteManagedCompany: (kind: CompanyKind, id: string) => void
   addMatch: (partnerId: string) => void
-  updateMatchStatus: (matchId: string, status: MatchStatus) => void
-  scheduleMeeting: (
-    match: Match,
-    requestedSlots?: string[],
-    requestedInterpreterId?: string | null
-  ) => void
+  createProviderMeeting: (match: Match, provider: "zoom" | "lark") => void
   completeMeeting: (meetingId: string) => void
   assignMeetingInterpreter: (
     meetingId: string,
@@ -1934,8 +1936,7 @@ function AdminPortal(props: {
     updateManagedCompany,
     deleteManagedCompany,
     addMatch,
-    updateMatchStatus,
-    scheduleMeeting,
+    createProviderMeeting,
     completeMeeting,
     assignMeetingInterpreter,
     createInterpreter,
@@ -2430,8 +2431,7 @@ function AdminPortal(props: {
               <MatchTable
                 db={db}
                 matches={db.matches}
-                onStatus={updateMatchStatus}
-                onSchedule={scheduleMeeting}
+                onCreateProvider={createProviderMeeting}
                 locale={locale}
               />
             </CardContent>
@@ -2448,8 +2448,8 @@ function AdminPortal(props: {
             <CardDescription>
               {textFor(
                 locale,
-                "Zoom and VooV links are pre-generated and stored in Supabase for launch tracking. Assign or confirm interpreters per session below.",
-                "Zoom 与 VooV 链接已预先生成，并存入 Supabase 以便上线追踪。可在下方为每场会议分配或确认翻译。"
+                "Zoom and Lark links are protected by Plexus and created only after both Vendors accept. Assign or confirm interpreters per session below.",
+                "Zoom 与 Lark 链接仅在双方供应商接受后由 Plexus 安全创建。可在下方为每场会议分配或确认翻译。"
               )}
             </CardDescription>
           </CardHeader>
@@ -3407,12 +3407,19 @@ function UserDashboard({
                 {formatDateTime(nextMeeting.startsAt)} · {nextMeeting.platform}{" "}
                 · {nextMeeting.interpreter}
               </p>
-              <Button className="mt-3" asChild>
-                <a href={nextMeeting.link} target="_blank" rel="noreferrer">
+              {nextMeeting.link ? (
+                <Button className="mt-3" asChild>
+                  <a href={nextMeeting.link} target="_blank" rel="noreferrer">
+                    <Icon icon={CameraVideoIcon} inline="inline-start" />
+                    Join meeting
+                  </a>
+                </Button>
+              ) : (
+                <Button className="mt-3" disabled>
                   <Icon icon={CameraVideoIcon} inline="inline-start" />
-                  Join meeting
-                </a>
-              </Button>
+                  Awaiting secure link
+                </Button>
+              )}
             </div>
           ) : null}
         </CardContent>
@@ -4006,6 +4013,17 @@ function UserMatches({
           const counterpartName = getCompanyName(db, counterpartId)
           const isAccepted = match.status === "Accepted"
           const isScheduled = match.status === "Session Scheduled"
+          const ownAcceptedAt =
+            perspective === "delegation"
+              ? match.delegationAcceptedAt
+              : match.partnerAcceptedAt
+          const counterpartAcceptedAt =
+            perspective === "delegation"
+              ? match.partnerAcceptedAt
+              : match.delegationAcceptedAt
+          const meetingRequested = db.meetings.some(
+            (meeting) => meeting.matchId === match.id
+          )
           return (
             <Card key={match.id}>
               <CardHeader>
@@ -4033,16 +4051,45 @@ function UserMatches({
                   {textFor(locale, "Match confidence", "匹配信心")}:{" "}
                   {match.score}%
                 </p>
+                <p className="text-sm text-muted-foreground">
+                  {ownAcceptedAt
+                    ? textFor(locale, "You accepted", "您已接受")
+                    : textFor(
+                        locale,
+                        "Your acceptance is pending",
+                        "等待您接受"
+                      )}
+                  {" · "}
+                  {counterpartAcceptedAt
+                    ? textFor(locale, "The other party accepted", "对方已接受")
+                    : textFor(
+                        locale,
+                        "Waiting for the other party",
+                        "等待对方接受"
+                      )}
+                </p>
               </CardContent>
               <CardFooter className="flex flex-wrap gap-2">
-                {isScheduled || isAccepted ? (
+                {isScheduled ? (
+                  <Button disabled>
+                    {textFor(locale, "Meeting created", "会议已创建")}
+                  </Button>
+                ) : isAccepted ? (
                   <MeetingSlotPickerDialog
                     match={match}
                     locale={locale}
-                    isScheduled={isScheduled}
+                    isScheduled={meetingRequested}
                     interpreters={availableInterpreters}
                     onSubmit={onSchedule}
                   />
+                ) : ownAcceptedAt ? (
+                  <Button disabled>
+                    {textFor(
+                      locale,
+                      "Waiting for the other party",
+                      "等待对方接受"
+                    )}
+                  </Button>
                 ) : (
                   <Button onClick={() => onStatus(match.id, "Accepted")}>
                     {textFor(locale, "Accept", "接受")}
@@ -4232,8 +4279,7 @@ function UserMeetings({ db, meetings }: { db: LocalDb; meetings: Meeting[] }) {
       <CardHeader>
         <CardTitle>Meeting schedule</CardTitle>
         <CardDescription>
-          One-tap join links are pre-generated; no live API call happens on
-          join.
+          Protected join links open only during the confirmed meeting window.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -5425,14 +5471,12 @@ function makeBlankCompany(kind: CompanyKind): ManagedCompany {
 function MatchTable({
   db,
   matches,
-  onStatus,
-  onSchedule,
+  onCreateProvider,
   locale = "en",
 }: {
   db: LocalDb
   matches: Match[]
-  onStatus: (matchId: string, status: MatchStatus) => void
-  onSchedule: (match: Match) => void
+  onCreateProvider: (match: Match, provider: "zoom" | "lark") => void
   locale?: Locale
 }) {
   return (
@@ -5447,37 +5491,60 @@ function MatchTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {matches.map((match) => (
-            <TableRow key={match.id}>
-              <TableCell>
-                <p className="font-medium">
-                  {getCompanyName(db, match.delegationId)}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {getCompanyName(db, match.partnerId)}
-                </p>
-              </TableCell>
-              <TableCell>{match.score}%</TableCell>
-              <TableCell>
-                <Badge variant={statusVariant(match.status)}>
-                  {statusLabel(match.status, locale)}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={() => onStatus(match.id, "Accepted")}
-                  >
-                    {textFor(locale, "Accept", "接受")}
-                  </Button>
-                  <Button onClick={() => onSchedule(match)}>
-                    {textFor(locale, "Schedule", "安排")}
-                  </Button>
-                </div>
-              </TableCell>
-            </TableRow>
-          ))}
+          {matches.map((match) => {
+            const mutuallyAccepted = Boolean(
+              match.delegationAcceptedAt && match.partnerAcceptedAt
+            )
+            const sessionScheduled = match.status === "Session Scheduled"
+
+            return (
+              <TableRow key={match.id}>
+                <TableCell>
+                  <p className="font-medium">
+                    {getCompanyName(db, match.delegationId)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {getCompanyName(db, match.partnerId)}
+                  </p>
+                </TableCell>
+                <TableCell>{match.score}%</TableCell>
+                <TableCell>
+                  <Badge variant={statusVariant(match.status)}>
+                    {statusLabel(match.status, locale)}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap gap-2">
+                    {sessionScheduled ? (
+                      <Button disabled>
+                        {textFor(locale, "Meeting created", "会议已创建")}
+                      </Button>
+                    ) : mutuallyAccepted ? (
+                      <>
+                        <Button
+                          variant="outline"
+                          onClick={() => onCreateProvider(match, "zoom")}
+                        >
+                          {textFor(locale, "Create Zoom", "创建 Zoom")}
+                        </Button>
+                        <Button onClick={() => onCreateProvider(match, "lark")}>
+                          {textFor(locale, "Create Lark", "创建 Lark")}
+                        </Button>
+                      </>
+                    ) : (
+                      <Button disabled>
+                        {textFor(
+                          locale,
+                          "Waiting for both Vendors",
+                          "等待双方接受"
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            )
+          })}
         </TableBody>
       </Table>
     </div>
@@ -5970,12 +6037,23 @@ function SessionList({
                 ) : null}
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button asChild>
-                  <a href={meeting.link} target="_blank" rel="noreferrer">
+                {meeting.link ? (
+                  <Button asChild>
+                    <a href={meeting.link} target="_blank" rel="noreferrer">
+                      <Icon icon={CameraVideoIcon} inline="inline-start" />
+                      {textFor(locale, "Join", "加入")}
+                    </a>
+                  </Button>
+                ) : (
+                  <Button disabled>
                     <Icon icon={CameraVideoIcon} inline="inline-start" />
-                    {textFor(locale, "Join", "加入")}
-                  </a>
-                </Button>
+                    {textFor(
+                      locale,
+                      "Awaiting secure link",
+                      "等待安全会议链接"
+                    )}
+                  </Button>
+                )}
                 {onComplete ? (
                   <Button
                     variant="outline"

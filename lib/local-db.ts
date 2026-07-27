@@ -109,6 +109,8 @@ export type Match = {
   status: MatchStatus
   score: number
   note: string
+  delegationAcceptedAt: string | null
+  partnerAcceptedAt: string | null
 }
 
 export type Interpreter = {
@@ -125,7 +127,7 @@ export type Meeting = {
   matchId: string
   startsAt: string
   duration: number
-  platform: "Zoom" | "VooV"
+  platform: "Pending" | "Zoom" | "Lark" | "VooV"
   link: string
   interpreter: string
   requestedInterpreterId: string | null
@@ -351,6 +353,8 @@ export const seedDb: LocalDb = {
       status: "Session Scheduled",
       score: 94,
       note: "Strong sector fit and Malaysia rollout experience.",
+      delegationAcceptedAt: "2026-07-01T09:00:00+08:00",
+      partnerAcceptedAt: "2026-07-01T10:00:00+08:00",
     },
     {
       id: "mat-2",
@@ -359,6 +363,8 @@ export const seedDb: LocalDb = {
       status: "Proposed",
       score: 72,
       note: "Useful for assembly and maintenance partner discovery.",
+      delegationAcceptedAt: null,
+      partnerAcceptedAt: null,
     },
     {
       id: "mat-3",
@@ -367,6 +373,8 @@ export const seedDb: LocalDb = {
       status: "Accepted",
       score: 91,
       note: "Association can coordinate hospital pilot conversations.",
+      delegationAcceptedAt: "2026-07-02T09:00:00+08:00",
+      partnerAcceptedAt: "2026-07-02T11:00:00+08:00",
     },
     {
       id: "mat-4",
@@ -375,6 +383,8 @@ export const seedDb: LocalDb = {
       status: "Session Scheduled",
       score: 96,
       note: "Pilot farms and government liaison are aligned.",
+      delegationAcceptedAt: "2026-07-03T09:00:00+08:00",
+      partnerAcceptedAt: "2026-07-03T10:30:00+08:00",
     },
   ],
   interpreters: [
@@ -420,7 +430,7 @@ export const seedDb: LocalDb = {
       startsAt: "2026-07-08T10:00:00+08:00",
       duration: 45,
       platform: "VooV",
-      link: "https://meeting.tencent.com/dm/local-demo-ses-1",
+      link: "/m/local-demo-session-0000000000000001",
       interpreter: "Grace Wong · EN-ZH",
       requestedInterpreterId: "int-1",
       host: "Sarah Lim",
@@ -434,7 +444,7 @@ export const seedDb: LocalDb = {
       startsAt: "2026-07-09T14:30:00+08:00",
       duration: 60,
       platform: "Zoom",
-      link: "https://zoom.us/j/local-demo-ses-2",
+      link: "/m/local-demo-session-0000000000000002",
       interpreter: "Lee Wei · ZH-EN",
       requestedInterpreterId: "int-2",
       host: "Amir Rahman",
@@ -532,7 +542,7 @@ export const seedDb: LocalDb = {
   ],
   notifications: [
     "2 delegation companies have fewer than 2 confirmed matches.",
-    "VooV links are pre-generated for China network compatibility.",
+    "Zoom and Lark links are protected until the confirmed meeting window.",
     "September check-in QR codes are ready for confirmed partners.",
   ],
   announcements: [

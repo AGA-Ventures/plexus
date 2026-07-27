@@ -104,6 +104,22 @@ aliases for the Vendor workspace.
 Public login and missing-route interfaces do not enumerate protected portal
 paths. The route table above is internal engineering documentation.
 
+## Meeting routes
+
+| Route                | Access                                      | Purpose                                      |
+| -------------------- | ------------------------------------------- | -------------------------------------------- |
+| `POST /api/meetings` | Superadmin or owning Admin; both acceptances | Create a Zoom/Lark meeting and wrapped link  |
+| `/api/lark/login`    | Superadmin                                   | Start one-time Lark host authorization       |
+| `/api/lark/callback` | Superadmin, matching state, PKCE verifier    | Store/rotate the server-only Lark host token |
+| `/m/[slug]`          | Opaque time-limited link                      | Count access and redirect to the provider    |
+
+`POST /api/meetings` requires `matchId`, which binds provider creation to an
+existing tenant-scoped match. The route refuses creation until both the
+Delegation and Partner acceptance timestamps exist. The public `/m/[slug]`
+route reveals no database or provider identifier, is inactive before its
+meeting time, expires after the meeting, and enforces the configured open
+limit.
+
 ## Trusted claim contract
 
 ```json
@@ -173,7 +189,7 @@ and first-time password-setup flows remain planned work.
 | Server page/data loader | Validate active relational bindings                             |
 | Server Action/API       | Authorize the requested operation and tenant                    |
 | PostgreSQL RLS          | Restrict rows even if an application check is bypassed          |
-| Constraints/triggers    | Prevent invalid or direct authorization rebinding               |
+| Constraints/triggers    | Prevent invalid bindings and one-sided match acceptance         |
 | Audit                   | Record privileged tenant, account, Vendor, and settings changes |
 
 UI visibility is convenience only; it is never the authorization boundary.

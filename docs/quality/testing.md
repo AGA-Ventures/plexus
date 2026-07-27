@@ -10,7 +10,7 @@
 | --------------------- | --------------------------------------------------- | ------------------------------------------------- |
 | Documentation         | Required docs and local links are valid             | `npm run docs:check`                              |
 | Static                | Lint and TypeScript contracts                       | `npm run lint`, `npm run typecheck`               |
-| Unit                  | Pure auth, matching, export, locale behavior        | `npm run test:unit`                               |
+| Unit                  | Auth, matching, providers, meeting gates, exports   | `npm run test:unit`                               |
 | Database/RLS          | Constraints, isolation, negative access             | `npm run test:rls`                                |
 | Browser               | Routes, UI, responsive and credential flows         | `npm run test:e2e`                                |
 | Build                 | Production Next.js compilation and route generation | `npm run build`                                   |
@@ -59,6 +59,13 @@ npm run test:e2e
 | Vendor opens Admin/Superadmin route  | Redirect to Vendor workspace                   |
 | Vendor updates another company       | Reject                                         |
 | Direct authorization-binding update  | Trigger/RLS rejection                          |
+| First Vendor accepts                  | Match remains `Proposed`                       |
+| Vendor writes other acceptance        | Trigger rejection                              |
+| Second Vendor accepts                 | Match becomes `Accepted`                       |
+| Authenticated user reads raw link/token | Permission denied                            |
+| Expired wrapped meeting link          | HTTP 410; no provider redirect                 |
+| Access limit reached                  | HTTP 403; no provider redirect                 |
+| Provider response contains host URL   | Host URL is neither returned nor logged        |
 
 ## Verified production evidence
 
@@ -123,12 +130,19 @@ Every production provider adapter must test:
 - Tenant and permission isolation.
 - Redaction of credentials and sensitive payloads from logs.
 
+The secure-meeting unit suite covers duration/start normalization, wrapped URL
+construction, time/access gate classification, Zoom token caching and
+`start_url` exclusion, plus Lark PKCE, state, scopes, and exact redirect URI.
+The database suite covers one-sided acceptance and server-only raw link/token
+tables. Live provider success, rate limiting, and provider-side cancellation
+remain deployment smoke/integration evidence.
+
 ## Known gaps
 
 - Authenticated browser tests are credential-gated rather than running in
   normal pull-request CI.
-- Provider adapters for meetings, email, signing, notifications, QR, and some
-  compliance flows need production integration tests.
+- Meeting providers, email, signing, notifications, QR, and some compliance
+  flows need recorded production integration tests.
 - Safari/Edge, accessibility, performance, and Core Web Vitals need recorded
   baselines.
 - Error tracking, uptime monitoring, and user-journey telemetry remain roadmap

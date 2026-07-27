@@ -108,6 +108,29 @@ Use the management console so Auth state, application profile, tenant/company
 state, and audit history remain aligned. A stale token is still denied by
 active relational checks.
 
+## Secure meeting provider operations
+
+Before enabling provider creation:
+
+1. Apply `20260727182004_secure_mutual_meeting_links.sql`.
+2. Set `NEXT_PUBLIC_APP_URL`, Supabase privileged access, and Zoom/Lark
+   credentials in Vercel. Keep every credential except the app origin
+   server-only.
+3. Ensure the Lark app's registered callback exactly equals
+   `LARK_REDIRECT_URI`, then sign in as a Superadmin and visit
+   `/api/lark/login` once.
+4. Use a test match in one tenant. Log in as each Vendor and accept separately;
+   confirm the first leaves it proposed and the second accepts it.
+5. Create one Zoom and one Lark meeting from the Admin workspace. Confirm the
+   API/UI contains only `/m/<slug>`, the link is unavailable before its start,
+   redirects during its window, and returns 410 after expiry.
+
+Lark access refreshes automatically and persists the rotated refresh token. If
+Lark authorization is revoked or expires, repeat `/api/lark/login`; do not copy
+tokens into chat, logs, or database consoles. An active wrapper is reused to
+make repeat Admin submissions idempotent; after expiry, provider creation
+replaces the wrapper and resets its access count.
+
 ## Triage by symptom
 
 | Symptom                    | First checks                                                                |
@@ -119,6 +142,10 @@ active relational checks.
 | Cross-tenant data concern  | Disable affected account, preserve evidence, review RLS/audit immediately   |
 | File upload fails          | Bucket policy, size/type, Storage logs, tenant scope                        |
 | Tenant logo upload fails   | `tenant-branding` bucket, 2 MiB/type limit, server secret, tenant scope     |
+| Meeting creation is locked | Confirm both Vendor acceptance timestamps and owning Admin tenant           |
+| Zoom creation fails        | S2S app/account/scopes, Vercel vars, Zoom status, sanitized function log     |
+| Lark creation fails        | Host authorization row, callback match, app scopes, Lark status              |
+| Meeting link is 425/410/403| Start time / expiry / ten-open limit; do not reveal the raw provider URL     |
 | Deployment fails           | Vercel build log, environment variables, target verification                |
 | Migration fails            | Stop app promotion, retain error, inspect plan/history, create forward fix  |
 
@@ -133,8 +160,8 @@ npm run verify:deploy
 ```
 
 Use Supabase Auth, API, Postgres, and Storage logs for the matching subsystem.
-Do not paste credentials, tokens, contact data, or complete provider payloads
-into issues or chat.
+Do not paste credentials, tokens, raw meeting URLs, contact data, or complete
+provider payloads into issues or chat.
 
 ## Production role verification
 

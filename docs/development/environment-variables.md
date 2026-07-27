@@ -9,12 +9,33 @@ explains ownership and scope; it never contains real secrets.
 
 ## Application variables
 
-| Variable                               | Browser-visible | Local            | Preview  | Production  | Purpose                                          |
-| -------------------------------------- | --------------- | ---------------- | -------- | ----------- | ------------------------------------------------ |
-| `NEXT_PUBLIC_SUPABASE_URL`             | Yes             | Required         | Required | Required    | Approved Supabase API URL                        |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes             | Required         | Required | Required    | Public client key; RLS is the boundary           |
-| `SUPABASE_SECRET_KEY`                  | No              | Privileged tasks | No       | Required    | Auth Admin API and privileged account operations |
-| `NEXT_PUBLIC_SITE_URL`                 | Yes             | Optional         | Optional | Recommended | Canonical origin for recovery links and metadata |
+| Variable                               | Browser-visible | Local            | Preview  | Production  | Purpose                                                |
+| -------------------------------------- | --------------- | ---------------- | -------- | ----------- | ------------------------------------------------------ |
+| `NEXT_PUBLIC_SUPABASE_URL`             | Yes             | Required         | Required | Required    | Approved Supabase API URL                              |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes             | Required         | Required | Required    | Public client key; RLS is the boundary                 |
+| `SUPABASE_SECRET_KEY`                  | No              | Privileged tasks | No       | Required    | Preferred Auth Admin/privileged database credential    |
+| `SUPABASE_SERVICE_ROLE_KEY`            | No              | Optional alias   | No       | Supported   | Legacy server-only alias when no secret key is present |
+| `NEXT_PUBLIC_SITE_URL`                 | Yes             | Optional         | Optional | Recommended | Canonical origin for recovery links and metadata       |
+| `NEXT_PUBLIC_APP_URL`                  | Yes             | Required         | Required | Required    | Exact origin used to build wrapped meeting links       |
+
+## Meeting provider variables
+
+| Variable             | Browser-visible | Purpose                            |
+| -------------------- | --------------- | ---------------------------------- |
+| `ZOOM_ACCOUNT_ID`    | No              | Zoom Server-to-Server OAuth account |
+| `ZOOM_CLIENT_ID`     | No              | Zoom Server-to-Server OAuth client  |
+| `ZOOM_CLIENT_SECRET` | No              | Zoom Server-to-Server OAuth secret  |
+| `LARK_APP_ID`        | No              | Lark Custom App OAuth client        |
+| `LARK_APP_SECRET`    | No              | Lark Custom App OAuth secret        |
+| `LARK_REDIRECT_URI`  | No              | Exact registered Lark callback URI  |
+
+Production uses
+`https://www.plexus.enterprises/api/lark/callback` as the registered Lark
+redirect. The value sent during both authorization and code exchange comes
+directly from `LARK_REDIRECT_URI`; do not normalize, append to, or reconstruct
+it. Lark consent includes `vc:reserve`, `vc:reserve:readonly`, and
+`offline_access` so the host can authorize once and the server can rotate the
+refresh token.
 
 ## Bootstrap and test variables
 
@@ -44,7 +65,8 @@ When a provider becomes production-supported:
 - `NEXT_PUBLIC_*` is compiled into browser JavaScript and must not contain a
   secret.
 - The publishable Supabase key is intentionally public; RLS protects data.
-- `SUPABASE_SECRET_KEY` must never use a `NEXT_PUBLIC_` prefix.
+- `SUPABASE_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, Zoom credentials, and
+  Lark credentials must never use a `NEXT_PUBLIC_` prefix.
 - `.env.local` and `.vercel/` stay untracked.
 - Preview does not receive the production Supabase secret.
 - Vercel Development variables are not the local source of truth.

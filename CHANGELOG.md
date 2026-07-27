@@ -8,6 +8,16 @@ reviewed together.
 
 ### 2026-07-28
 
+- Required separate Delegation and Partner acceptance before a match can
+  advance, enforced each Vendor's own decision at the database boundary, and
+  removed Admin acceptance on behalf of Vendors.
+- Added server-only Zoom and Lark meeting creation, one-time Lark host OAuth
+  with refresh-token rotation, expiring opaque Plexus join links, concurrent
+  access counting, RLS-locked token/raw-link tables, Admin provider controls,
+  deployment documentation, and provider/gate/RLS tests.
+- Fixed the Admin portal runtime crash by passing the protected Zoom/Lark
+  meeting-creation callback through the `AdminPortal` component boundary and
+  removing the superseded Admin matching callbacks.
 - Expanded the Admin/Vendor user-profile popup into a responsive account
   settings workspace with Profile, tenant-scoped White label, and Access
   sections; removed raw user/tenant IDs; added safe self display-name editing;

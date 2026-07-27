@@ -56,6 +56,36 @@ Vendor types `delegation` and `partner` are subtypes of the `vendor` role.
 Legacy subtype routes redirect to the unified Vendor workspace. Supported
 locales are `en`, `zh`, `zh-Hant`, and `th`; `cn` aliases to `zh`.
 
+## Secure Zoom and Lark meeting links
+
+Meeting creation is allowed only after the Delegation Vendor and Partner Vendor
+have each accepted the match. The Admin then creates a Zoom or Lark meeting,
+and Plexus shares only an expiring `NEXT_PUBLIC_APP_URL/m/<opaque-slug>` link.
+The raw provider join URL remains in a server-only, RLS-locked table.
+
+Release setup:
+
+1. Add the Supabase, Zoom, Lark, and `NEXT_PUBLIC_APP_URL` variables from
+   `.env.example` to the appropriate Vercel environments.
+2. Apply `supabase/migrations/20260727182004_secure_mutual_meeting_links.sql`
+   before deploying the dependent application code.
+3. While signed in as a Superadmin, visit `/api/lark/login` once and approve
+   the platform Lark host authorization.
+4. Create a link from the Admin matching screen or call
+   `POST /api/meetings` with an accepted match:
+
+   ```json
+   {
+     "matchId": "<match-uuid>",
+     "provider": "zoom",
+     "topic": "Partner introduction",
+     "durationMinutes": 60
+   }
+   ```
+
+The API response contains `shareUrl` and `expiresAt`; it never contains the raw
+provider URL or a Zoom host URL.
+
 ## Required verification
 
 ```bash

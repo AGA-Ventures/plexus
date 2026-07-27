@@ -2,7 +2,7 @@
 
 **Owner:** Engineering
 **Review trigger:** Module boundary, runtime, provider, or data-flow change
-**Last reviewed:** 2026-07-27
+**Last reviewed:** 2026-07-28
 
 ## Runtime architecture
 
@@ -17,7 +17,7 @@ flowchart LR
     S --> AU["Supabase Auth"]
     S --> DB["Postgres + RLS"]
     S --> ST["Private Storage"]
-    R --> X["External provider adapters"]
+    R --> X["Zoom and Lark provider adapters"]
 ```
 
 - Next.js App Router provides public pages, localized portals, route handlers,
@@ -47,7 +47,7 @@ flowchart LR
 | Identity/tenancy         | Login, Superadmin, Admin           | Auth and management actions | Auth, tenants, profiles, Vendors                 |
 | Vendor onboarding        | Vendor workspace                   | Plexus actions              | Vendor and subtype profiles                      |
 | Matching                 | Vendor discovery, Admin operations | Plexus actions              | Candidate directory, matches                     |
-| Meetings/deals           | Portal workflows                   | Plexus actions              | Meetings, interpreters, deals                    |
+| Meetings/deals           | Portals, `/api/meetings`, `/m/*`   | `lib/meetings.ts`           | Matches, meetings, protected links, tokens       |
 | Event operations         | Admin/Vendor portals               | Plexus actions              | Itineraries, site visits, liaison                |
 | Communications/resources | Admin APIs and portals             | Protected route handlers    | Announcements, notifications, resources, Storage |
 | Compliance               | Protected compliance routes        | Compliance adapter          | Provider responses, no secret in client          |
@@ -97,6 +97,8 @@ Every new module must document and implement:
 | Documentation | Which product, schema, runbook, and changelog entries change?         |
 
 Use [Feature plan](../templates/feature-plan.md) to capture the contract.
+The secure provider workflow is recorded in
+[Secure meeting links](../project-management/secure-meeting-links.md).
 
 ## Dependency direction
 

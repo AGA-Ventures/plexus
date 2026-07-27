@@ -8,9 +8,10 @@
 ## Source of truth
 
 Committed migrations in `supabase/migrations/` are the schema source of truth.
-This document is a reviewed human-readable snapshot of the live project.
+This document is a reviewed human-readable snapshot of the live project plus
+the next committed migration where explicitly marked.
 
-Current live inventory:
+Current live inventory, before the pending secure-meeting migration:
 
 - PostgreSQL 17
 - 21 recorded migrations
@@ -20,6 +21,12 @@ Current live inventory:
 - 0 public views and 0 public enum types
 - 2 Storage buckets: private `event-resources` and public `tenant-branding`
 - Supabase security advisor: no findings on 2026-07-28
+
+Pending migration `20260727182004_secure_mutual_meeting_links.sql` brings the
+committed schema to 22 migrations and 21 public tables. It adds per-party match
+acceptance, the server-only Lark token store, and the server-only raw meeting
+link store. Apply it before deploying the dependent application code; do not
+count it as live until the post-deploy readback succeeds.
 
 Status values are enforced with `CHECK` constraints rather than PostgreSQL enum
 types.
@@ -38,6 +45,7 @@ erDiagram
     DELEGATION_COMPANIES ||--o{ MATCHES : "participates"
     PARTNER_COMPANIES ||--o{ MATCHES : "participates"
     MATCHES ||--o{ MEETINGS : "schedules"
+    MEETINGS ||--o| MEETING_PROVIDER_LINKS : "protects provider URL"
     MATCHES ||--o{ DEALS : "produces"
     ADMIN_TENANTS ||--o{ SITE_VISITS : "scopes"
     SITE_VISITS ||--o{ SITE_VISIT_DELEGATIONS : "assigns"
@@ -212,6 +220,8 @@ matches (
   status text NOT NULL,
   score integer NOT NULL,
   note text NOT NULL,
+  delegation_accepted_at timestamptz NULL,
+  partner_accepted_at timestamptz NULL,
   created_at timestamptz NOT NULL default now(),
   updated_at timestamptz NOT NULL default now(),
   UNIQUE (delegation_company_id, partner_company_id),
@@ -235,6 +245,31 @@ meetings (
   updated_at timestamptz NOT NULL default now()
 )
 
+meeting_provider_links (
+  id uuid PK default gen_random_uuid(),
+  meeting_id uuid UNIQUE NOT NULL FK -> meetings.id,
+  slug text UNIQUE NOT NULL,
+  provider text NOT NULL,
+  topic text NULL,
+  join_url text NOT NULL,
+  provider_meeting_id text NULL,
+  available_at timestamptz NOT NULL,
+  expires_at timestamptz NOT NULL,
+  open_count integer NOT NULL default 0,
+  max_opens integer NOT NULL default 10,
+  created_at timestamptz NOT NULL default now(),
+  updated_at timestamptz NOT NULL default now()
+)
+
+oauth_tokens (
+  id text PK,
+  refresh_token text NOT NULL,
+  access_token text NULL,
+  expires_at timestamptz NULL,
+  refresh_token_expires_at timestamptz NULL,
+  updated_at timestamptz NOT NULL default now()
+)
+
 deals (
   id uuid PK default gen_random_uuid(),
   match_id uuid NOT NULL FK -> matches.id,
@@ -254,8 +289,16 @@ Important checks:
 
 - Match score is between 0 and 100.
 - Match status: `Proposed`, `Accepted`, `Rejected`, or `Session Scheduled`.
-- Meeting platform: `Zoom` or `VooV`.
+- `Accepted` and `Session Scheduled` require both acceptance timestamps.
+- A Vendor can change only its own acceptance timestamp; the trigger derives
+  `Accepted` only after both participating Vendors agree.
+- Meeting platform: `Pending`, `Zoom`, `Lark`, or legacy `VooV`.
 - Meeting status: `Scheduled`, `Live`, `Completed`, or `Cancelled`.
+- Provider links require HTTPS, at least 32 slug characters, a positive access
+  limit, and an expiry after their activation time.
+- `oauth_tokens` and `meeting_provider_links` have RLS enabled, no
+  anon/authenticated policies, and revoked browser-role grants. Only the
+  server-only Supabase administration client can access them.
 - Deal status: `Under Discussion`, `Agreement Reached`, `Signed`, or `Failed`.
 - Signatory check: `Verified`, `Pending`, or `Flagged`.
 
@@ -385,6 +428,7 @@ written through the server-only Supabase administration client.
 | Subtype profile         | All        | Own tenant                | Own subtype/company            |
 | Candidate directory     | All        | Own tenant                | Opposite subtype in own tenant |
 | Matches/meetings/deals  | All        | Own tenant                | Records involving own company  |
+| Provider links/tokens   | Server only| Server only               | Server only                    |
 | Itinerary               | All        | Own tenant manage         | Published own-tenant entries   |
 | Site visits             | All        | Own tenant manage         | Assigned Delegation only       |
 | Announcements/resources | All        | Own tenant manage         | Permitted audience             |

@@ -12,6 +12,7 @@ components/             Product components and shared UI primitives
 lib/                    Domain logic, authorization, data access, clients
 public/                 Public static assets
 supabase/migrations/    Canonical database and RLS history
+supabase/templates/     Version-controlled Supabase Auth email HTML
 supabase/tests/         pgTAP authorization tests
 tests/                  Unit and Playwright tests
 scripts/                Bootstrap, verification, deployment, QA utilities

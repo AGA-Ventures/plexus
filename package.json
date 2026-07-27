@@ -29,6 +29,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
+    "preview:auth-email": "node scripts/preview-auth-email.mjs",
     "typecheck": "tsc --noEmit",
     "verify:deploy": "node scripts/verify-vercel-targets.mjs",
     "verify:release": "npm run verify:targets && npm run docs:check && npm audit --omit=dev --audit-level=critical && npm run lint && npm run typecheck && npm run test:unit && npm run build",

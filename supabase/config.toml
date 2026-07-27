@@ -109,8 +109,8 @@ port = 54324
 # Uncomment to expose additional ports for testing user applications that send emails.
 # smtp_port = 54325
 # pop3_port = 54326
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+admin_email = "security@plexus.local"
+sender_name = "Plexus Security"
 
 [storage]
 enabled = true
@@ -243,7 +243,11 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Uncomment to customize email template
+[auth.email.template.recovery]
+subject = "Reset your Plexus password"
+content_path = "./supabase/templates/recovery.html"
+
+# Uncomment to customize another authentication email template.
 # [auth.email.template.invite]
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"

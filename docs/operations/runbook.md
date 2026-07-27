@@ -74,10 +74,26 @@ Before enabling recovery for a production cohort:
 
 - Set the exact Supabase Auth Site URL and allow the approved
   `/auth/callback` origins.
-- Configure production SMTP; do not rely on the restricted default sender for
-  external Admin or Vendor recipients.
+- Copy the version-controlled `supabase/templates/recovery.html` into the hosted
+  Supabase **Reset password** email template and use the subject
+  `Reset your Plexus password`.
+- Configure production SMTP with the sender name `Plexus Security` and a
+  verified dedicated Auth sender address; the default `Supabase Auth` sender is
+  restricted and not production-ready.
+- Keep email-provider link tracking disabled so the one-time recovery URL is not
+  rewritten.
 - Send a recovery email to an approved test account and verify link exchange,
-  password update, forced re-login, and tenant branding.
+  password update, forced re-login, inbox sender, subject, and Plexus branding.
+
+Review the template locally without sending email:
+
+```bash
+npm run preview:auth-email
+```
+
+Open `http://127.0.0.1:4174` and verify the email at narrow and wide widths.
+The preview uses sample values only; it does not contact Supabase or send a
+message.
 
 ### Suspend or restore
 

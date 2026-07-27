@@ -8,6 +8,9 @@ reviewed together.
 
 ### 2026-07-28
 
+- Replaced the generic Supabase password-recovery message with a
+  version-controlled, responsive Plexus security email, plus a safe local
+  preview and hosted SMTP/template deployment guidance.
 - Added tenant-aware self-service password recovery with a generic public
   response, Supabase PKCE callback exchange, verified password update, and
   return to the branded login.

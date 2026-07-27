@@ -86,8 +86,21 @@ worktree rather than stashing, overwriting, or committing that work.
 - Set `NEXT_PUBLIC_SITE_URL` when a canonical branded domain is established.
 - Configure the exact Site URL and `/auth/callback` redirects for local,
   Preview, and Production origins in Supabase Auth.
-- Configure production SMTP and verify that password-recovery email reaches an
-  external Admin/Vendor address before broad release.
+- Treat `supabase/templates/recovery.html` as the version-controlled source for
+  the recovery email. Hosted Supabase does not read this local file: copy its
+  HTML and the subject `Reset your Plexus password` into **Authentication >
+  Email Templates > Reset password** for the approved project.
+- Configure custom SMTP with the sender name `Plexus Security` and a verified,
+  dedicated authentication sender address. The built-in sender displays
+  `Supabase Auth`, is restricted, and is not suitable for external
+  Admin/Vendor recipients.
+- Disable provider link tracking for Auth email, configure SPF, DKIM, and DMARC,
+  and verify the recovery CTA and plain-link fallback in major mail clients.
+- New Free projects using Supabase's default SMTP cannot customize Auth email
+  templates; use a paid project or custom SMTP before promoting this branding.
+- Send a password-recovery message to an approved test account and verify that
+  the sender, subject, Plexus wordmark, reset link, and forced re-login all work
+  before broad release.
 - Run `npm run verify:deploy` after Vercel Git/environment changes.
 
 See [Environment variables](../development/environment-variables.md).

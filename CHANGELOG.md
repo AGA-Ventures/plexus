@@ -12,8 +12,6 @@ reviewed together.
   unique service-only creation job to prevent duplicate provider calls, and
   surfaced sanitized creation failures as critical Superadmin incidents with
   audited, capped retry while preserving the Vendors' agreement.
-- Reconciled the automatic meeting incident migration filename with the
-  `20260727193452` version already recorded by the hosted Plexus database.
 - Added an Admin meeting-operations dashboard with zero-state totals, the full
   tenant-scoped meeting list, visible Zoom/Lark readiness, and a dedicated
   Meeting settings sidebar destination that reports server configuration,

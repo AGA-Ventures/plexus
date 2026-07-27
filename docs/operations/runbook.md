@@ -113,7 +113,7 @@ active relational checks.
 Before enabling provider creation:
 
 1. Apply `20260727182004_secure_mutual_meeting_links.sql`, then
-   `20260727193452_automatic_meeting_critical_incidents.sql`.
+   `20260727191200_automatic_meeting_critical_incidents.sql`.
 2. Set `NEXT_PUBLIC_APP_URL`, Supabase privileged access, and Zoom/Lark
    credentials in Vercel. Set `PLEXUS_DEFAULT_MEETING_PROVIDER` to `zoom` or
    `lark`. Keep every credential except the app origin server-only.

@@ -95,6 +95,17 @@ test.describe("three-tier route protection", () => {
     await expect(page).toHaveURL(/\/en\/login/)
   })
 
+  test("does not expose protected portal paths on missing pages", async ({
+    page,
+  }) => {
+    await page.goto("/en/not-a-plexus-route")
+    await expect(
+      page.getByRole("heading", { name: "Page not found" })
+    ).toBeVisible()
+    await expect(page.getByText("Portal routes")).toHaveCount(0)
+    await expect(page.getByText(/\/en\/superadmin/)).toHaveCount(0)
+  })
+
   test("rejects invalid email/password login", async ({ page }) => {
     await login(page, "invalid@example.com", "wrong-password")
     await expect(

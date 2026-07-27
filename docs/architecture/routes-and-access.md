@@ -57,6 +57,9 @@ Root aliases such as `/login`, `/admin`, `/vendor`, and `/superadmin` redirect
 to English. Legacy `/delegation` and `/partner` routes are compatibility
 aliases for the Vendor workspace.
 
+Public login and missing-route interfaces do not enumerate protected portal
+paths. The route table above is internal engineering documentation.
+
 ## Trusted claim contract
 
 ```json

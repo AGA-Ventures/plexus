@@ -52,6 +52,7 @@ npm run test:e2e
 | Admin uploads another tenant's logo  | Reject                           |
 | Spoofed/oversized tenant logo        | Reject before Storage write      |
 | Operator opens tenant login preview  | Allow in scope; disable sign-in  |
+| Admin password confirmation differs  | Reject before provisioning       |
 | Vendor reads another Vendor          | No data                          |
 | Vendor opens Admin/Superadmin route  | Redirect to Vendor workspace     |
 | Vendor updates another company       | Reject                           |

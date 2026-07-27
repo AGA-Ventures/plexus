@@ -90,6 +90,8 @@ policy summary.
 - Admin creates Vendors only in its own active tenant and only when platform
   provisioning is enabled.
 - Provisioning uses the Auth Admin API and exact relational bindings.
+- Admin provisioning validates the temporary password confirmation in both the
+  browser and the Server Action before creating any tenant or Auth record.
 - Partial failures roll back created Auth/database records.
 - Temporary password delivery remains a controlled risk until invitation and
   first-time password setup flows are implemented.

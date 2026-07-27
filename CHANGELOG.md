@@ -8,6 +8,9 @@ reviewed together.
 
 ### 2026-07-28
 
+- Clarified the public support-email and private Admin-login-email purposes in
+  Admin provisioning, and required a matching temporary-password confirmation
+  in both the form and Server Action.
 - Added direct, tenant-scoped login-logo uploads to a constrained public
   Supabase Storage bucket, an immediate logo preview in tenant settings, and an
   authenticated sign-in-disabled login-page preview for Superadmins and Admins.

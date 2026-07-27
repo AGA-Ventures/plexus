@@ -44,7 +44,9 @@ Use the Superadmin control center. Confirm:
 
 - Tenant slug/name/support email.
 - Named Admin owner.
-- Correct email.
+- Public tenant support email and private Admin login email are correctly
+  identified.
+- Temporary password and confirmation match.
 - Secure password delivery.
 - Successful first login and tenant scope.
 

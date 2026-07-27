@@ -185,6 +185,10 @@ where a shared Server Action supports more than one role.
 - Create an Admin tenant and its first Admin login.
 - Capture tenant name, slug, support email, Admin display name, login email,
   and temporary password.
+- Explain that the support email is the tenant-facing help contact while the
+  Admin email is the first operator's private login and recovery identity.
+- Require the temporary password to be entered twice and match before
+  provisioning is submitted.
 - Create a confirmed Supabase Auth account with trusted Admin claims and a
   matching active database profile.
 - Edit tenant name, support email, and primary brand color.

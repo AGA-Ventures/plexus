@@ -170,6 +170,40 @@ test.describe("Superadmin flow", () => {
     await expect(
       page.getByRole("button", { name: /send (admin )?reset link/i }).first()
     ).toBeVisible()
+    await page.getByRole("button", { name: "Create Admin" }).click()
+    const createAdminDialog = page.getByRole("dialog", {
+      name: "Create Admin tenant and account",
+    })
+    await expect(
+      createAdminDialog.getByText(
+        "Shown to tenant users for login and account help."
+      )
+    ).toBeVisible()
+    await expect(
+      createAdminDialog.getByText(
+        "Private sign-in and password-recovery email for the first Admin."
+      )
+    ).toBeVisible()
+    await createAdminDialog
+      .getByLabel("Temporary password", { exact: true })
+      .fill("Temporary-Password-1")
+    await createAdminDialog
+      .getByLabel("Confirm temporary password")
+      .fill("Temporary-Password-2")
+    await createAdminDialog.getByLabel("Confirm temporary password").blur()
+    await expect(
+      createAdminDialog.getByText("Passwords do not match.")
+    ).toBeVisible()
+    await expect(
+      createAdminDialog.getByRole("button", {
+        name: "Create tenant and Admin",
+      })
+    ).toBeDisabled()
+    await createAdminDialog
+      .getByLabel("Confirm temporary password")
+      .fill("Temporary-Password-1")
+    await expect(createAdminDialog.getByText("Passwords match.")).toBeVisible()
+    await createAdminDialog.getByRole("button", { name: "Close" }).click()
     await page
       .getByRole("button", { name: /edit( tenant profile)?/i })
       .first()

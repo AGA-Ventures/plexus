@@ -39,6 +39,7 @@ import {
 import { isActiveAdminRecoveryAccount } from "@/lib/admin-password-recovery"
 import type { AuthenticatedIdentity } from "@/lib/authorization"
 import type { Locale } from "@/lib/i18n"
+import { hasMatchingPasswordConfirmation } from "@/lib/password-confirmation"
 import type {
   AdminTenant,
   AuditEvent,
@@ -128,9 +129,9 @@ function formatDate(value: string) {
 }
 
 function labelStatus(status: string) {
-  return status.replaceAll("_", " ").replace(/^\w/, (letter) =>
-    letter.toUpperCase()
-  )
+  return status
+    .replaceAll("_", " ")
+    .replace(/^\w/, (letter) => letter.toUpperCase())
 }
 
 function statusBadge(status: string) {
@@ -171,15 +172,14 @@ function MetricCard({
           <HugeiconsIcon icon={icon} strokeWidth={1.7} />
         </div>
       </CardHeader>
-      <CardFooter className="text-xs text-muted-foreground">{detail}</CardFooter>
+      <CardFooter className="text-xs text-muted-foreground">
+        {detail}
+      </CardFooter>
     </Card>
   )
 }
 
-function NativeSelect({
-  children,
-  ...props
-}: React.ComponentProps<"select">) {
+function NativeSelect({ children, ...props }: React.ComponentProps<"select">) {
   return (
     <select className={fieldClass} {...props}>
       {children}
@@ -197,15 +197,47 @@ function CreateAdminDialog({
   onSubmit: (form: FormData) => void
 }) {
   const [open, setOpen] = useState(false)
+  const [temporaryPassword, setTemporaryPassword] = useState("")
+  const [confirmTemporaryPassword, setConfirmTemporaryPassword] = useState("")
+  const [confirmTouched, setConfirmTouched] = useState(false)
+  const passwordsMatch = hasMatchingPasswordConfirmation(
+    temporaryPassword,
+    confirmTemporaryPassword
+  )
+  const showPasswordMismatch =
+    confirmTouched &&
+    confirmTemporaryPassword.length > 0 &&
+    temporaryPassword !== confirmTemporaryPassword
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    onSubmit(new FormData(event.currentTarget))
+
+    const form = new FormData(event.currentTarget)
+
+    if (
+      form.get("temporaryPassword") !== form.get("confirmTemporaryPassword")
+    ) {
+      setConfirmTouched(true)
+      return
+    }
+
+    onSubmit(form)
     setOpen(false)
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen)
+
+        if (!nextOpen) {
+          setTemporaryPassword("")
+          setConfirmTemporaryPassword("")
+          setConfirmTouched(false)
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <Button disabled={disabled || pending}>
           <HugeiconsIcon icon={AddIcon} data-icon="inline-start" />
@@ -216,7 +248,8 @@ function CreateAdminDialog({
         <DialogHeader>
           <DialogTitle>Create Admin tenant and account</DialogTitle>
           <DialogDescription>
-            Creates the tenant, trusted Auth claims, and its first Admin profile.
+            Creates the tenant, trusted Auth claims, and its first Admin
+            profile.
           </DialogDescription>
         </DialogHeader>
         <form className="grid gap-4" onSubmit={submit}>
@@ -237,8 +270,21 @@ function CreateAdminDialog({
             </div>
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="supportEmail">Support email</Label>
-            <Input id="supportEmail" name="supportEmail" type="email" required />
+            <Label htmlFor="supportEmail">Support email (public contact)</Label>
+            <Input
+              id="supportEmail"
+              name="supportEmail"
+              type="email"
+              aria-describedby="supportEmailDescription"
+              required
+            />
+            <p
+              id="supportEmailDescription"
+              className="text-xs text-muted-foreground"
+            >
+              Shown to tenant users for login and account help. A shared inbox
+              such as support@company.com is recommended.
+            </p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="grid gap-1.5">
@@ -246,26 +292,85 @@ function CreateAdminDialog({
               <Input id="adminName" name="displayName" required minLength={2} />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="adminEmail">Admin email</Label>
-              <Input id="adminEmail" name="email" type="email" required />
+              <Label htmlFor="adminEmail">Admin email (login account)</Label>
+              <Input
+                id="adminEmail"
+                name="email"
+                type="email"
+                aria-describedby="adminEmailDescription"
+                required
+              />
+              <p
+                id="adminEmailDescription"
+                className="text-xs text-muted-foreground"
+              >
+                Private sign-in and password-recovery email for the first Admin.
+              </p>
             </div>
           </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="adminPassword">Temporary password</Label>
-            <Input
-              id="adminPassword"
-              name="temporaryPassword"
-              type="password"
-              minLength={12}
-              autoComplete="new-password"
-              required
-            />
-            <p className="text-xs text-muted-foreground">
-              Minimum 12 characters. Share it through an approved secure channel.
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-1.5">
+              <Label htmlFor="adminPassword">Temporary password</Label>
+              <Input
+                id="adminPassword"
+                name="temporaryPassword"
+                type="password"
+                minLength={12}
+                autoComplete="new-password"
+                value={temporaryPassword}
+                onChange={(event) => setTemporaryPassword(event.target.value)}
+                required
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="confirmAdminPassword">
+                Confirm temporary password
+              </Label>
+              <Input
+                id="confirmAdminPassword"
+                name="confirmTemporaryPassword"
+                type="password"
+                minLength={12}
+                autoComplete="new-password"
+                value={confirmTemporaryPassword}
+                onChange={(event) =>
+                  setConfirmTemporaryPassword(event.target.value)
+                }
+                onBlur={() => setConfirmTouched(true)}
+                aria-invalid={showPasswordMismatch}
+                aria-describedby="adminPasswordDescription adminPasswordMatch"
+                required
+              />
+            </div>
+            <p
+              id="adminPasswordDescription"
+              className="text-xs text-muted-foreground sm:col-span-2"
+            >
+              Minimum 12 characters. Share it through an approved secure
+              channel.
+            </p>
+            <p
+              id="adminPasswordMatch"
+              className={
+                showPasswordMismatch
+                  ? "text-xs text-destructive sm:col-span-2"
+                  : passwordsMatch
+                    ? "text-xs text-emerald-500 sm:col-span-2 dark:text-emerald-400"
+                    : "text-xs text-muted-foreground sm:col-span-2"
+              }
+              aria-live="polite"
+            >
+              {showPasswordMismatch
+                ? "Passwords do not match. Enter the same temporary password twice."
+                : passwordsMatch
+                  ? "Passwords match."
+                  : "Enter the same temporary password again to confirm it."}
             </p>
           </div>
           <DialogFooter>
-            <Button type="submit">Create tenant and Admin</Button>
+            <Button type="submit" disabled={pending || !passwordsMatch}>
+              Create tenant and Admin
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
@@ -478,7 +583,9 @@ function MobileRecord({
           {status ? statusBadge(status) : null}
         </div>
       </CardHeader>
-      {children ? <CardContent className="grid gap-3">{children}</CardContent> : null}
+      {children ? (
+        <CardContent className="grid gap-3">{children}</CardContent>
+      ) : null}
     </Card>
   )
 }
@@ -656,7 +763,8 @@ export function SuperadminConsole(props: Props) {
     [tenants]
   )
   const filteredVendors = vendors.filter((vendor) => {
-    const text = `${vendor.name_en} ${vendor.name_cn} ${vendor.sector}`.toLowerCase()
+    const text =
+      `${vendor.name_en} ${vendor.name_cn} ${vendor.sector}`.toLowerCase()
     return (
       text.includes(vendorSearch.toLowerCase()) &&
       (tenantFilter === "all" || vendor.admin_id === tenantFilter) &&
@@ -714,6 +822,7 @@ export function SuperadminConsole(props: Props) {
           displayName: form.get("displayName"),
           email: form.get("email"),
           temporaryPassword: form.get("temporaryPassword"),
+          confirmTemporaryPassword: form.get("confirmTemporaryPassword"),
         }),
       "Admin tenant and account created."
     )
@@ -838,7 +947,7 @@ export function SuperadminConsole(props: Props) {
 
           <TabsContent
             value="admins"
-            className="min-w-0 grid gap-4 lg:col-start-2 lg:row-start-1"
+            className="grid min-w-0 gap-4 lg:col-start-2 lg:row-start-1"
           >
             <Card>
               <CardHeader className="gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -982,7 +1091,7 @@ export function SuperadminConsole(props: Props) {
 
           <TabsContent
             value="vendors"
-            className="min-w-0 grid gap-4 lg:col-start-2 lg:row-start-1"
+            className="grid min-w-0 gap-4 lg:col-start-2 lg:row-start-1"
           >
             <Card>
               <CardHeader className="gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -1113,10 +1222,7 @@ export function SuperadminConsole(props: Props) {
                       subtitle={`${tenantNames.get(vendor.admin_id) ?? "Unknown Admin"} · ${labelStatus(vendor.vendor_type)} · ${vendor.sector}`}
                       status={vendor.status}
                     >
-                      <VendorDirectoryDialog
-                        locale={locale}
-                        vendor={vendor}
-                      />
+                      <VendorDirectoryDialog locale={locale} vendor={vendor} />
                       <StatusControl
                         value={vendor.status}
                         options={["active", "suspended", "archived"]}
@@ -1198,19 +1304,21 @@ export function SuperadminConsole(props: Props) {
                           </TableCell>
                           <TableCell>
                             {account.admin_id
-                              ? tenantNames.get(account.admin_id) ?? "Unknown"
+                              ? (tenantNames.get(account.admin_id) ?? "Unknown")
                               : "Platform-wide"}
                           </TableCell>
                           <TableCell>
                             {account.vendor_company_id
-                              ? vendors.find(
+                              ? (vendors.find(
                                   (vendor) =>
                                     vendor.id === account.vendor_company_id
-                                )?.name_en ?? account.vendor_company_id
+                                )?.name_en ?? account.vendor_company_id)
                               : "—"}
                           </TableCell>
                           <TableCell>
-                            {statusBadge(account.active ? "active" : "suspended")}
+                            {statusBadge(
+                              account.active ? "active" : "suspended"
+                            )}
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
@@ -1272,7 +1380,8 @@ export function SuperadminConsole(props: Props) {
                     >
                       <p className="text-xs text-muted-foreground">
                         {account.admin_id
-                          ? tenantNames.get(account.admin_id) ?? "Unknown Admin"
+                          ? (tenantNames.get(account.admin_id) ??
+                            "Unknown Admin")
                           : "Platform-wide account"}
                       </p>
                       <Button
@@ -1365,7 +1474,9 @@ export function SuperadminConsole(props: Props) {
                       <CardContent className="grid grid-cols-2 gap-3 text-xs">
                         <div>
                           <p className="text-muted-foreground">Vendors</p>
-                          <p className="text-lg font-semibold">{tenantVendors}</p>
+                          <p className="text-lg font-semibold">
+                            {tenantVendors}
+                          </p>
                         </div>
                         <div>
                           <p className="text-muted-foreground">Matches</p>
@@ -1419,7 +1530,8 @@ export function SuperadminConsole(props: Props) {
               <CardHeader>
                 <CardTitle>Audit events</CardTitle>
                 <CardDescription>
-                  Append-only history for tenant, Vendor, account, and transfer changes.
+                  Append-only history for tenant, Vendor, account, and transfer
+                  changes.
                 </CardDescription>
               </CardHeader>
               <CardContent className="grid gap-4">
@@ -1456,7 +1568,8 @@ export function SuperadminConsole(props: Props) {
                         <p className="break-all">
                           Target: {event.target_id ?? "—"} · Tenant:{" "}
                           {event.admin_id
-                            ? tenantNames.get(event.admin_id) ?? event.admin_id
+                            ? (tenantNames.get(event.admin_id) ??
+                              event.admin_id)
                             : "Platform"}
                         </p>
                         <pre className="max-h-72 overflow-auto rounded bg-muted p-3 text-[11px]">

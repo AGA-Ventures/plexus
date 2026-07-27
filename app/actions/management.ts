@@ -10,10 +10,8 @@ import {
   getPasswordRecoveryRedirectUrl,
   resolvePasswordRecoveryOrigin,
 } from "@/lib/password-recovery"
-import {
-  type TenantStatus,
-  type VendorStatus,
-} from "@/lib/management-data"
+import { type TenantStatus, type VendorStatus } from "@/lib/management-data"
+import { hasMatchingPasswordConfirmation } from "@/lib/password-confirmation"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
@@ -28,20 +26,33 @@ const tenantStatusSchema = z.enum(["active", "suspended", "archived"])
 const vendorStatusSchema = z.enum(["active", "suspended", "archived"])
 const vendorTypeSchema = z.enum(["delegation", "partner"])
 
-const createAdminSchema = z.object({
-  locale: localeSchema,
-  tenantName: z.string().trim().min(2).max(120),
-  tenantSlug: z
-    .string()
-    .trim()
-    .min(2)
-    .max(80)
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-  supportEmail: z.email().trim(),
-  displayName: z.string().trim().min(2).max(120),
-  email: z.email().trim(),
-  temporaryPassword: z.string().min(12).max(128),
-})
+const createAdminSchema = z
+  .object({
+    locale: localeSchema,
+    tenantName: z.string().trim().min(2).max(120),
+    tenantSlug: z
+      .string()
+      .trim()
+      .min(2)
+      .max(80)
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+    supportEmail: z.email().trim(),
+    displayName: z.string().trim().min(2).max(120),
+    email: z.email().trim(),
+    temporaryPassword: z.string().min(12).max(128),
+    confirmTemporaryPassword: z.string().min(12).max(128),
+  })
+  .refine(
+    (value) =>
+      hasMatchingPasswordConfirmation(
+        value.temporaryPassword,
+        value.confirmTemporaryPassword
+      ),
+    {
+      message: "Temporary passwords do not match.",
+      path: ["confirmTemporaryPassword"],
+    }
+  )
 
 const createVendorSchema = z.object({
   locale: localeSchema,
@@ -70,9 +81,7 @@ const updateTenantSchema = z.object({
     .max(500)
     .refine(
       (value) =>
-        value === "" ||
-        value.startsWith("/") ||
-        value.startsWith("https://"),
+        value === "" || value.startsWith("/") || value.startsWith("https://"),
       "Use an HTTPS URL or a public path beginning with /."
     ),
 })
@@ -217,10 +226,7 @@ export async function createVendorAccountAction(
     const authorization = await requireOperator()
     const { identity, supabase } = authorization
 
-    if (
-      identity.role === "admin" &&
-      identity.adminId !== parsed.data.adminId
-    ) {
+    if (identity.role === "admin" && identity.adminId !== parsed.data.adminId) {
       return {
         ok: false,
         error: "Admins can create Vendors only in their own tenant.",
@@ -234,10 +240,7 @@ export async function createVendorAccountAction(
         .eq("setting_key", "vendor_account_provisioning")
         .maybeSingle()
 
-      if (
-        permissionResult.error ||
-        permissionResult.data?.value !== true
-      ) {
+      if (permissionResult.error || permissionResult.data?.value !== true) {
         return {
           ok: false,
           error: "Vendor account provisioning is disabled by Plexus.",
@@ -819,24 +822,26 @@ export async function transferVendorAction(input: {
       return { ok: false, error: "Only Superadmins can transfer Vendors." }
     }
 
-    const [vendorResult, destinationResult, profilesResult] = await Promise.all([
-      authorization.supabase
-        .from("vendor_companies")
-        .select("admin_id, vendor_type")
-        .eq("id", parsed.data.vendorId)
-        .single(),
-      authorization.supabase
-        .from("admin_tenants")
-        .select("id")
-        .eq("id", parsed.data.destinationAdminId)
-        .eq("status", "active")
-        .maybeSingle(),
-      authorization.supabase
-        .from("user_profiles")
-        .select("id")
-        .eq("vendor_company_id", parsed.data.vendorId)
-        .eq("role", "vendor"),
-    ])
+    const [vendorResult, destinationResult, profilesResult] = await Promise.all(
+      [
+        authorization.supabase
+          .from("vendor_companies")
+          .select("admin_id, vendor_type")
+          .eq("id", parsed.data.vendorId)
+          .single(),
+        authorization.supabase
+          .from("admin_tenants")
+          .select("id")
+          .eq("id", parsed.data.destinationAdminId)
+          .eq("status", "active")
+          .maybeSingle(),
+        authorization.supabase
+          .from("user_profiles")
+          .select("id")
+          .eq("vendor_company_id", parsed.data.vendorId)
+          .eq("role", "vendor"),
+      ]
+    )
 
     if (vendorResult.error) {
       return { ok: false, error: vendorResult.error.message }
@@ -877,13 +882,10 @@ export async function transferVendorAction(input: {
       }
     }
 
-    const transferResult = await authorization.supabase.rpc(
-      "transfer_vendor",
-      {
-        p_vendor_id: parsed.data.vendorId,
-        p_destination_admin_id: parsed.data.destinationAdminId,
-      }
-    )
+    const transferResult = await authorization.supabase.rpc("transfer_vendor", {
+      p_vendor_id: parsed.data.vendorId,
+      p_destination_admin_id: parsed.data.destinationAdminId,
+    })
 
     if (transferResult.error) {
       for (const userId of profileIds) {

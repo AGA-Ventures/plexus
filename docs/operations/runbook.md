@@ -70,6 +70,11 @@ Supabase exchanges the one-time email code at `/auth/callback`; only the
 recovered user session can update its password, after which the session signs
 out and returns to login.
 
+An authenticated Superadmin can also choose **Send reset link** from an Admin
+tenant row. That server action revalidates the target as an active Admin,
+records the request in the platform audit log, and uses the same tenant-aware
+Supabase recovery flow. It never reveals or directly changes the password.
+
 Before enabling recovery for a production cohort:
 
 - Set the exact Supabase Auth Site URL and allow the approved

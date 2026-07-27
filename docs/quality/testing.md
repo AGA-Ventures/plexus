@@ -42,6 +42,7 @@ npm run test:e2e
 | Password recovery request            | Generic response for valid email |
 | Invalid or expired recovery callback | Return to recovery request       |
 | Unauthenticated password update      | Reject and request a new link    |
+| Superadmin requests Admin recovery   | Active Admin only; audited email |
 | Invalid/malformed trusted claims     | Deny and sign out                |
 | Inactive profile                     | Deny                             |
 | Inactive tenant/Vendor               | Deny                             |

@@ -3,13 +3,19 @@
 import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
+import { isActiveAdminRecoveryAccount } from "@/lib/admin-password-recovery"
 import { getAuthenticatedIdentity } from "@/lib/authorization"
 import type { Locale } from "@/lib/i18n"
+import {
+  getPasswordRecoveryRedirectUrl,
+  resolvePasswordRecoveryOrigin,
+} from "@/lib/password-recovery"
 import {
   type TenantStatus,
   type VendorStatus,
 } from "@/lib/management-data"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import { createSupabaseServerClient } from "@/lib/supabase/server"
 
 export type ManagementActionResult = {
   ok: boolean
@@ -377,6 +383,115 @@ export async function setTenantStatusAction(input: {
     }
 
     refreshManagement(parsed.data.locale)
+    return { ok: true }
+  } catch (error) {
+    return actionError(error)
+  }
+}
+
+export async function sendAdminPasswordResetAction(input: {
+  locale: Locale
+  userId: string
+}): Promise<ManagementActionResult> {
+  const parsed = z
+    .object({
+      locale: localeSchema,
+      userId: uuidSchema,
+    })
+    .safeParse(input)
+
+  if (!parsed.success) {
+    return { ok: false, error: "Invalid Admin password-recovery request." }
+  }
+
+  try {
+    const authorization = await requireOperator()
+
+    if (authorization.identity.role !== "superadmin") {
+      return {
+        ok: false,
+        error: "Only Superadmins can send Admin recovery links.",
+      }
+    }
+
+    const profileResult = await authorization.supabase
+      .from("user_profiles")
+      .select("id, email, role, admin_id, active")
+      .eq("id", parsed.data.userId)
+      .maybeSingle()
+
+    const profile = profileResult.data
+
+    if (profileResult.error || !isActiveAdminRecoveryAccount(profile)) {
+      return {
+        ok: false,
+        error: "Select an active Admin account in your permitted scope.",
+      }
+    }
+
+    const tenantResult = await authorization.supabase
+      .from("admin_tenants")
+      .select("id, slug")
+      .eq("id", profile.admin_id)
+      .maybeSingle()
+
+    if (tenantResult.error || !tenantResult.data) {
+      return {
+        ok: false,
+        error: "The Admin tenant could not be verified.",
+      }
+    }
+
+    const adminClient = createSupabaseAdminClient()
+    const auditResult = await adminClient.from("audit_events").insert({
+      actor_user_id: authorization.identity.userId,
+      actor_role: authorization.identity.role,
+      action: "request_password_recovery",
+      target_table: "user_profiles",
+      target_id: profile.id,
+      admin_id: profile.admin_id,
+      before_values: null,
+      after_values: {
+        delivery: "email_link",
+        tenant_slug: tenantResult.data.slug,
+      },
+    })
+
+    if (auditResult.error) {
+      return {
+        ok: false,
+        error:
+          "The recovery request could not be audited, so no email was sent.",
+      }
+    }
+
+    const origin = resolvePasswordRecoveryOrigin({
+      productionUrl: process.env.VERCEL_PROJECT_PRODUCTION_URL,
+      siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+    })
+    const redirectTo = getPasswordRecoveryRedirectUrl({
+      origin,
+      locale: parsed.data.locale,
+      tenantSlug: tenantResult.data.slug,
+    })
+    const supabase = await createSupabaseServerClient()
+    const resetResult = await supabase.auth.resetPasswordForEmail(
+      profile.email,
+      { redirectTo }
+    )
+
+    if (resetResult.error) {
+      console.warn("Supabase Admin password recovery request failed.", {
+        code: resetResult.error.code,
+        status: resetResult.error.status,
+      })
+      return {
+        ok: false,
+        error:
+          "The recovery email could not be sent. Check the Auth email service and try again.",
+      }
+    }
+
     return { ok: true }
   } catch (error) {
     return actionError(error)

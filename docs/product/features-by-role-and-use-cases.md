@@ -145,6 +145,7 @@ flowchart LR
 | Vendor company status and directory | Every tenant | Own tenant | Own profile through Vendor workflow |
 | Vendor cross-tenant transfer | Yes | No | No |
 | Account suspension/restoration and claim synchronization | All permitted accounts; cannot self-suspend | Vendor accounts in own tenant | No |
+| Admin password recovery link | Send to an active Admin account from its tenant row | Self-service only | No |
 | Platform settings | Read/write | Reads the Vendor-provisioning permission used by its workflow | No |
 | Privileged audit history | Platform-wide, latest 200 shown | Own tenant, latest 100 shown | No |
 | Operational tenant reporting | Cross-tenant totals | Full own-tenant dashboard and reports | Own-company summaries |
@@ -193,7 +194,9 @@ where a shared Server Action supports more than one role.
 
 Temporary password delivery remains a controlled manual process.
 Self-service password recovery is live; invitation and first-time password
-setup flows are planned.
+setup flows are planned. A Superadmin can also send an audited, tenant-aware
+password recovery link to an active Admin account without viewing or replacing
+the password.
 
 ### Global Vendor governance
 
@@ -217,8 +220,12 @@ setup flows are planned.
 - Suspend or restore permitted accounts in both the database profile and
   Supabase Auth.
 - Synchronize trusted Auth claims from the canonical database binding.
+- Send a Supabase password recovery link to an active Admin from its tenant
+  control row; the link returns to that tenant's branded password-reset flow.
 - Prevent a Superadmin from suspending its own account through this control.
 - Revert claim changes when mandatory audit logging fails.
+- Record the recovery request before email delivery without storing the email
+  address or recovery token in audit values.
 
 ### Reporting
 

@@ -8,6 +8,10 @@ reviewed together.
 
 ### 2026-07-28
 
+- Replaced the Superadmin console's horizontal section tabs with the same
+  responsive desktop sidebar and mobile navigation pattern used by Admin, and
+  added an audited tenant-row action that sends active Admins a Supabase
+  password recovery link without exposing or overwriting their password.
 - Replaced the generic Supabase password-recovery message with a
   version-controlled, responsive Plexus security email, plus a safe local
   preview and hosted SMTP/template deployment guidance.

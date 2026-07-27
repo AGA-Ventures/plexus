@@ -154,11 +154,27 @@ test.describe("Superadmin flow", () => {
     await expect(
       page.getByRole("heading", { name: "Plexus platform control center" })
     ).toBeVisible()
+    await openMobilePortalMenu(page)
+    const navigation =
+      (page.viewportSize()?.width ?? 1024) >= 1024
+        ? page.getByRole("complementary")
+        : page.getByRole("dialog")
+    await expect(navigation.getByText("Superadmin workspace")).toBeVisible()
     await expect(
-      page.getByRole("tab", { name: "Admin tenants" })
+      navigation.getByRole("tab", { name: "Admin tenants" })
     ).toBeVisible()
-    await expect(page.getByRole("tab", { name: "Vendors" })).toBeVisible()
-    await expect(page.getByRole("tab", { name: "Audit events" })).toBeVisible()
+    await expect(navigation.getByRole("tab", { name: "Vendors" })).toBeVisible()
+    await expect(
+      navigation.getByRole("tab", { name: "Audit events" })
+    ).toBeVisible()
+
+    if ((page.viewportSize()?.width ?? 1024) < 1024) {
+      await navigation.getByRole("tab", { name: "Admin tenants" }).click()
+    }
+
+    await expect(
+      page.getByRole("button", { name: /send (admin )?reset link/i }).first()
+    ).toBeVisible()
     await expectNoHorizontalOverflow(page)
   })
 

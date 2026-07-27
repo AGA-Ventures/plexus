@@ -138,6 +138,18 @@ The Admin currently supplies the Vendor's initial login email and temporary
 password. Self-service recovery is available after provisioning; invitation
 and first-time password-setup flows remain planned work.
 
+### Superadmin sends an Admin recovery link
+
+1. Verify the caller is an authenticated Superadmin.
+2. Re-read the target `user_profiles` row and require an active `admin` role
+   with an Admin tenant binding.
+3. Resolve the tenant slug on the server and build the approved
+   tenant-aware `/auth/callback` redirect.
+4. Record the privileged recovery request in `audit_events` before delivery,
+   without storing the email address or recovery token in audit values.
+5. Ask Supabase Auth to email the standard one-time recovery link. The
+   Superadmin never sees or sets the Admin's password.
+
 ## Enforcement layers
 
 | Layer                   | Responsibility                                                  |

@@ -14,6 +14,7 @@
     "bootstrap:superadmin": "node --env-file=.env.local scripts/bootstrap-superadmin.mjs",
     "deploy:preview": "node scripts/deploy-vercel.mjs preview",
     "deploy:production": "node scripts/deploy-vercel.mjs production",
+    "docs:check": "node scripts/check-docs.mjs",
     "start": "next start",
     "lint": "eslint",
     "setup:repo": "node scripts/setup-repository.mjs",
@@ -30,7 +31,7 @@
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit",
     "verify:deploy": "node scripts/verify-vercel-targets.mjs",
-    "verify:release": "npm run verify:targets && npm audit --omit=dev --audit-level=critical && npm run lint && npm run typecheck && npm run test:unit && npm run build",
+    "verify:release": "npm run verify:targets && npm run docs:check && npm audit --omit=dev --audit-level=critical && npm run lint && npm run typecheck && npm run test:unit && npm run build",
     "verify:targets": "node scripts/verify-deployment-targets.mjs",
     "whereami": "node scripts/where-am-i.mjs"
   },

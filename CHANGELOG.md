@@ -8,6 +8,13 @@ reviewed together.
 
 ### 2026-07-27
 
+- Reorganized project knowledge into a layered `docs/` operating system for
+  product, architecture, development, project management, quality, operations,
+  security, and reference material.
+- Added a live-schema-based database catalog, ER model, RLS summary, module
+  boundaries, delivery roadmap, reusable planning templates, and documentation
+  validation.
+- Made documentation validation part of the standard release and CI gates.
 - Added canonical GitHub, Supabase, and Vercel target definitions.
 - Added repository setup, pre-push protection, live project status, release
   verification, and guarded deployment commands.

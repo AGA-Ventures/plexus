@@ -1,0 +1,139 @@
+# Deployment and Release
+
+**Owner:** Release owner
+**Review trigger:** Hosting, target, environment, branch, or release change
+**Last reviewed:** 2026-07-27
+
+The machine-readable destinations are in `.deployment-targets.json`. Release
+scripts fail closed when the checkout points elsewhere.
+
+## Approved production targets
+
+| System   | Target                                        | Production rule                    |
+| -------- | --------------------------------------------- | ---------------------------------- |
+| GitHub   | `AGA-Ventures/plexus`                         | Push only through `origin`         |
+| Supabase | `Plexus` / `pnjblggcdigekluualin`             | Confirmed, forward-only migrations |
+| Vercel   | `plexus` / `prj_FUkKgAm7UXkFGTgmtFM8ynaSHKuE` | Deploy reviewed `main`             |
+
+Current public production alias:
+
+```text
+https://plexus-gules.vercel.app
+```
+
+## Current automation state
+
+Manual production deployment is working. Automatic Vercel Git deployment is
+blocked until the Vercel GitHub integration receives write/admin access to
+`AGA-Ventures/plexus`.
+
+One-time completion:
+
+1. Grant the Vercel GitHub app access to the repository.
+2. Run:
+
+   ```bash
+   vercel git connect https://github.com/AGA-Ventures/plexus
+   npm run verify:deploy
+   ```
+
+3. Confirm feature branches create Preview deployments and `main` creates
+   Production deployments in the approved project.
+
+## Release sequence
+
+1. Update code, tests, docs, and `CHANGELOG.md`.
+2. Run `npm run docs:check` and `npm run verify:release`.
+3. Push a feature branch to `origin`.
+4. Review CI and Preview.
+5. If migrations changed, review `npm run supabase:plan`.
+6. Merge the reviewed pull request to `main`.
+7. Apply required migrations before dependent app code is promoted.
+8. Confirm the Vercel Production deployment.
+9. Run public/protected route smoke tests.
+10. Run the production role verifier when authorization/provisioning changed.
+11. Inspect runtime errors and update project status.
+
+Database migrations are intentionally not coupled automatically to every Git
+push.
+
+## Manual Vercel fallback
+
+While Git integration is unavailable:
+
+```bash
+npm run deploy:preview
+npm run deploy:production
+```
+
+The scripts require:
+
+- A clean worktree.
+- The exact commit on the approved GitHub remote.
+- Production deployments from `main` only.
+- Passing release verification.
+- Typed confirmation.
+
+If the active checkout contains unrelated work, deploy from a clean temporary
+worktree rather than stashing, overwriting, or committing that work.
+
+## Environment policy
+
+- `.env.local` and `.vercel/` are untracked.
+- Public Supabase variables exist in Preview and Production.
+- `SUPABASE_SECRET_KEY` exists only in Production.
+- Local development uses `.env.local`.
+- Set `NEXT_PUBLIC_SITE_URL` when a canonical branded domain is established.
+- Configure the exact Site URL and allowed redirects in Supabase Auth.
+- Run `npm run verify:deploy` after Vercel Git/environment changes.
+
+See [Environment variables](../development/environment-variables.md).
+
+## Post-deploy checks
+
+```bash
+curl -I https://production.example/
+curl -I https://production.example/en/login
+curl -I https://production.example/en/admin
+curl -I https://production.example/en/superadmin
+curl -I https://production.example/en/vendor
+
+vercel inspect https://deployment-url
+vercel logs https://deployment-url --level error --since 1h --no-branch
+```
+
+Expected anonymous behavior:
+
+- `/` and `/en/login`: successful response.
+- Protected routes: redirect to `/en/login?next=...`.
+
+## Rollback
+
+### Application-only
+
+Use Vercel rollback or promote the last verified deployment:
+
+```bash
+vercel rollback
+```
+
+Verify routes and errors after rollback.
+
+### Database
+
+Create and review a forward-fix migration. Do not delete migration history,
+rename an applied migration, or use destructive reset commands.
+
+### Mixed application/database incident
+
+Choose the safest compatible application version, stop further releases,
+prepare a forward database fix, and follow the
+[incident runbook](incident-response.md).
+
+## Dependency advisories
+
+The release gate blocks critical production findings. Current high findings are
+in the supported Next.js build-time PostCSS and Sharp dependency tree and are
+tracked upstream. Do not run `npm audit fix --force`; it proposes an unsafe
+framework downgrade. Reassess whenever a supported Next.js release resolves
+the chain.

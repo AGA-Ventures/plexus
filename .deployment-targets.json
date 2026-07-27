@@ -1,0 +1,27 @@
+{
+  "github": {
+    "remote": "origin",
+    "repository": "AGA-Ventures/plexus",
+    "productionBranch": "main",
+    "pushUrls": [
+      "https://github.com/AGA-Ventures/plexus.git",
+      "git@github.com:AGA-Ventures/plexus.git"
+    ],
+    "migrationAliases": [
+      "https://github.com/AGATECH-ACC/plexus.git",
+      "git@github.com:AGATECH-ACC/plexus.git"
+    ]
+  },
+  "supabase": {
+    "projectName": "Plexus",
+    "projectRef": "pnjblggcdigekluualin",
+    "url": "https://pnjblggcdigekluualin.supabase.co",
+    "postgresMajor": 17
+  },
+  "vercel": {
+    "projectName": "plexus",
+    "projectId": "prj_FUkKgAm7UXkFGTgmtFM8ynaSHKuE",
+    "orgId": "team_KzGeiue15bNfoPpONOXYD4Pf",
+    "productionBranch": "main"
+  }
+}

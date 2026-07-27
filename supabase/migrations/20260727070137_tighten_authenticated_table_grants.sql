@@ -21,4 +21,3 @@ grant select, insert, update, delete on public.site_visits to authenticated;
 grant select, insert, update, delete on public.site_visit_delegations to authenticated;
 grant select, insert, update, delete on public.liaison_contacts to authenticated;
 grant select, insert, update, delete on public.notifications to authenticated;
-

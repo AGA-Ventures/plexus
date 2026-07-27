@@ -3,6 +3,20 @@
 Supabase-backed multi-tenant operations platform for Malaysia–China/Macao
 business matching.
 
+## Project orientation
+
+Run this before development or deployment to see the current branch, commit,
+push destination, Supabase link, local environment target, and Vercel link:
+
+```bash
+npm run whereami
+```
+
+- [Development workflow](DEVELOPMENT.md)
+- [Deployment workflow](DEPLOYMENT.md)
+- [Current project state](PROJECT_STATUS.md)
+- [Dated change history](CHANGELOG.md)
+
 ## Workspaces
 
 - `/en/superadmin` — Plexus platform control center across all Admin tenants.
@@ -24,7 +38,7 @@ server-only `SUPABASE_SECRET_KEY` (`sb_secret_...`). Never expose it through a
 The canonical model and RLS policies live in:
 
 ```txt
-supabase/migrations/20260727073913_three_tier_tenant_authorization.sql
+supabase/migrations/20260727080418_three_tier_tenant_authorization.sql
 ```
 
 Authorization uses only `app_metadata`:

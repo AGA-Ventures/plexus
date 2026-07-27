@@ -23,8 +23,9 @@ export default function NotFound() {
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            Portal routes are <code>/en/admin</code>, <code>/en/delegation</code> and{" "}
-            <code>/en/partner</code> (and their <code>/zh/</code> equivalents).
+            Portal routes are <code>/en/superadmin</code>,{" "}
+            <code>/en/admin</code>, and <code>/en/vendor</code> (with equivalent
+            localized routes).
           </p>
         </CardContent>
         <CardFooter>

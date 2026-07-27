@@ -2,7 +2,8 @@
 
 import { z } from "zod"
 
-import { getAppMetadata, type AppRole } from "@/lib/auth"
+import type { AppRole } from "@/lib/auth"
+import { validateAuthenticatedUser } from "@/lib/authorization"
 import { matchNoteFromScore, scoreMatch } from "@/lib/matching"
 import { loadPlexusDb } from "@/lib/plexus-data"
 import type {
@@ -181,7 +182,11 @@ async function withSession(
     return { ok: false, error: "Your account is missing app_metadata.role." }
   }
 
-  if (options?.role && context.userRole !== options.role) {
+  if (
+    options?.role &&
+    context.userRole !== options.role &&
+    context.userRole !== "superadmin"
+  ) {
     return {
       ok: false,
       error: "You do not have permission to perform this action.",
@@ -208,12 +213,16 @@ async function createActionContext() {
     throw new Error(error?.message ?? "You must be logged in.")
   }
 
-  const metadata = getAppMetadata(user)
+  const authorization = await validateAuthenticatedUser(supabase, user)
+
+  if (!authorization.ok) {
+    throw new Error(authorization.error)
+  }
 
   return {
     supabase,
-    metadata,
-    userRole: metadata.role,
+    identity: authorization.identity,
+    userRole: authorization.identity.role,
   }
 }
 
@@ -443,11 +452,15 @@ export async function requestMatchAction(
     return { ok: false, error: "Select a valid company to match." }
   }
 
-  return runMutation(async ({ supabase, metadata, userRole }) => {
-    if (userRole !== "delegation" && userRole !== "partner") {
+  return runMutation(async ({ supabase, identity, userRole }) => {
+    if (
+      userRole !== "vendor" ||
+      !identity.vendorType ||
+      !identity.vendorCompanyId
+    ) {
       return {
         error: {
-          message: "Only delegation or partner accounts can request matches.",
+          message: "Only linked Vendor accounts can request matches.",
         },
       }
     }
@@ -471,14 +484,8 @@ export async function requestMatchAction(
     let partnerId: string
     let scoreInput: Parameters<typeof scoreMatch>[0]
 
-    if (userRole === "delegation") {
-      if (!metadata.delegation_company_id) {
-        return {
-          error: { message: "No delegation company is linked to your account." },
-        }
-      }
-
-      delegationId = metadata.delegation_company_id
+    if (identity.vendorType === "delegation") {
+      delegationId = identity.vendorCompanyId
       partnerId = counterpartId
 
       const ownResult = await supabase
@@ -505,13 +512,7 @@ export async function requestMatchAction(
         },
       }
     } else {
-      if (!metadata.partner_company_id) {
-        return {
-          error: { message: "No partner company is linked to your account." },
-        }
-      }
-
-      partnerId = metadata.partner_company_id
+      partnerId = identity.vendorCompanyId
       delegationId = counterpartId
 
       const ownResult = await supabase
@@ -563,7 +564,7 @@ export async function requestMatchAction(
       partner_company_id: partnerId,
       status: "Proposed",
       score: result.score,
-      note: `Self-requested by ${userRole}. ${matchNoteFromScore(result)}`,
+      note: `Self-requested by ${identity.vendorType} Vendor. ${matchNoteFromScore(result)}`,
     })
   })
 }
@@ -614,7 +615,7 @@ export async function scheduleMeetingAction(
 
   const meetingId = crypto.randomUUID()
 
-  return runMutation(async ({ supabase, metadata, userRole }) => {
+  return runMutation(async ({ supabase, identity, userRole }) => {
     const matchResult = await supabase
       .from("matches")
       .select("delegation_company_id, partner_company_id, status")
@@ -627,11 +628,13 @@ export async function scheduleMeetingAction(
 
     const match = matchResult.data
     const canSchedule =
+      userRole === "superadmin" ||
       userRole === "admin" ||
-      (userRole === "delegation" &&
-        metadata.delegation_company_id === match.delegation_company_id) ||
-      (userRole === "partner" &&
-        metadata.partner_company_id === match.partner_company_id)
+      (userRole === "vendor" &&
+        ((identity.vendorType === "delegation" &&
+          identity.vendorCompanyId === match.delegation_company_id) ||
+          (identity.vendorType === "partner" &&
+            identity.vendorCompanyId === match.partner_company_id)))
 
     if (!canSchedule) {
       return {
@@ -642,7 +645,7 @@ export async function scheduleMeetingAction(
     }
 
     if (
-      userRole !== "admin" &&
+      userRole === "vendor" &&
       !["Accepted", "Session Scheduled"].includes(match.status)
     ) {
       return {
@@ -705,7 +708,7 @@ export async function scheduleMeetingAction(
     const summary =
       (meetingSlots.length > 0
         ? `Participant selected preferred 1-hour working-day slots: ${meetingSlots.join(", ")}. Admin should confirm one slot and replace the placeholder with the final Zoom/VooV session.`
-        : userRole === "admin"
+        : userRole === "admin" || userRole === "superadmin"
           ? "Admin scheduled production session. Replace with Zoom/VooV API after workflow confirmation."
           : "Participant requested a meeting after accepting the match. Admin can replace this placeholder with a confirmed Zoom/VooV slot.") +
       interpreterNote
@@ -986,19 +989,10 @@ export async function updateCompanyProfileAction(
   const profile = parsed.data
   const profileComplete = profileCompleteness(profile)
 
-  return runMutation(async ({ supabase, metadata, userRole }) => {
+  return runMutation(async ({ supabase, identity, userRole }) => {
     if (
-      userRole === "delegation" &&
-      (kind !== "delegation" || metadata.delegation_company_id !== id)
-    ) {
-      return {
-        error: { message: "You can only update your own company profile." },
-      }
-    }
-
-    if (
-      userRole === "partner" &&
-      (kind !== "partner" || metadata.partner_company_id !== id)
+      userRole === "vendor" &&
+      (identity.vendorType !== kind || identity.vendorCompanyId !== id)
     ) {
       return {
         error: { message: "You can only update your own company profile." },

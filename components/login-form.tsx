@@ -35,11 +35,12 @@ type LoginCopy = Record<string, string>
 
 const copy: Partial<Record<Locale, LoginCopy>> & { en: LoginCopy } = {
   en: {
-    title: "Login to Plexus Connect",
-    subtitle: "Use the production account created for you in Supabase Auth.",
+    title: "One login for every Plexus workspace",
+    subtitle:
+      "Sign in once. Your trusted account role sends you to the Superadmin, Admin, or Vendor workspace.",
     email: "Email",
     password: "Password",
-    hint: "Accounts are created by the admin team for phase-one launch.",
+    hint: "Accounts are provisioned by an authorized Plexus operator.",
     submit: "Login",
     success: "Logged in. Redirecting to portal.",
     routes: "Portal routes",
@@ -47,11 +48,11 @@ const copy: Partial<Record<Locale, LoginCopy>> & { en: LoginCopy } = {
     loginProblem: "Cannot log in",
   },
   zh: {
-    title: "登录 Plexus Connect",
-    subtitle: "使用管理员在 Supabase Auth 中创建的生产账号。",
+    title: "一个入口登录所有 Plexus 工作台",
+    subtitle: "登录后，系统会根据可信账号角色进入超级管理员、管理员或供应商工作台。",
     email: "邮箱",
     password: "密码",
-    hint: "第一阶段上线账号由管理员创建。",
+    hint: "账号由获授权的 Plexus 运营人员创建。",
     submit: "登录",
     success: "登录成功，正在进入门户。",
     routes: "门户路径",
@@ -59,11 +60,11 @@ const copy: Partial<Record<Locale, LoginCopy>> & { en: LoginCopy } = {
     loginProblem: "无法登录",
   },
   "zh-Hant": {
-    title: "登入 Plexus Connect",
-    subtitle: "使用管理員在 Supabase Auth 中建立的生產帳號。",
+    title: "一個入口登入所有 Plexus 工作台",
+    subtitle: "登入後，系統會根據可信帳號角色進入超級管理員、管理員或供應商工作台。",
     email: "電郵",
     password: "密碼",
-    hint: "第一階段上線帳號由管理員建立。",
+    hint: "帳號由獲授權的 Plexus 營運人員建立。",
     submit: "登入",
     success: "登入成功，正在進入門戶。",
     routes: "門戶路徑",
@@ -71,11 +72,11 @@ const copy: Partial<Record<Locale, LoginCopy>> & { en: LoginCopy } = {
     loginProblem: "無法登入",
   },
   th: {
-    title: "เข้าสู่ระบบ Plexus Connect",
-    subtitle: "ใช้บัญชี production ที่ผู้ดูแลสร้างไว้ใน Supabase Auth",
+    title: "ล็อกอินเดียวสำหรับทุกพื้นที่ทำงาน Plexus",
+    subtitle: "ระบบจะนำคุณไปยังพื้นที่ Superadmin, Admin หรือ Vendor ตามบทบาทที่เชื่อถือได้",
     email: "อีเมล",
     password: "รหัสผ่าน",
-    hint: "บัญชีสำหรับช่วงเปิดตัวเฟสแรกสร้างโดยทีมผู้ดูแล",
+    hint: "บัญชีสร้างโดยผู้ปฏิบัติงาน Plexus ที่ได้รับอนุญาต",
     submit: "เข้าสู่ระบบ",
     success: "เข้าสู่ระบบแล้ว กำลังไปยังพอร์ทัล",
     routes: "เส้นทางพอร์ทัล",
@@ -114,7 +115,7 @@ export function LoginForm({ locale }: { locale: Locale }) {
             </div>
             <div className="flex flex-col gap-2">
               <p className="text-sm font-medium text-muted-foreground">
-                Malaysia-China/Macao delegation
+                Secure multi-tenant operations
               </p>
               <h1 className="text-3xl font-semibold tracking-normal sm:text-4xl">
                 {t.title}
@@ -130,9 +131,9 @@ export function LoginForm({ locale }: { locale: Locale }) {
               <CardDescription>{t.hint}</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3 text-sm text-muted-foreground">
+              <p>Superadmin: /{locale}/superadmin</p>
               <p>Admin: /{locale}/admin</p>
-              <p>Delegation: /{locale}/delegation</p>
-              <p>Partner: /{locale}/partner</p>
+              <p>Vendor: /{locale}/vendor</p>
               <p>{t.noSignup}</p>
             </CardContent>
           </Card>
@@ -182,7 +183,11 @@ export function LoginForm({ locale }: { locale: Locale }) {
               </FieldGroup>
             </CardContent>
             <CardFooter className="flex flex-wrap gap-2">
-              <Button type="submit" disabled={isPending}>
+              <Button
+                className="w-full sm:w-auto"
+                type="submit"
+                disabled={isPending}
+              >
                 <HugeiconsIcon
                   icon={Login03Icon}
                   data-icon="inline-start"

@@ -111,7 +111,7 @@ export function MatchDiscovery({
             </p>
           </div>
           <Button variant="outline" asChild>
-            <Link href={`/${locale}/${role}`}>
+            <Link href={`/${locale}/vendor`}>
               {tr(locale, "Back to portal", "返回门户")}
             </Link>
           </Button>

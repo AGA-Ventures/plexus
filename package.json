@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "bootstrap:superadmin": "node --env-file=.env.local scripts/bootstrap-superadmin.mjs",
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
     "test:unit": "vitest run",
+    "test:rls": "npx --yes supabase@latest test db",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "format": "prettier --write \"**/*.{ts,tsx}\"",

@@ -2,7 +2,12 @@
 
 import { z } from "zod"
 
-import { getAppMetadata, getRolePortalPath } from "@/lib/auth"
+import {
+  getAppMetadata,
+  getRoleBindingError,
+  getRolePortalPath,
+} from "@/lib/auth"
+import { validateAuthenticatedUser } from "@/lib/authorization"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
@@ -53,17 +58,25 @@ export async function loginAction(_state: LoginActionState, formData: FormData):
   }
 
   const metadata = getAppMetadata(data.user)
+  const bindingError = getRoleBindingError(metadata)
 
-  if (!metadata.role) {
+  if (bindingError) {
     await supabase.auth.signOut()
-    return {
-      error:
-        "This account can sign in, but it has no launch role. Ask an admin to set app_metadata.role to admin, delegation, or partner.",
-    }
+    return { error: bindingError }
+  }
+
+  const authorization = await validateAuthenticatedUser(supabase, data.user)
+
+  if (!authorization.ok) {
+    await supabase.auth.signOut()
+    return { error: authorization.error }
   }
 
   return {
-    redirectTo: getRolePortalPath(normalizeLocale(parsed.data.locale) as Locale, metadata.role),
+    redirectTo: getRolePortalPath(
+      normalizeLocale(parsed.data.locale) as Locale,
+      authorization.identity.role
+    ),
   }
 }
 

@@ -1,6 +1,5 @@
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 
-import { PlexusConnectMvp } from "@/components/malayconnect-mvp"
 import { isLocaleParam, normalizeLocale } from "@/lib/i18n"
 import { getProtectedPortalData } from "@/lib/plexus-data"
 
@@ -16,7 +15,7 @@ export default async function DelegationLocalePage({
   }
 
   const normalizedLocale = normalizeLocale(locale)
-  const { db, session } = await getProtectedPortalData(normalizedLocale, "delegation")
+  await getProtectedPortalData(normalizedLocale, "vendor")
 
-  return <PlexusConnectMvp role="delegation" locale={normalizedLocale} initialDb={db} session={session} />
+  redirect(`/${normalizedLocale}/vendor`)
 }

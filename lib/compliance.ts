@@ -2,9 +2,8 @@ import "server-only"
 
 import { z } from "zod"
 
-import { getAppMetadata } from "@/lib/auth"
+import { getAuthenticatedIdentity } from "@/lib/authorization"
 import { isMalaysiaMarket } from "@/lib/markets"
-import { createSupabaseServerClient } from "@/lib/supabase/server"
 
 export const complianceVendorIds = ["worldCheck", "ssm", "ctos"] as const
 
@@ -92,27 +91,25 @@ export function getComplianceVendorStatus() {
 }
 
 export async function requireComplianceAdmin() {
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
+  const authorization = await getAuthenticatedIdentity()
 
-  if (error || !user) {
+  if (!authorization.ok) {
     return {
       ok: false as const,
       status: 401,
-      error: "Authentication required.",
+      error: authorization.error,
     }
   }
 
-  const metadata = getAppMetadata(user)
-
-  if (metadata.role !== "admin") {
-    return { ok: false as const, status: 403, error: "Admin access required." }
+  if (!["superadmin", "admin"].includes(authorization.identity.role)) {
+    return {
+      ok: false as const,
+      status: 403,
+      error: "Superadmin or Admin access required.",
+    }
   }
 
-  return { ok: true as const, user }
+  return { ok: true as const, identity: authorization.identity }
 }
 
 export async function runComplianceScreening(input: ComplianceScreeningInput) {

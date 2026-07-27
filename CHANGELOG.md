@@ -8,6 +8,11 @@ reviewed together.
 
 ### 2026-07-28
 
+- Expanded the Admin/Vendor user-profile popup into a responsive account
+  settings workspace with Profile, tenant-scoped White label, and Access
+  sections; removed raw user/tenant IDs; added safe self display-name editing;
+  and embedded logo upload, login preview, language, recovery, and session
+  controls.
 - Clarified the public support-email and private Admin-login-email purposes in
   Admin provisioning, and required a matching temporary-password confirmation
   in both the form and Server Action.

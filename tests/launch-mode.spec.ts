@@ -246,6 +246,37 @@ test.describe("Admin tenant flow", () => {
     await openMobilePortalMenu(page)
   })
 
+  test("Admin account settings hide IDs and expose profile, branding, and access controls", async ({
+    page,
+  }) => {
+    await login(page, adminEmail!, adminPassword!, /\/en\/admin/)
+    await page.getByRole("button", { name: /Admin account$/ }).click()
+
+    const dialog = page.getByRole("dialog", { name: "User profile" })
+    await expect(dialog).toBeVisible()
+    await expect(dialog.getByLabel("Display name")).toBeVisible()
+    await expect(dialog.getByLabel("Login email")).toHaveAttribute(
+      "readonly",
+      ""
+    )
+    await expect(dialog.getByText("User ID", { exact: true })).toHaveCount(0)
+    await expect(dialog.getByText("Tenant ID", { exact: true })).toHaveCount(0)
+
+    await dialog.getByRole("button", { name: /White label/ }).click()
+    await expect(dialog.getByLabel("Workspace name")).toBeVisible()
+    await expect(dialog.getByLabel("Support email")).toBeVisible()
+    await expect(
+      dialog.getByRole("link", { name: "Preview login page" })
+    ).toBeVisible()
+
+    await dialog.getByRole("button", { name: /Access Security/ }).click()
+    await expect(
+      dialog.getByRole("link", { name: "Send password recovery" })
+    ).toBeVisible()
+    await expect(dialog.getByRole("button", { name: "Logout" })).toBeVisible()
+    await expectNoHorizontalOverflow(page)
+  })
+
   test("Admin is redirected away from platform and Vendor routes", async ({
     page,
   }) => {

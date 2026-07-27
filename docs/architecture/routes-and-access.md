@@ -43,6 +43,14 @@ flowchart TD
 Public signup is disabled. Superadmins create Admins; Superadmins or the owning
 Admin create Vendors.
 
+The Admin and Vendor sidebars open an in-place account-settings dialog rather
+than exposing an additional route. The dialog shows human-readable profile and
+workspace information, permits the signed-in user to update only their own
+display name, and keeps trusted IDs and authorization bindings out of the UI.
+Admins additionally receive tenant-scoped white-label controls; role, tenant,
+email ownership, account state, and account deletion remain governed by the
+operator workflows and trusted server actions.
+
 Tenant-branded login accepts the owning Admin and Vendors bound to that Admin
 tenant. It rejects Superadmins and accounts belonging to any other tenant. The
 tenant slug is presentation and validation context only; it never grants a

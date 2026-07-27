@@ -138,6 +138,7 @@ flowchart LR
 | -------------------------------------------------------- | --------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | Shared login, role routing, logout                       | Own account                                         | Own account                                                                | Own account                                                        |
 | Self-service password recovery                           | Own account                                         | Own account                                                                | Own account                                                        |
+| Account profile settings                                 | No dedicated self-service panel                     | Edit own display name; manage branding and access from one settings dialog | Edit own display name and review access                            |
 | Admin tenant creation                                    | All tenants                                         | No                                                                         | No                                                                 |
 | Tenant profile and branding                              | Upload logo, edit, and preview every tenant         | Upload logo, edit, and preview own tenant                                  | View applied workspace context                                     |
 | Tenant activation, suspension, archiving                 | Every tenant                                        | No                                                                         | No                                                                 |
@@ -282,11 +283,17 @@ case-management or compliance-decision product.
 
 **Status: Live**
 
+- Open a compact account-settings workspace with separate Profile, White
+  label, and Access sections; edit the signed-in display name without exposing
+  internal user or tenant UUIDs.
+- Review the human-readable account role and workspace, change portal language,
+  start self-service password recovery, or end the current session.
 - View own-tenant totals, fully matched Delegations, invited/arrived guests,
   signed MOUs, scheduled/completed meetings, conversion, notifications, and a
   phase timeline.
 - Review the current session queue and mark a meeting complete.
-- Edit the tenant name, support email, and primary color.
+- Edit the tenant name, support email, login logo, and primary color, then open
+  an authenticated login-page preview without leaving account settings.
 - Open Vendor account management, Vendor provisioning, and Compliance.
 - Export a pre-visit report directly from the dashboard.
 

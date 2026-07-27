@@ -36,27 +36,29 @@ npm run test:e2e
 
 ## Authorization acceptance matrix
 
-| Scenario                             | Expected                         |
-| ------------------------------------ | -------------------------------- |
-| Unauthenticated protected route      | Redirect to localized login      |
-| Password recovery request            | Generic response for valid email |
-| Invalid or expired recovery callback | Return to recovery request       |
-| Unauthenticated password update      | Reject and request a new link    |
-| Superadmin requests Admin recovery   | Active Admin only; audited email |
-| Invalid/malformed trusted claims     | Deny and sign out                |
-| Inactive profile                     | Deny                             |
-| Inactive tenant/Vendor               | Deny                             |
-| Superadmin opens Admin/Vendor route  | Redirect to Superadmin workspace |
-| Admin reads another tenant           | No data/authorization error      |
-| Admin provisions into another tenant | Reject                           |
-| Admin uploads another tenant's logo  | Reject                           |
-| Spoofed/oversized tenant logo        | Reject before Storage write      |
-| Operator opens tenant login preview  | Allow in scope; disable sign-in  |
-| Admin password confirmation differs  | Reject before provisioning       |
-| Vendor reads another Vendor          | No data                          |
-| Vendor opens Admin/Superadmin route  | Redirect to Vendor workspace     |
-| Vendor updates another company       | Reject                           |
-| Direct authorization-binding update  | Trigger/RLS rejection            |
+| Scenario                             | Expected                                       |
+| ------------------------------------ | ---------------------------------------------- |
+| Unauthenticated protected route      | Redirect to localized login                    |
+| Password recovery request            | Generic response for valid email               |
+| Invalid or expired recovery callback | Return to recovery request                     |
+| Unauthenticated password update      | Reject and request a new link                  |
+| Superadmin requests Admin recovery   | Active Admin only; audited email               |
+| Invalid/malformed trusted claims     | Deny and sign out                              |
+| Inactive profile                     | Deny                                           |
+| Inactive tenant/Vendor               | Deny                                           |
+| Superadmin opens Admin/Vendor route  | Redirect to Superadmin workspace               |
+| Admin reads another tenant           | No data/authorization error                    |
+| Admin provisions into another tenant | Reject                                         |
+| Admin uploads another tenant's logo  | Reject                                         |
+| Spoofed/oversized tenant logo        | Reject before Storage write                    |
+| Operator opens tenant login preview  | Allow in scope; disable sign-in                |
+| Admin opens account settings         | Show profile/branding/access; hide trusted IDs |
+| User updates own display name        | Update only the verified profile               |
+| Admin password confirmation differs  | Reject before provisioning                     |
+| Vendor reads another Vendor          | No data                                        |
+| Vendor opens Admin/Superadmin route  | Redirect to Vendor workspace                   |
+| Vendor updates another company       | Reject                                         |
+| Direct authorization-binding update  | Trigger/RLS rejection                          |
 
 ## Verified production evidence
 

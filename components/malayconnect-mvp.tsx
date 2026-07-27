@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
@@ -15,16 +15,21 @@ import {
   CheckmarkCircle02Icon,
   Download01Icon,
   File01Icon,
+  Logout01Icon,
   Menu01Icon,
+  PaintBoardIcon,
   QrCodeIcon,
+  SaveIcon,
+  SecurityCheckIcon,
   ShieldUserIcon,
   TranslationIcon,
   Upload01Icon,
+  UserAccountIcon,
   UserGroupIcon,
 } from "@hugeicons/core-free-icons"
 import { toast } from "sonner"
 
-import { logoutAction } from "@/app/actions/auth"
+import { logoutAction, updateOwnProfileAction } from "@/app/actions/auth"
 import {
   addMatchAction,
   assignMeetingInterpreterAction,
@@ -47,13 +52,7 @@ import {
   updateMatchStatusAction,
 } from "@/app/actions/plexus"
 import { downloadCsv, downloadIcs } from "@/lib/export"
-import {
-  isChineseLocale,
-  localeLabels,
-  localeNames,
-  locales,
-  type Locale,
-} from "@/lib/i18n"
+import { isChineseLocale, localeLabels, locales, type Locale } from "@/lib/i18n"
 import { supportedMarketNames } from "@/lib/markets"
 import {
   type Announcement,
@@ -78,7 +77,10 @@ import type { PortalSession } from "@/lib/plexus-data"
 import { cn } from "@/lib/utils"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AdminVendorProvision } from "@/components/admin-vendor-provision"
-import { TenantProfileDialog } from "@/components/tenant-profile-dialog"
+import {
+  TenantProfileDialog,
+  TenantProfileForm,
+} from "@/components/tenant-profile-dialog"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -335,7 +337,20 @@ const uiCopy: Partial<Record<Locale, UiCopy>> & { en: UiCopy } = {
     account: "account",
     userProfile: "User profile",
     userProfileDescription:
-      "Supabase Auth account, portal access and session controls.",
+      "Manage your profile, workspace identity, branding, and secure access.",
+    profileSection: "Profile",
+    brandingSection: "White label",
+    accessSection: "Access",
+    personalDetails: "Personal details",
+    personalDetailsDescription:
+      "Update the name shown to your workspace team. Your login email is managed separately.",
+    displayName: "Display name",
+    loginEmail: "Login email",
+    saveProfile: "Save profile",
+    workspaceIdentity: "Workspace identity",
+    accessAndSecurity: "Access & security",
+    accessAndSecurityDescription:
+      "Review your role, language, password recovery, and current session.",
     launchRole: "Launch role",
     locale: "Locale",
     userId: "User ID",
@@ -3008,15 +3023,73 @@ function SidebarUserAccount({
   logout: () => void
 }) {
   const t = getUiCopy(locale)
+  const router = useRouter()
+  const [section, setSection] = useState<"profile" | "branding" | "access">(
+    "profile"
+  )
+  const [displayName, setDisplayName] = useState(session.displayName)
+  const [savingProfile, startProfileTransition] = useTransition()
   const currentRoleLink = roleLinks.find((item) => item.role === role)
   const workspaceRoute = session.role
   const roleLabel = currentRoleLink
     ? localizedLabel(currentRoleLink.label, locale)
     : session.role
-  const emailName = session.email.split("@")[0] ?? session.email
+  const workspaceName = session.tenantName ?? "Plexus"
+  const canManageBranding = session.role === "admin" && Boolean(session.adminId)
+  const accountSections = [
+    {
+      value: "profile" as const,
+      label: t.profileSection,
+      description: "Name and workspace",
+      icon: UserAccountIcon,
+      visible: true,
+    },
+    {
+      value: "branding" as const,
+      label: t.brandingSection,
+      description: "Login and identity",
+      icon: PaintBoardIcon,
+      visible: canManageBranding,
+    },
+    {
+      value: "access" as const,
+      label: t.accessSection,
+      description: "Security and session",
+      icon: SecurityCheckIcon,
+      visible: true,
+    },
+  ].filter((item) => item.visible)
+
+  function saveProfile(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const form = new FormData(event.currentTarget)
+
+    startProfileTransition(async () => {
+      const result = await updateOwnProfileAction({
+        displayName: form.get("displayName"),
+        locale,
+      })
+
+      if (!result.ok || !result.displayName) {
+        toast.error(result.error ?? "Unable to update your profile.")
+        return
+      }
+
+      setDisplayName(result.displayName)
+      toast.success("Profile name updated.")
+      router.refresh()
+    })
+  }
 
   return (
-    <Dialog>
+    <Dialog
+      onOpenChange={(open) => {
+        if (open) {
+          setSection("profile")
+          setDisplayName(session.displayName)
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <button
           type="button"
@@ -3024,12 +3097,12 @@ function SidebarUserAccount({
         >
           <Avatar className="size-8">
             <AvatarFallback className="text-xs">
-              {getInitials(emailName)}
+              {getInitials(displayName)}
             </AvatarFallback>
           </Avatar>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-xs font-semibold text-sidebar-foreground">
-              {session.email}
+              {displayName}
             </span>
             <span className="block truncate text-xs text-muted-foreground">
               {roleLabel} {t.account}
@@ -3042,68 +3115,255 @@ function SidebarUserAccount({
           />
         </button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>{t.userProfile}</DialogTitle>
+      <DialogContent className="max-h-[calc(100svh-2rem)] gap-0 overflow-hidden p-0 sm:max-w-4xl">
+        <DialogHeader className="border-b px-5 py-4 pr-12 sm:px-6 sm:py-5">
+          <DialogTitle className="text-base">{t.userProfile}</DialogTitle>
           <DialogDescription>{t.userProfileDescription}</DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-3 rounded-md border bg-muted/30 p-3">
-            <Avatar className="size-10">
-              <AvatarFallback>{getInitials(emailName)}</AvatarFallback>
-            </Avatar>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">{session.email}</p>
-              <p className="text-xs text-muted-foreground">
-                {roleLabel} {t.account} · Supabase Auth
-              </p>
+        <div className="grid min-h-0 overflow-hidden sm:grid-cols-[13rem_minmax(0,1fr)]">
+          <aside className="border-b bg-muted/20 p-3 sm:border-r sm:border-b-0 sm:p-4">
+            <div className="mb-3 hidden items-center gap-3 rounded-lg border bg-background/80 p-3 sm:flex">
+              <Avatar className="size-9">
+                <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <p className="truncate text-xs font-semibold">{displayName}</p>
+                <p className="truncate text-[0.6875rem] text-muted-foreground">
+                  {workspaceName}
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="grid gap-3 text-sm sm:grid-cols-2">
-            <InfoTile label={t.launchRole} value={session.role} />
-            <InfoTile label={t.locale} value={localeNames[locale]} />
-          </div>
-          <InfoTile label={t.userId} value={session.userId} />
-          <Separator />
-          <div className="grid gap-2">
-            <p className="text-xs font-medium text-muted-foreground">
-              {t.language}
-            </p>
-            <ToggleGroup
-              type="single"
-              value={locale}
-              variant="outline"
-              size="sm"
-              className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4"
+            <nav
+              aria-label="Account settings"
+              className={cn(
+                "grid gap-1",
+                accountSections.length === 3
+                  ? "grid-cols-3 sm:grid-cols-1"
+                  : "grid-cols-2 sm:grid-cols-1"
+              )}
             >
-              {locales.map((item) => (
-                <ToggleGroupItem
-                  key={item}
-                  value={item}
-                  asChild
-                  className="w-full"
-                >
-                  <Link href={`/${item}/${workspaceRoute}`}>
-                    {localeLabels[item]}
-                  </Link>
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
+              {accountSections.map((item) => {
+                const selected = section === item.value
+
+                return (
+                  <button
+                    key={item.value}
+                    type="button"
+                    aria-current={selected ? "page" : undefined}
+                    onClick={() => setSection(item.value)}
+                    className={cn(
+                      "flex min-w-0 items-center justify-center gap-2 rounded-md px-2.5 py-2 text-left transition-colors sm:justify-start sm:px-3",
+                      selected
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    <HugeiconsIcon
+                      icon={item.icon}
+                      strokeWidth={1.8}
+                      className="size-4 shrink-0"
+                    />
+                    <span className="min-w-0">
+                      <span className="block truncate text-xs font-medium">
+                        {item.label}
+                      </span>
+                      <span
+                        className={cn(
+                          "hidden truncate text-[0.625rem] sm:block",
+                          selected
+                            ? "text-primary-foreground/75"
+                            : "text-muted-foreground"
+                        )}
+                      >
+                        {item.description}
+                      </span>
+                    </span>
+                  </button>
+                )
+              })}
+            </nav>
+          </aside>
+          <div className="min-h-0 overflow-y-auto">
+            {section === "profile" ? (
+              <section className="grid gap-5 p-5 sm:p-6">
+                <div>
+                  <h3 className="font-heading text-sm font-medium">
+                    {t.personalDetails}
+                  </h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {t.personalDetailsDescription}
+                  </p>
+                </div>
+                <form className="grid gap-4" onSubmit={saveProfile}>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid gap-1.5">
+                      <label
+                        htmlFor="accountDisplayName"
+                        className="text-xs font-medium"
+                      >
+                        {t.displayName}
+                      </label>
+                      <Input
+                        id="accountDisplayName"
+                        name="displayName"
+                        defaultValue={displayName}
+                        minLength={2}
+                        maxLength={120}
+                        required
+                      />
+                    </div>
+                    <div className="grid gap-1.5">
+                      <label
+                        htmlFor="accountLoginEmail"
+                        className="text-xs font-medium"
+                      >
+                        {t.loginEmail}
+                      </label>
+                      <Input
+                        id="accountLoginEmail"
+                        value={session.email}
+                        readOnly
+                        aria-describedby="accountLoginEmailDescription"
+                      />
+                      <p
+                        id="accountLoginEmailDescription"
+                        className="text-[0.6875rem] text-muted-foreground"
+                      >
+                        Used for sign-in and password recovery.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border bg-muted/25 p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-medium">
+                          {t.workspaceIdentity}
+                        </p>
+                        <p className="mt-1 text-sm font-semibold">
+                          {workspaceName}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {roleLabel} workspace account
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="gap-1.5">
+                        <span className="size-1.5 rounded-full bg-emerald-500" />
+                        Active
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button type="submit" disabled={savingProfile}>
+                      <HugeiconsIcon icon={SaveIcon} data-icon="inline-start" />
+                      {savingProfile ? t.saving : t.saveProfile}
+                    </Button>
+                  </div>
+                </form>
+              </section>
+            ) : null}
+
+            {section === "branding" && canManageBranding && session.adminId ? (
+              <section className="grid gap-5 p-5 sm:p-6">
+                <div>
+                  <h3 className="font-heading text-sm font-medium">
+                    White-label workspace
+                  </h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Control the public name, support contact, logo, and primary
+                    color shown on your tenant login.
+                  </p>
+                </div>
+                <TenantProfileForm
+                  locale={locale}
+                  tenantId={session.adminId}
+                  initialName={session.tenantName}
+                  initialSupportEmail={session.tenantSupportEmail}
+                  initialPrimaryColor={session.tenantPrimaryColor}
+                  initialLogoUrl={session.tenantLogoUrl}
+                />
+              </section>
+            ) : null}
+
+            {section === "access" ? (
+              <section className="grid gap-5 p-5 sm:p-6">
+                <div>
+                  <h3 className="font-heading text-sm font-medium">
+                    {t.accessAndSecurity}
+                  </h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {t.accessAndSecurityDescription}
+                  </p>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <InfoTile label="Account role" value={roleLabel} />
+                  <InfoTile label="Workspace" value={workspaceName} />
+                </div>
+                <Separator />
+                <div className="grid gap-2">
+                  <p className="text-xs font-medium">{t.language}</p>
+                  <ToggleGroup
+                    type="single"
+                    value={locale}
+                    variant="outline"
+                    size="sm"
+                    className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4"
+                  >
+                    {locales.map((item) => (
+                      <ToggleGroupItem
+                        key={item}
+                        value={item}
+                        asChild
+                        className="w-full"
+                      >
+                        <Link href={`/${item}/${workspaceRoute}`}>
+                          {localeLabels[item]}
+                        </Link>
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
+                </div>
+                <div className="rounded-lg border bg-muted/25 p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-background">
+                      <HugeiconsIcon icon={ShieldUserIcon} className="size-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium">Password security</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Supabase Auth protects this account. Recovery sends a
+                        verified, single-use link to your login email.
+                      </p>
+                      <Button
+                        asChild
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                      >
+                        <Link href={`/${locale}/forgot-password`}>
+                          Send password recovery
+                        </Link>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-between">
+                  <Button variant="outline" onClick={logout}>
+                    <HugeiconsIcon
+                      icon={Logout01Icon}
+                      data-icon="inline-start"
+                    />
+                    {t.logout}
+                  </Button>
+                  <Button asChild>
+                    <Link href={`/${locale}/${workspaceRoute}`}>
+                      {t.openRolePage.replace("{role}", roleLabel)}
+                    </Link>
+                  </Button>
+                </div>
+              </section>
+            ) : null}
           </div>
-          {session.adminId ? (
-            <InfoTile label="Tenant ID" value={session.adminId} />
-          ) : null}
         </div>
-        <DialogFooter className="gap-2 sm:justify-between">
-          <Button variant="outline" onClick={logout}>
-            {t.logout}
-          </Button>
-          <Button asChild>
-            <Link href={`/${locale}/${workspaceRoute}`}>
-              {t.openRolePage.replace("{role}", roleLabel)}
-            </Link>
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   )
@@ -4283,7 +4543,9 @@ function CompanyTable({
                   <AvatarFallback>{getInitials(company.nameEn)}</AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">{company.nameEn}</p>
+                  <p className="truncate text-sm font-medium">
+                    {company.nameEn}
+                  </p>
                   <p className="truncate text-xs text-muted-foreground">
                     {company.nameCn || company.sector}
                   </p>

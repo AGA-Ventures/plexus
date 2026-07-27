@@ -1,5 +1,6 @@
 "use server"
 
+import { revalidatePath } from "next/cache"
 import { z } from "zod"
 
 import {
@@ -7,13 +8,17 @@ import {
   getRoleBindingError,
   getRolePortalPath,
 } from "@/lib/auth"
-import { validateAuthenticatedUser } from "@/lib/authorization"
+import {
+  getAuthenticatedIdentity,
+  validateAuthenticatedUser,
+} from "@/lib/authorization"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
 import {
   getLoginPath,
   getPasswordRecoveryRedirectUrl,
   resolvePasswordRecoveryOrigin,
 } from "@/lib/password-recovery"
+import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
 export type LoginActionState = {
@@ -29,6 +34,12 @@ export type PasswordRecoveryActionState = {
 export type UpdatePasswordActionState = {
   error?: string
   redirectTo?: string
+}
+
+export type UpdateOwnProfileActionResult = {
+  ok: boolean
+  displayName?: string
+  error?: string
 }
 
 function formatLoginError(message: string) {
@@ -81,6 +92,11 @@ const updatePasswordSchema = z
     message: "Passwords do not match.",
     path: ["confirmPassword"],
   })
+
+const updateOwnProfileSchema = z.object({
+  displayName: z.string().trim().min(2).max(120),
+  locale: z.enum(["en", "zh", "zh-Hant", "th"]),
+})
 
 export async function loginAction(
   _state: LoginActionState,
@@ -252,6 +268,58 @@ export async function updatePasswordAction(
       parsed.data.tenantSlug,
       true
     ),
+  }
+}
+
+export async function updateOwnProfileAction(
+  input: unknown
+): Promise<UpdateOwnProfileActionResult> {
+  const parsed = updateOwnProfileSchema.safeParse(input)
+
+  if (!parsed.success) {
+    return {
+      ok: false,
+      error:
+        parsed.error.issues[0]?.message ??
+        "Enter a name between 2 and 120 characters.",
+    }
+  }
+
+  const authorization = await getAuthenticatedIdentity()
+
+  if (!authorization.ok) {
+    return { ok: false, error: authorization.error }
+  }
+
+  try {
+    // The service client is intentionally server-only. The authenticated user
+    // ID is resolved from the verified session and only display_name is
+    // accepted, so role, tenant, status, and email bindings cannot be changed.
+    const adminClient = createSupabaseAdminClient()
+    const result = await adminClient
+      .from("user_profiles")
+      .update({ display_name: parsed.data.displayName })
+      .eq("id", authorization.identity.userId)
+      .select("display_name")
+      .single()
+
+    if (result.error) {
+      return { ok: false, error: result.error.message }
+    }
+
+    revalidatePath(
+      getRolePortalPath(parsed.data.locale, authorization.identity.role)
+    )
+
+    return {
+      ok: true,
+      displayName: result.data.display_name,
+    }
+  } catch {
+    return {
+      ok: false,
+      error: "Your profile could not be updated. Try again.",
+    }
   }
 }
 

@@ -270,6 +270,22 @@ oauth_tokens (
   updated_at timestamptz NOT NULL default now()
 )
 
+meeting_creation_jobs (
+  id uuid PK default gen_random_uuid(),
+  match_id uuid UNIQUE NOT NULL,
+  admin_id uuid NOT NULL,
+  provider text NOT NULL,
+  status text NOT NULL,
+  attempt_count integer NOT NULL default 1,
+  failure_code text NULL,
+  failure_summary text NULL,
+  last_attempt_at timestamptz NOT NULL default now(),
+  resolved_at timestamptz NULL,
+  created_at timestamptz NOT NULL default now(),
+  updated_at timestamptz NOT NULL default now(),
+  FK (match_id, admin_id) -> matches(id, admin_id)
+)
+
 deals (
   id uuid PK default gen_random_uuid(),
   match_id uuid NOT NULL FK -> matches.id,
@@ -299,6 +315,9 @@ Important checks:
 - `oauth_tokens` and `meeting_provider_links` have RLS enabled, no
   anon/authenticated policies, and revoked browser-role grants. Only the
   server-only Supabase administration client can access them.
+- `meeting_creation_jobs` is service-written and unique per match. Authenticated
+  access is select-only and RLS permits only an active Superadmin, exposing
+  sanitized status/failure fields rather than provider payloads.
 - Deal status: `Under Discussion`, `Agreement Reached`, `Signed`, or `Failed`.
 - Signatory check: `Verified`, `Pending`, or `Flagged`.
 

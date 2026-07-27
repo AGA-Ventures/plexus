@@ -76,6 +76,20 @@ export type PlatformSetting = {
   updated_at: string
 }
 
+export type MeetingCreationIncident = {
+  id: string
+  match_id: string
+  admin_id: string
+  provider: "zoom" | "lark"
+  status: "failed"
+  attempt_count: number
+  failure_code: string
+  failure_summary: string
+  last_attempt_at: string
+  created_at: string
+  updated_at: string
+}
+
 function rowsOrThrow<T>(
   data: T[] | null,
   error: { message: string } | null,
@@ -109,6 +123,7 @@ export async function getSuperadminManagementData(locale: Locale) {
     meetingsResult,
     dealsResult,
     settingsResult,
+    meetingIncidentsResult,
   ] = await Promise.all([
     supabase
       .from("admin_tenants")
@@ -137,6 +152,14 @@ export async function getSuperadminManagementData(locale: Locale) {
       .select("*")
       .order("category", { ascending: true })
       .order("setting_key", { ascending: true }),
+    supabase
+      .from("meeting_creation_jobs")
+      .select(
+        "id, match_id, admin_id, provider, status, attempt_count, failure_code, failure_summary, last_attempt_at, created_at, updated_at"
+      )
+      .eq("status", "failed")
+      .order("updated_at", { ascending: false })
+      .limit(100),
   ])
 
   return {
@@ -166,6 +189,11 @@ export async function getSuperadminManagementData(locale: Locale) {
       settingsResult.data,
       settingsResult.error,
       "Load platform settings"
+    ),
+    meetingCreationIncidents: rowsOrThrow<MeetingCreationIncident>(
+      meetingIncidentsResult.data,
+      meetingIncidentsResult.error,
+      "Load critical meeting incidents"
     ),
     operations: {
       matches: rowsOrThrow<TenantOperationalCount>(

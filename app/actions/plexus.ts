@@ -5,6 +5,7 @@ import { z } from "zod"
 import type { AppRole } from "@/lib/auth"
 import { validateAuthenticatedUser } from "@/lib/authorization"
 import { matchNoteFromScore, scoreMatch } from "@/lib/matching"
+import { ensureAutomaticMeetingAfterAcceptance } from "@/lib/meeting-automation"
 import {
   createMeeting,
   meetingProviders,
@@ -592,7 +593,7 @@ export async function updateMatchStatusAction(
           ? "delegation_accepted_at"
           : "partner_accepted_at"
 
-      return await supabase
+      const decisionResult = await supabase
         .from("matches")
         .update({
           [acceptedAtField]:
@@ -602,6 +603,42 @@ export async function updateMatchStatusAction(
             : {}),
         })
         .eq("id", matchId)
+        .select(
+          "id, admin_id, status, delegation_accepted_at, partner_accepted_at"
+        )
+        .maybeSingle()
+
+      if (decisionResult.error) {
+        return decisionResult
+      }
+
+      const match = decisionResult.data
+
+      if (!match) {
+        return {
+          error: {
+            message: "The selected match is not available to this Vendor.",
+          },
+        }
+      }
+
+      if (
+        parsed.data === "Accepted" &&
+        match.status === "Accepted" &&
+        match.delegation_accepted_at &&
+        match.partner_accepted_at
+      ) {
+        await ensureAutomaticMeetingAfterAcceptance({
+          matchId: match.id,
+          adminId: match.admin_id,
+          actor: {
+            userId: identity.userId,
+            role: identity.role,
+          },
+        })
+      }
+
+      return decisionResult
     }
 
     if (["Accepted", "Session Scheduled"].includes(parsed.data)) {

@@ -13,6 +13,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import {
   AddIcon,
   AnalyticsUpIcon,
+  Alert02Icon,
   Audit01Icon,
   Building01Icon,
   Logout03Icon,
@@ -28,6 +29,7 @@ import { logoutAction } from "@/app/actions/auth"
 import {
   createAdminAccountAction,
   createVendorAccountAction,
+  retryMeetingCreationAction,
   sendAdminPasswordResetAction,
   setAccountActiveAction,
   setTenantStatusAction,
@@ -45,12 +47,18 @@ import type {
   AuditEvent,
   ManagedAccount,
   ManagedVendor,
+  MeetingCreationIncident,
   PlatformSetting,
   TenantOperationalCount,
   TenantStatus,
   VendorStatus,
 } from "@/lib/management-data"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import {
+  Alert,
+  AlertAction,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -101,6 +109,7 @@ type Props = {
   vendors: ManagedVendor[]
   accounts: ManagedAccount[]
   auditEvents: AuditEvent[]
+  meetingCreationIncidents: MeetingCreationIncident[]
   operations: {
     matches: TenantOperationalCount[]
     meetings: TenantOperationalCount[]
@@ -117,6 +126,7 @@ const superadminNavItems = [
   { value: "vendors", label: "Vendors", icon: UserGroupIcon },
   { value: "accounts", label: "Accounts", icon: ShieldUserIcon },
   { value: "reporting", label: "Reporting", icon: AnalyticsUpIcon },
+  { value: "incidents", label: "Critical incidents", icon: Alert02Icon },
   { value: "settings", label: "Platform settings", icon: Settings01Icon },
   { value: "audit", label: "Audit events", icon: Audit01Icon },
 ]
@@ -747,6 +757,7 @@ export function SuperadminConsole(props: Props) {
     vendors,
     accounts,
     auditEvents,
+    meetingCreationIncidents,
     operations,
     platformSettings,
   } = props
@@ -857,6 +868,17 @@ export function SuperadminConsole(props: Props) {
     )
   }
 
+  function retryMeetingCreation(incident: MeetingCreationIncident) {
+    runAction(
+      () =>
+        retryMeetingCreationAction({
+          locale,
+          jobId: incident.id,
+        }),
+      "Meeting created and the critical incident was resolved."
+    )
+  }
+
   return (
     <main className="min-h-svh bg-muted/20">
       <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
@@ -903,6 +925,30 @@ export function SuperadminConsole(props: Props) {
               account creation, recovery links, suspension, restoration, and
               Vendor transfers. Directory and reporting access remain available.
             </AlertDescription>
+          </Alert>
+        ) : null}
+
+        {meetingCreationIncidents.length ? (
+          <Alert variant="destructive" className="py-3">
+            <HugeiconsIcon icon={Alert02Icon} />
+            <AlertTitle>
+              Critical: {meetingCreationIncidents.length} meeting creation{" "}
+              {meetingCreationIncidents.length === 1 ? "failure" : "failures"}
+            </AlertTitle>
+            <AlertDescription>
+              Vendor agreement was preserved, but Plexus could not create the
+              provider meeting. Review the sanitized incident and retry after
+              correcting provider availability or authorization.
+            </AlertDescription>
+            <AlertAction>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => setActiveTab("incidents")}
+              >
+                Review
+              </Button>
+            </AlertAction>
           </Alert>
         ) : null}
 
@@ -1494,6 +1540,73 @@ export function SuperadminConsole(props: Props) {
                     </Card>
                   )
                 })}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent
+            value="incidents"
+            className="min-w-0 lg:col-start-2 lg:row-start-1"
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle>Critical meeting incidents</CardTitle>
+                <CardDescription>
+                  Automatic meeting creation failures requiring Superadmin
+                  attention. Provider credentials, tokens, and raw responses are
+                  never shown here.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-3">
+                {meetingCreationIncidents.length ? (
+                  meetingCreationIncidents.map((incident) => (
+                    <div
+                      key={incident.id}
+                      className="grid gap-3 rounded-md border border-destructive/35 bg-destructive/5 p-4"
+                    >
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant="destructive">Critical</Badge>
+                            <Badge variant="outline">
+                              {incident.provider.toUpperCase()}
+                            </Badge>
+                            <span className="text-sm font-medium">
+                              {tenantNames.get(incident.admin_id) ??
+                                "Unknown tenant"}
+                            </span>
+                          </div>
+                          <p className="mt-2 text-sm">
+                            {incident.failure_summary}
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {labelStatus(incident.failure_code)} · Attempt{" "}
+                            {incident.attempt_count} ·{" "}
+                            {formatDate(incident.last_attempt_at)}
+                          </p>
+                        </div>
+                        <Button
+                          variant="destructive"
+                          disabled={pending || incident.attempt_count >= 20}
+                          onClick={() => retryMeetingCreation(incident)}
+                        >
+                          Retry meeting creation
+                        </Button>
+                      </div>
+                      <p className="text-xs break-all text-muted-foreground">
+                        Match: {incident.match_id}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="rounded-md border border-dashed p-6 text-center">
+                    <p className="font-medium">No critical meeting incidents</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Automatic provider creation is operating without
+                      unresolved failures.
+                    </p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

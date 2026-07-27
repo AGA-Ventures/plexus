@@ -153,7 +153,7 @@ flowchart LR
 | Delegation and Partner records                           | Platform directory/reporting                        | Create, view, update, and delete within own tenant                         | Update own registration profile                                    |
 | Match discovery                                          | No dedicated Superadmin UI                          | Manages own-tenant matching board                                          | Opposite-subtype directory; limited fields only                    |
 | Match status and scoring                                 | No dedicated Superadmin UI                          | Propose, score, and operate own-tenant matches                             | Request and record only its own acceptance/change decision         |
-| Meetings                                                 | Cross-tenant reporting                              | Create protected Zoom/Lark links after both accept; operate own sessions   | After mutual acceptance, request times and join through Plexus     |
+| Meetings                                                 | Cross-tenant critical incidents and controlled retry | Monitor automatically created sessions                                    | Second acceptance creates the default provider; join through Plexus |
 | Interpreter roster                                       | No dedicated Superadmin UI                          | Create, edit, set availability, delete, and assign                         | Request an available preferred interpreter                         |
 | MOU/deal tracking                                        | Cross-tenant reporting                              | Track status, signatory check, mark signed, preview/download available PDF | View own MOU status and preview/download available PDF             |
 | Communications                                           | No dedicated Superadmin UI                          | Create targeted announcements and in-app notifications                     | View applicable operational notifications                          |
@@ -264,6 +264,17 @@ the password.
   when recorded.
 - Rely on append-only access for normal application roles.
 
+### Critical meeting incidents
+
+**Status: Live**
+
+- Receive a prominent critical alert when automatic Zoom or Lark meeting
+  creation fails after both Vendors have accepted a match.
+- Review the affected tenant, match, provider, attempt count, and a sanitized
+  failure category without exposing credentials or provider responses.
+- Retry the failed meeting creation from the Superadmin console while
+  preserving the Vendors' accepted match.
+
 ### Compliance readiness
 
 **Status: Adapter**
@@ -337,8 +348,9 @@ workflows. Use the Vendor provisioning control when the company needs a login.
 - View predicted fit percentages.
 - Assign a Partner to create a proposed match.
 - Track `Proposed`, `Accepted`, `Rejected`, and `Session Scheduled` states.
-- Wait for each participating Vendor to record its own acceptance before
-  scheduling a meeting; Admins cannot accept on a Vendor's behalf.
+- Wait for each participating Vendor to record its own acceptance; the second
+  acceptance automatically creates the configured provider meeting. Admins
+  cannot accept on a Vendor's behalf.
 - Prevent duplicate Vendor-requested matches.
 
 The score is an operational matching aid, not an autonomous approval or due
@@ -352,17 +364,19 @@ diligence decision.
 - Review company pair, date/time, duration, platform, host, interpreter,
   meeting status, agreement status, and summary.
 - Export the tenant meeting calendar as an `.ics` file.
-- Create Zoom or Lark meetings only after both Vendors accept.
+- Monitor the Zoom or Lark meeting created automatically after both Vendors
+  accept.
 - Join through an opaque Plexus link; never display the provider URL.
 - Mark a meeting complete and save the current fixed completion summary.
 - Create, edit, set availability for, and delete interpreters.
 - Review Vendor interpreter preferences and assign or clear the confirmed
   interpreter.
 
-Provider creation and the secure link gate are implemented in source. The
-Vercel credential setup, migration application, one-time Lark authorization,
-and live Zoom/Lark smoke tests remain release steps. Provider rescheduling,
-cancellation, reminders, reconciliation, and audited retry remain future work.
+Provider creation, the secure link gate, durable critical incidents, and
+Superadmin retry are implemented in source. The Vercel credential setup,
+migration application, one-time Lark authorization, and live Zoom/Lark smoke
+tests remain release steps. Provider rescheduling, cancellation, reminders,
+and reconciliation remain future work.
 
 ### MOU and deal tracking
 
@@ -493,10 +507,10 @@ profile document.
 
 **Status: Live preferences / Adapter deployment pending**
 
-- Request a meeting only after both participating Vendors accept.
-- Select 3 to 6 future, one-hour weekday preferences.
-- Optionally request an available interpreter.
-- Let the Admin confirm the final time and interpreter.
+- Trigger automatic meeting creation when the second participating Vendor
+  accepts.
+- Use the platform-configured Zoom or Lark provider without waiting for an
+  Admin creation action.
 - View own scheduled meetings and stored summaries.
 - Open the expiring Plexus link without receiving the raw provider URL.
 - Download an individual `.ics` calendar invitation.

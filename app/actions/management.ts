@@ -6,6 +6,7 @@ import { z } from "zod"
 import { isActiveAdminRecoveryAccount } from "@/lib/admin-password-recovery"
 import { getAuthenticatedIdentity } from "@/lib/authorization"
 import type { Locale } from "@/lib/i18n"
+import { retryAutomaticMeetingCreation } from "@/lib/meeting-automation"
 import {
   getPasswordRecoveryRedirectUrl,
   resolvePasswordRecoveryOrigin,
@@ -99,6 +100,10 @@ const updatePlatformSettingSchema = z.object({
   locale: localeSchema,
   settingId: uuidSchema,
   value: z.string().trim().max(20_000),
+})
+const retryMeetingCreationSchema = z.object({
+  locale: localeSchema,
+  jobId: uuidSchema,
 })
 
 function actionError(error: unknown) {
@@ -949,6 +954,49 @@ export async function updatePlatformSettingAction(
     }
 
     refreshManagement(parsed.data.locale)
+    return { ok: true }
+  } catch (error) {
+    return actionError(error)
+  }
+}
+
+export async function retryMeetingCreationAction(
+  input: unknown
+): Promise<ManagementActionResult> {
+  const parsed = retryMeetingCreationSchema.safeParse(input)
+
+  if (!parsed.success) {
+    return { ok: false, error: "Choose a valid meeting creation incident." }
+  }
+
+  try {
+    const authorization = await requireOperator()
+
+    if (authorization.identity.role !== "superadmin") {
+      return {
+        ok: false,
+        error: "Only Superadmins can retry critical meeting incidents.",
+      }
+    }
+
+    const state = await retryAutomaticMeetingCreation({
+      jobId: parsed.data.jobId,
+      actor: {
+        userId: authorization.identity.userId,
+        role: authorization.identity.role,
+      },
+    })
+
+    refreshManagement(parsed.data.locale)
+
+    if (state === "failed") {
+      return {
+        ok: false,
+        error:
+          "The provider retry failed. The incident remains critical for Superadmin review.",
+      }
+    }
+
     return { ok: true }
   } catch (error) {
     return actionError(error)

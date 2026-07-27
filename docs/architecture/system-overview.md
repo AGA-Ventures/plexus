@@ -47,7 +47,7 @@ flowchart LR
 | Identity/tenancy         | Login, Superadmin, Admin           | Auth and management actions | Auth, tenants, profiles, Vendors                 |
 | Vendor onboarding        | Vendor workspace                   | Plexus actions              | Vendor and subtype profiles                      |
 | Matching                 | Vendor discovery, Admin operations | Plexus actions              | Candidate directory, matches                     |
-| Meetings/deals           | Portals, `/api/meetings`, `/m/*`   | `lib/meetings.ts`           | Matches, meetings, protected links, tokens       |
+| Meetings/deals           | Portals, `/api/meetings`, `/m/*`   | Meeting automation and adapters | Matches, creation jobs, meetings, protected links, tokens |
 | Event operations         | Admin/Vendor portals               | Plexus actions              | Itineraries, site visits, liaison                |
 | Communications/resources | Admin APIs and portals             | Protected route handlers    | Announcements, notifications, resources, Storage |
 | Compliance               | Protected compliance routes        | Compliance adapter          | Provider responses, no secret in client          |
@@ -99,6 +99,9 @@ Every new module must document and implement:
 Use [Feature plan](../templates/feature-plan.md) to capture the contract.
 The secure provider workflow is recorded in
 [Secure meeting links](../project-management/secure-meeting-links.md).
+The second Vendor acceptance claims one service-only creation job. Provider
+failure preserves the accepted match, records a sanitized critical incident,
+and exposes a controlled retry only to Superadmin.
 
 ## Dependency direction
 

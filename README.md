@@ -59,20 +59,23 @@ locales are `en`, `zh`, `zh-Hant`, and `th`; `cn` aliases to `zh`.
 ## Secure Zoom and Lark meeting links
 
 Meeting creation is allowed only after the Delegation Vendor and Partner Vendor
-have each accepted the match. The Admin then creates a Zoom or Lark meeting,
-and Plexus shares only an expiring `NEXT_PUBLIC_APP_URL/m/<opaque-slug>` link.
-The raw provider join URL remains in a server-only, RLS-locked table.
+have each accepted the match. The second acceptance automatically creates the
+configured Zoom or Lark meeting, and Plexus shares only an expiring
+`NEXT_PUBLIC_APP_URL/m/<opaque-slug>` link. The raw provider join URL remains in
+a server-only, RLS-locked table. A provider failure preserves the agreement and
+raises a sanitized critical incident for Superadmin retry.
 
 Release setup:
 
 1. Add the Supabase, Zoom, Lark, and `NEXT_PUBLIC_APP_URL` variables from
    `.env.example` to the appropriate Vercel environments.
 2. Apply `supabase/migrations/20260727182004_secure_mutual_meeting_links.sql`
-   before deploying the dependent application code.
+   and `20260727191200_automatic_meeting_critical_incidents.sql` before
+   deploying the dependent application code.
 3. While signed in as a Superadmin, visit `/api/lark/login` once and approve
    the platform Lark host authorization.
-4. Create a link from the Admin matching screen or call
-   `POST /api/meetings` with an accepted match:
+4. Accept from each Vendor to trigger the default provider automatically, or
+   call `POST /api/meetings` with an accepted match for controlled recovery:
 
    ```json
    {

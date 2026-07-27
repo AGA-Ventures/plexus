@@ -66,6 +66,9 @@ npm run test:e2e
 | Expired wrapped meeting link          | HTTP 410; no provider redirect                 |
 | Access limit reached                  | HTTP 403; no provider redirect                 |
 | Provider response contains host URL   | Host URL is neither returned nor logged        |
+| Concurrent second acceptance          | One creation job and at most one provider flow |
+| Provider creation fails               | Agreement stays accepted; Superadmin sees sanitized critical incident |
+| Superadmin retries a failed job        | Attempt increments; success resolves incident  |
 
 ## Verified production evidence
 
@@ -131,11 +134,13 @@ Every production provider adapter must test:
 - Redaction of credentials and sensitive payloads from logs.
 
 The secure-meeting unit suite covers duration/start normalization, wrapped URL
-construction, time/access gate classification, Zoom token caching and
-`start_url` exclusion, plus Lark PKCE, state, scopes, and exact redirect URI.
-The database suite covers one-sided acceptance and server-only raw link/token
-tables. Live provider success, rate limiting, and provider-side cancellation
-remain deployment smoke/integration evidence.
+construction, time/access gate classification, automatic-provider selection,
+sanitized failure classification, Zoom token caching and `start_url`
+exclusion, plus Lark PKCE, state, scopes, and exact redirect URI. The database
+suite covers one-sided acceptance, one creation job per match, Superadmin-only
+incident reads, and server-only raw link/token writes. Live provider success,
+rate limiting, and provider-side cancellation remain deployment
+smoke/integration evidence.
 
 ## Known gaps
 

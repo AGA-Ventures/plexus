@@ -8,6 +8,10 @@ reviewed together.
 
 ### 2026-07-28
 
+- Automated provider meeting creation when the second Vendor accepts, added a
+  unique service-only creation job to prevent duplicate provider calls, and
+  surfaced sanitized creation failures as critical Superadmin incidents with
+  audited, capped retry while preserving the Vendors' agreement.
 - Required separate Delegation and Partner acceptance before a match can
   advance, enforced each Vendor's own decision at the database boundary, and
   removed Admin acceptance on behalf of Vendors.

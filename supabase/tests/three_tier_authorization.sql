@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(24);
+select plan(28);
 
 insert into auth.users (
   id, instance_id, aud, role, email, encrypted_password,
@@ -311,6 +311,35 @@ select throws_ok(
   'Authenticated users cannot read raw provider URLs'
 );
 
+reset role;
+insert into public.meeting_creation_jobs (
+  id, match_id, admin_id, provider, status, attempt_count,
+  failure_code, failure_summary
+) values (
+  '85000000-0000-4000-8000-000000000001',
+  '84000000-0000-4000-8000-000000000001',
+  '82000000-0000-4000-8000-000000000001',
+  'zoom', 'failed', 1, 'provider_error',
+  'The meeting provider rejected or returned an invalid meeting.'
+);
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000006","role":"authenticated","app_metadata":{"role":"vendor","admin_id":"82000000-0000-4000-8000-000000000001","vendor_company_id":"83000000-0000-4000-8000-000000000004","vendor_type":"partner"}}';
+select results_eq(
+  $$select count(*) from public.meeting_creation_jobs$$,
+  array[0::bigint],
+  'Vendors cannot read critical meeting incidents'
+);
+
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000002","role":"authenticated","app_metadata":{"role":"admin","admin_id":"82000000-0000-4000-8000-000000000001"}}';
+select results_eq(
+  $$select count(*) from public.meeting_creation_jobs$$,
+  array[0::bigint],
+  'Admins cannot read critical meeting incidents'
+);
+
 set local request.jwt.claims =
   '{"sub":"81000000-0000-4000-8000-000000000002","role":"authenticated","app_metadata":{"role":"admin"}}';
 select results_eq(
@@ -338,6 +367,24 @@ select results_eq(
   )$$,
   array[2::bigint],
   'Superadmin sees every Vendor'
+);
+select results_eq(
+  $$select count(*) from public.meeting_creation_jobs
+    where id = '85000000-0000-4000-8000-000000000001'$$,
+  array[1::bigint],
+  'Superadmin sees sanitized critical meeting incidents'
+);
+select throws_ok(
+  $$insert into public.meeting_creation_jobs (
+    match_id, admin_id, provider
+  ) values (
+    '84000000-0000-4000-8000-000000000001',
+    '82000000-0000-4000-8000-000000000001',
+    'zoom'
+  )$$,
+  '42501',
+  'permission denied for table meeting_creation_jobs',
+  'Superadmin cannot forge service-controlled meeting incidents'
 );
 
 delete from public.matches

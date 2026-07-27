@@ -20,14 +20,15 @@ explains ownership and scope; it never contains real secrets.
 
 ## Meeting provider variables
 
-| Variable             | Browser-visible | Purpose                            |
-| -------------------- | --------------- | ---------------------------------- |
-| `ZOOM_ACCOUNT_ID`    | No              | Zoom Server-to-Server OAuth account |
-| `ZOOM_CLIENT_ID`     | No              | Zoom Server-to-Server OAuth client  |
-| `ZOOM_CLIENT_SECRET` | No              | Zoom Server-to-Server OAuth secret  |
-| `LARK_APP_ID`        | No              | Lark Custom App OAuth client        |
-| `LARK_APP_SECRET`    | No              | Lark Custom App OAuth secret        |
-| `LARK_REDIRECT_URI`  | No              | Exact registered Lark callback URI  |
+| Variable                          | Browser-visible | Purpose                                             |
+| --------------------------------- | --------------- | --------------------------------------------------- |
+| `ZOOM_ACCOUNT_ID`                 | No              | Zoom Server-to-Server OAuth account                 |
+| `ZOOM_CLIENT_ID`                  | No              | Zoom Server-to-Server OAuth client                  |
+| `ZOOM_CLIENT_SECRET`              | No              | Zoom Server-to-Server OAuth secret                  |
+| `PLEXUS_DEFAULT_MEETING_PROVIDER` | No              | Automatic provider; `zoom` or `lark`, defaults Zoom |
+| `LARK_APP_ID`                     | No              | Lark Custom App OAuth client                        |
+| `LARK_APP_SECRET`                 | No              | Lark Custom App OAuth secret                        |
+| `LARK_REDIRECT_URI`               | No              | Exact registered Lark callback URI                  |
 
 Production uses
 `https://www.plexus.enterprises/api/lark/callback` as the registered Lark

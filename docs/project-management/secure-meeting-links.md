@@ -34,7 +34,7 @@ hosts.
 | Routes/APIs               | `POST /api/meetings`, `/api/lark/login`, `/api/lark/callback`, `/m/[slug]` |
 | Roles and authorization   | Each Vendor accepts for itself; service automation creates after the second acceptance; Superadmin authorizes Lark and retries failures; opaque gate is public |
 | Tenant/company scope      | Match, Admin, Delegation, and Partner must share the canonical tenant |
-| Tables/migrations         | Acceptance columns, `oauth_tokens`, `meeting_provider_links`, `meeting_creation_jobs`; migrations `20260727182004` and `20260727191200` |
+| Tables/migrations         | Acceptance columns, `oauth_tokens`, `meeting_provider_links`, `meeting_creation_jobs`; migrations `20260727182004` and `20260727193452` |
 | Server/domain interface   | `createMeeting`, automatic creation coordinator, Zoom adapter, Lark adapter, authenticated Server Actions |
 | Domain events             | A unique creation job claims the match; success/failure writes a sanitized audit event |
 | External providers        | Zoom S2S OAuth; Lark user OAuth v2 with PKCE and rotated refresh token |

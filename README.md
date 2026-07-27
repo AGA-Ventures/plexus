@@ -70,7 +70,7 @@ Release setup:
 1. Add the Supabase, Zoom, Lark, and `NEXT_PUBLIC_APP_URL` variables from
    `.env.example` to the appropriate Vercel environments.
 2. Apply `supabase/migrations/20260727182004_secure_mutual_meeting_links.sql`
-   and `20260727191200_automatic_meeting_critical_incidents.sql` before
+   and `20260727193452_automatic_meeting_critical_incidents.sql` before
    deploying the dependent application code.
 3. While signed in as a Superadmin, visit `/api/lark/login` once and approve
    the platform Lark host authorization.

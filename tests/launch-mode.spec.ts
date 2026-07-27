@@ -241,7 +241,18 @@ test.describe("Admin tenant flow", () => {
     await expect(
       page.getByRole("heading", { name: "Admin operations dashboard" })
     ).toBeVisible()
-    await expect(page.getByText("Tenant-scoped Admin view")).toBeVisible()
+    await expect(page.getByText("Tenant-scoped Admin view")).toHaveCount(0)
+    await expect(page.getByText("Operational alerts")).toHaveCount(0)
+    await expect(
+      page.getByRole("link", { name: "Vendor accounts" })
+    ).toBeVisible()
+    await expect(page.getByRole("link", { name: "Compliance" })).toBeVisible()
+    await expect(
+      page.getByRole("button", { name: "Provision Vendor account" })
+    ).toHaveCount(0)
+    await expect(
+      page.getByRole("button", { name: "Tenant settings" })
+    ).toHaveCount(0)
     await expectNoHorizontalOverflow(page)
     await openMobilePortalMenu(page)
   })
@@ -265,14 +276,38 @@ test.describe("Admin tenant flow", () => {
     await dialog.getByRole("button", { name: /White label/ }).click()
     await expect(dialog.getByLabel("Workspace name")).toBeVisible()
     await expect(dialog.getByLabel("Support email")).toBeVisible()
+    const accountBrandAvatar = dialog.getByTestId("account-brand-avatar")
+    const configuredLogoUrl = await dialog
+      .getByLabel("Login logo URL")
+      .inputValue()
+
+    if (configuredLogoUrl) {
+      await expect(
+        accountBrandAvatar.getByRole("img", { name: /workspace logo$/ })
+      ).toHaveAttribute("src", configuredLogoUrl)
+    } else {
+      await expect(
+        accountBrandAvatar.locator('[data-slot="avatar-fallback"]')
+      ).not.toBeEmpty()
+    }
     await expect(
       dialog.getByRole("link", { name: "Preview login page" })
     ).toBeVisible()
 
     await dialog.getByRole("button", { name: /Access Security/ }).click()
+    const languageRoutes = dialog.getByRole("radiogroup", { name: "Language" })
+    await expect(languageRoutes.locator("a")).toHaveCount(4)
+    await expect(languageRoutes.locator('a[href="/en/admin"]')).toBeVisible()
+    await expect(languageRoutes.locator('a[href="/zh/admin"]')).toBeVisible()
+    await expect(
+      languageRoutes.locator('a[href="/zh-Hant/admin"]')
+    ).toBeVisible()
+    await expect(languageRoutes.locator('a[href="/th/admin"]')).toBeVisible()
+    await expect(languageRoutes.locator('a[href="/ja/admin"]')).toHaveCount(0)
     await expect(
       dialog.getByRole("link", { name: "Send password recovery" })
     ).toBeVisible()
+    await expect(dialog.getByText(/Supabase Auth/i)).toHaveCount(0)
     await expect(dialog.getByRole("button", { name: "Logout" })).toBeVisible()
     await expectNoHorizontalOverflow(page)
   })
@@ -289,15 +324,55 @@ test.describe("Admin tenant flow", () => {
 
   test("Admin can open its Vendor provisioning workflow", async ({ page }) => {
     await login(page, adminEmail!, adminPassword!, /\/en\/admin/)
-    await page.getByRole("link", { name: "Manage Vendor accounts" }).click()
+    await page.getByRole("link", { name: "Vendor accounts" }).click()
     await expect(page).toHaveURL(/\/en\/admin\/vendors/)
     await expect(
       page.getByRole("heading", { name: /Vendor management$/ })
     ).toBeVisible()
     await page.getByRole("button", { name: "Provision Vendor account" }).click()
+    const dialog = page.getByRole("dialog", {
+      name: "Create a Vendor in your tenant",
+    })
+    await expect(dialog).toBeVisible()
+    const vendorTypePicker = dialog.getByRole("combobox", {
+      name: "Vendor subtype",
+    })
+    await expect(vendorTypePicker).toContainText("Delegation")
+    await vendorTypePicker.click()
+    await page.getByRole("option", { name: /Partner/ }).click()
+    await expect(vendorTypePicker).toContainText("Partner")
+    await expectNoHorizontalOverflow(page)
+  })
+
+  test("Admin can review meeting operations and provider readiness", async ({
+    page,
+  }) => {
+    await login(page, adminEmail!, adminPassword!, /\/en\/admin/)
+    await page.getByRole("button", { name: "Meetings" }).click()
+    await page.getByRole("tab", { name: "Meeting dashboard" }).click()
+
     await expect(
-      page.getByRole("dialog", { name: "Create a Vendor in your tenant" })
+      page.getByText("Meeting operations", { exact: true })
     ).toBeVisible()
+    await expect(
+      page.getByText("Total meetings", { exact: true })
+    ).toBeVisible()
+    await expect(
+      page.getByRole("heading", { name: "All meetings" })
+    ).toBeVisible()
+    await expect(page.getByText("Zoom", { exact: true }).first()).toBeVisible()
+    await expect(page.getByText("Lark", { exact: true }).first()).toBeVisible()
+
+    await page.getByRole("button", { name: "Meeting settings" }).click()
+    await expect(
+      page.getByText("Meeting settings", { exact: true }).last()
+    ).toBeVisible()
+    await expect(page.getByText("Protected meeting links")).toBeVisible()
+    await expect(page.getByText("Configuration access")).toBeVisible()
+    await expect(page.getByText("Platform managed")).toBeVisible()
+    await expect(
+      page.getByText(/ZOOM_CLIENT_SECRET|LARK_APP_SECRET/)
+    ).toHaveCount(0)
     await expectNoHorizontalOverflow(page)
   })
 })

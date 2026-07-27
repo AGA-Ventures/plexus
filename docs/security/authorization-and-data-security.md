@@ -50,6 +50,9 @@ No single UI or middleware check is treated as sufficient.
 - Updates use both `USING` and `WITH CHECK`.
 - Vendor access to matches, meetings, and deals requires participation by the
   Vendor's own company.
+- Meeting-provider readiness is computed server-side and exposes only
+  configuration/authorization states to the Admin UI. Zoom/Lark credentials,
+  OAuth tokens, and raw provider meeting links remain server-only.
 - Audit events are append-only to normal application roles.
 - Direct changes to role, tenant, company, or subtype bindings are protected by
   constraints and triggers.

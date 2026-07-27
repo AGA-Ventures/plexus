@@ -53,7 +53,12 @@ import {
   updateMatchStatusAction,
 } from "@/app/actions/plexus"
 import { downloadCsv, downloadIcs } from "@/lib/export"
-import { isChineseLocale, localeLabels, locales, type Locale } from "@/lib/i18n"
+import {
+  isChineseLocale,
+  localeLabels,
+  protectedPortalLocales,
+  type Locale,
+} from "@/lib/i18n"
 import { supportedMarketNames } from "@/lib/markets"
 import {
   type Announcement,
@@ -73,15 +78,16 @@ import {
   type ResourceAudience,
   type ResourceCategory,
 } from "@/lib/local-db"
+import {
+  type MeetingProviderReadiness,
+  type MeetingProviderState,
+  unavailableMeetingProviderReadiness,
+} from "@/lib/meeting-provider-readiness"
 import { scoreMatch } from "@/lib/matching"
 import type { PortalSession } from "@/lib/plexus-data"
 import { cn } from "@/lib/utils"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AdminVendorProvision } from "@/components/admin-vendor-provision"
-import {
-  TenantProfileDialog,
-  TenantProfileForm,
-} from "@/components/tenant-profile-dialog"
+import { TenantProfileForm } from "@/components/tenant-profile-dialog"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -93,7 +99,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -165,6 +171,11 @@ type NavItem = {
     label: string
     icon: typeof AnalyticsUpIcon
   }>
+}
+type ExternalNavItem = {
+  href: string
+  label: string
+  icon: typeof AnalyticsUpIcon
 }
 type LocalizedLabels = Partial<Record<Locale, string>> & { en: string }
 type PortalCopy = Record<PortalRole, Record<string, string>>
@@ -318,6 +329,8 @@ const uiCopy: Partial<Record<Locale, UiCopy>> & { en: UiCopy } = {
     reports: "Reports",
     communications: "Communications",
     resources: "Documents & Resources",
+    vendorAccounts: "Vendor accounts",
+    compliance: "Compliance",
     companyProfile: "Company Profile",
     partnerProfile: "Partner Profile",
     myMatches: "My Matches",
@@ -376,6 +389,8 @@ const uiCopy: Partial<Record<Locale, UiCopy>> & { en: UiCopy } = {
     reports: "报告",
     communications: "通讯",
     resources: "文件与资源",
+    vendorAccounts: "供应商账号",
+    compliance: "合规",
     companyProfile: "企业资料",
     partnerProfile: "伙伴资料",
     myMatches: "我的配对",
@@ -394,7 +409,7 @@ const uiCopy: Partial<Record<Locale, UiCopy>> & { en: UiCopy } = {
     persistedNotice: "数据已存入 Supabase，并为上线模式启用 Auth 与 RLS。",
     account: "账号",
     userProfile: "用户资料",
-    userProfileDescription: "Supabase Auth 账号、门户访问与会话控制。",
+    userProfileDescription: "账号、门户访问与会话控制。",
     launchRole: "上线角色",
     locale: "语言",
     userId: "用户 ID",
@@ -419,6 +434,8 @@ const uiCopy: Partial<Record<Locale, UiCopy>> & { en: UiCopy } = {
     reports: "報告",
     communications: "通訊",
     resources: "文件與資源",
+    vendorAccounts: "供應商帳號",
+    compliance: "合規",
     companyProfile: "企業資料",
     partnerProfile: "夥伴資料",
     myMatches: "我的配對",
@@ -437,7 +454,7 @@ const uiCopy: Partial<Record<Locale, UiCopy>> & { en: UiCopy } = {
     persistedNotice: "資料已存入 Supabase，並為上線模式啟用 Auth 與 RLS。",
     account: "帳號",
     userProfile: "使用者資料",
-    userProfileDescription: "Supabase Auth 帳號、門戶存取與工作階段控制。",
+    userProfileDescription: "帳號、門戶存取與工作階段控制。",
     launchRole: "上線角色",
     locale: "語言",
     userId: "使用者 ID",
@@ -462,6 +479,8 @@ const uiCopy: Partial<Record<Locale, UiCopy>> & { en: UiCopy } = {
     reports: "รายงาน",
     communications: "สื่อสาร",
     resources: "เอกสารและทรัพยากร",
+    vendorAccounts: "บัญชีผู้ขาย",
+    compliance: "การปฏิบัติตามข้อกำหนด",
     companyProfile: "โปรไฟล์บริษัท",
     partnerProfile: "โปรไฟล์พันธมิตร",
     myMatches: "คู่ของฉัน",
@@ -481,8 +500,7 @@ const uiCopy: Partial<Record<Locale, UiCopy>> & { en: UiCopy } = {
       "ข้อมูลถูกบันทึกใน Supabase พร้อม Auth และ RLS สำหรับโหมดเปิดตัว",
     account: "บัญชี",
     userProfile: "โปรไฟล์ผู้ใช้",
-    userProfileDescription:
-      "บัญชี Supabase Auth การเข้าถึงพอร์ทัล และการควบคุมเซสชัน",
+    userProfileDescription: "บัญชี การเข้าถึงพอร์ทัล และการควบคุมเซสชัน",
     launchRole: "บทบาทเปิดตัว",
     locale: "ภาษา",
     userId: "User ID",
@@ -693,6 +711,45 @@ function toTraditional(value: string) {
     ["管理员", "管理員"],
     ["运营", "營運"],
     ["仪表板", "儀表板"],
+    ["设置", "設定"],
+    ["就绪", "就緒"],
+    ["链接", "連結"],
+    ["范围", "範圍"],
+    ["清单", "清單"],
+    ["凭证", "憑證"],
+    ["授权", "授權"],
+    ["服务器", "伺服器"],
+    ["当前", "目前"],
+    ["时效", "時效"],
+    ["权限", "權限"],
+    ["租户", "租戶"],
+    ["超级", "超級"],
+    ["检查", "檢查"],
+    ["系统会", "系統會"],
+    ["系统", "系統"],
+    ["会收到", "會收到"],
+    ["参与者", "參與者"],
+    ["会议时", "會議時"],
+    ["与", "與"],
+    ["供应商", "供應商"],
+    ["创建", "建立"],
+    ["保护", "保護"],
+    ["在线", "線上"],
+    ["配置", "設定"],
+    ["验证", "驗證"],
+    ["总数", "總數"],
+    ["分钟", "分鐘"],
+    ["预订", "預訂"],
+    ["时长", "時長"],
+    ["进行中", "進行中"],
+    ["场", "場"],
+    ["双方", "雙方"],
+    ["自动", "自動"],
+    ["显示", "顯示"],
+    ["这里", "這裡"],
+    ["环境", "環境"],
+    ["来源", "來源"],
+    ["相关", "相關"],
     ["配对", "配對"],
     ["企业", "企業"],
     ["会议", "會議"],
@@ -1222,7 +1279,23 @@ function adminTabItems(locale: Locale) {
       ],
     },
     { value: "matching", label: t.matching, icon: UserGroupIcon },
-    { value: "meetings", label: t.meetings, icon: CameraVideoIcon },
+    {
+      value: "meeting-management",
+      label: t.meetings,
+      icon: CameraVideoIcon,
+      children: [
+        {
+          value: "meetings",
+          label: textFor(locale, "Meeting dashboard", "会议仪表板"),
+          icon: Calendar03Icon,
+        },
+        {
+          value: "meeting-settings",
+          label: textFor(locale, "Meeting settings", "会议设置"),
+          icon: SecurityCheckIcon,
+        },
+      ],
+    },
     { value: "interpreters", label: t.interpreters, icon: TranslationIcon },
     { value: "signing", label: t.signing, icon: File01Icon },
     { value: "communications", label: t.communications, icon: Alert02Icon },
@@ -1311,11 +1384,13 @@ export function PlexusConnectMvp({
   locale = "en",
   initialDb,
   session,
+  meetingProviderReadiness = unavailableMeetingProviderReadiness,
 }: {
   role: PortalRole
   locale?: Locale
   initialDb: LocalDb
   session: PortalSession
+  meetingProviderReadiness?: MeetingProviderReadiness
 }) {
   const router = useRouter()
   const [db, setDb] = useState<LocalDb>(initialDb)
@@ -1677,6 +1752,7 @@ export function PlexusConnectMvp({
             createResource={createResource}
             uploadResource={uploadResource}
             toggleResourceVisibility={toggleResourceVisibility}
+            meetingProviderReadiness={meetingProviderReadiness}
           />
         ) : role === "delegation" ? (
           <DelegationPortal
@@ -1919,6 +1995,7 @@ function AdminPortal(props: {
     resourceId: string,
     visibleToDelegation: boolean
   ) => void
+  meetingProviderReadiness: MeetingProviderReadiness
 }) {
   const {
     db,
@@ -1949,8 +2026,10 @@ function AdminPortal(props: {
     createResource,
     uploadResource,
     toggleResourceVisibility,
+    meetingProviderReadiness,
   } = props
   const [activeTab, setActiveTab] = useState("dashboard")
+  const navigationCopy = getUiCopy(locale)
   const filteredDelegationCompanies = db.delegationCompanies.filter((company) =>
     matchCompanyQuery(company, query)
   )
@@ -2024,6 +2103,18 @@ function AdminPortal(props: {
     >
       <ResponsiveTabsNav
         items={adminTabItems(locale)}
+        externalItems={[
+          {
+            href: `/${locale}/admin/vendors`,
+            label: navigationCopy.vendorAccounts,
+            icon: UserAccountIcon,
+          },
+          {
+            href: `/${locale}/compliance`,
+            label: navigationCopy.compliance,
+            icon: SecurityCheckIcon,
+          },
+        ]}
         activeValue={activeTab}
         onValueChange={setActiveTab}
         role={role}
@@ -2035,49 +2126,6 @@ function AdminPortal(props: {
       <TabsContent value="dashboard" className="min-w-0">
         <div className="flex flex-col gap-4">
           <DashboardHeader copy={copy} metrics={metrics} locale={locale} />
-          <Alert>
-            <Icon icon={ShieldUserIcon} />
-            <AlertTitle>
-              {textFor(locale, "Tenant-scoped Admin view", "租户范围管理员视图")}
-            </AlertTitle>
-            <AlertDescription>
-              {textFor(
-                locale,
-                "Every table below is restricted to Vendors and operations assigned to your Admin tenant. Other Admin tenants are blocked by row-level security.",
-                "下方每个表格仅显示分配给您管理员租户的供应商与运营数据；其他管理员租户由行级安全策略隔离。"
-              )}
-            </AlertDescription>
-          </Alert>
-          <OperationalAlert message={db.notifications[0]} locale={locale} />
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Button asChild variant="outline">
-              <Link href={`/${locale}/admin/vendors`}>
-                Manage Vendor accounts
-              </Link>
-            </Button>
-            {session.adminId ? (
-              <>
-                <AdminVendorProvision
-                  locale={locale}
-                  adminId={session.adminId}
-                />
-                <TenantProfileDialog
-                  locale={locale}
-                  tenantId={session.adminId}
-                  initialName={session.tenantName}
-                  initialSupportEmail={session.tenantSupportEmail}
-                  initialPrimaryColor={session.tenantPrimaryColor}
-                  initialLogoUrl={session.tenantLogoUrl}
-                  triggerLabel="Tenant settings"
-                />
-              </>
-            ) : null}
-            <Button asChild variant="outline">
-              <Link href={`/${locale}/compliance`}>
-                Compliance integrations
-              </Link>
-            </Button>
-          </div>
           <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
             <Card>
               <CardHeader>
@@ -2441,25 +2489,56 @@ function AdminPortal(props: {
 
       <TabsContent value="meetings" className="min-w-0">
         <Card>
-          <CardHeader>
-            <CardTitle>
-              {textFor(locale, "Online meeting scheduler", "线上会议排程")}
-            </CardTitle>
-            <CardDescription>
-              {textFor(
-                locale,
-                "Zoom and Lark links are protected by Plexus and created only after both Vendors accept. Assign or confirm interpreters per session below.",
-                "Zoom 与 Lark 链接仅在双方供应商接受后由 Plexus 安全创建。可在下方为每场会议分配或确认翻译。"
-              )}
-            </CardDescription>
+          <CardHeader className="gap-3 sm:flex sm:flex-row sm:items-start sm:justify-between">
+            <div className="grid gap-1.5">
+              <CardTitle>
+                {textFor(locale, "Meeting operations", "会议运营")}
+              </CardTitle>
+              <CardDescription>
+                {textFor(
+                  locale,
+                  "Monitor every tenant meeting, provider readiness, calendar slot and interpreter assignment.",
+                  "集中监控租户内所有会议、平台就绪状态、日历时段与翻译分配。"
+                )}
+              </CardDescription>
+            </div>
+            <Button
+              className="sm:shrink-0"
+              variant="outline"
+              onClick={() => setActiveTab("meeting-settings")}
+            >
+              <Icon icon={SecurityCheckIcon} inline="inline-start" />
+              {textFor(locale, "Meeting settings", "会议设置")}
+            </Button>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
+            <MeetingProviderStatusStrip
+              readiness={meetingProviderReadiness}
+              locale={locale}
+            />
             <MeetingCalendarView
               db={db}
               meetings={db.meetings}
               locale={locale}
             />
             <Separator />
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h3 className="text-base font-semibold">
+                  {textFor(locale, "All meetings", "全部会议")}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {textFor(
+                    locale,
+                    "The complete tenant-scoped meeting list, including completed and cancelled sessions.",
+                    "租户范围内的完整会议清单，包括已完成与已取消的会议。"
+                  )}
+                </p>
+              </div>
+              <Badge variant="outline">
+                {db.meetings.length} {textFor(locale, "total", "场")}
+              </Badge>
+            </div>
             <SessionList
               db={db}
               meetings={db.meetings}
@@ -2469,6 +2548,14 @@ function AdminPortal(props: {
             />
           </CardContent>
         </Card>
+      </TabsContent>
+
+      <TabsContent value="meeting-settings" className="min-w-0">
+        <MeetingSettings
+          readiness={meetingProviderReadiness}
+          locale={locale}
+          onBack={() => setActiveTab("meetings")}
+        />
       </TabsContent>
 
       <TabsContent value="interpreters" className="min-w-0">
@@ -2805,6 +2892,7 @@ function PortalTabs({
 
 function ResponsiveTabsNav({
   items,
+  externalItems = [],
   activeValue,
   onValueChange,
   role,
@@ -2813,6 +2901,7 @@ function ResponsiveTabsNav({
   logout,
 }: {
   items: NavItem[]
+  externalItems?: ExternalNavItem[]
   activeValue?: string
   onValueChange?: (value: string) => void
   role: PortalRole
@@ -2927,6 +3016,26 @@ function ResponsiveTabsNav({
     })
   }
 
+  function renderExternalItems(onNavigate?: () => void) {
+    return externalItems.map((item) => (
+      <Button
+        key={item.href}
+        asChild
+        variant="ghost"
+        className={cn(navTriggerClass, "text-xs font-medium")}
+      >
+        <Link href={item.href} onClick={onNavigate}>
+          <HugeiconsIcon
+            icon={item.icon}
+            strokeWidth={1.7}
+            className="size-4"
+          />
+          {item.label}
+        </Link>
+      </Button>
+    ))
+  }
+
   return (
     <>
       <aside className="hidden self-stretch lg:block">
@@ -2942,6 +3051,11 @@ function ResponsiveTabsNav({
           <TabsList className="h-auto w-full flex-col items-stretch gap-1 bg-transparent p-0">
             {renderNavItems()}
           </TabsList>
+          {externalItems.length ? (
+            <div className="mt-1 flex flex-col gap-1 border-t border-sidebar-border pt-2">
+              {renderExternalItems()}
+            </div>
+          ) : null}
           <SidebarUserAccount
             role={role}
             locale={locale}
@@ -2995,6 +3109,11 @@ function ResponsiveTabsNav({
               <TabsList className="h-auto w-full flex-col items-stretch gap-1 bg-transparent p-0">
                 {renderNavItems(() => setMobileNavOpen(false))}
               </TabsList>
+              {externalItems.length ? (
+                <div className="mt-2 flex flex-col gap-1 border-t border-sidebar-border pt-2">
+                  {renderExternalItems(() => setMobileNavOpen(false))}
+                </div>
+              ) : null}
             </div>
             <div className="border-t border-sidebar-border p-3 pt-0">
               <SidebarUserAccount
@@ -3096,6 +3215,13 @@ function SidebarUserAccount({
           className="mt-3 flex w-full items-center gap-3 rounded-md border border-sidebar-border bg-background/80 px-3 py-2.5 text-left shadow-xs transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring/45 focus-visible:outline-none lg:mt-auto"
         >
           <Avatar className="size-8">
+            {session.tenantLogoUrl ? (
+              <AvatarImage
+                src={session.tenantLogoUrl}
+                alt={`${workspaceName} workspace logo`}
+                className="bg-background object-contain p-1"
+              />
+            ) : null}
             <AvatarFallback className="text-xs">
               {getInitials(displayName)}
             </AvatarFallback>
@@ -3123,7 +3249,14 @@ function SidebarUserAccount({
         <div className="grid min-h-0 overflow-hidden sm:grid-cols-[13rem_minmax(0,1fr)]">
           <aside className="border-b bg-muted/20 p-3 sm:border-r sm:border-b-0 sm:p-4">
             <div className="mb-3 hidden items-center gap-3 rounded-lg border bg-background/80 p-3 sm:flex">
-              <Avatar className="size-9">
+              <Avatar className="size-9" data-testid="account-brand-avatar">
+                {session.tenantLogoUrl ? (
+                  <AvatarImage
+                    src={session.tenantLogoUrl}
+                    alt={`${workspaceName} workspace logo`}
+                    className="bg-background object-contain p-1"
+                  />
+                ) : null}
                 <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
               </Avatar>
               <div className="min-w-0">
@@ -3306,9 +3439,10 @@ function SidebarUserAccount({
                     value={locale}
                     variant="outline"
                     size="sm"
+                    aria-label={t.language}
                     className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4"
                   >
-                    {locales.map((item) => (
+                    {protectedPortalLocales.map((item) => (
                       <ToggleGroupItem
                         key={item}
                         value={item}
@@ -3330,8 +3464,8 @@ function SidebarUserAccount({
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-medium">Password security</p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Supabase Auth protects this account. Recovery sends a
-                        verified, single-use link to your login email.
+                        Your account is protected. Recovery sends a verified,
+                        single-use link to your login email.
                       </p>
                       <Button
                         asChild
@@ -6103,6 +6237,237 @@ function SessionList({
   )
 }
 
+function meetingProviderStateLabel(
+  state: MeetingProviderState,
+  locale: Locale
+) {
+  if (state === "online") {
+    return textFor(locale, "Online", "在线")
+  }
+  if (state === "authorization_required") {
+    return textFor(locale, "Authorization required", "需要授权")
+  }
+  return textFor(locale, "Setup required", "需要设置")
+}
+
+function MeetingProviderStatus({
+  name,
+  state,
+  detail,
+  locale,
+}: {
+  name: "Zoom" | "Lark"
+  state: MeetingProviderState
+  detail: string
+  locale: Locale
+}) {
+  const online = state === "online"
+
+  return (
+    <div className="rounded-md border bg-muted/20 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <span
+            className={cn(
+              "flex size-9 shrink-0 items-center justify-center rounded-md border",
+              online
+                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-500"
+                : "bg-background text-muted-foreground"
+            )}
+          >
+            <Icon icon={name === "Zoom" ? CameraVideoIcon : Calendar03Icon} />
+          </span>
+          <div className="min-w-0">
+            <p className="font-medium">{name}</p>
+            <p className="text-xs text-muted-foreground">
+              {textFor(locale, "Online meeting provider", "在线会议平台")}
+            </p>
+          </div>
+        </div>
+        <Badge
+          variant={online ? "default" : "outline"}
+          className={cn(
+            "shrink-0",
+            online &&
+              "border-emerald-500/30 bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/15"
+          )}
+        >
+          <span
+            className={cn(
+              "mr-1.5 size-1.5 rounded-full",
+              online ? "bg-emerald-500" : "bg-amber-500"
+            )}
+          />
+          {meetingProviderStateLabel(state, locale)}
+        </Badge>
+      </div>
+      <p className="mt-3 text-sm text-muted-foreground">{detail}</p>
+    </div>
+  )
+}
+
+function MeetingProviderStatusStrip({
+  readiness,
+  locale,
+}: {
+  readiness: MeetingProviderReadiness
+  locale: Locale
+}) {
+  return (
+    <div className="grid gap-3 lg:grid-cols-2">
+      <MeetingProviderStatus
+        name="Zoom"
+        state={readiness.zoom.state}
+        locale={locale}
+        detail={
+          readiness.zoom.state === "online"
+            ? textFor(
+                locale,
+                "Ready to create protected Zoom meetings.",
+                "已可创建受保护的 Zoom 会议。"
+              )
+            : textFor(
+                locale,
+                "Platform configuration must be completed before Zoom meetings can be created.",
+                "创建 Zoom 会议前需要先完成平台配置。"
+              )
+        }
+      />
+      <MeetingProviderStatus
+        name="Lark"
+        state={readiness.lark.state}
+        locale={locale}
+        detail={
+          readiness.lark.state === "online"
+            ? textFor(
+                locale,
+                "Configured and authorized for protected Lark meetings.",
+                "已完成配置与授权，可创建受保护的 Lark 会议。"
+              )
+            : readiness.lark.state === "authorization_required"
+              ? textFor(
+                  locale,
+                  "Platform configuration is complete; Plexus authorization is still required.",
+                  "平台配置已完成，仍需 Plexus 完成授权。"
+                )
+              : textFor(
+                  locale,
+                  "Platform configuration must be completed before Lark meetings can be created.",
+                  "创建 Lark 会议前需要先完成平台配置。"
+                )
+        }
+      />
+    </div>
+  )
+}
+
+function MeetingSettings({
+  readiness,
+  locale,
+  onBack,
+}: {
+  readiness: MeetingProviderReadiness
+  locale: Locale
+  onBack: () => void
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      <Card>
+        <CardHeader className="gap-3 sm:flex sm:flex-row sm:items-start sm:justify-between">
+          <div className="grid gap-1.5">
+            <CardTitle>
+              {textFor(locale, "Meeting settings", "会议设置")}
+            </CardTitle>
+            <CardDescription>
+              {textFor(
+                locale,
+                "Review Zoom, Lark and protected-link readiness for this environment.",
+                "查看当前环境的 Zoom、Lark 与受保护链接就绪状态。"
+              )}
+            </CardDescription>
+          </div>
+          <Button className="sm:shrink-0" variant="outline" onClick={onBack}>
+            <Icon icon={Calendar03Icon} inline="inline-start" />
+            {textFor(locale, "Back to meetings", "返回会议")}
+          </Button>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <MeetingProviderStatusStrip readiness={readiness} locale={locale} />
+
+          <div className="grid gap-3 lg:grid-cols-2">
+            <div className="rounded-md border p-4">
+              <div className="flex items-center gap-2">
+                <Icon icon={SecurityCheckIcon} />
+                <h3 className="font-medium">
+                  {textFor(
+                    locale,
+                    "Protected meeting links",
+                    "受保护的会议链接"
+                  )}
+                </h3>
+                <Badge
+                  variant={
+                    readiness.protectedLinksConfigured ? "default" : "outline"
+                  }
+                  className={cn(
+                    "ml-auto",
+                    readiness.protectedLinksConfigured &&
+                      "border-emerald-500/30 bg-emerald-500/15 text-emerald-500 hover:bg-emerald-500/15"
+                  )}
+                >
+                  {readiness.protectedLinksConfigured
+                    ? textFor(locale, "Ready", "已就绪")
+                    : textFor(locale, "Setup required", "需要设置")}
+                </Badge>
+              </div>
+              <p className="mt-3 text-sm text-muted-foreground">
+                {textFor(
+                  locale,
+                  "Participants receive an expiring Plexus link. Raw provider links and credentials stay server-side.",
+                  "参与者会收到有时效的 Plexus 链接；平台原始链接与凭证只保留在服务器端。"
+                )}
+              </p>
+            </div>
+
+            <div className="rounded-md border p-4">
+              <div className="flex items-center gap-2">
+                <Icon icon={ShieldUserIcon} />
+                <h3 className="font-medium">
+                  {textFor(locale, "Configuration access", "配置权限")}
+                </h3>
+                <Badge variant="outline" className="ml-auto">
+                  {textFor(locale, "Platform managed", "平台管理")}
+                </Badge>
+              </div>
+              <p className="mt-3 text-sm text-muted-foreground">
+                {textFor(
+                  locale,
+                  "Tenant Admins can review readiness here. Plexus Superadmin manages provider credentials and Lark authorization.",
+                  "租户管理员可在此查看就绪状态；平台凭证与 Lark 授权由 Plexus 超级管理员管理。"
+                )}
+              </p>
+            </div>
+          </div>
+
+          <Alert>
+            <Icon icon={SecurityCheckIcon} />
+            <AlertTitle>
+              {textFor(locale, "Readiness check", "就绪检查")}
+            </AlertTitle>
+            <AlertDescription>
+              {textFor(
+                locale,
+                "Online means the required server configuration, protected-link origin and—where required—provider authorization are present. The provider API is validated again when a meeting is created.",
+                "“在线”表示所需服务器配置、受保护链接来源及相关平台授权均已就绪；创建会议时系统会再次验证平台 API。"
+              )}
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
 function MeetingCalendarView({
   db,
   meetings,
@@ -6112,10 +6477,6 @@ function MeetingCalendarView({
   meetings: Meeting[]
   locale?: Locale
 }) {
-  if (!meetings.length) {
-    return null
-  }
-
   const sortedMeetings = [...meetings].sort(
     (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()
   )
@@ -6133,11 +6494,11 @@ function MeetingCalendarView({
 
     return groups
   }, [])
-  const meetingMatchIds = new Set(meetings.map((meeting) => meeting.matchId))
-  const agreementsReached = db.deals.filter(
-    (deal) =>
-      meetingMatchIds.has(deal.matchId) &&
-      ["Agreement Reached", "Signed"].includes(deal.status)
+  const activeMeetings = meetings.filter((meeting) =>
+    ["Scheduled", "Live"].includes(meeting.status)
+  ).length
+  const completedMeetings = meetings.filter(
+    (meeting) => meeting.status === "Completed"
   ).length
   const totalMinutes = meetings.reduce(
     (total, meeting) => total + meeting.duration,
@@ -6148,16 +6509,16 @@ function MeetingCalendarView({
     <div className="grid gap-4">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <InfoTile
-          label={textFor(locale, "Calendar days", "日历天数")}
-          value={meetingsByDay.length}
-        />
-        <InfoTile
-          label={textFor(locale, "Meetings tracked", "已追踪会议")}
+          label={textFor(locale, "Total meetings", "会议总数")}
           value={meetings.length}
         />
         <InfoTile
-          label={textFor(locale, "Agreement reached", "已达成协议")}
-          value={`${agreementsReached} / ${meetings.length}`}
+          label={textFor(locale, "Scheduled / live", "已排期 / 进行中")}
+          value={activeMeetings}
+        />
+        <InfoTile
+          label={textFor(locale, "Completed", "已完成")}
+          value={completedMeetings}
         />
         <InfoTile
           label={textFor(locale, "Booked time", "已预订时长")}
@@ -6165,134 +6526,150 @@ function MeetingCalendarView({
         />
       </div>
 
-      <div className="rounded-md border bg-muted/20 p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h3 className="text-base font-semibold">
-              {textFor(locale, "Calendar view", "日历视图")}
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              {textFor(
-                locale,
-                "Track each meeting slot with agreement status, host and interpreter coverage.",
-                "按会议时段追踪协议状态、主持人与翻译覆盖。"
-              )}
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => {
-              downloadIcs(
-                "plexus-meeting-calendar",
-                sortedMeetings.map((meeting) => {
-                  const match = db.matches.find(
-                    (item) => item.id === meeting.matchId
-                  )
-                  const title = match
-                    ? `${getCompanyName(db, match.delegationId)} ↔ ${getCompanyName(db, match.partnerId)}`
-                    : `Plexus session ${meeting.id}`
-
-                  return {
-                    uid: meeting.id,
-                    title,
-                    start: new Date(meeting.startsAt),
-                    durationMinutes: meeting.duration,
-                    location: `${meeting.platform} · ${meeting.link}`,
-                    description: `Interpreter: ${meeting.interpreter}. Host: ${meeting.host}. ${meeting.summary}`,
-                  }
-                }),
-                "Plexus Connect meeting calendar"
-              )
-              toast.success(
-                textFor(
+      {meetings.length ? (
+        <div className="rounded-md border bg-muted/20 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h3 className="text-base font-semibold">
+                {textFor(locale, "Calendar view", "日历视图")}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {textFor(
                   locale,
-                  "Meeting calendar (.ics) downloaded.",
-                  "会议日历（.ics）已下载。"
-                )
-              )
-            }}
-          >
-            <Icon icon={Download01Icon} inline="inline-start" />
-            {textFor(locale, "Export calendar", "导出日历")}
-          </Button>
-        </div>
-
-        <div className="mt-4 grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
-          {meetingsByDay.map((group) => (
-            <div
-              key={group.day}
-              className="rounded-md border bg-background p-3"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold">{group.day}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {textFor(
-                      locale,
-                      `${group.meetings.length} meeting${group.meetings.length === 1 ? "" : "s"}`,
-                      `${group.meetings.length} 场会议`
-                    )}
-                  </p>
-                </div>
-                <Badge variant="outline">
-                  {formatMeetingMonth(group.meetings[0].startsAt, locale)}
-                </Badge>
-              </div>
-
-              <div className="mt-3 flex flex-col gap-3">
-                {group.meetings.map((meeting) => {
-                  const match = db.matches.find(
-                    (item) => item.id === meeting.matchId
-                  )
-                  const deal = db.deals.find(
-                    (item) => item.matchId === meeting.matchId
-                  )
-
-                  return (
-                    <div
-                      key={meeting.id}
-                      className="border-l-2 border-primary/70 pl-3"
-                    >
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant={statusVariant(meeting.status)}>
-                          {meeting.status}
-                        </Badge>
-                        <Badge variant="outline">
-                          {formatMeetingTime(meeting.startsAt, locale)} ·{" "}
-                          {meeting.duration} {textFor(locale, "min", "分钟")}
-                        </Badge>
-                      </div>
-                      <p className="mt-2 text-sm font-medium">
-                        {match
-                          ? `${getCompanyName(db, match.delegationId)} ↔ ${getCompanyName(db, match.partnerId)}`
-                          : meeting.id}
-                      </p>
-                      <div className="mt-2 grid gap-1 text-xs text-muted-foreground">
-                        <p>
-                          {meeting.platform} ·{" "}
-                          {textFor(locale, "Host", "主持人")}: {meeting.host}
-                        </p>
-                        <p>
-                          {textFor(locale, "Interpreter", "翻译")}:{" "}
-                          {meeting.interpreter}
-                        </p>
-                        <p>
-                          {textFor(locale, "Agreement", "协议")}:{" "}
-                          <span className="font-medium text-foreground">
-                            {deal?.status
-                              ? statusLabel(deal.status, locale)
-                              : textFor(locale, "No deal yet", "暂无协议")}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+                  "Track each meeting slot with agreement status, host and interpreter coverage.",
+                  "按会议时段追踪协议状态、主持人与翻译覆盖。"
+                )}
+              </p>
             </div>
-          ))}
+            <Button
+              variant="outline"
+              onClick={() => {
+                downloadIcs(
+                  "plexus-meeting-calendar",
+                  sortedMeetings.map((meeting) => {
+                    const match = db.matches.find(
+                      (item) => item.id === meeting.matchId
+                    )
+                    const title = match
+                      ? `${getCompanyName(db, match.delegationId)} ↔ ${getCompanyName(db, match.partnerId)}`
+                      : `Plexus session ${meeting.id}`
+
+                    return {
+                      uid: meeting.id,
+                      title,
+                      start: new Date(meeting.startsAt),
+                      durationMinutes: meeting.duration,
+                      location: `${meeting.platform} · ${meeting.link}`,
+                      description: `Interpreter: ${meeting.interpreter}. Host: ${meeting.host}. ${meeting.summary}`,
+                    }
+                  }),
+                  "Plexus Connect meeting calendar"
+                )
+                toast.success(
+                  textFor(
+                    locale,
+                    "Meeting calendar (.ics) downloaded.",
+                    "会议日历（.ics）已下载。"
+                  )
+                )
+              }}
+            >
+              <Icon icon={Download01Icon} inline="inline-start" />
+              {textFor(locale, "Export calendar", "导出日历")}
+            </Button>
+          </div>
+
+          <div className="mt-4 grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+            {meetingsByDay.map((group) => (
+              <div
+                key={group.day}
+                className="rounded-md border bg-background p-3"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold">{group.day}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {textFor(
+                        locale,
+                        `${group.meetings.length} meeting${group.meetings.length === 1 ? "" : "s"}`,
+                        `${group.meetings.length} 场会议`
+                      )}
+                    </p>
+                  </div>
+                  <Badge variant="outline">
+                    {formatMeetingMonth(group.meetings[0].startsAt, locale)}
+                  </Badge>
+                </div>
+
+                <div className="mt-3 flex flex-col gap-3">
+                  {group.meetings.map((meeting) => {
+                    const match = db.matches.find(
+                      (item) => item.id === meeting.matchId
+                    )
+                    const deal = db.deals.find(
+                      (item) => item.matchId === meeting.matchId
+                    )
+
+                    return (
+                      <div
+                        key={meeting.id}
+                        className="border-l-2 border-primary/70 pl-3"
+                      >
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant={statusVariant(meeting.status)}>
+                            {meeting.status}
+                          </Badge>
+                          <Badge variant="outline">
+                            {formatMeetingTime(meeting.startsAt, locale)} ·{" "}
+                            {meeting.duration} {textFor(locale, "min", "分钟")}
+                          </Badge>
+                        </div>
+                        <p className="mt-2 text-sm font-medium">
+                          {match
+                            ? `${getCompanyName(db, match.delegationId)} ↔ ${getCompanyName(db, match.partnerId)}`
+                            : meeting.id}
+                        </p>
+                        <div className="mt-2 grid gap-1 text-xs text-muted-foreground">
+                          <p>
+                            {meeting.platform} ·{" "}
+                            {textFor(locale, "Host", "主持人")}: {meeting.host}
+                          </p>
+                          <p>
+                            {textFor(locale, "Interpreter", "翻译")}:{" "}
+                            {meeting.interpreter}
+                          </p>
+                          <p>
+                            {textFor(locale, "Agreement", "协议")}:{" "}
+                            <span className="font-medium text-foreground">
+                              {deal?.status
+                                ? statusLabel(deal.status, locale)
+                                : textFor(locale, "No deal yet", "暂无协议")}
+                            </span>
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="rounded-md border border-dashed bg-muted/10 p-6 text-center">
+          <Icon icon={Calendar03Icon} />
+          <h3 className="mt-3 font-medium">
+            {textFor(locale, "No meetings scheduled", "尚未安排会议")}
+          </h3>
+          <p className="mx-auto mt-1 max-w-xl text-sm text-muted-foreground">
+            {textFor(
+              locale,
+              "After both Vendors accept a match, create a Zoom or Lark meeting from Matching. It will appear here automatically.",
+              "双方供应商接受配对后，可从配对页面创建 Zoom 或 Lark 会议，并自动显示在这里。"
+            )}
+          </p>
+        </div>
+      )}
     </div>
   )
 }

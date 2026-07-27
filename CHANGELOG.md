@@ -12,6 +12,25 @@ reviewed together.
   unique service-only creation job to prevent duplicate provider calls, and
   surfaced sanitized creation failures as critical Superadmin incidents with
   audited, capped retry while preserving the Vendors' agreement.
+- Added an Admin meeting-operations dashboard with zero-state totals, the full
+  tenant-scoped meeting list, visible Zoom/Lark readiness, and a dedicated
+  Meeting settings sidebar destination that reports server configuration,
+  protected-link readiness, and Lark authorization without exposing secrets.
+- Removed the internal tenant-scope and persistence notices from the Admin
+  dashboard so operational content begins immediately below the metrics.
+- Replaced the Admin dashboard's four-button utility strip with dedicated
+  sidebar links for Vendor accounts and Compliance; kept Vendor provisioning
+  inside Vendor accounts and tenant branding inside account settings.
+- Reused each Admin tenant's white-label logo in the account control and
+  account-settings identity panel, with operator initials retained as a
+  resilient fallback.
+- Removed Supabase product naming from customer-facing account-settings copy
+  while preserving the profile, access, recovery, and session meaning.
+- Limited the protected account language selector to the four fully translated
+  portal routes: English, Simplified Chinese, Traditional Chinese, and Thai.
+- Replaced the native Vendor-subtype select with a branded, accessible picker
+  that explains Delegation and Partner roles and keeps the chosen subtype
+  visible before account creation.
 - Required separate Delegation and Partner acceptance before a match can
   advance, enforced each Vendor's own decision at the database boundary, and
   removed Admin acceptance on behalf of Vendors.

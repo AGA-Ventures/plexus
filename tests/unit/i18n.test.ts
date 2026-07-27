@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest"
 
-import { isLocaleParam, locales, normalizeLocale } from "@/lib/i18n"
+import {
+  isLocaleParam,
+  locales,
+  normalizeLocale,
+  protectedPortalLocales,
+} from "@/lib/i18n"
 import { supportedMarkets } from "@/lib/markets"
 
 describe("i18n route coverage", () => {
@@ -17,6 +22,10 @@ describe("i18n route coverage", () => {
 
   it("accepts every public locale route", () => {
     expect(locales.every((locale) => isLocaleParam(locale))).toBe(true)
+  })
+
+  it("only offers fully translated locales inside protected portals", () => {
+    expect(protectedPortalLocales).toEqual(["en", "zh", "zh-Hant", "th"])
   })
 
   it("keeps the provided market list routeable", () => {

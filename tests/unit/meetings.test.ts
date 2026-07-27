@@ -8,6 +8,7 @@ import {
   normalizeMeetingDuration,
   normalizeMeetingStart,
 } from "@/lib/meetings"
+import { classifyMeetingProviderReadiness } from "@/lib/meeting-provider-readiness"
 
 describe("secure meeting helpers", () => {
   beforeEach(() => {
@@ -37,6 +38,55 @@ describe("secure meeting helpers", () => {
     expect(buildMeetingShareUrl("a".repeat(32))).toBe(
       `https://www.plexus.enterprises/m/${"a".repeat(32)}`
     )
+  })
+
+  it("reports provider setup and authorization requirements without exposing configuration", () => {
+    expect(
+      classifyMeetingProviderReadiness({
+        zoomConfigured: false,
+        larkConfigured: false,
+        larkAuthorized: false,
+        protectedLinksConfigured: false,
+      })
+    ).toEqual({
+      zoom: {
+        configured: false,
+        state: "setup_required",
+      },
+      lark: {
+        authorized: false,
+        configured: false,
+        state: "setup_required",
+      },
+      protectedLinksConfigured: false,
+    })
+
+    expect(
+      classifyMeetingProviderReadiness({
+        zoomConfigured: true,
+        larkConfigured: true,
+        larkAuthorized: false,
+        protectedLinksConfigured: true,
+      })
+    ).toMatchObject({
+      zoom: { state: "online" },
+      lark: { state: "authorization_required" },
+    })
+  })
+
+  it("reports providers online only when protected meeting creation is ready", () => {
+    expect(
+      classifyMeetingProviderReadiness({
+        zoomConfigured: true,
+        larkConfigured: true,
+        larkAuthorized: true,
+        protectedLinksConfigured: true,
+      })
+    ).toMatchObject({
+      zoom: { state: "online" },
+      lark: { state: "online" },
+      protectedLinksConfigured: true,
+    })
   })
 
   it.each([

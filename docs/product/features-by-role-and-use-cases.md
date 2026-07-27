@@ -302,10 +302,16 @@ case-management or compliance-decision product.
 - View own-tenant totals, fully matched Delegations, invited/arrived guests,
   signed MOUs, scheduled/completed meetings, conversion, notifications, and a
   phase timeline.
+- Keep the Admin dashboard focused on operating metrics and workflow cards
+  without internal tenancy or persistence notices.
 - Review the current session queue and mark a meeting complete.
 - Edit the tenant name, support email, login logo, and primary color, then open
   an authenticated login-page preview without leaving account settings.
-- Open Vendor account management, Vendor provisioning, and Compliance.
+- Reuse the saved white-label logo in the Admin account control and account
+  settings identity panel, with the operator's initials as the fallback.
+- Open Vendor accounts and Compliance from the Admin sidebar; start
+  provisioning inside Vendor accounts and manage tenant branding from the
+  account settings popup.
 - Export a pre-visit report directly from the dashboard.
 
 ### Vendor and Vendor-account management
@@ -360,9 +366,19 @@ diligence decision.
 
 **Status: Live data model / Adapter deployment pending**
 
-- View meetings in calendar and session-list formats.
+- Open a dedicated meeting-operations dashboard from the Admin sidebar.
+- Review total, scheduled/live, completed, and booked-time metrics even when
+  the tenant has no meetings yet.
+- View the complete tenant-scoped meeting list and calendar, including
+  completed and cancelled sessions.
 - Review company pair, date/time, duration, platform, host, interpreter,
   meeting status, agreement status, and summary.
+- Review truthful Zoom and Lark readiness plus protected-link readiness in
+  Meeting settings. `Online` means the required server configuration,
+  protected-link origin, and provider authorization are present; the provider
+  API is validated again when a meeting is created.
+- Keep provider credentials and Lark authorization platform-managed while
+  allowing tenant Admins to inspect readiness without viewing secrets.
 - Export the tenant meeting calendar as an `.ics` file.
 - Monitor the Zoom or Lark meeting created automatically after both Vendors
   accept.

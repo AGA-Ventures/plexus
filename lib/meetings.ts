@@ -3,7 +3,14 @@ import "server-only"
 import { randomBytes } from "node:crypto"
 
 import { createLarkMeeting } from "@/lib/lark"
-import { createSupabaseAdminClient } from "@/lib/supabaseAdmin"
+import {
+  classifyMeetingProviderReadiness,
+  type MeetingProviderReadiness,
+} from "@/lib/meeting-provider-readiness"
+import {
+  createSupabaseAdminClient,
+  hasSupabaseAdminSecret,
+} from "@/lib/supabaseAdmin"
 import { createZoomMeeting } from "@/lib/zoom"
 
 export const meetingProviders = ["zoom", "lark"] as const
@@ -11,6 +18,60 @@ export type MeetingProvider = (typeof meetingProviders)[number]
 
 const MIN_DURATION_MINUTES = 30
 const MAX_DURATION_MINUTES = 480
+
+function hasCompleteConfiguration(names: string[]) {
+  return names.every((name) => Boolean(process.env[name]))
+}
+
+export async function getMeetingProviderReadiness(): Promise<MeetingProviderReadiness> {
+  const zoomEnvironmentConfigured = hasCompleteConfiguration([
+    "ZOOM_ACCOUNT_ID",
+    "ZOOM_CLIENT_ID",
+    "ZOOM_CLIENT_SECRET",
+  ])
+  const larkEnvironmentConfigured = hasCompleteConfiguration([
+    "LARK_APP_ID",
+    "LARK_APP_SECRET",
+    "LARK_REDIRECT_URI",
+  ])
+  const protectedLinkOriginConfigured = Boolean(process.env.NEXT_PUBLIC_APP_URL)
+  let protectedLinkStoreConfigured = false
+  let larkTokenStoreConfigured = false
+  let larkAuthorized = false
+
+  if (hasSupabaseAdminSecret()) {
+    try {
+      const supabase = createSupabaseAdminClient()
+      const [linkStoreResult, tokenResult] = await Promise.all([
+        supabase.from("meeting_provider_links").select("id").limit(1),
+        supabase
+          .from("oauth_tokens")
+          .select("refresh_token_expires_at")
+          .eq("id", "lark")
+          .maybeSingle(),
+      ])
+
+      const refreshTokenExpiresAt = tokenResult.data?.refresh_token_expires_at
+      protectedLinkStoreConfigured = !linkStoreResult.error
+      larkTokenStoreConfigured = !tokenResult.error
+      larkAuthorized =
+        !tokenResult.error &&
+        Boolean(tokenResult.data) &&
+        (!refreshTokenExpiresAt ||
+          new Date(refreshTokenExpiresAt).getTime() > Date.now())
+    } catch {
+      larkAuthorized = false
+    }
+  }
+
+  return classifyMeetingProviderReadiness({
+    zoomConfigured: zoomEnvironmentConfigured,
+    larkConfigured: larkEnvironmentConfigured && larkTokenStoreConfigured,
+    larkAuthorized,
+    protectedLinksConfigured:
+      protectedLinkOriginConfigured && protectedLinkStoreConfigured,
+  })
+}
 
 export function normalizeMeetingDuration(durationMinutes = 60) {
   const normalizedDuration = Number.isFinite(durationMinutes)

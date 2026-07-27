@@ -2,18 +2,33 @@
 
 **Owner:** Engineering and security
 **Review trigger:** Route, role, login, or provisioning change
-**Last reviewed:** 2026-07-27
+**Last reviewed:** 2026-07-28
 
 ## Login routing
 
-All roles use one email/password login.
+All roles use one email/password login with two presentation modes:
+
+- The Plexus platform login at `/[locale]/login`.
+- An active Admin tenant's white-label login through
+  `/[locale]/login?tenant=<tenant-slug>` or `<tenant-slug>.plexus.com`.
+
+The tenant mode displays the Admin tenant's name, logo, primary color, and
+support contact. Tenant branding is resolved on the server and falls back to
+the Plexus platform presentation when the requested tenant is invalid,
+inactive, or unavailable.
 
 ```mermaid
 flowchart TD
-    L["/[locale]/login"] --> A["Supabase password sign-in"]
+    P["Plexus platform login"] --> L["/[locale]/login"]
+    T["Admin tenant login"] --> L
+    L --> A["Password sign-in"]
     A --> V{"Claims and database binding valid?"}
     V -- "No" --> U["Login error or /[locale]/unauthorized"]
-    V -- "Yes" --> R{"app_metadata.role"}
+    V -- "Yes" --> W{"Tenant-branded request?"}
+    W -- "Yes" --> B{"Account belongs to that tenant?"}
+    B -- "No" --> U
+    B -- "Yes" --> R{"app_metadata.role"}
+    W -- "No" --> R
     R -- "superadmin" --> S["/[locale]/superadmin"]
     R -- "admin" --> AD["/[locale]/admin"]
     R -- "vendor" --> VE["/[locale]/vendor"]
@@ -21,6 +36,11 @@ flowchart TD
 
 Public signup is disabled. Superadmins create Admins; Superadmins or the owning
 Admin create Vendors.
+
+Tenant-branded login accepts the owning Admin and Vendors bound to that Admin
+tenant. It rejects Superadmins and accounts belonging to any other tenant. The
+tenant slug is presentation and validation context only; it never grants a
+role, tenant, or company scope.
 
 ## Canonical protected routes
 

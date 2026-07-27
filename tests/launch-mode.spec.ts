@@ -15,7 +15,7 @@ async function login(
 ) {
   await page.goto("/en/login")
   await page.getByLabel("Email").fill(email)
-  await page.getByLabel("Password").fill(password)
+  await page.getByLabel("Password", { exact: true }).fill(password)
   await page.getByRole("button", { name: /login/i }).click()
 
   if (expectedPortal) {
@@ -58,16 +58,16 @@ test.describe("three-tier route protection", () => {
     await page.goto("/en/login")
     await expect(
       page.getByRole("heading", {
-        name: "One login for every Plexus workspace",
+        name: "Discover. Connect. Agree. Grow.",
       })
     ).toBeVisible()
     await expect(page.getByLabel("Email")).toHaveCount(1)
-    await expect(page.getByLabel("Password")).toHaveCount(1)
-    await expect(page.getByText("Superadmin: /en/superadmin")).toBeVisible()
-    await expect(
-      page.getByText("Admin: /en/admin", { exact: true })
-    ).toBeVisible()
-    await expect(page.getByText("Vendor: /en/vendor")).toBeVisible()
+    await expect(page.getByLabel("Password", { exact: true })).toHaveCount(1)
+    await expect(page.getByRole("button", { name: "Login" })).toBeVisible()
+    await expect(page.getByText("Supabase Auth")).toHaveCount(0)
+    await expect(page.getByText("Portal routes")).toHaveCount(0)
+    await expect(page.getByText("Self-signup is disabled")).toHaveCount(0)
+    await expect(page.getByText(/\/en\/superadmin/)).toHaveCount(0)
     await expectNoHorizontalOverflow(page)
   })
 
@@ -84,7 +84,7 @@ test.describe("three-tier route protection", () => {
       await expect(page).toHaveURL(/\/(en|zh)\/login/)
       await expect(
         page.getByRole("heading", {
-          name: /one login for every plexus workspace|一个入口登录所有 plexus 工作台/i,
+          name: /discover\. connect\. agree\. grow\.|发现、连接、合作、成长。/i,
         })
       ).toBeVisible()
     })
@@ -98,7 +98,7 @@ test.describe("three-tier route protection", () => {
   test("rejects invalid email/password login", async ({ page }) => {
     await login(page, "invalid@example.com", "wrong-password")
     await expect(
-      page.getByRole("main").getByText(/invalid login credentials/i)
+      page.getByRole("main").getByText(/email or password is incorrect/i)
     ).toBeVisible()
   })
 })

@@ -2051,6 +2051,7 @@ function AdminPortal(props: {
                   initialName={session.tenantName}
                   initialSupportEmail={session.tenantSupportEmail}
                   initialPrimaryColor={session.tenantPrimaryColor}
+                  initialLogoUrl={session.tenantLogoUrl}
                   triggerLabel="Tenant settings"
                 />
               </>

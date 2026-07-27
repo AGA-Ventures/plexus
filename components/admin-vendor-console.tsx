@@ -186,6 +186,7 @@ export function AdminVendorConsole({
               initialName={tenant.name}
               initialSupportEmail={tenant.support_email}
               initialPrimaryColor={tenant.primary_color}
+              initialLogoUrl={tenant.logo_url}
               triggerLabel="Tenant settings"
             />
             <AdminVendorProvision

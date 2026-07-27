@@ -20,31 +20,41 @@ function formatLoginError(message: string) {
   const normalized = message.toLowerCase()
 
   if (normalized.includes("invalid login credentials")) {
-    return "Invalid login credentials. Check the email and password, or ask an admin to confirm this account exists in Supabase Auth."
+    return "Email or password is incorrect. Check your details and try again."
   }
 
   if (normalized.includes("email not confirmed")) {
-    return "Email is not confirmed. Ask an admin to confirm the user in Supabase Auth, then try again."
+    return "This account is not ready to sign in. Contact your workspace administrator."
   }
 
-  return message
+  return "We could not sign you in. Check your details and try again."
 }
 
 const loginSchema = z.object({
   email: z.email("Enter a valid email address.").trim(),
   password: z.string().min(1, "Enter your password."),
   locale: z.string().optional(),
+  tenantSlug: z
+    .string()
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+    .optional(),
 })
 
-export async function loginAction(_state: LoginActionState, formData: FormData): Promise<LoginActionState> {
+export async function loginAction(
+  _state: LoginActionState,
+  formData: FormData
+): Promise<LoginActionState> {
   const parsed = loginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
     locale: formData.get("locale"),
+    tenantSlug: formData.get("tenantSlug") || undefined,
   })
 
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Check your login details." }
+    return {
+      error: parsed.error.issues[0]?.message ?? "Check your login details.",
+    }
   }
 
   const supabase = await createSupabaseServerClient()
@@ -70,6 +80,30 @@ export async function loginAction(_state: LoginActionState, formData: FormData):
   if (!authorization.ok) {
     await supabase.auth.signOut()
     return { error: authorization.error }
+  }
+
+  if (parsed.data.tenantSlug) {
+    const adminId = authorization.identity.adminId
+    const tenantResult = adminId
+      ? await supabase
+          .from("admin_tenants")
+          .select("slug")
+          .eq("id", adminId)
+          .eq("status", "active")
+          .maybeSingle()
+      : undefined
+
+    if (
+      !tenantResult?.data ||
+      tenantResult.error ||
+      tenantResult.data.slug !== parsed.data.tenantSlug
+    ) {
+      await supabase.auth.signOut()
+      return {
+        error:
+          "This account does not belong to this workspace. Use your organization’s sign-in page.",
+      }
+    }
   }
 
   return {

@@ -22,6 +22,7 @@ export type AuthenticatedIdentity = {
   tenantName?: string
   tenantSupportEmail?: string
   tenantPrimaryColor?: string
+  tenantLogoUrl?: string
 }
 
 type ProfileRow = {
@@ -91,13 +92,18 @@ export async function validateAuthenticatedUser(
   }
 
   let tenantDetails:
-    | { name: string; support_email: string; primary_color: string }
+    | {
+        name: string
+        support_email: string
+        primary_color: string
+        logo_url: string
+      }
     | undefined
 
   if (metadata.role === "admin") {
     const tenantResult = await supabase
       .from("admin_tenants")
-      .select("id, status, name, support_email, primary_color")
+      .select("id, status, name, support_email, primary_color, logo_url")
       .eq("id", metadata.admin_id!)
       .eq("status", "active")
       .maybeSingle()
@@ -137,6 +143,7 @@ export async function validateAuthenticatedUser(
       tenantName: tenantDetails?.name,
       tenantSupportEmail: tenantDetails?.support_email,
       tenantPrimaryColor: tenantDetails?.primary_color,
+      tenantLogoUrl: tenantDetails?.logo_url,
     },
   }
 }

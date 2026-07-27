@@ -25,6 +25,7 @@ export function TenantProfileDialog({
   initialName = "",
   initialSupportEmail = "",
   initialPrimaryColor = "#16839a",
+  initialLogoUrl = "",
   triggerLabel = "Edit",
 }: {
   locale: Locale
@@ -32,6 +33,7 @@ export function TenantProfileDialog({
   initialName?: string
   initialSupportEmail?: string
   initialPrimaryColor?: string
+  initialLogoUrl?: string
   triggerLabel?: string
 }) {
   const router = useRouter()
@@ -49,6 +51,7 @@ export function TenantProfileDialog({
         name: form.get("name"),
         supportEmail: form.get("supportEmail"),
         primaryColor: form.get("primaryColor"),
+        logoUrl: form.get("logoUrl"),
       })
 
       if (result.ok) {
@@ -70,7 +73,7 @@ export function TenantProfileDialog({
         <DialogHeader>
           <DialogTitle>Edit Admin tenant profile</DialogTitle>
           <DialogDescription>
-            Update the tenant-facing name, support contact, and brand color.
+            Update the tenant-facing name, support contact, and login branding.
           </DialogDescription>
         </DialogHeader>
         <form className="grid gap-4" onSubmit={submit}>
@@ -91,6 +94,17 @@ export function TenantProfileDialog({
               type="email"
               defaultValue={initialSupportEmail}
               required
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor={`tenantLogo-${tenantId}`}>Login logo URL</Label>
+            <Input
+              id={`tenantLogo-${tenantId}`}
+              name="logoUrl"
+              type="text"
+              inputMode="url"
+              placeholder="https://example.com/logo.png"
+              defaultValue={initialLogoUrl}
             />
           </div>
           <div className="grid gap-1.5">

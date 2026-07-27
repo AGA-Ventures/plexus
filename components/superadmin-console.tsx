@@ -696,6 +696,7 @@ export function SuperadminConsole(props: Props) {
                                 initialName={tenant.name}
                                 initialSupportEmail={tenant.support_email}
                                 initialPrimaryColor={tenant.primary_color}
+                                initialLogoUrl={tenant.logo_url}
                               />
                               <StatusControl
                                 value={tenant.status}
@@ -758,6 +759,7 @@ export function SuperadminConsole(props: Props) {
                         initialName={tenant.name}
                         initialSupportEmail={tenant.support_email}
                         initialPrimaryColor={tenant.primary_color}
+                        initialLogoUrl={tenant.logo_url}
                         triggerLabel="Edit tenant profile"
                       />
                     </MobileRecord>

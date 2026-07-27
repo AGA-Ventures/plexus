@@ -8,6 +8,11 @@ reviewed together.
 
 ### 2026-07-28
 
+- Redesigned login as a responsive Plexus superapp experience, removed exposed
+  infrastructure and route details, and added server-resolved white-label Admin
+  tenant branding with tenant-bound sign-in validation.
+- Added tenant login logo management, safe public logo URL validation, and
+  platform/tenant login coverage in unit and browser tests.
 - Added a current-state application feature guide covering the Superadmin,
   Admin, Delegation Vendor, and Partner Vendor layers, with permission
   matrices, use-case diagrams, routes, authorization boundaries, and explicit

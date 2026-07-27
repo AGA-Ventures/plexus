@@ -2,7 +2,7 @@
 
 **Owner:** Security and engineering
 **Review trigger:** Auth, role, RLS, storage, secret, provider, or privacy change
-**Last reviewed:** 2026-07-27
+**Last reviewed:** 2026-07-28
 
 ## Security objectives
 
@@ -77,6 +77,11 @@ policy summary.
 - Sensitive account disablement should suspend relational access and revoke or
   expire sessions according to the current Supabase Auth policy.
 - Public signup and anonymous sign-in remain disabled.
+- Tenant-branded login slugs are untrusted context. After authentication, the
+  server compares the requested active tenant with the account's trusted
+  `admin_id`; a mismatch signs the user out and returns a generic error.
+- Tenant branding is loaded server-side. It changes presentation only and does
+  not participate in role or row-level authorization.
 
 ## Account provisioning
 

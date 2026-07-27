@@ -58,6 +58,17 @@ const updateTenantSchema = z.object({
     .string()
     .trim()
     .regex(/^#[0-9a-f]{6}$/i, "Enter a six-digit hex color."),
+  logoUrl: z
+    .string()
+    .trim()
+    .max(500)
+    .refine(
+      (value) =>
+        value === "" ||
+        value.startsWith("/") ||
+        value.startsWith("https://"),
+      "Use an HTTPS URL or a public path beginning with /."
+    ),
 })
 
 const updateVendorSchema = z.object({
@@ -397,6 +408,7 @@ export async function updateTenantProfileAction(
         name: parsed.data.name,
         support_email: parsed.data.supportEmail,
         primary_color: parsed.data.primaryColor,
+        logo_url: parsed.data.logoUrl,
       })
       .eq("id", parsed.data.tenantId)
       .select("id")

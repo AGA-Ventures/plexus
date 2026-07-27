@@ -16,12 +16,26 @@ import {
   hasSupabaseAdminSecret,
 } from "@/lib/supabase/admin"
 
-type TenantBrandingRow = {
+export type TenantBrandingRow = {
   slug: string
   name: string
   support_email: string
   logo_url: string
   primary_color: string
+}
+
+export function getTenantLoginBranding(tenant: TenantBrandingRow) {
+  const primaryColor = normalizeBrandColor(tenant.primary_color)
+
+  return {
+    mode: "tenant",
+    slug: tenant.slug,
+    name: tenant.name,
+    logoUrl: normalizeLogoUrl(tenant.logo_url),
+    primaryColor,
+    accentForeground: readableForeground(primaryColor),
+    supportEmail: tenant.support_email || undefined,
+  } satisfies LoginBranding
 }
 
 export async function getLoginBranding(requestedSlug?: string) {
@@ -47,18 +61,7 @@ export async function getLoginBranding(requestedSlug?: string) {
       return platformLoginBranding
     }
 
-    const tenant = result.data as TenantBrandingRow
-    const primaryColor = normalizeBrandColor(tenant.primary_color)
-
-    return {
-      mode: "tenant",
-      slug: tenant.slug,
-      name: tenant.name,
-      logoUrl: normalizeLogoUrl(tenant.logo_url),
-      primaryColor,
-      accentForeground: readableForeground(primaryColor),
-      supportEmail: tenant.support_email || undefined,
-    } satisfies LoginBranding
+    return getTenantLoginBranding(result.data as TenantBrandingRow)
   } catch {
     return platformLoginBranding
   }

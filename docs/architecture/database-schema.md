@@ -2,7 +2,7 @@
 
 **Owner:** Engineering and data/security
 **Review trigger:** Every database migration
-**Last verified against live Supabase:** 2026-07-27
+**Last verified against live Supabase:** 2026-07-28
 **Project:** `Plexus` (`pnjblggcdigekluualin`)
 
 ## Source of truth
@@ -13,13 +13,13 @@ This document is a reviewed human-readable snapshot of the live project.
 Current live inventory:
 
 - PostgreSQL 17
-- 20 recorded migrations
+- 21 recorded migrations
 - 19 public tables
 - 19 of 19 public tables have RLS enabled
 - 70 public-table RLS policies
 - 0 public views and 0 public enum types
-- 1 private Storage bucket: `event-resources`
-- Supabase security advisor: no findings on 2026-07-27
+- 2 Storage buckets: private `event-resources` and public `tenant-branding`
+- Supabase security advisor: no findings on 2026-07-28
 
 Status values are enforced with `CHECK` constraints rather than PostgreSQL enum
 types.
@@ -368,6 +368,12 @@ event_resources (
 Announcement and resource audience is `all`, `delegation`, `partner`, or
 `admin`. The `event-resources` Storage bucket is private, has a 15 MiB file
 limit, and accepts PDF, JPEG, PNG, WebP, DOCX, and PPTX files.
+
+The `tenant-branding` Storage bucket is public because tenant logos must render
+on unauthenticated login pages. It has a 2 MiB file limit and accepts only PNG,
+JPEG, and WebP. Logo objects are stored below the owning Admin tenant UUID.
+Uploads are authorized by the application, checked by file signature, and
+written through the server-only Supabase administration client.
 
 ## RLS access summary
 

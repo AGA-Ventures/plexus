@@ -71,6 +71,9 @@ const copy: Partial<Record<Locale, LoginCopy>> & { en: LoginCopy } = {
     supportFallback: "Contact your workspace administrator.",
     poweredBy: "Powered by Plexus",
     loginProblem: "Cannot log in",
+    previewTitle: "Brand preview",
+    previewMessage: "Sign-in is disabled in preview mode.",
+    previewSubmit: "Preview only",
   },
   zh: {
     platformKicker: "商业超级应用",
@@ -98,6 +101,9 @@ const copy: Partial<Record<Locale, LoginCopy>> & { en: LoginCopy } = {
     supportFallback: "请联系您的工作台管理员。",
     poweredBy: "由 Plexus 提供支持",
     loginProblem: "无法登录",
+    previewTitle: "品牌预览",
+    previewMessage: "预览模式下已停用登录。",
+    previewSubmit: "仅预览",
   },
   "zh-Hant": {
     platformKicker: "商業超級應用",
@@ -125,6 +131,9 @@ const copy: Partial<Record<Locale, LoginCopy>> & { en: LoginCopy } = {
     supportFallback: "請聯絡您的工作台管理員。",
     poweredBy: "由 Plexus 提供支援",
     loginProblem: "無法登入",
+    previewTitle: "品牌預覽",
+    previewMessage: "預覽模式下已停用登入。",
+    previewSubmit: "僅預覽",
   },
   th: {
     platformKicker: "ซูเปอร์แอปสำหรับธุรกิจ",
@@ -153,6 +162,9 @@ const copy: Partial<Record<Locale, LoginCopy>> & { en: LoginCopy } = {
     supportFallback: "ติดต่อผู้ดูแลพื้นที่ทำงานของคุณ",
     poweredBy: "ขับเคลื่อนโดย Plexus",
     loginProblem: "เข้าสู่ระบบไม่ได้",
+    previewTitle: "ตัวอย่างแบรนด์",
+    previewMessage: "ปิดการเข้าสู่ระบบในโหมดตัวอย่าง",
+    previewSubmit: "ดูตัวอย่างเท่านั้น",
   },
 }
 
@@ -160,10 +172,12 @@ export function LoginForm({
   locale,
   branding,
   passwordUpdated = false,
+  previewMode = false,
 }: {
   locale: Locale
   branding: LoginBranding
   passwordUpdated?: boolean
+  previewMode?: boolean
 }) {
   const router = useRouter()
   const [passwordVisible, setPasswordVisible] = useState(false)
@@ -210,6 +224,25 @@ export function LoginForm({
       className="relative isolate min-h-svh overflow-hidden bg-[#24164d] text-white"
       style={loginStyle}
     >
+      {previewMode ? (
+        <div
+          role="status"
+          className="absolute top-4 right-4 z-20 flex max-w-xs items-start gap-3 rounded-xl border border-white/20 bg-[#120d2e]/88 px-4 py-3 text-white shadow-xl backdrop-blur-xl"
+        >
+          <HugeiconsIcon
+            icon={EyeIcon}
+            strokeWidth={1.7}
+            className="mt-0.5 size-4 shrink-0 text-cyan-200"
+          />
+          <div>
+            <p className="text-xs font-semibold">{t.previewTitle}</p>
+            <p className="mt-0.5 text-[11px] text-white/65">
+              {t.previewMessage}
+            </p>
+          </div>
+        </div>
+      ) : null}
+
       <Image
         src="/login-plexus-network-x.webp"
         alt=""
@@ -264,7 +297,12 @@ export function LoginForm({
             <p className="text-sm leading-6 text-white/68">{prompt}</p>
           </CardHeader>
 
-          <form action={formAction}>
+          <form
+            action={previewMode ? undefined : formAction}
+            onSubmit={
+              previewMode ? (event) => event.preventDefault() : undefined
+            }
+          >
             <CardContent className="px-6 sm:px-8">
               <FieldGroup className="gap-4">
                 <input type="hidden" name="locale" value={locale} />
@@ -296,6 +334,7 @@ export function LoginForm({
                       autoComplete="email"
                       placeholder={t.emailPlaceholder}
                       required
+                      disabled={previewMode}
                       className="h-12 rounded-xl border-white/20 bg-white/10 pr-4 pl-10 text-sm text-white shadow-none placeholder:text-white/42 focus-visible:border-white/50 focus-visible:ring-white/18 md:text-sm"
                     />
                   </div>
@@ -309,12 +348,18 @@ export function LoginForm({
                     >
                       {t.password}
                     </FieldLabel>
-                    <Link
-                      href={forgotPasswordPath}
-                      className="text-xs font-medium text-white/70 underline-offset-4 transition hover:text-white hover:underline focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-                    >
-                      {t.forgotPassword}
-                    </Link>
+                    {previewMode ? (
+                      <span className="text-xs font-medium text-white/45">
+                        {t.forgotPassword}
+                      </span>
+                    ) : (
+                      <Link
+                        href={forgotPasswordPath}
+                        className="text-xs font-medium text-white/70 underline-offset-4 transition hover:text-white hover:underline focus-visible:rounded focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                      >
+                        {t.forgotPassword}
+                      </Link>
+                    )}
                   </div>
                   <div className="relative">
                     <HugeiconsIcon
@@ -329,6 +374,7 @@ export function LoginForm({
                       autoComplete="current-password"
                       placeholder={t.passwordPlaceholder}
                       required
+                      disabled={previewMode}
                       className="h-12 rounded-xl border-white/20 bg-white/10 pr-11 pl-10 text-sm text-white shadow-none placeholder:text-white/42 focus-visible:border-white/50 focus-visible:ring-white/18 md:text-sm"
                     />
                     <button
@@ -338,6 +384,7 @@ export function LoginForm({
                       }
                       aria-pressed={passwordVisible}
                       onClick={() => setPasswordVisible((visible) => !visible)}
+                      disabled={previewMode}
                       className="absolute top-1/2 right-3 flex size-7 -translate-y-1/2 items-center justify-center rounded-md text-white/55 transition hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                     >
                       <HugeiconsIcon
@@ -354,6 +401,7 @@ export function LoginForm({
                     <Checkbox
                       id="remember"
                       name="remember"
+                      disabled={previewMode}
                       className="border-white/35 bg-white/8 data-checked:border-[var(--login-accent)] data-checked:bg-[var(--login-accent)] data-checked:text-[var(--login-accent-foreground)]"
                     />
                     <Label
@@ -400,14 +448,18 @@ export function LoginForm({
                 <Button
                   className="mt-1 h-12 w-full rounded-xl bg-[var(--login-accent)] text-sm font-semibold text-[var(--login-accent-foreground)] shadow-[0_14px_30px_rgba(14,9,39,0.2)] hover:bg-[var(--login-accent)] hover:opacity-92"
                   type="submit"
-                  disabled={isPending}
+                  disabled={isPending || previewMode}
                 >
                   <HugeiconsIcon
                     icon={Login03Icon}
                     data-icon="inline-start"
                     strokeWidth={1.8}
                   />
-                  {isPending ? t.submitting : t.submit}
+                  {previewMode
+                    ? t.previewSubmit
+                    : isPending
+                      ? t.submitting
+                      : t.submit}
                   <HugeiconsIcon
                     icon={ArrowRight01Icon}
                     data-icon="inline-end"

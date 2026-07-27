@@ -23,13 +23,13 @@ when behavior changes.
 
 ## Capability status legend
 
-| Status | Meaning |
-| --- | --- |
-| **Live** | Persisted in Supabase and protected by application authorization and RLS |
-| **Controlled** | Live, but requires approved users or a manual operational step |
-| **Adapter** | The interface and data contract exist, but a production provider or end-to-end automation is incomplete |
-| **Simulation** | The screen demonstrates an operational step without completing a real external action |
-| **Planned / concept** | Product direction only; not an available production workflow |
+| Status                | Meaning                                                                                                 |
+| --------------------- | ------------------------------------------------------------------------------------------------------- |
+| **Live**              | Persisted in Supabase and protected by application authorization and RLS                                |
+| **Controlled**        | Live, but requires approved users or a manual operational step                                          |
+| **Adapter**           | The interface and data contract exist, but a production provider or end-to-end automation is incomplete |
+| **Simulation**        | The screen demonstrates an operational step without completing a real external action                   |
+| **Planned / concept** | Product direction only; not an available production workflow                                            |
 
 ## Role hierarchy and scope
 
@@ -52,11 +52,11 @@ the Admin operations portal.
 
 ## Role summary
 
-| Role | Primary outcome | Data scope | Main workspace |
-| --- | --- | --- | --- |
-| Superadmin | Govern Plexus, its tenants, accounts, settings, and cross-tenant operations | All tenants and platform records | `/[locale]/superadmin` |
-| Admin | Run a branded tenant, manage its Vendors, and operate its business program | Own Admin tenant | `/[locale]/admin` |
-| Vendor | Maintain one company profile and participate in matching, meetings, agreements, and event workflows | Own company and explicitly shared workflow records | `/[locale]/vendor` |
+| Role       | Primary outcome                                                                                     | Data scope                                         | Main workspace         |
+| ---------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------- |
+| Superadmin | Govern Plexus, its tenants, accounts, settings, and cross-tenant operations                         | All tenants and platform records                   | `/[locale]/superadmin` |
+| Admin      | Run a branded tenant, manage its Vendors, and operate its business program                          | Own Admin tenant                                   | `/[locale]/admin`      |
+| Vendor     | Maintain one company profile and participate in matching, meetings, agreements, and event workflows | Own company and explicitly shared workflow records | `/[locale]/vendor`     |
 
 All roles use the same email/password login. Trusted Supabase Auth
 `app_metadata` determines the role and bindings, after which the user is sent
@@ -134,33 +134,33 @@ flowchart LR
 
 ## Feature and permission matrix
 
-| Capability | Superadmin | Admin | Vendor |
-| --- | --- | --- | --- |
-| Shared login, role routing, logout | Own account | Own account | Own account |
-| Self-service password recovery | Own account | Own account | Own account |
-| Admin tenant creation | All tenants | No | No |
-| Tenant profile and branding | Every tenant | Own tenant | View applied workspace context |
-| Tenant activation, suspension, archiving | Every tenant | No | No |
-| Vendor account provisioning | Any active tenant | Own active tenant, when platform setting permits | No |
-| Vendor company status and directory | Every tenant | Own tenant | Own profile through Vendor workflow |
-| Vendor cross-tenant transfer | Yes | No | No |
-| Account suspension/restoration and claim synchronization | All permitted accounts; cannot self-suspend | Vendor accounts in own tenant | No |
-| Admin password recovery link | Send to an active Admin account from its tenant row | Self-service only | No |
-| Platform settings | Read/write | Reads the Vendor-provisioning permission used by its workflow | No |
-| Privileged audit history | Platform-wide, latest 200 shown | Own tenant, latest 100 shown | No |
-| Operational tenant reporting | Cross-tenant totals | Full own-tenant dashboard and reports | Own-company summaries |
-| Delegation and Partner records | Platform directory/reporting | Create, view, update, and delete within own tenant | Update own registration profile |
-| Match discovery | No dedicated Superadmin UI | Manages own-tenant matching board | Opposite-subtype directory; limited fields only |
-| Match status and scoring | No dedicated Superadmin UI | Propose, score, assign, and update own-tenant matches | Request, accept, reject/request change for own matches |
-| Meetings | Cross-tenant reporting | Schedule, view calendar, join, complete, and assign interpreters | Request preferred times, join own meetings, export calendar invite |
-| Interpreter roster | No dedicated Superadmin UI | Create, edit, set availability, delete, and assign | Request an available preferred interpreter |
-| MOU/deal tracking | Cross-tenant reporting | Track status, signatory check, mark signed, preview/download available PDF | View own MOU status and preview/download available PDF |
-| Communications | No dedicated Superadmin UI | Create targeted announcements and in-app notifications | View applicable operational notifications |
-| Documents and resources | No dedicated Superadmin UI | Add URL resources, upload private files, set audience and visibility | Delegation subtype can view permitted resources |
-| Event attendance and check-in | Cross-tenant reporting only | Manual/QR check-in simulation for tenant Partners | Partner subtype confirms attendance and sees QR status |
-| Itinerary, site visits, liaison | Cross-tenant reporting only | Publish itinerary; view site visits and liaison records | Delegation subtype views published itinerary |
-| CSV/ICS exports | Reporting on screen | Pre-visit CSV, post-event CSV, and meeting calendar ICS | Meeting ICS; Delegation itinerary CSV |
-| Compliance console and APIs | Platform access | Own authenticated access | No |
+| Capability                                               | Superadmin                                          | Admin                                                                      | Vendor                                                             |
+| -------------------------------------------------------- | --------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Shared login, role routing, logout                       | Own account                                         | Own account                                                                | Own account                                                        |
+| Self-service password recovery                           | Own account                                         | Own account                                                                | Own account                                                        |
+| Admin tenant creation                                    | All tenants                                         | No                                                                         | No                                                                 |
+| Tenant profile and branding                              | Upload logo, edit, and preview every tenant         | Upload logo, edit, and preview own tenant                                  | View applied workspace context                                     |
+| Tenant activation, suspension, archiving                 | Every tenant                                        | No                                                                         | No                                                                 |
+| Vendor account provisioning                              | Any active tenant                                   | Own active tenant, when platform setting permits                           | No                                                                 |
+| Vendor company status and directory                      | Every tenant                                        | Own tenant                                                                 | Own profile through Vendor workflow                                |
+| Vendor cross-tenant transfer                             | Yes                                                 | No                                                                         | No                                                                 |
+| Account suspension/restoration and claim synchronization | All permitted accounts; cannot self-suspend         | Vendor accounts in own tenant                                              | No                                                                 |
+| Admin password recovery link                             | Send to an active Admin account from its tenant row | Self-service only                                                          | No                                                                 |
+| Platform settings                                        | Read/write                                          | Reads the Vendor-provisioning permission used by its workflow              | No                                                                 |
+| Privileged audit history                                 | Platform-wide, latest 200 shown                     | Own tenant, latest 100 shown                                               | No                                                                 |
+| Operational tenant reporting                             | Cross-tenant totals                                 | Full own-tenant dashboard and reports                                      | Own-company summaries                                              |
+| Delegation and Partner records                           | Platform directory/reporting                        | Create, view, update, and delete within own tenant                         | Update own registration profile                                    |
+| Match discovery                                          | No dedicated Superadmin UI                          | Manages own-tenant matching board                                          | Opposite-subtype directory; limited fields only                    |
+| Match status and scoring                                 | No dedicated Superadmin UI                          | Propose, score, assign, and update own-tenant matches                      | Request, accept, reject/request change for own matches             |
+| Meetings                                                 | Cross-tenant reporting                              | Schedule, view calendar, join, complete, and assign interpreters           | Request preferred times, join own meetings, export calendar invite |
+| Interpreter roster                                       | No dedicated Superadmin UI                          | Create, edit, set availability, delete, and assign                         | Request an available preferred interpreter                         |
+| MOU/deal tracking                                        | Cross-tenant reporting                              | Track status, signatory check, mark signed, preview/download available PDF | View own MOU status and preview/download available PDF             |
+| Communications                                           | No dedicated Superadmin UI                          | Create targeted announcements and in-app notifications                     | View applicable operational notifications                          |
+| Documents and resources                                  | No dedicated Superadmin UI                          | Add URL resources, upload private files, set audience and visibility       | Delegation subtype can view permitted resources                    |
+| Event attendance and check-in                            | Cross-tenant reporting only                         | Manual/QR check-in simulation for tenant Partners                          | Partner subtype confirms attendance and sees QR status             |
+| Itinerary, site visits, liaison                          | Cross-tenant reporting only                         | Publish itinerary; view site visits and liaison records                    | Delegation subtype views published itinerary                       |
+| CSV/ICS exports                                          | Reporting on screen                                 | Pre-visit CSV, post-event CSV, and meeting calendar ICS                    | Meeting ICS; Delegation itinerary CSV                              |
+| Compliance console and APIs                              | Platform access                                     | Own authenticated access                                                   | No                                                                 |
 
 Database RLS narrows Admin and Vendor actions to their permitted rows even
 where a shared Server Action supports more than one role.
@@ -188,6 +188,10 @@ where a shared Server Action supports more than one role.
 - Create a confirmed Supabase Auth account with trusted Admin claims and a
   matching active database profile.
 - Edit tenant name, support email, and primary brand color.
+- Upload a PNG, JPEG, or WebP login logo directly to tenant-scoped Supabase
+  Storage, with an advanced HTTPS URL fallback for existing assets.
+- Preview the tenant login presentation in an authenticated, sign-in-disabled
+  browser tab before sharing the public tenant login.
 - Change tenant state between `active`, `suspended`, and `archived`.
 - View the number of Vendors assigned to each tenant.
 - Roll back partial provisioning when a later creation step fails.
@@ -542,20 +546,21 @@ flowchart LR
 
 ## Routes and access
 
-| Route | Access | Purpose |
-| --- | --- | --- |
-| `/[locale]/login` | Public | Shared login and role-directed routing |
-| `/[locale]/forgot-password` | Public | Generic password-recovery email request |
-| `/auth/callback` | Public | Supabase PKCE code exchange for a recovery session |
-| `/[locale]/reset-password` | Recovery session | Set a new password for the recovered account |
-| `/[locale]/superadmin` | Superadmin | Platform control center |
-| `/[locale]/admin` | Admin | Tenant operations portal |
-| `/[locale]/admin/vendors` | Admin | Tenant Vendor and Vendor-account management |
-| `/[locale]/vendor` | Vendor | Delegation or Partner company workspace |
-| `/[locale]/vendor/discover` | Vendor | Opposite-subtype company discovery |
-| `/[locale]/compliance` | Superadmin, Admin | Compliance integration readiness |
-| `/[locale]/compliance/world-check` | Superadmin, Admin | World-Check adapter status |
-| `/[locale]/compliance/malaysia-ssm-ctos` | Superadmin, Admin | Malaysia SSM/CTOS adapter status |
+| Route                                    | Access            | Purpose                                                 |
+| ---------------------------------------- | ----------------- | ------------------------------------------------------- |
+| `/[locale]/login`                        | Public            | Shared login and role-directed routing                  |
+| `/[locale]/forgot-password`              | Public            | Generic password-recovery email request                 |
+| `/auth/callback`                         | Public            | Supabase PKCE code exchange for a recovery session      |
+| `/[locale]/reset-password`               | Recovery session  | Set a new password for the recovered account            |
+| `/[locale]/superadmin`                   | Superadmin        | Platform control center                                 |
+| `/[locale]/login-preview`                | Superadmin, Admin | Authenticated, sign-in-disabled tenant branding preview |
+| `/[locale]/admin`                        | Admin             | Tenant operations portal                                |
+| `/[locale]/admin/vendors`                | Admin             | Tenant Vendor and Vendor-account management             |
+| `/[locale]/vendor`                       | Vendor            | Delegation or Partner company workspace                 |
+| `/[locale]/vendor/discover`              | Vendor            | Opposite-subtype company discovery                      |
+| `/[locale]/compliance`                   | Superadmin, Admin | Compliance integration readiness                        |
+| `/[locale]/compliance/world-check`       | Superadmin, Admin | World-Check adapter status                              |
+| `/[locale]/compliance/malaysia-ssm-ctos` | Superadmin, Admin | Malaysia SSM/CTOS adapter status                        |
 
 Root aliases such as `/login`, `/admin`, `/vendor`, and `/superadmin` redirect
 to English. Legacy `/delegation` and `/partner` paths redirect Vendor users to
@@ -607,6 +612,9 @@ flowchart TD
   company participates.
 - The event-resource bucket is private and file downloads are authorized
   through the resource metadata and signed URLs.
+- Tenant login logos use the public `tenant-branding` bucket so they render
+  before authentication; application authorization, tenant scoping, file-size
+  limits, and image-signature validation protect uploads.
 
 ## Known gaps and planned capabilities
 

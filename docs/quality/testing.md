@@ -49,12 +49,21 @@ npm run test:e2e
 | Superadmin opens Admin/Vendor route  | Redirect to Superadmin workspace |
 | Admin reads another tenant           | No data/authorization error      |
 | Admin provisions into another tenant | Reject                           |
+| Admin uploads another tenant's logo  | Reject                           |
+| Spoofed/oversized tenant logo        | Reject before Storage write      |
+| Operator opens tenant login preview  | Allow in scope; disable sign-in  |
 | Vendor reads another Vendor          | No data                          |
 | Vendor opens Admin/Superadmin route  | Redirect to Vendor workspace     |
 | Vendor updates another company       | Reject                           |
 | Direct authorization-binding update  | Trigger/RLS rejection            |
 
 ## Verified production evidence
+
+On 2026-07-28:
+
+- The `tenant-branding` public Storage bucket was applied and read back with
+  its 2 MiB limit and PNG/JPEG/WebP allowlist.
+- Supabase security advisors reported no findings after the migration.
 
 On 2026-07-27:
 

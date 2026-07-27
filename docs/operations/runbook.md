@@ -116,6 +116,7 @@ active relational checks.
 | User sees wrong portal     | App metadata, profile binding, token refresh/sign-out                       |
 | Cross-tenant data concern  | Disable affected account, preserve evidence, review RLS/audit immediately   |
 | File upload fails          | Bucket policy, size/type, Storage logs, tenant scope                        |
+| Tenant logo upload fails   | `tenant-branding` bucket, 2 MiB/type limit, server secret, tenant scope     |
 | Deployment fails           | Vercel build log, environment variables, target verification                |
 | Migration fails            | Stop app promotion, retain error, inspect plan/history, create forward fix  |
 

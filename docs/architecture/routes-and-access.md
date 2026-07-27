@@ -17,6 +17,12 @@ support contact. Tenant branding is resolved on the server and falls back to
 the Plexus platform presentation when the requested tenant is invalid,
 inactive, or unavailable.
 
+Authenticated Superadmins and Admins can open
+`/[locale]/login-preview?tenantId=<tenant-uuid>` to inspect the tenant
+presentation without leaving their operator session. The preview disables
+sign-in, Superadmins can inspect any tenant, and Admins can inspect only their
+own tenant.
+
 ```mermaid
 flowchart TD
     P["Plexus platform login"] --> L["/[locale]/login"]
@@ -78,6 +84,7 @@ external Admin and Vendor recipients.
 | `/[locale]/superadmin`      | Superadmin        | All tenants                         |
 | `/[locale]/admin`           | Admin             | Own tenant                          |
 | `/[locale]/admin/vendors`   | Admin             | Own tenant Vendors and users        |
+| `/[locale]/login-preview`   | Superadmin, Admin | Any tenant or own tenant            |
 | `/[locale]/vendor`          | Vendor            | Own company                         |
 | `/[locale]/vendor/discover` | Vendor            | Eligible opposite-subtype directory |
 | `/[locale]/compliance`      | Superadmin, Admin | Platform or own tenant              |
@@ -162,3 +169,12 @@ and first-time password-setup flows remain planned work.
 | Audit                   | Record privileged tenant, account, Vendor, and settings changes |
 
 UI visibility is convenience only; it is never the authorization boundary.
+
+## Tenant logo upload
+
+`POST /api/tenant-branding/logo` accepts a multipart logo from an authenticated
+Superadmin or Admin. Admins are restricted to their own tenant. The handler
+requires a valid PNG, JPEG, or WebP file signature, enforces the 2 MiB limit,
+stores the object under the tenant UUID in the public `tenant-branding` bucket,
+and updates `admin_tenants.logo_url`. If the database update fails, the new
+object is removed; after success, a previous application-owned logo is removed.

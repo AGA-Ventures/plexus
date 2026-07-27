@@ -144,12 +144,7 @@ test.describe("Superadmin flow", () => {
   )
 
   test("Superadmin can view every management directory", async ({ page }) => {
-    await login(
-      page,
-      superadminEmail!,
-      superadminPassword!,
-      /\/en\/superadmin/
-    )
+    await login(page, superadminEmail!, superadminPassword!, /\/en\/superadmin/)
     await expect(page).toHaveURL(/\/en\/superadmin/)
     await expect(
       page.getByRole("heading", { name: "Plexus platform control center" })
@@ -175,18 +170,26 @@ test.describe("Superadmin flow", () => {
     await expect(
       page.getByRole("button", { name: /send (admin )?reset link/i }).first()
     ).toBeVisible()
+    await page
+      .getByRole("button", { name: /edit( tenant profile)?/i })
+      .first()
+      .click()
+    const tenantProfile = page.getByRole("dialog", {
+      name: "Edit Admin tenant profile",
+    })
+    await expect(
+      tenantProfile.getByLabel("Login logo", { exact: true })
+    ).toHaveAttribute("type", "file")
+    await expect(
+      tenantProfile.getByRole("link", { name: "Preview login page" })
+    ).toHaveAttribute("target", "_blank")
     await expectNoHorizontalOverflow(page)
   })
 
   test("Superadmin is redirected away from the Admin workspace", async ({
     page,
   }) => {
-    await login(
-      page,
-      superadminEmail!,
-      superadminPassword!,
-      /\/en\/superadmin/
-    )
+    await login(page, superadminEmail!, superadminPassword!, /\/en\/superadmin/)
     await page.goto("/en/admin")
     await expect(page).toHaveURL(/\/en\/superadmin/)
   })
@@ -221,9 +224,7 @@ test.describe("Admin tenant flow", () => {
 
   test("Admin can open its Vendor provisioning workflow", async ({ page }) => {
     await login(page, adminEmail!, adminPassword!, /\/en\/admin/)
-    await page
-      .getByRole("link", { name: "Manage Vendor accounts" })
-      .click()
+    await page.getByRole("link", { name: "Manage Vendor accounts" }).click()
     await expect(page).toHaveURL(/\/en\/admin\/vendors/)
     await expect(
       page.getByRole("heading", { name: /Vendor management$/ })
@@ -254,7 +255,9 @@ test.describe("Vendor flow", () => {
     await openMobilePortalMenu(page)
   })
 
-  test("Vendor cannot enter Admin or Superadmin workspaces", async ({ page }) => {
+  test("Vendor cannot enter Admin or Superadmin workspaces", async ({
+    page,
+  }) => {
     await login(page, vendorEmail!, vendorPassword!, /\/en\/vendor/)
     await page.goto("/en/admin")
     await expect(page).toHaveURL(/\/en\/vendor/)

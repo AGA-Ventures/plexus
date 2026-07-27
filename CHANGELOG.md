@@ -8,6 +8,9 @@ reviewed together.
 
 ### 2026-07-28
 
+- Added direct, tenant-scoped login-logo uploads to a constrained public
+  Supabase Storage bucket, an immediate logo preview in tenant settings, and an
+  authenticated sign-in-disabled login-page preview for Superadmins and Admins.
 - Replaced the Superadmin console's horizontal section tabs with the same
   responsive desktop sidebar and mobile navigation pattern used by Admin, and
   added an audited tenant-row action that sends active Admins a Supabase

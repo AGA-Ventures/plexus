@@ -23,8 +23,11 @@ describe("Plexus password recovery email", () => {
     expect(config).toContain('sender_name = "Plexus Security"')
   })
 
-  it("keeps the supported Supabase recovery variables intact", () => {
-    expect(template.match(/{{ \.ConfirmationURL }}/g)).toHaveLength(3)
+  it("uses a cross-device recovery token instead of a PKCE confirmation URL", () => {
+    expect(template).not.toContain("{{ .ConfirmationURL }}")
+    expect(template.match(/{{ \.RedirectTo }}/g)).toHaveLength(3)
+    expect(template.match(/{{ \.TokenHash }}/g)).toHaveLength(3)
+    expect(template.match(/type=recovery/g)).toHaveLength(3)
     expect(template).toContain("{{ .Email }}")
   })
 

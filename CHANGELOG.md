@@ -8,6 +8,10 @@ reviewed together.
 
 ### 2026-07-29
 
+- Made password-recovery emails work across browsers and devices. The hosted
+  template now sends Supabase's one-time recovery token hash to the protected
+  callback, which verifies it as a recovery OTP before opening the new-password
+  form; legacy PKCE callback codes remain temporarily supported.
 - Fixed Admin password-recovery emails opening the wrong localhost port. Local
   development now builds the Supabase callback from the active loopback request
   while Production continues to trust only the configured canonical origin;

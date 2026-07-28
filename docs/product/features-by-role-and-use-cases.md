@@ -651,7 +651,7 @@ flowchart LR
 | ---------------------------------------- | ----------------- | ------------------------------------------------------- |
 | `/[locale]/login`                        | Public            | Shared login and role-directed routing                  |
 | `/[locale]/forgot-password`              | Public            | Generic password-recovery email request                 |
-| `/auth/callback`                         | Public            | Supabase PKCE code exchange for a recovery session      |
+| `/auth/callback`                         | Public            | Supabase recovery token verification and legacy PKCE exchange |
 | `/[locale]/reset-password`               | Recovery session  | Set a new password for the recovered account            |
 | `/[locale]/superadmin`                   | Superadmin        | Platform control center                                 |
 | `/[locale]/login-preview`                | Superadmin, Admin | Authenticated, sign-in-disabled tenant branding preview |

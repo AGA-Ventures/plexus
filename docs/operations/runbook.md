@@ -70,9 +70,10 @@ chat or repository files.
 
 Users request recovery from the tenant-aware login page. The public response
 is deliberately generic so it does not reveal whether an account exists.
-Supabase exchanges the one-time email code at `/auth/callback`; only the
+Plexus verifies the one-time recovery token hash at `/auth/callback`; only the
 recovered user session can update its password, after which the session signs
-out and returns to login.
+out and returns to login. This token-hash flow works when a Superadmin sends
+the email and the Admin opens it on another browser or device.
 
 An authenticated Superadmin can also choose **Send reset link** from an Admin
 tenant row. That server action revalidates the target as an active Admin,

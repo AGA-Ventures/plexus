@@ -20,7 +20,7 @@
 | Identity         | Shared email/password login and logout          | Live            | Supabase Auth, `app/actions/auth.ts` |
 | Identity         | Superadmin/Admin/Vendor route isolation         | Live            | `proxy.ts`, `lib/authorization.ts`   |
 | Identity         | Admin and Vendor account provisioning           | Controlled      | Auth Admin API, management actions   |
-| Identity         | Self-service password recovery                  | Controlled      | Supabase Auth email and PKCE flow    |
+| Identity         | Self-service password recovery                  | Controlled      | Supabase Auth token-hash email flow  |
 | Identity         | Invitation email and first-time password setup  | Planned         | Supabase Auth email flow             |
 | Tenancy          | Admin tenant lifecycle and branding             | Live            | `admin_tenants`, Superadmin console  |
 | Tenancy          | Vendor ownership and cross-tenant transfer      | Live            | `vendor_companies`, audited RPC      |

@@ -64,9 +64,13 @@ All roles can use the tenant-aware **Forgot password?** link:
    same generic success response for valid email syntax.
 2. Supabase Auth sends the recovery email without the application querying or
    revealing whether the account exists.
-3. `/auth/callback` exchanges the one-time PKCE code for a cookie-backed
-   recovery session. The callback accepts only localized
-   `/{locale}/reset-password` destinations, preventing an open redirect.
+3. The recovery template sends the recipient directly to `/auth/callback`
+   with Supabase's one-time token hash. The callback verifies it as a
+   `recovery` OTP and creates a cookie-backed session on the recipient's
+   browser, so a Superadmin may initiate recovery without requiring the Admin
+   to use the same browser. Legacy PKCE codes remain accepted during migration.
+   The callback accepts only localized `/{locale}/reset-password`
+   destinations, preventing an open redirect.
 4. `/{locale}/reset-password` requires a verified Supabase user session and
    updates only that signed-in Auth user's password.
 5. The recovery session is signed out after the update, and the user returns
@@ -85,7 +89,7 @@ production requests continue to use only the configured canonical origin.
 | --------------------------- | ------------------- | ------------------------------------- |
 | `/[locale]/login`           | None                | Shared role-directed login            |
 | `/[locale]/forgot-password` | None                | Generic recovery-email request        |
-| `/auth/callback`            | One-time Auth code  | PKCE recovery-session exchange        |
+| `/auth/callback`            | One-time token/code | Token-hash recovery verification; legacy PKCE exchange |
 | `/[locale]/reset-password`  | Recovered user      | Update the recovered account password |
 
 ## Canonical protected routes

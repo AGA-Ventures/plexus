@@ -13,12 +13,13 @@ const templateUrl = new URL(
 )
 
 function renderPreview(template) {
-  const previewLink =
-    "http://localhost:3000/en/reset-password?tenant=plexus-managed"
+  const previewRedirectTo =
+    "http://localhost:3000/auth/callback?next=%2Fen%2Freset-password%3Ftenant%3Dplexus-managed"
 
   return template
     .replaceAll("{{ .Email }}", "admin@plexus.example")
-    .replaceAll("{{ .ConfirmationURL }}", previewLink)
+    .replaceAll("{{ .RedirectTo }}", previewRedirectTo)
+    .replaceAll("{{ .TokenHash }}", "sample-recovery-token-hash")
 }
 
 const server = createServer(async (request, response) => {

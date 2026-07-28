@@ -89,7 +89,10 @@ worktree rather than stashing, overwriting, or committing that work.
 - Treat `supabase/templates/recovery.html` as the version-controlled source for
   the recovery email. Hosted Supabase does not read this local file: copy its
   HTML and the subject `Reset your Plexus password` into **Authentication >
-  Email Templates > Reset password** for the approved project.
+  Email Templates > Reset password** for the approved project. The hosted
+  template must retain `.RedirectTo`, `.TokenHash`, and `type=recovery`; using
+  `.ConfirmationURL` restores the same-browser PKCE limitation and breaks
+  Superadmin-initiated recovery for another Admin.
 - Configure custom SMTP with the sender name `Plexus Security` and a verified,
   dedicated authentication sender address. The built-in sender displays
   `Supabase Auth`, is restricted, and is not suitable for external

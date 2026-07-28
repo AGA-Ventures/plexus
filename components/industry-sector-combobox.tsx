@@ -89,9 +89,11 @@ export function IndustrySectorCombobox({
         </PopoverTrigger>
         <PopoverContent
           align="start"
-          className="w-[min(42rem,calc(100vw-2rem))] p-0"
+          collisionPadding={16}
+          className="flex max-h-[min(28rem,var(--radix-popover-content-available-height))] min-h-0 w-[min(42rem,calc(100vw-2rem))] flex-col p-0"
         >
           <Command
+            className="min-h-0 flex-1"
             filter={(value, search) => {
               const normalizedValue = value.toLocaleLowerCase()
               const searchTerms = search
@@ -109,7 +111,10 @@ export function IndustrySectorCombobox({
               placeholder="Search by industry, activity, or ISIC code…"
               aria-label="Search global industry sectors"
             />
-            <CommandList id={listId} className="max-h-96">
+            <CommandList
+              id={listId}
+              className="max-h-none min-h-0 flex-1 overscroll-contain"
+            >
               <CommandEmpty>
                 No matching industry. Search a broader activity.
               </CommandEmpty>
@@ -249,9 +254,11 @@ export function IndustrySectorMultiCombobox({
         </PopoverTrigger>
         <PopoverContent
           align="start"
-          className="w-[min(42rem,calc(100vw-2rem))] p-0"
+          collisionPadding={16}
+          className="flex max-h-[min(28rem,var(--radix-popover-content-available-height))] min-h-0 w-[min(42rem,calc(100vw-2rem))] flex-col p-0"
         >
           <Command
+            className="min-h-0 flex-1"
             filter={(itemValue, search) => {
               const normalizedValue = itemValue.toLocaleLowerCase()
               const searchTerms = search
@@ -269,7 +276,10 @@ export function IndustrySectorMultiCombobox({
               placeholder="Search by industry, activity, or ISIC code…"
               aria-label="Search global industry sectors"
             />
-            <CommandList id={listId} className="max-h-96">
+            <CommandList
+              id={listId}
+              className="max-h-none min-h-0 flex-1 overscroll-contain"
+            >
               <CommandEmpty>
                 No matching industry. Search a broader activity.
               </CommandEmpty>

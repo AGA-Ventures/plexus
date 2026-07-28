@@ -8,6 +8,17 @@ reviewed together.
 
 ### 2026-07-28
 
+- Fixed the industry sector picker overflowing its dialog and scrolling badly.
+  The panel had a fixed 24rem list inside an unbounded popover, so on shorter
+  screens it ran past the viewport and its lower entries could not be reached.
+  It is now bounded by the space the browser actually has between the trigger
+  and the screen edge, keeps a 16px margin from every edge, and contains its
+  own wheel scrolling so it no longer scrolls the dialog behind it. The list
+  also shows a scrollbar: it previously carried a `no-scrollbar` class that
+  was never defined anywhere in the project, leaving a long list with no
+  visible sign that it scrolled at all. Both the single and multi-select
+  pickers are fixed, which covers Vendor provisioning, Superadmin and Admin
+  company editing, the Vendor directory, and the registration profile.
 - Made the Vendor provisioning form explain itself. Required fields now carry a
   marker with a screen-reader equivalent, the one optional field is labelled as
   such, and every field states its purpose: **Account holder** identifies the

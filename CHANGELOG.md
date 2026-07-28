@@ -8,6 +8,10 @@ reviewed together.
 
 ### 2026-07-29
 
+- Kept Admins inside their tenant workspace when they select **Compliance**.
+  The Admin navigation now opens an in-workspace **In progress** panel instead
+  of navigating to the separate compliance console, which remains available at
+  its existing public route for future phases.
 - Restored wheel and touch scrolling inside industry-sector pickers nested in
   Vendor dialogs while keeping the surrounding dialog stationary.
 

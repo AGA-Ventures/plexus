@@ -1372,6 +1372,7 @@ function adminTabItems(locale: Locale) {
     { value: "resources", label: t.resources, icon: Upload01Icon },
     { value: "onsite", label: t.onsite, icon: QrCodeIcon },
     { value: "reports", label: t.reports, icon: Download01Icon },
+    { value: "compliance", label: t.compliance, icon: SecurityCheckIcon },
   ] satisfies NavItem[]
 }
 
@@ -2504,11 +2505,6 @@ function AdminPortal(props: {
             label: navigationCopy.vendorAccounts,
             icon: UserAccountIcon,
           },
-          {
-            href: `/${locale}/compliance`,
-            label: navigationCopy.compliance,
-            icon: SecurityCheckIcon,
-          },
         ]}
         activeValue={activeTab}
         onValueChange={setActiveTab}
@@ -3041,6 +3037,41 @@ function AdminPortal(props: {
 
       <TabsContent value="reports" className="min-w-0">
         <ReportsPanel db={db} metrics={metrics} locale={locale} />
+      </TabsContent>
+
+      <TabsContent value="compliance" className="min-w-0">
+        <Card>
+          <CardHeader className="gap-4">
+            <div className="flex size-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <HugeiconsIcon
+                icon={SecurityCheckIcon}
+                strokeWidth={1.7}
+                className="size-6"
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="font-heading text-lg font-semibold">
+                {textFor(
+                  locale,
+                  "Compliance is coming soon",
+                  "合规功能即将推出",
+                  "ฟีเจอร์การปฏิบัติตามข้อกำหนดกำลังจะมา"
+                )}
+              </h2>
+              <Badge variant="secondary">
+                {textFor(locale, "In progress", "开发中", "กำลังดำเนินการ")}
+              </Badge>
+            </div>
+            <CardDescription className="max-w-2xl text-sm leading-6">
+              {textFor(
+                locale,
+                "Compliance tools are not included in the current project phase. This workspace will become available to all Admins in a future release.",
+                "合规工具不包含在当前项目阶段中。此工作区将在未来版本中向所有管理员开放。",
+                "เครื่องมือด้านการปฏิบัติตามข้อกำหนดยังไม่รวมอยู่ในโครงการระยะปัจจุบัน และจะเปิดให้ผู้ดูแลระบบทุกคนใช้งานในเวอร์ชันถัดไป"
+              )}
+            </CardDescription>
+          </CardHeader>
+        </Card>
       </TabsContent>
     </Tabs>
   )
@@ -3735,11 +3766,6 @@ export function AdminWorkspaceRouteNavigation({
           href: `/${locale}/admin/vendors`,
           label: copy.vendorAccounts,
           icon: UserAccountIcon,
-        },
-        {
-          href: `/${locale}/compliance`,
-          label: copy.compliance,
-          icon: SecurityCheckIcon,
         },
       ]}
       itemHref={(value) => `/${locale}/admin?section=${value}`}

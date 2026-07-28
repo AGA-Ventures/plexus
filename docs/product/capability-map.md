@@ -2,7 +2,7 @@
 
 **Owner:** Product and engineering leads
 **Review trigger:** Capability delivery, retirement, or production-readiness change
-**Last reviewed:** 2026-07-28
+**Last reviewed:** 2026-07-29
 
 ## Status definitions
 
@@ -35,7 +35,8 @@
 | Communications   | Announcements and notifications                 | Live data model | Tenant-scoped tables                 |
 | Communications   | Transactional email/push delivery               | Adapter         | API routes/provider pending          |
 | Resources        | Private resource metadata and uploads           | Live            | Storage bucket and API routes        |
-| Compliance       | SSM/CTOS/World-Check interface                  | Adapter         | Protected compliance routes          |
+| Compliance       | Admin tenant compliance workspace               | Planned         | Admin shell phase-status panel        |
+| Compliance       | SSM/CTOS/World-Check interface                  | Adapter         | Protected compliance routes           |
 | Governance       | Platform settings and provisioning controls     | Live            | `platform_settings`                  |
 | Governance       | Append-only privileged audit events             | Live            | `audit_events` and triggers          |
 | Reporting        | Operational dashboard summaries                 | Controlled      | Existing portal views                |

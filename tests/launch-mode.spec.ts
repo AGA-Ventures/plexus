@@ -246,7 +246,14 @@ test.describe("Admin tenant flow", () => {
     await expect(
       page.getByRole("link", { name: "Vendor accounts" })
     ).toBeVisible()
-    await expect(page.getByRole("link", { name: "Compliance" })).toBeVisible()
+    const complianceTab = page.getByRole("tab", { name: "Compliance" })
+    await expect(complianceTab).toBeVisible()
+    await complianceTab.click()
+    await expect(page).toHaveURL(/\/en\/admin\/?$/)
+    await expect(
+      page.getByRole("heading", { name: "Compliance is coming soon" })
+    ).toBeVisible()
+    await expect(page.getByText("In progress", { exact: true })).toBeVisible()
     await expect(
       page.getByRole("button", { name: "Provision Vendor account" })
     ).toHaveCount(0)

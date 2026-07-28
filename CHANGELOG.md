@@ -8,6 +8,29 @@ reviewed together.
 
 ### 2026-07-28
 
+- Resolved the conflict between Admin-arranged meetings and provider-link
+  protection. The arranging Admin is the scheduling authority, so manual
+  meeting creation now books the Zoom or Lark meeting and issues its protected
+  join link immediately instead of withholding it until both Vendors accept.
+  The override never accepts on a Vendor's behalf: acceptance columns stay
+  empty, an undecided match keeps its `Proposed` status, and the database
+  constraint and trigger that require mutual acceptance before a match may
+  advance remain unchanged. When the provider is unreachable the meeting still
+  reaches both calendars and the Admin receives an explicit warning that the
+  link is missing. The Vendor-driven path, the `POST /api/meetings` route, and
+  automatic creation after the second acceptance all keep their existing
+  mutual-acceptance requirement.
+- Allowed Admins to reschedule a provider-backed meeting instead of blocking
+  the change. Amending the platform, date, or duration books a replacement
+  provider meeting and issues a new slug, retiring the previous join link so it
+  cannot outlive the schedule it was issued for; the details dialog states this
+  before the change is saved, and a provider failure now leaves the original
+  meeting and link untouched.
+- Widened the protected join window so a link is usable in practice: it opens
+  15 minutes before the start for early arrivals and expires 30 minutes after
+  the scheduled end for meetings that run over, replacing a window that was
+  valid only between the exact start and end times.
+
 - Added a real Admin MOU workflow: tenant operators can create one agreement
   from an existing Vendor match, move it through signing statuses, upload or
   replace a validated private PDF up to 10 MiB, review it through a 60-second

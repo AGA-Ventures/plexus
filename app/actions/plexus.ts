@@ -40,7 +40,9 @@ import type {
 } from "@/lib/local-db"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
-type ActionResult = { ok: true; db: LocalDb } | { ok: false; error: string }
+type ActionResult =
+  | { ok: true; db: LocalDb; warning?: string }
+  | { ok: false; error: string }
 
 const uuidSchema = z.uuid()
 const delegationStatusSchema = z.enum([
@@ -151,7 +153,10 @@ async function runMutation(
 async function withSession(
   operation: (
     context: Awaited<ReturnType<typeof createActionContext>>
-  ) => Promise<{ error?: { message: string } | null } | void>,
+  ) => Promise<{
+    error?: { message: string } | null
+    warning?: string
+  } | void>,
   options?: { role?: AppRole }
 ): Promise<ActionResult> {
   const context = await createActionContext()
@@ -177,7 +182,11 @@ async function withSession(
     return { ok: false, error: result.error.message }
   }
 
-  return { ok: true, db: await loadPlexusDb(context.supabase) }
+  const db = await loadPlexusDb(context.supabase)
+
+  return result?.warning
+    ? { ok: true, db, warning: result.warning }
+    : { ok: true, db }
 }
 
 async function createActionContext() {
@@ -560,25 +569,58 @@ export async function createManualMeetingAction(
         `Admin-arranged meeting between ${delegationResult.data.name_en} and ${partnerResult.data.name_en}.`,
         `Preferred provider: ${parsed.data.platform === "zoom" ? "Zoom" : "Lark"}.`,
         `Agenda: ${parsed.data.agenda}`,
-        existingMatchResult.data?.status === "Accepted" ||
-        existingMatchResult.data?.status === "Session Scheduled"
-          ? "The accepted match is ready for protected provider-link creation."
-          : "The calendar slot is confirmed; a protected Zoom or Lark link remains unavailable until both Vendors accept the match.",
+        "The tenant Admin authorized the protected provider link directly.",
       ].join(" ")
 
-      return supabase.from("meetings").insert({
-        admin_id: identity.adminId,
-        match_id: matchId,
-        starts_at: parsed.data.startsAt,
-        duration_minutes: parsed.data.durationMinutes,
-        platform: parsed.data.platform === "zoom" ? "Zoom" : "Lark",
-        link: "",
-        interpreter: interpreterLabel,
-        requested_interpreter_id: interpreter?.id ?? null,
-        host: identity.displayName,
-        status: "Scheduled",
-        summary,
-      })
+      const meetingResult = await supabase
+        .from("meetings")
+        .insert({
+          admin_id: identity.adminId,
+          match_id: matchId,
+          starts_at: parsed.data.startsAt,
+          duration_minutes: parsed.data.durationMinutes,
+          platform: parsed.data.platform === "zoom" ? "Zoom" : "Lark",
+          link: "",
+          interpreter: interpreterLabel,
+          requested_interpreter_id: interpreter?.id ?? null,
+          host: identity.displayName,
+          status: "Scheduled",
+          summary,
+        })
+        .select("id")
+        .single()
+
+      if (meetingResult.error || !meetingResult.data) {
+        return {
+          error: { message: "Unable to add the meeting to the calendar." },
+        }
+      }
+
+      // An Admin who arranges the meeting is the scheduling authority, so the
+      // protected link is issued now instead of waiting for mutual acceptance.
+      try {
+        await createMeeting({
+          matchId,
+          adminId: identity.adminId,
+          meetingId: meetingResult.data.id,
+          provider: parsed.data.platform,
+          topic: `${delegationResult.data.name_en} ↔ ${partnerResult.data.name_en}`,
+          durationMinutes: parsed.data.durationMinutes,
+          startsAt: new Date(parsed.data.startsAt),
+          allowWithoutMutualAcceptance: true,
+          summary,
+        })
+      } catch (error) {
+        return {
+          warning: `The meeting is on both calendars, but the protected ${
+            parsed.data.platform === "zoom" ? "Zoom" : "Lark"
+          } link could not be created: ${
+            error instanceof Error
+              ? error.message
+              : "the meeting provider is unavailable."
+          }`,
+        }
+      }
     },
     { role: "admin" }
   )
@@ -661,14 +703,8 @@ export async function updateMeetingAction(
         meetingResult.data.duration_minutes !== parsed.data.durationMinutes ||
         meetingResult.data.platform !== platform
 
-      if (meetingResult.data.link && scheduleChanged) {
-        return {
-          error: {
-            message:
-              "This meeting already has a protected provider link. Reschedule it through the meeting provider before changing its platform or time.",
-          },
-        }
-      }
+      const needsReprovision =
+        Boolean(meetingResult.data.link) && scheduleChanged
 
       const duplicateResult = await supabase
         .from("meetings")
@@ -701,10 +737,51 @@ export async function updateMeetingAction(
         "Admin-amended meeting.",
         `Preferred provider: ${platform}.`,
         `Agenda: ${parsed.data.agenda}`,
-        meetingResult.data.link
-          ? "Protected provider link retained."
-          : "The calendar slot is confirmed; a protected Zoom or Lark link remains unavailable until both Vendors accept the match.",
+        needsReprovision
+          ? "A fresh protected provider link replaced the previous one."
+          : meetingResult.data.link
+            ? "Protected provider link retained."
+            : "The calendar slot is confirmed; a protected Zoom or Lark link remains unavailable until both Vendors accept the match.",
       ].join(" ")
+
+      // Rescheduling a provider-backed meeting books a new provider meeting and
+      // retires the previous protected link, so the old join URL cannot outlive
+      // the schedule it was issued for.
+      if (needsReprovision) {
+        try {
+          await createMeeting({
+            matchId: meetingResult.data.match_id,
+            adminId: identity.adminId,
+            meetingId: meetingResult.data.id,
+            provider: parsed.data.platform,
+            topic: "Plexus business matching meeting",
+            durationMinutes: parsed.data.durationMinutes,
+            startsAt: new Date(parsed.data.startsAt),
+            allowWithoutMutualAcceptance: true,
+            replaceExistingLink: true,
+            summary,
+          })
+        } catch (error) {
+          return {
+            error: {
+              message: `The ${platform} meeting could not be rescheduled: ${
+                error instanceof Error
+                  ? error.message
+                  : "the meeting provider is unavailable."
+              }`,
+            },
+          }
+        }
+
+        return supabase
+          .from("meetings")
+          .update({
+            interpreter: interpreterLabel,
+            requested_interpreter_id: interpreter?.id ?? null,
+          })
+          .eq("id", parsed.data.meetingId)
+          .eq("admin_id", identity.adminId)
+      }
 
       return supabase
         .from("meetings")

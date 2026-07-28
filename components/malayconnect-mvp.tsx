@@ -1642,7 +1642,9 @@ export function PlexusConnectMvp({
   ])
 
   async function applyServerResult(
-    action: Promise<{ ok: true; db: LocalDb } | { ok: false; error: string }>,
+    action: Promise<
+      { ok: true; db: LocalDb; warning?: string } | { ok: false; error: string }
+    >,
     successMessage: string
   ) {
     setIsSaving(true)
@@ -1655,7 +1657,11 @@ export function PlexusConnectMvp({
       }
 
       setDb(result.db)
-      toast.success(successMessage)
+      if (result.warning) {
+        toast.warning(result.warning)
+      } else {
+        toast.success(successMessage)
+      }
       router.refresh()
       return true
     } catch (error) {
@@ -7847,13 +7853,17 @@ function ManualMeetingDialog({
         <Alert>
           <Icon icon={SecurityCheckIcon} />
           <AlertTitle>
-            {textFor(locale, "Provider-link protection", "会议链接保护")}
+            {textFor(
+              locale,
+              "Admin-authorized meeting link",
+              "管理员授权会议链接"
+            )}
           </AlertTitle>
           <AlertDescription>
             {textFor(
               locale,
-              "This schedules the calendar record immediately. A protected Zoom or Lark link is created only after both Vendors accept the match.",
-              "系统会立即建立日历记录；只有双方供应商接受配对后，才会建立受保护的 Zoom 或 Lark 链接。"
+              "As the arranging Admin you are the scheduling authority, so Plexus books the Zoom or Lark meeting and issues its protected join link straight away — mutual Vendor acceptance is not required. The link stays time-boxed and access-limited.",
+              "作为安排会议的管理员，您即为排程权限方，因此 Plexus 会立即预约 Zoom 或 Lark 会议并签发受保护的加入链接，无需双方供应商先行接受。该链接仍受时段与访问次数限制保护。"
             )}
           </AlertDescription>
         </Alert>
@@ -8258,15 +8268,15 @@ function MeetingDetailsDialog({
                 <AlertTitle>
                   {textFor(
                     locale,
-                    "Protected link retained",
-                    "保留受保护会议链接"
+                    "Rescheduling reissues the link",
+                    "改期将重新签发链接"
                   )}
                 </AlertTitle>
                 <AlertDescription>
                   {textFor(
                     locale,
-                    "This meeting already has a protected provider link. Its platform, date, and duration are locked here; the agenda and interpreter can still be amended.",
-                    "此会议已有受保护的平台链接。平台、日期和时长会在此锁定，但仍可修改议程与翻译。"
+                    "This meeting has a protected provider link. Changing the platform, date, or duration books a new provider meeting and retires the previous join link, so share the new link with both Vendors.",
+                    "此会议已有受保护的平台链接。变更平台、日期或时长会重新预约会议并停用原有加入链接，请将新链接分享给双方供应商。"
                   )}
                 </AlertDescription>
               </Alert>
@@ -8279,7 +8289,6 @@ function MeetingDetailsDialog({
                 </FieldLabel>
                 <Select
                   value={platform}
-                  disabled={isProtected}
                   onValueChange={(value) =>
                     setPlatform(value as MeetingAmendmentInput["platform"])
                   }
@@ -8303,7 +8312,6 @@ function MeetingDetailsDialog({
                 </FieldLabel>
                 <Select
                   value={durationMinutes}
-                  disabled={isProtected}
                   onValueChange={setDurationMinutes}
                 >
                   <SelectTrigger
@@ -8330,7 +8338,6 @@ function MeetingDetailsDialog({
                   id={`meetingStartsAt-${meeting.id}`}
                   type="datetime-local"
                   value={startsAt}
-                  disabled={isProtected}
                   onChange={(event) => setStartsAt(event.target.value)}
                 />
               </div>

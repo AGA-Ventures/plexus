@@ -390,20 +390,26 @@ diligence decision.
 - Review company pair, date/time, duration, platform, host, interpreter,
   meeting status, agreement status, and summary.
 - Open any calendar entry or meeting-list row in a responsive details dialog.
-  Admins can amend a future unlinked meeting's time, duration, Zoom/Lark
-  preference, interpreter, and agenda. Vendor pairing is immutable; meetings
-  with protected links keep provider, date, and duration locked while still
-  allowing agenda and interpreter changes. Completed and cancelled meetings
-  are read-only.
+  Admins can amend a meeting's time, duration, Zoom/Lark preference,
+  interpreter, and agenda. Vendor pairing is immutable. Rescheduling a meeting
+  that already has a protected link books a replacement provider meeting and
+  issues a new link, retiring the previous one so it can no longer be used;
+  the dialog states this before the change is saved. Completed and cancelled
+  meetings are read-only.
 - Copy the protected Plexus join link from the meeting row or details dialog
   once it is ready. The copy control remains disabled while acceptance or
   provider creation is pending and never exposes the raw Zoom/Lark URL.
 - Manually select one delegation Vendor and one Malaysian partner, set a future
   time, Zoom or Lark preference, duration, interpreter, and agenda, and add the
   meeting to both Vendor calendars. Plexus creates or reuses the tenant-scoped
-  match, rejects rejected pairs and duplicate times, and keeps the provider
-  link pending until both Vendors accept. Compact company names in the closed
-  selectors prevent long sector labels from colliding with adjacent fields.
+  match, rejects rejected pairs and duplicate times, and — because the
+  arranging Admin is the scheduling authority — books the Zoom or Lark meeting
+  and issues its protected join link immediately, without waiting for mutual
+  acceptance. The override never records acceptance for a Vendor, so an
+  undecided match keeps its `Proposed` status. If the provider is unreachable
+  the meeting still reaches both calendars and the Admin is warned that the
+  link is missing. Compact company names in the closed selectors prevent long
+  sector labels from colliding with adjacent fields.
 - Review truthful Zoom and Lark readiness plus protected-link readiness in
   Meeting settings. `Online` means the required server configuration,
   protected-link origin, and provider authorization are present; the provider

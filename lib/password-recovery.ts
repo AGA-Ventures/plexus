@@ -50,11 +50,30 @@ export function getLoginPath(
 
 export function resolvePasswordRecoveryOrigin({
   productionUrl,
+  requestUrl,
   siteUrl,
+  environment = process.env.NODE_ENV,
 }: {
   productionUrl?: string
+  requestUrl?: string | null
   siteUrl?: string
+  environment?: string
 }) {
+  if (environment === "development" && requestUrl) {
+    try {
+      const requestOrigin = new URL(requestUrl)
+
+      if (
+        ["localhost", "127.0.0.1", "[::1]"].includes(requestOrigin.hostname) &&
+        ["http:", "https:"].includes(requestOrigin.protocol)
+      ) {
+        return requestOrigin.origin
+      }
+    } catch {
+      // Ignore malformed request metadata and continue with configured origins.
+    }
+  }
+
   const candidate = productionUrl
     ? `https://${productionUrl}`
     : siteUrl || fallbackOrigin

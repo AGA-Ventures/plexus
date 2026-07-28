@@ -1,6 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { headers } from "next/headers"
 import { z } from "zod"
 
 import { isActiveAdminRecoveryAccount } from "@/lib/admin-password-recovery"
@@ -514,8 +515,13 @@ export async function sendAdminPasswordResetAction(input: {
       }
     }
 
+    const requestHeaders = await headers()
     const origin = resolvePasswordRecoveryOrigin({
       productionUrl: process.env.VERCEL_PROJECT_PRODUCTION_URL,
+      requestUrl:
+        requestHeaders.get("origin") ??
+        requestHeaders.get("referer") ??
+        undefined,
       siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
     })
     const redirectTo = getPasswordRecoveryRedirectUrl({

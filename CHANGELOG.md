@@ -8,6 +8,10 @@ reviewed together.
 
 ### 2026-07-29
 
+- Fixed Admin password-recovery emails opening the wrong localhost port. Local
+  development now builds the Supabase callback from the active loopback request
+  while Production continues to trust only the configured canonical origin;
+  the local site and application URLs are also aligned to port 3000.
 - Kept Admins inside their tenant workspace when they select **Compliance**.
   The Admin navigation now opens an in-workspace **In progress** panel instead
   of navigating to the separate compliance console, which remains available at

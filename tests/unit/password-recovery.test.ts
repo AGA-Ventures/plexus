@@ -40,6 +40,35 @@ describe("password recovery routes", () => {
     ).toBe("https://plexus.example")
   })
 
+  it("uses the active loopback origin during local development", () => {
+    expect(
+      resolvePasswordRecoveryOrigin({
+        environment: "development",
+        productionUrl: "plexus.example",
+        requestUrl: "http://localhost:3000/en/superadmin",
+        siteUrl: "http://localhost:3001",
+      })
+    ).toBe("http://localhost:3000")
+    expect(
+      resolvePasswordRecoveryOrigin({
+        environment: "development",
+        requestUrl: "http://127.0.0.1:3000/en/forgot-password",
+        siteUrl: "http://localhost:3001",
+      })
+    ).toBe("http://127.0.0.1:3000")
+  })
+
+  it("does not trust a request origin in production", () => {
+    expect(
+      resolvePasswordRecoveryOrigin({
+        environment: "production",
+        productionUrl: "plexus.example",
+        requestUrl: "https://attacker.example/forgot-password",
+        siteUrl: "https://www.plexus.enterprises",
+      })
+    ).toBe("https://plexus.example")
+  })
+
   it("falls back safely when the configured site URL is invalid", () => {
     expect(
       resolvePasswordRecoveryOrigin({

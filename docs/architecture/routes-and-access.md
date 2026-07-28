@@ -74,7 +74,10 @@ All roles can use the tenant-aware **Forgot password?** link:
 
 Production email delivery requires the approved application origin in
 Supabase Auth Site URL/redirect settings and a production SMTP provider for
-external Admin and Vendor recipients.
+external Admin and Vendor recipients. Local development uses the active
+loopback request origin for the callback, so a stale configured development
+port cannot send the browser to a different localhost server; non-loopback and
+production requests continue to use only the configured canonical origin.
 
 ## Canonical public auth routes
 

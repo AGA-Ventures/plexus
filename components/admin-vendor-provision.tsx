@@ -1,6 +1,6 @@
 "use client"
 
-import { type FormEvent, useState, useTransition } from "react"
+import { type FormEvent, type ReactNode, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
@@ -54,14 +54,21 @@ export function AdminVendorProvision({
   locale,
   adminId,
   disabled = false,
+  lockedVendorType,
+  trigger,
 }: {
   locale: Locale
   adminId: string
   disabled?: boolean
+  /** Opened from a subtype-specific tab: preset the subtype and hold it. */
+  lockedVendorType?: VendorType
+  trigger?: ReactNode
 }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [vendorType, setVendorType] = useState<VendorType>("delegation")
+  const [vendorType, setVendorType] = useState<VendorType>(
+    lockedVendorType ?? "delegation"
+  )
   const [pending, startTransition] = useTransition()
   const selectedVendorType =
     vendorTypeOptions.find((option) => option.value === vendorType) ??
@@ -99,14 +106,16 @@ export function AdminVendorProvision({
       open={open}
       onOpenChange={(nextOpen) => {
         setOpen(nextOpen)
-        if (nextOpen) setVendorType("delegation")
+        if (nextOpen) setVendorType(lockedVendorType ?? "delegation")
       }}
     >
       <DialogTrigger asChild>
-        <Button disabled={disabled}>
-          <HugeiconsIcon icon={AddIcon} data-icon="inline-start" />
-          Provision Vendor account
-        </Button>
+        {trigger ?? (
+          <Button disabled={disabled}>
+            <HugeiconsIcon icon={AddIcon} data-icon="inline-start" />
+            Provision Vendor account
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
@@ -120,63 +129,85 @@ export function AdminVendorProvision({
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="grid min-w-0 gap-1.5">
               <Label htmlFor="adminVendorType">Vendor subtype</Label>
-              <Select
-                value={vendorType}
-                onValueChange={(value) => setVendorType(value as VendorType)}
-              >
-                <SelectTrigger
+              {lockedVendorType ? (
+                <div
                   id="adminVendorType"
-                  className="h-auto min-h-12 w-full min-w-0 overflow-hidden px-3 py-2 text-left"
+                  className="flex min-h-12 min-w-0 items-center gap-2.5 rounded-md border border-border bg-muted/40 px-3 py-2"
                 >
-                  <SelectValue>
-                    <span className="flex min-w-0 items-center gap-2.5">
-                      <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
-                        <HugeiconsIcon
-                          icon={selectedVendorType.icon}
-                          className="size-4"
-                        />
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block text-xs font-medium text-foreground">
-                          {selectedVendorType.label}
-                        </span>
-                        <span className="block truncate text-[0.6875rem] leading-4 text-muted-foreground">
-                          {selectedVendorType.description}
-                        </span>
-                      </span>
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
+                    <HugeiconsIcon
+                      icon={selectedVendorType.icon}
+                      className="size-4"
+                    />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-xs font-medium text-foreground">
+                      {selectedVendorType.label}
                     </span>
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent
-                  align="start"
-                  className="min-w-[min(22rem,calc(100vw-2rem))] p-1"
+                    <span className="block truncate text-[0.6875rem] leading-4 text-muted-foreground">
+                      {selectedVendorType.description}
+                    </span>
+                  </span>
+                </div>
+              ) : (
+                <Select
+                  value={vendorType}
+                  onValueChange={(value) => setVendorType(value as VendorType)}
                 >
-                  {vendorTypeOptions.map((option) => (
-                    <SelectItem
-                      key={option.value}
-                      value={option.value}
-                      className="min-h-14 py-2.5 pr-8"
-                    >
-                      <span className="flex items-start gap-2.5">
-                        <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/70 text-muted-foreground">
+                  <SelectTrigger
+                    id="adminVendorType"
+                    className="h-auto min-h-12 w-full min-w-0 overflow-hidden px-3 py-2 text-left"
+                  >
+                    <SelectValue>
+                      <span className="flex min-w-0 items-center gap-2.5">
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
                           <HugeiconsIcon
-                            icon={option.icon}
+                            icon={selectedVendorType.icon}
                             className="size-4"
                           />
                         </span>
                         <span className="min-w-0">
                           <span className="block text-xs font-medium text-foreground">
-                            {option.label}
+                            {selectedVendorType.label}
                           </span>
-                          <span className="block text-[0.6875rem] leading-4 text-muted-foreground">
-                            {option.description}
+                          <span className="block truncate text-[0.6875rem] leading-4 text-muted-foreground">
+                            {selectedVendorType.description}
                           </span>
                         </span>
                       </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent
+                    align="start"
+                    className="min-w-[min(22rem,calc(100vw-2rem))] p-1"
+                  >
+                    {vendorTypeOptions.map((option) => (
+                      <SelectItem
+                        key={option.value}
+                        value={option.value}
+                        className="min-h-14 py-2.5 pr-8"
+                      >
+                        <span className="flex items-start gap-2.5">
+                          <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/70 text-muted-foreground">
+                            <HugeiconsIcon
+                              icon={option.icon}
+                              className="size-4"
+                            />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block text-xs font-medium text-foreground">
+                              {option.label}
+                            </span>
+                            <span className="block text-[0.6875rem] leading-4 text-muted-foreground">
+                              {option.description}
+                            </span>
+                          </span>
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               <input type="hidden" name="vendorType" value={vendorType} />
             </div>
             <div className="grid gap-1.5">

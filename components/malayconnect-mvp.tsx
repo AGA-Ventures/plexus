@@ -52,7 +52,6 @@ import {
   checkInPartnerAction,
   completeMeetingAction,
   confirmAttendanceAction,
-  createCompanyAction,
   createDealAction,
   createInterpreterAction,
   createManualMeetingAction,
@@ -115,6 +114,7 @@ import {
   type ResourceAudience,
   type ResourceCategory,
 } from "@/lib/local-db"
+import { AdminVendorProvision } from "@/components/admin-vendor-provision"
 import { formatCountdown, getMeetingCountdown } from "@/lib/meeting-countdown"
 import {
   getProtectedMeetingPath,
@@ -1682,13 +1682,6 @@ export function PlexusConnectMvp({
     }
   }
 
-  function createCompany(_kind: CompanyKind, values: ManagedCompany) {
-    void applyServerResult(
-      createCompanyAction(values),
-      `${values.nameEn} created.`
-    )
-  }
-
   function updateManagedCompany(_kind: CompanyKind, values: ManagedCompany) {
     void applyServerResult(
       updateCompanyAction(values),
@@ -2008,7 +2001,6 @@ export function PlexusConnectMvp({
             logout={logout}
             selectedDelegation={selectedDelegation}
             setSelectedDelegation={setSelectedDelegation}
-            createCompany={createCompany}
             updateManagedCompany={updateManagedCompany}
             deleteManagedCompany={deleteManagedCompany}
             addMatch={addMatch}
@@ -2343,7 +2335,6 @@ function AdminPortal(props: {
   logout: () => void
   selectedDelegation: string
   setSelectedDelegation: (value: string) => void
-  createCompany: (kind: CompanyKind, values: ManagedCompany) => void
   updateManagedCompany: (kind: CompanyKind, values: ManagedCompany) => void
   deleteManagedCompany: (kind: CompanyKind, id: string) => void
   addMatch: (partnerId: string) => void
@@ -2402,7 +2393,6 @@ function AdminPortal(props: {
     logout,
     selectedDelegation,
     setSelectedDelegation,
-    createCompany,
     updateManagedCompany,
     deleteManagedCompany,
     addMatch,
@@ -2572,16 +2562,18 @@ function AdminPortal(props: {
                 />
               </CardContent>
               <CardFooter className="flex flex-wrap gap-2">
-                <CompanyDialog
-                  kind="delegation"
-                  mode="create"
-                  onSave={(company) => createCompany("delegation", company)}
-                >
-                  <Button>
-                    <Icon icon={AddIcon} inline="inline-start" />
-                    {textFor(locale, "Add Company", "新增企业")}
-                  </Button>
-                </CompanyDialog>
+                {session.adminId ? (
+                  <AdminVendorProvision
+                    locale={locale}
+                    adminId={session.adminId}
+                    trigger={
+                      <Button>
+                        <Icon icon={AddIcon} inline="inline-start" />
+                        {textFor(locale, "Add Company", "新增企业")}
+                      </Button>
+                    }
+                  />
+                ) : null}
                 <Button
                   variant="outline"
                   onClick={() => exportPreVisitReport(db, locale)}
@@ -2636,16 +2628,19 @@ function AdminPortal(props: {
                 )}
               </p>
             </div>
-            <CompanyDialog
-              kind="delegation"
-              mode="create"
-              onSave={(company) => createCompany("delegation", company)}
-            >
-              <Button>
-                <Icon icon={AddIcon} inline="inline-start" />
-                {textFor(locale, "Add Delegation", "新增代表团")}
-              </Button>
-            </CompanyDialog>
+            {session.adminId ? (
+              <AdminVendorProvision
+                locale={locale}
+                adminId={session.adminId}
+                lockedVendorType="delegation"
+                trigger={
+                  <Button>
+                    <Icon icon={AddIcon} inline="inline-start" />
+                    {textFor(locale, "Add Delegation", "新增代表团")}
+                  </Button>
+                }
+              />
+            ) : null}
           </div>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <InfoTile
@@ -2722,16 +2717,19 @@ function AdminPortal(props: {
                 )}
               </p>
             </div>
-            <CompanyDialog
-              kind="partner"
-              mode="create"
-              onSave={(company) => createCompany("partner", company)}
-            >
-              <Button>
-                <Icon icon={AddIcon} inline="inline-start" />
-                {textFor(locale, "Add MY Partner", "新增马方伙伴")}
-              </Button>
-            </CompanyDialog>
+            {session.adminId ? (
+              <AdminVendorProvision
+                locale={locale}
+                adminId={session.adminId}
+                lockedVendorType="partner"
+                trigger={
+                  <Button>
+                    <Icon icon={AddIcon} inline="inline-start" />
+                    {textFor(locale, "Add MY Partner", "新增马方伙伴")}
+                  </Button>
+                }
+              />
+            ) : null}
           </div>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <InfoTile

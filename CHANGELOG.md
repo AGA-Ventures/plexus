@@ -8,6 +8,15 @@ reviewed together.
 
 ### 2026-07-28
 
+- Made every Admin company-creation control provision a real Vendor account.
+  **Add Delegation**, **Add MY Partner**, and **Add Company** previously wrote a
+  company row with no login, so the resulting Vendor could never sign in, while
+  a separate **Provision Vendor account** button created the company and its
+  account together. All three now open the provisioning dialog; the two
+  subtype-specific buttons preset and hold their subtype, and the generic
+  button keeps the subtype picker — it had silently hardcoded delegation
+  despite its label. The account-less creation path and its dead client
+  plumbing were removed.
 - Added a live countdown badge to every meeting card, calendar entry, and
   meeting details view. It counts down to the start, switches to the time
   remaining once the meeting is running, and reports how long ago a meeting

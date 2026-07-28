@@ -364,6 +364,27 @@ test.describe("Admin tenant flow", () => {
     await vendorTypePicker.click()
     await page.getByRole("option", { name: /Partner/ }).click()
     await expect(vendorTypePicker).toContainText("Partner")
+    const sectorPicker = dialog.getByRole("combobox", {
+      name: "Sector required",
+    })
+    await sectorPicker.click()
+    const sectorList = page.getByRole("listbox", { name: "Suggestions" })
+    await expect(sectorList).toBeVisible()
+    const initialSectorScrollTop = await sectorList.evaluate(
+      (element) => element.scrollTop
+    )
+    const initialDialogScrollTop = await dialog.evaluate(
+      (element) => element.scrollTop
+    )
+    await sectorList.hover()
+    await page.mouse.wheel(0, 500)
+    await expect
+      .poll(() => sectorList.evaluate((element) => element.scrollTop))
+      .toBeGreaterThan(initialSectorScrollTop)
+    await expect
+      .poll(() => dialog.evaluate((element) => element.scrollTop))
+      .toBe(initialDialogScrollTop)
+    await page.keyboard.press("Escape")
     await expectNoHorizontalOverflow(page)
   })
 

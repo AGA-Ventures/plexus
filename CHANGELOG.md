@@ -8,6 +8,14 @@ reviewed together.
 
 ### 2026-07-28
 
+- Stopped copied join links, Join buttons, and calendar exports from handing
+  out the origin that happened to create the meeting. A meeting created against
+  a development server stored an absolute `http://localhost:3000/m/...` URL and
+  served it to everyone, including Vendors on production. The slug is now
+  treated as the identity of a protected link and resolved against the host the
+  viewer is actually on, while legacy external provider links are left
+  untouched. Three stored production links were corrected to the production
+  origin.
 - Stopped the manual meeting dialog from stranding Admins behind a silently
   disabled **Create meeting** button. The footer now lists every outstanding
   requirement while the form is filled in, the agenda counter states its

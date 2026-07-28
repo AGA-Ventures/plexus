@@ -114,6 +114,11 @@ import {
   type ResourceCategory,
 } from "@/lib/local-db"
 import {
+  getProtectedMeetingPath,
+  toMeetingHref,
+  toShareableMeetingLink,
+} from "@/lib/meeting-links"
+import {
   type MeetingProviderReadiness,
   type MeetingProviderState,
   unavailableMeetingProviderReadiness,
@@ -4192,7 +4197,11 @@ function UserDashboard({
               </p>
               {nextMeeting.link ? (
                 <Button className="mt-3" asChild>
-                  <a href={nextMeeting.link} target="_blank" rel="noreferrer">
+                  <a
+                    href={toMeetingHref(nextMeeting.link)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     <Icon icon={CameraVideoIcon} inline="inline-start" />
                     Join meeting
                   </a>
@@ -7741,6 +7750,10 @@ function toLocalMeetingDateTime(value: string) {
     .slice(0, 16)
 }
 
+function shareableMeetingLink(link?: string) {
+  return toShareableMeetingLink(link, window.location.origin)
+}
+
 function ManualMeetingDialog({
   db,
   locale = "en",
@@ -8582,7 +8595,11 @@ function MeetingDetailsDialog({
                 <>
                   <CopyMeetingLinkButton link={meeting.link} locale={locale} />
                   <Button asChild variant="outline">
-                    <a href={meeting.link} target="_blank" rel="noreferrer">
+                    <a
+                      href={toMeetingHref(meeting.link)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       <Icon icon={CameraVideoIcon} inline="inline-start" />
                       {textFor(locale, "Join meeting", "加入会议")}
                     </a>
@@ -8616,13 +8633,13 @@ function CopyMeetingLinkButton({
     }
 
     try {
-      const shareUrl = new URL(link, window.location.origin)
+      const shareUrl = shareableMeetingLink(link)
 
-      if (!/^\/m\/[^/]+$/.test(shareUrl.pathname)) {
+      if (!shareUrl || !getProtectedMeetingPath(shareUrl)) {
         throw new Error("Only protected meeting links can be copied.")
       }
 
-      await navigator.clipboard.writeText(shareUrl.toString())
+      await navigator.clipboard.writeText(shareUrl)
       toast.success(
         textFor(
           locale,
@@ -8783,7 +8800,11 @@ function SessionList({
                 ) : null}
                 {meeting.link ? (
                   <Button asChild>
-                    <a href={meeting.link} target="_blank" rel="noreferrer">
+                    <a
+                      href={toMeetingHref(meeting.link)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       <Icon icon={CameraVideoIcon} inline="inline-start" />
                       {textFor(locale, "Join", "加入")}
                     </a>
@@ -8820,7 +8841,7 @@ function SessionList({
                               : `Plexus session ${meeting.id}`,
                             start: new Date(meeting.startsAt),
                             durationMinutes: meeting.duration,
-                            location: `${meeting.platform} · ${meeting.link}`,
+                            location: `${meeting.platform} · ${shareableMeetingLink(meeting.link)}`,
                             description: `Interpreter: ${meeting.interpreter}. Host: ${meeting.host}. ${meeting.summary}`,
                           },
                         ],
@@ -9172,7 +9193,7 @@ function MeetingCalendarView({
                       title,
                       start: new Date(meeting.startsAt),
                       durationMinutes: meeting.duration,
-                      location: `${meeting.platform} · ${meeting.link}`,
+                      location: `${meeting.platform} · ${shareableMeetingLink(meeting.link)}`,
                       description: `Interpreter: ${meeting.interpreter}. Host: ${meeting.host}. ${meeting.summary}`,
                     }
                   }),

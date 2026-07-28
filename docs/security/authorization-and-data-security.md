@@ -107,13 +107,30 @@ policy summary.
 The `event-resources` bucket is private. File access requires an authenticated,
 authorized metadata record and server-mediated path.
 
-For upload/upsert policies, remember that replacement requires `INSERT`,
-`SELECT`, and `UPDATE` permissions. Validate:
+The `vendor-profile-documents` bucket is also private. It accepts only PDF
+objects up to 6 MiB. Both the metadata table and Storage policies independently
+require an active actor and an exact tenant/company path match. The Vendor
+handler validates extension, declared MIME type, and `%PDF-` signature,
+sanitizes the filename, creates the tenant/company-prefixed path on the server,
+and never returns that path to the browser. Review uses a 60-second signed URL.
+Delete requires explicit UI confirmation and removes both the private object
+and its metadata.
+
+The `mou-documents` bucket is private and accepts only PDFs up to 10 MiB.
+Admins may create, replace, and delete documents only for deals in their own
+tenant. Vendors may read only when their trusted company binding participates
+in the deal's match. The server validates extension, MIME, size, `%PDF-`
+signature, and object name; the browser receives only a protected review
+route, which returns a 60-second signed URL. Metadata and deal mutations are
+audited.
+
+For upload/replacement policies, validate:
 
 - Tenant ownership.
+- Deal/match participation.
 - Audience.
 - MIME allowlist.
-- 15 MiB size limit.
+- Module-specific size limit.
 - Sanitized filename and storage path.
 - Download authorization.
 - Deletion and retention behavior.

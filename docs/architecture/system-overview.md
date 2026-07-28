@@ -45,9 +45,10 @@ flowchart LR
 | ------------------------ | ---------------------------------- | --------------------------- | ------------------------------------------------ |
 | Public shell             | Public routes, site header/footer  | Server-rendered pages       | Static content                                   |
 | Identity/tenancy         | Login, Superadmin, Admin           | Auth and management actions | Auth, tenants, profiles, Vendors                 |
-| Vendor onboarding        | Vendor workspace                   | Plexus actions              | Vendor and subtype profiles                      |
+| Vendor onboarding        | Vendor workspace, `/api/vendor/profile-documents` | Plexus actions and protected document handlers | Vendor/subtype profiles and private profile documents |
 | Matching                 | Vendor discovery, Admin operations | Plexus actions              | Candidate directory, matches                     |
 | Meetings/deals           | Portals, `/api/meetings`, `/m/*`   | Meeting automation and adapters | Matches, creation jobs, meetings, protected links, tokens |
+| Signing/MOU              | Admin/Vendor Signing, `/api/admin/deals/*`, `/api/mou-documents/*` | Plexus actions and protected document handlers | Deals, private MOU metadata, Storage, audit events |
 | Event operations         | Admin/Vendor portals               | Plexus actions              | Itineraries, site visits, liaison                |
 | Communications/resources | Admin APIs and portals             | Protected route handlers    | Announcements, notifications, resources, Storage |
 | Compliance               | Protected compliance routes        | Compliance adapter          | Provider responses, no secret in client          |

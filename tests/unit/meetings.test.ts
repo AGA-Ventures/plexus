@@ -4,6 +4,7 @@ vi.mock("server-only", () => ({}))
 
 import {
   buildMeetingShareUrl,
+  getMeetingJoinWindow,
   getMeetingWindowStatus,
   normalizeMeetingDuration,
   normalizeMeetingStart,
@@ -32,6 +33,25 @@ describe("secure meeting helpers", () => {
       normalizeMeetingStart(new Date("2026-07-28T09:00:00.000Z"), now)
     ).toBe(now)
     expect(normalizeMeetingStart(future, now)).toBe(future)
+  })
+
+  it("opens the join window before the start and past the scheduled end", () => {
+    const startsAt = new Date("2026-07-28T10:00:00.000Z")
+    const { availableAt, expiresAt } = getMeetingJoinWindow(startsAt, 60)
+
+    expect(availableAt.toISOString()).toBe("2026-07-28T09:45:00.000Z")
+    expect(expiresAt.toISOString()).toBe("2026-07-28T11:30:00.000Z")
+
+    // A participant arriving ten minutes early can still open the link.
+    expect(
+      getMeetingWindowStatus({
+        now: startsAt.getTime() - 10 * 60 * 1000,
+        availableAt: availableAt.getTime(),
+        expiresAt: expiresAt.getTime(),
+        openCount: 0,
+        maxOpens: 10,
+      })
+    ).toBe("active")
   })
 
   it("builds only the wrapped share URL", () => {

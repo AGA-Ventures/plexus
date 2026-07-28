@@ -7,10 +7,13 @@ import { getProtectedPortalData } from "@/lib/plexus-data"
 
 export default async function AdminLocalePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>
+  searchParams: Promise<{ section?: string | string[] }>
 }) {
   const { locale } = await params
+  const { section } = await searchParams
 
   if (!isLocaleParam(locale)) {
     notFound()
@@ -29,6 +32,7 @@ export default async function AdminLocalePage({
       locale={normalizedLocale}
       initialDb={db}
       session={session}
+      initialAdminSection={Array.isArray(section) ? section[0] : section}
       meetingProviderReadiness={meetingProviderReadiness}
     />
   )

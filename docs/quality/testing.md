@@ -1,74 +1,512 @@
-# Testing Strategy and Current Evidence
+# Full Production Test Plan and Test Case Catalog
 
 **Owner:** Engineering and release owner
-**Review trigger:** New workflow, test layer, release evidence, or quality gap
+**Review trigger:** New workflow, route, Server Action, API, database object,
+provider, test layer, release evidence, or quality gap
 **Last reviewed:** 2026-07-28
 
-## Test layers
+## Purpose
 
-| Layer                 | Proves                                              | Command/location                                  |
-| --------------------- | --------------------------------------------------- | ------------------------------------------------- |
-| Documentation         | Required docs and local links are valid             | `npm run docs:check`                              |
-| Static                | Lint and TypeScript contracts                       | `npm run lint`, `npm run typecheck`               |
-| Unit                  | Auth, matching, providers, meeting gates, exports   | `npm run test:unit`                               |
-| Database/RLS          | Constraints, isolation, negative access             | `npm run test:rls`                                |
-| Browser               | Routes, UI, responsive and credential flows         | `npm run test:e2e`                                |
-| Build                 | Production Next.js compilation and route generation | `npm run build`                                   |
-| Deployment            | Correct GitHub/Supabase/Vercel targets              | `npm run verify:targets`, `npm run verify:deploy` |
-| Production role smoke | Real login, provisioning, route isolation, cleanup  | `scripts/verify-production-roles.mjs`             |
+This is the canonical test plan for a full Plexus production run. It covers the
+three authorization layers in the implemented product:
 
-## Standard gates
+1. **Superadmin** — platform-wide governance.
+2. **Admin** — one isolated Admin tenant.
+3. **Vendor** — one company, with Delegation and Partner variants.
+
+Every business test must also prove the three technical layers:
+
+1. **Presentation layer** — route, page, control, validation, accessibility,
+   responsive state, and user-visible result.
+2. **Application layer** — proxy, server identity, Server Action or API
+   authorization, validation, provider behavior, and safe error handling.
+3. **Data layer** — persisted state, tenant/company isolation, RLS, constraints,
+   triggers, storage policy, idempotency, and audit evidence.
+
+The catalog is based on the current routes, actions, libraries, migrations, and
+product documentation. It tests live and controlled features as functional
+workflows. Adapter and simulation features must prove their stated boundary and
+must not be reported as completed external integrations. Planned `/app`
+concepts receive presentation-honesty tests only.
+
+## Release vocabulary
+
+| Term           | Meaning                                                                                        |
+| -------------- | ---------------------------------------------------------------------------------------------- |
+| Pass           | Actual result equals the expected result at every applicable layer                             |
+| Fail           | A required result, security boundary, cleanup step, or evidence item is missing                |
+| Blocked        | An approved credential, provider, environment, or test identity is unavailable                 |
+| Not applicable | The case is intentionally excluded by the selected run profile and the reason is recorded      |
+| Live           | Persisted production behavior is expected to work end to end                                   |
+| Controlled     | Live behavior requires an approved identity or operational step                                |
+| Adapter        | Contract/readiness behavior is tested; a real provider result is required only when configured |
+| Simulation     | The UI and local state transition are tested without claiming an external action               |
+| Planned        | Only truthful labeling, route safety, and absence from live workflows are tested               |
+
+A release cannot convert a Fail into Not applicable. A security, tenancy,
+authentication, migration, build, or cleanup failure is a release blocker.
+
+## Run profiles
+
+| Profile                    | When                                                                             | Required scope                                                                                                              |
+| -------------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Pull request               | Every change                                                                     | Documentation, lint, types, unit, build, affected RLS and browser cases                                                     |
+| Preview release            | Before merge or stakeholder acceptance                                           | Pull-request gates plus affected role workflows, responsive UI, APIs, and integrations                                      |
+| Production smoke           | Immediately after deployment                                                     | Targets, public/auth routes, protected-route redirects, one read-only session per role, logs, health, and no secret leakage |
+| Full controlled production | Launch, major release, auth/schema/provider change, or explicit release decision | Every applicable case in this document, approved consequential provider actions, evidence archive, and complete cleanup     |
+
+## Standard automated gates
+
+Run from the repository root:
 
 ```bash
+npm run whereami
 npm run docs:check
 npm run verify:release
 ```
 
-`verify:release` checks targets, production dependency audit at critical level,
-documentation, lint, types, unit tests, and production build.
+`verify:release` checks deployment targets, documentation, the production
+dependency audit at critical level, lint, TypeScript, unit tests, and the
+production build.
 
-When relevant:
+For auth, schema, storage, or security changes, also run:
 
 ```bash
 npm run test:rls
 npm run test:e2e
+npm run supabase:advisors
 ```
 
-## Authorization acceptance matrix
+For a controlled production role run:
 
-| Scenario                             | Expected                                       |
-| ------------------------------------ | ---------------------------------------------- |
-| Unauthenticated protected route      | Redirect to localized login                    |
-| Password recovery request            | Generic response for valid email               |
-| Invalid or expired recovery callback | Return to recovery request                     |
-| Unauthenticated password update      | Reject and request a new link                  |
-| Superadmin requests Admin recovery   | Active Admin only; audited email               |
-| Invalid/malformed trusted claims     | Deny and sign out                              |
-| Inactive profile                     | Deny                                           |
-| Inactive tenant/Vendor               | Deny                                           |
-| Superadmin opens Admin/Vendor route  | Redirect to Superadmin workspace               |
-| Admin reads another tenant           | No data/authorization error                    |
-| Admin provisions into another tenant | Reject                                         |
-| Admin uploads another tenant's logo  | Reject                                         |
-| Spoofed/oversized tenant logo        | Reject before Storage write                    |
-| Operator opens tenant login preview  | Allow in scope; disable sign-in                |
-| Admin opens account settings         | Show profile/branding/access; hide trusted IDs |
-| User updates own display name        | Update only the verified profile               |
-| Admin password confirmation differs  | Reject before provisioning                     |
-| Vendor reads another Vendor          | No data                                        |
-| Vendor opens Admin/Superadmin route  | Redirect to Vendor workspace                   |
-| Vendor updates another company       | Reject                                         |
-| Direct authorization-binding update  | Trigger/RLS rejection                          |
-| First Vendor accepts                  | Match remains `Proposed`                       |
-| Vendor writes other acceptance        | Trigger rejection                              |
-| Second Vendor accepts                 | Match becomes `Accepted`                       |
-| Authenticated user reads raw link/token | Permission denied                            |
-| Expired wrapped meeting link          | HTTP 410; no provider redirect                 |
-| Access limit reached                  | HTTP 403; no provider redirect                 |
-| Provider response contains host URL   | Host URL is neither returned nor logged        |
-| Concurrent second acceptance          | One creation job and at most one provider flow |
-| Provider creation fails               | Agreement stays accepted; Superadmin sees sanitized critical incident |
-| Superadmin retries a failed job        | Attempt increments; success resolves incident  |
+```bash
+E2E_BASE_URL=https://production.example \
+  node --env-file=.env.local scripts/verify-production-roles.mjs
+```
+
+The role verifier creates temporary production identities. Run it only with an
+approved Superadmin and server secret.
+
+## Production safety rules
+
+- Record the Git commit, Vercel deployment, Supabase project reference, test
+  start/end time, operator, and run ID before testing.
+- Use a dedicated QA tenant and synthetic company/contact data. Use unique
+  `.invalid` emails except for an explicitly approved mailbox-delivery case.
+- Prefix mutable test records with `QA-<run-id>-`.
+- Never copy production personal data into fixtures, screenshots, logs, issue
+  descriptions, or AI prompts.
+- Do not expose passwords, recovery links, OAuth codes, provider join URLs,
+  API keys, access tokens, refresh tokens, or service-role credentials in
+  evidence.
+- Obtain approval before sending a real recovery email, creating a live
+  Zoom/Lark meeting, calling a paid compliance provider, or changing an active
+  non-QA tenant.
+- Capture safe before/after database counts for every mutable table.
+- Stop immediately on cross-tenant access, role escalation, a public raw
+  provider URL/token, missing RLS, irreversible cleanup failure, or secret
+  leakage.
+- Delete temporary Auth users, tenant/company records, Storage objects,
+  provider meetings, OAuth artifacts created for the run, and related workflow
+  rows. Prove that no run-tagged residue remains.
+
+## Required production fixtures
+
+| Fixture               | Required state                                                               | Main purpose                    |
+| --------------------- | ---------------------------------------------------------------------------- | ------------------------------- |
+| `SA-QA`               | Active Superadmin with no tenant binding                                     | Platform governance             |
+| `TENANT-A`            | Active, branded QA Admin tenant                                              | Primary positive scope          |
+| `TENANT-B`            | Active QA Admin tenant                                                       | Cross-tenant negative scope     |
+| `TENANT-S`            | Suspended QA Admin tenant                                                    | Fail-closed checks              |
+| `ADMIN-A` / `ADMIN-B` | Active Admin bound to the matching tenant                                    | Tenant isolation                |
+| `ADMIN-S`             | Active profile bound to `TENANT-S`                                           | Inactive tenant denial          |
+| `DA-A1`, `DA-A2`      | Active Delegation Vendors in `TENANT-A`                                      | Discovery, matching, itinerary  |
+| `PA-A1`, `PA-A2`      | Active Partner Vendors in `TENANT-A`                                         | Discovery, matching, attendance |
+| `DA-B1`, `PA-B1`      | Active Vendors in `TENANT-B`                                                 | Cross-tenant denial             |
+| `VENDOR-S`            | Suspended Vendor company or inactive profile                                 | Stale-session denial            |
+| Match fixtures        | Proposed, one-sided accepted, mutually accepted, rejected, and scheduled     | State-machine coverage          |
+| Meeting fixtures      | Future, active, expired, exhausted, completed, and cancelled                 | Gate and reporting coverage     |
+| Interpreter fixtures  | Available and unavailable                                                    | Request/assignment coverage     |
+| Event fixtures        | Published/unpublished itinerary, site visit, liaison, resource, announcement | Operations coverage             |
+| Provider fixtures     | Zoom configured; Lark configured/authorized and expired/unavailable variants | Readiness and provider paths    |
+
+The run may create these fixtures through product workflows. Direct fixture
+insertion is acceptable only for a documented setup case and must preserve the
+same constraints as production.
+
+## Evidence required for every case
+
+Record:
+
+- Case ID, run ID, role, tenant/company, browser/device, locale, and timestamp.
+- Expected result and actual result.
+- Screenshot or video for presentation behavior.
+- HTTP status and a redacted request/response summary for APIs.
+- Safe database or Storage proof for mutations and isolation.
+- Audit action and target for privileged operations.
+- Relevant provider request ID, never a credential or raw sensitive payload.
+- Cleanup result and defect link when the case fails.
+
+## Full production execution order
+
+1. Freeze the release candidate and run target verification.
+2. Record baseline table, Auth-user, and Storage-object counts.
+3. Run static, unit, RLS, browser, and production-build gates.
+4. Run public, localization, authentication, recovery, and route cases.
+5. Run Superadmin governance cases.
+6. Run Admin tenant-operation cases.
+7. Run Delegation and Partner Vendor cases.
+8. Run the cross-role business workflow from provisioning through reports.
+9. Run API, provider, storage, concurrency, and failure-recovery cases.
+10. Run security, accessibility, responsive, compatibility, performance, and
+    observability checks.
+11. Clean all run-tagged data and external artifacts.
+12. Compare final counts with the baseline, inspect logs/advisors, and sign the
+    release result.
+
+## Shared public and route test cases
+
+| ID     | Function under test            | Procedure                                                                                                                                           | Expected three-layer result                                                                                                                                                                |
+| ------ | ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| PUB-01 | Public marketing routes        | Open `/`, `/for-vendors`, `/for-businesses`, `/how-it-works`, `/pricing`, `/about`, `/contact`, `/help`, and `/blog`; traverse header/footer links. | Pages return successfully, navigation has no broken links or protected-route disclosure, and no authenticated data request is made.                                                        |
+| PUB-02 | Public locale routes           | Open supported public content in English, Bahasa Malaysia, and Traditional Chinese; use the locale selector.                                        | Route and visible copy change consistently, canonical links remain valid, and unsupported locale input normalizes safely.                                                                  |
+| PUB-03 | Legal routes                   | Open privacy, terms, cookies, DPA, PDPA, and localized legal variants.                                                                              | Correct document title/content renders, links work, keyboard scrolling works, and no session is required.                                                                                  |
+| PUB-04 | Root aliases                   | Open `/login`, `/forgot-password`, `/admin`, `/vendor`, `/superadmin`, `/delegation`, `/partner`, and compliance aliases.                           | Public aliases redirect to the canonical English route; protected aliases still enforce role/session checks; legacy Vendor subtype routes resolve only to the unified Vendor workspace.    |
+| PUB-05 | Future-product showcase        | Open `/app` and inspect AI, finance, logistics, payments, interpretation, and agreement concepts.                                                   | The showcase loads and clearly remains a future/concept experience; no planned control writes production business data or implies a completed live workflow.                               |
+| PUB-06 | Not-found and error boundaries | Open an unknown public URL and force a safe page/data error in preview.                                                                             | Branded not-found/error UI appears, offers safe recovery navigation, returns the correct status where applicable, and reveals no stack, query, secret, tenant ID, or protected route list. |
+| PUB-07 | Static assets and metadata     | Inspect favicon, Apple icon, social metadata, logo, and key public images on desktop/mobile.                                                        | Assets return successfully without mixed content, layout shift is acceptable, metadata identifies Plexus, and alt text/decorative handling is appropriate.                                 |
+| PUB-08 | Cache and session separation   | Visit a public page anonymously, then authenticated, then in a separate anonymous session.                                                          | Public responses do not leak role/tenant content across sessions and protected responses are not stored in a shared public cache.                                                          |
+
+## Authentication, account, and localization test cases
+
+| ID      | Function under test         | Procedure                                                                                                                                                   | Expected three-layer result                                                                                                                                                 |
+| ------- | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AUTH-01 | Shared login                | Open `/{locale}/login` at desktop, tablet, and 390 px.                                                                                                      | One responsive login serves all roles, labels and validation are accessible, and the page exposes no infrastructure or route map.                                           |
+| AUTH-02 | Role routing                | Sign in separately as `SA-QA`, `ADMIN-A`, `DA-A1`, and `PA-A1`.                                                                                             | Each identity reaches only `/{locale}/superadmin`, `/{locale}/admin`, or `/{locale}/vendor`; trusted claims and the exact active profile binding are revalidated.           |
+| AUTH-03 | Invalid credentials         | Submit malformed email, empty/short password, valid unknown email, and wrong password.                                                                      | Client/server validation is clear, valid-looking failures use a safe generic message, no account enumeration occurs, and no session is created.                             |
+| AUTH-04 | Invalid trusted claims      | Try missing/unknown role, malformed UUIDs, unexpected Superadmin bindings, incomplete Vendor bindings, and claims that differ from `user_profiles`.         | Login fails closed, the session is signed out, and no protected data is returned.                                                                                           |
+| AUTH-05 | Inactive identity           | Try an inactive profile, suspended/archived tenant, suspended/archived Vendor, and a stale session created before suspension.                               | The proxy/server/data layers deny access; stale JWT claims do not bypass active relational checks.                                                                          |
+| AUTH-06 | Tenant-branded login        | Open `/{locale}/login?tenant=<TENANT-A-slug>` and the supported tenant host form.                                                                           | Server-resolved tenant name, safe logo, primary color, and support contact render; slug supplies presentation context only.                                                 |
+| AUTH-07 | Invalid tenant branding     | Request unknown, malformed, suspended, and archived tenant slugs/hosts.                                                                                     | Login safely uses the platform presentation or denies inactive context as designed; no tenant record or internal error is exposed.                                          |
+| AUTH-08 | Branded-login binding       | On the `TENANT-A` login, try `ADMIN-A`, `DA-A1`, `ADMIN-B`, `DA-B1`, and `SA-QA`.                                                                           | Tenant-A accounts succeed; Tenant-B and Superadmin accounts are signed out with a generic workspace mismatch; the slug never grants scope.                                  |
+| AUTH-09 | Login preview               | As Superadmin preview both tenants; as `ADMIN-A` preview A then B; try anonymously and as Vendor.                                                           | Preview is sign-in-disabled; Superadmin may view any tenant, Admin only its own, and anonymous/Vendor requests are denied.                                                  |
+| AUTH-10 | Protected route matrix      | For every role, directly open every canonical protected route and a protected missing route.                                                                | Allowed routes render; wrong-role routes redirect to the caller's own workspace; anonymous requests go to localized login; missing pages do not enumerate protected routes. |
+| AUTH-11 | Protected locales           | Open portal routes in `en`, `zh`, `zh-Hant`, and `th`; open `cn`; try unsupported public-only locale `ms`.                                                  | Supported portal locales render, `cn` aliases to `zh`, and unsupported protected locale input normalizes without bypassing access.                                          |
+| AUTH-12 | Password-recovery request   | Submit invalid email syntax, an existing email, and a nonexistent valid email, with and without tenant branding.                                            | Invalid syntax is rejected; both valid addresses receive the same visible success result; redirect URL uses the approved origin and preserves only a valid tenant slug.     |
+| AUTH-13 | Recovery callback safety    | Call `/auth/callback` with no code, invalid/expired code, a valid code, external `next`, unrelated internal `next`, and valid localized reset destinations. | Only a valid code creates a no-store recovery session; only approved reset paths are accepted; failures return to the safe recovery route with no open redirect.            |
+| AUTH-14 | Password update             | Open reset without a recovery session; submit mismatch/short password; submit a valid matching password in a valid recovery session.                        | Invalid attempts do not mutate Auth; success changes only that Auth user's password, signs out the recovery session, and returns to the matching branded login.             |
+| AUTH-15 | Recovery reuse              | Reuse the callback code/session after a successful update.                                                                                                  | One-time/expired recovery material cannot update the password again and a new link is requested.                                                                            |
+| AUTH-16 | Own profile update          | As Admin and each Vendor subtype, update display name; try empty, one-character, overlong, and injected values; submit role/tenant/company fields manually. | Only the verified user's `display_name` changes; authorization bindings, email, state, and other profiles remain unchanged; rendering is escaped.                           |
+| AUTH-17 | Logout                      | Log out from each role and use browser Back/direct protected URL.                                                                                           | Server session is cleared, caller returns to localized login, and cached protected content is not usable.                                                                   |
+| AUTH-18 | Concurrent/session behavior | Use two sessions, suspend the account in one, then navigate/mutate in the other.                                                                            | Subsequent server and data access fails closed; no stale session mutation succeeds.                                                                                         |
+
+## Superadmin test cases
+
+| ID    | Function under test                    | Procedure                                                                                                                                         | Expected three-layer result                                                                                                                                                               |
+| ----- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| SA-01 | Platform dashboard/read model          | Open the Superadmin dashboard with known fixture counts.                                                                                          | Tenant, Vendor, account, match, meeting, deal, active, and suspended totals match scoped database queries; server-secret warning appears only when privileged operations are unavailable. |
+| SA-02 | Create Admin account                   | Create `QA-<run>-TENANT` with valid slug, support email, Admin identity, and matching temporary passwords.                                        | Tenant, confirmed Auth user with trusted Admin claims, and active profile are created with exact binding; the new Admin can sign in; the operation is auditable.                          |
+| SA-03 | Admin provisioning validation/rollback | Try duplicate/invalid slug or email, mismatched passwords, weak/empty fields, Auth creation failure, and profile creation failure.                | Validation prevents partial writes; later failure deletes any created tenant/Auth/profile artifact; no orphan remains.                                                                    |
+| SA-04 | Tenant profile                         | Edit tenant name, support email, primary color, and safe HTTPS logo fallback.                                                                     | Updated values re-render in management, Admin settings, and branded login; only the selected tenant changes; invalid values are rejected.                                                 |
+| SA-05 | Tenant logo upload                     | Upload real PNG/JPEG/WebP, spoofed extension, wrong signature, zero-byte, oversized, and unsupported files; replace a prior app-owned logo.       | Valid image is stored under the tenant UUID and saved; invalid files never write; DB failure removes the new object; successful replacement removes only the prior owned object.          |
+| SA-06 | Tenant lifecycle                       | Move the QA tenant through active, suspended, archived, and restored states.                                                                      | Status persists and is audited; suspended/archived Admins and Vendors lose access; active restoration follows the approved account/session policy.                                        |
+| SA-07 | Admin recovery email                   | Send recovery for an active Admin, then try inactive, Vendor, unbound, foreign malformed, and missing profiles.                                   | Only the eligible Admin path proceeds; tenant-aware audit is written before delivery without email/token values; Superadmin never sees or sets the password.                              |
+| SA-08 | Global Vendor directory                | Search by English/Chinese name and sector; filter by tenant and subtype; clear filters.                                                           | Results/counts are correct across tenants, filters compose correctly, and no private provider secret/raw token appears.                                                                   |
+| SA-09 | Provision Vendor globally              | Create one Delegation and one Partner Vendor in an active tenant.                                                                                 | Canonical Vendor, subtype row, confirmed Auth user, exact profile/claims, and audit evidence agree; each can sign in to the unified Vendor workspace.                                     |
+| SA-10 | Vendor provisioning rollback           | Try inactive tenant, duplicate email/company conflict, invalid subtype/data, Auth failure, subtype failure, and profile failure.                  | No orphan Auth, canonical Vendor, subtype, or profile row remains; safe error is shown.                                                                                                   |
+| SA-11 | Vendor directory and lifecycle         | Edit names, sector, size, subtype details, contact, account holder, and login email; set active, suspended, archived, then restore.               | Canonical/subtype display, profile, and Auth login remain synchronized; invalid/duplicate email rolls all edited details back; state is audited and inactive Vendor sessions fail closed. |
+| SA-12 | Vendor transfer                        | Transfer a Vendor with users, matches, meetings, deals, and related tenant-owned rows from A to B.                                                | The approved transfer function moves all defined records atomically, updates claims/bindings, produces actor-attributed audit, preserves foreign keys, and denies old-tenant access.      |
+| SA-13 | Transfer rejection/rollback            | Try same tenant, inactive target, missing Vendor, non-Superadmin caller, conflicting target data, and forced audit failure.                       | Request is rejected or rolled back without split tenancy, partial claim changes, or lost workflow data.                                                                                   |
+| SA-14 | Account suspend/restore                | Suspend/restore permitted Admin and Vendor accounts; try self-suspending `SA-QA`.                                                                 | Profile and Auth state follow the controlled workflow, audit is written, stale sessions fail, and Superadmin self-suspension is prevented.                                                |
+| SA-15 | Claim synchronization                  | Corrupt a QA user's trusted claim in a controlled setup, then synchronize.                                                                        | Claims are rebuilt from canonical bindings, login works only after refresh/sign-in, and failed mandatory audit restores previous claims.                                                  |
+| SA-16 | Platform settings                      | Update default plan, Vendor provisioning boolean, supported-market value, and operations notice using JSON and string input; try as Admin.        | Values parse and persist as intended with `updated_by`; only Superadmin may mutate; Admin sees only the provisioning permission required by its workflow.                                 |
+| SA-17 | Audit history                          | Search the latest 200 events by action, table, role, and target; inspect before/after/request ID.                                                 | Results are platform-wide, ordered and complete; normal application roles cannot update/delete/forge audit rows.                                                                          |
+| SA-18 | Platform reporting                     | Compare per-tenant and platform totals against direct safe queries.                                                                               | Vendor/match/meeting/deal totals are accurate and cross-tenant rows are not double-counted.                                                                                               |
+| SA-19 | Critical meeting incident              | Force configuration, authorization, rate-limit, timeout, provider, storage, and agreement-changed failures.                                       | One sanitized job/incident is visible only to Superadmin; raw provider response/credentials are absent; failure code/summary, tenant, match, provider, and attempt are accurate.          |
+| SA-20 | Incident retry/idempotency             | Retry a failed job, issue concurrent retries, retry a succeeded/processing job, and reach the controlled cap in a fixture.                        | One caller claims the retry, attempt increments once, success resolves the incident, duplicate provider creation is avoided, and the cap is enforced/audited.                             |
+| SA-21 | Lark authorization                     | Start OAuth as Superadmin; test cancel, bad/missing state, missing verifier/code, expired state, wrong role, token exchange failure, and success. | PKCE/state cookies are secure and cleared, only Superadmin succeeds, exact redirect/scopes are used, token stays server-only, and safe status text is returned.                           |
+| SA-22 | Compliance readiness                   | Open all compliance routes and query vendor status with configured/unconfigured variants.                                                         | Superadmin receives normalized readiness without keys; adapter status is truthful and does not claim a completed case-management decision.                                                |
+| SA-23 | Role denial                            | Attempt Admin/Vendor pages and Admin-only operational actions as Superadmin where no platform UI is defined.                                      | Routing returns to the Superadmin workspace and direct operations enforce their explicit role contract; platform authority does not silently impersonate a tenant user.                   |
+
+## Admin test cases
+
+| ID    | Function under test               | Procedure                                                                                                                                                                                                                                                                                                                                                                                                                      | Expected three-layer result                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ----- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| AD-01 | Tenant dashboard                  | Open an empty and populated tenant dashboard.                                                                                                                                                                                                                                                                                                                                                                                  | Metrics, notifications, phase timeline, queue, next actions, conversion, and totals match only the Admin's tenant; zero states remain usable.                                                                                                                                                                                                                                                                                                                                                  |
+| AD-02 | Account settings                  | Update own name and language; inspect Profile, White label, and Access sections; initiate recovery and logout.                                                                                                                                                                                                                                                                                                                 | Trusted IDs are hidden, human-readable role/workspace are correct, only allowed self/tenant fields mutate, and controls work at mobile/desktop widths.                                                                                                                                                                                                                                                                                                                                         |
+| AD-03 | Own tenant branding               | Edit name/support/color/logo and open login preview.                                                                                                                                                                                                                                                                                                                                                                           | Changes affect only the own tenant and its branded login; cross-tenant tenant ID, logo path, or preview request is rejected at application and data layers.                                                                                                                                                                                                                                                                                                                                    |
+| AD-04 | Vendor accounts read model        | Open Vendor accounts, search/filter, inspect subtype, sector, linked users, state, and latest 100 audit events.                                                                                                                                                                                                                                                                                                                | Only own-tenant Vendors/users/audits appear and counts match the database.                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| AD-05 | Provision Vendor enabled          | With platform permission on, create Delegation and Partner accounts in own tenant.                                                                                                                                                                                                                                                                                                                                             | Auth, canonical Vendor, subtype, profile, claims, and audit agree and new users can sign in.                                                                                                                                                                                                                                                                                                                                                                                                   |
+| AD-06 | Provision Vendor denial           | Disable platform permission; try foreign tenant ID, inactive own tenant, invalid data, and direct request as Vendor.                                                                                                                                                                                                                                                                                                           | Every attempt is denied before consequential writes; RLS also prevents cross-tenant rows; rollback removes partial artifacts.                                                                                                                                                                                                                                                                                                                                                                  |
+| AD-07 | Vendor directory/lifecycle        | Edit own-tenant Vendor company, select and search its sector by ISIC code/name/group, update subtype, contact, account-holder, and login-email details; activate, suspend, archive, restore; try a Tenant-B Vendor/account ID and duplicate email.                                                                                                                                                                             | The global industry picker covers each UN ISIC Revision 5 section/division and preserves an existing custom value until replaced; own subtype/profile/Auth records update together and audit correctly; failed Auth changes restore the original details; foreign records are invisible/unchanged and a suspended Vendor loses access.                                                                                                                                                         |
+| AD-08 | Vendor account governance         | Suspend/restore Vendor users and synchronize claims; try Admin, Superadmin, and foreign Vendor targets.                                                                                                                                                                                                                                                                                                                        | Only own-tenant Vendor accounts are mutable; protected roles/foreign users remain unchanged; stale Vendor sessions fail closed.                                                                                                                                                                                                                                                                                                                                                                |
+| AD-09 | Delegation company CRUD           | Create, inspect, search, edit, and delete an operational Delegation record; select/search its UN ISIC sector; submit a pending placeholder and other invalid enum/range/required data.                                                                                                                                                                                                                                         | The selected sector persists across Vendor and operational directories, a legacy pending value resolves from submitted profile industries, invalid data fails, and delete respects related-record constraints without affecting another tenant.                                                                                                                                                                                                                                                |
+| AD-10 | Partner company CRUD              | Create, inspect, search, edit, and delete a Partner; select/search its UN ISIC sector and cover type, verification, attendance, arrival, and completeness values.                                                                                                                                                                                                                                                              | The selected sector persists across Vendor and operational directories; valid values remain tenant-scoped, while pending placeholders, invalid enums/ranges, and foreign IDs are rejected.                                                                                                                                                                                                                                                                                                     |
+| AD-11 | Company profile detail            | Inspect the full structured registration profile and edit operational company data.                                                                                                                                                                                                                                                                                                                                            | All stored fields render safely, search covers documented fields, and contact/profile data remains tenant-scoped.                                                                                                                                                                                                                                                                                                                                                                              |
+| AD-12 | Matching score                    | Select Delegation and rank Partner candidates with exact, partial, unrelated, verified/pending, and incomplete profiles.                                                                                                                                                                                                                                                                                                       | Scores are deterministic, clamped 0–100, reasons/notes match inputs, and the UI does not present the score as due diligence approval.                                                                                                                                                                                                                                                                                                                                                          |
+| AD-13 | Create match                      | Assign a Partner, retry the same pair, use same-side/foreign/invalid IDs.                                                                                                                                                                                                                                                                                                                                                      | One proposed own-tenant match is created with score/note; uniqueness and RLS reject duplicates and cross-tenant pairs.                                                                                                                                                                                                                                                                                                                                                                         |
+| AD-14 | Match state authority             | Try to mark Accepted or Session Scheduled as Admin; move a match to Proposed/Rejected where allowed.                                                                                                                                                                                                                                                                                                                           | Admin cannot accept for either Vendor or bypass provider creation; permitted resets clear acceptance timestamps as defined.                                                                                                                                                                                                                                                                                                                                                                    |
+| AD-15 | Meeting operations                | Open Meeting operations for empty and populated data; inspect list/calendar and all statuses; open details from both surfaces and amend time, provider, duration, interpreter, and agenda; copy the link before and after protected-link creation; test completed/cancelled, duplicate, stale, unavailable-interpreter, and cross-tenant changes; manually create meetings with Zoom/Lark and extra-long company/sector names. | Metrics and meeting details are accurate and tenant-scoped; both surfaces open one accessible responsive dialog; valid unlinked changes persist, completed/cancelled meetings are read-only, provider-backed schedules stay locked while agenda/interpreter changes remain allowed, copy stays disabled while pending and copies only the absolute protected `/m/...` URL when ready, Vendor pairs and raw provider URLs are never editable/exposed, and invalid requests perform no mutation. |
+| AD-16 | Provider readiness                | Inspect Zoom, Lark, protected-link, and Lark-authorization readiness across configuration variants.                                                                                                                                                                                                                                                                                                                            | `Online` appears only when all required server/store/auth conditions hold; no env name value, token, raw URL, or provider secret is shown.                                                                                                                                                                                                                                                                                                                                                     |
+| AD-17 | Protected provider meeting        | For a mutually accepted own match create/monitor Zoom and Lark; try one-sided, rejected, foreign, malformed, and duplicate requests.                                                                                                                                                                                                                                                                                           | Success stores/reuses one meeting and opaque link, advances match to Session Scheduled, and never returns/logs host URL; invalid requests perform no provider action.                                                                                                                                                                                                                                                                                                                          |
+| AD-18 | Complete meeting                  | Complete an own scheduled/live meeting; retry; use foreign/invalid ID.                                                                                                                                                                                                                                                                                                                                                         | Own status becomes Completed with the defined summary; totals update; foreign/invalid data is unchanged.                                                                                                                                                                                                                                                                                                                                                                                       |
+| AD-19 | Interpreter CRUD                  | Create, edit, toggle availability, and delete an interpreter; try invalid email/lengths and a foreign ID.                                                                                                                                                                                                                                                                                                                      | Valid roster changes persist only in tenant; invalid/foreign mutations fail without side effects.                                                                                                                                                                                                                                                                                                                                                                                              |
+| AD-20 | Interpreter preference/assignment | Review Vendor preference; assign available interpreter, clear it, choose unavailable/missing/foreign interpreter.                                                                                                                                                                                                                                                                                                              | Confirmed display text updates while `requested_interpreter_id` is preserved; invalid choices are rejected.                                                                                                                                                                                                                                                                                                                                                                                    |
+| AD-21 | Deal tracking                     | Create an MOU from an own-tenant Vendor match, retry the same match, then move it through Under Discussion, Agreement Reached, Signed, and Failed; try invalid/foreign match, status, and deal IDs.                                                                                                                                                                                                                                 | One MOU is created through the UI for the selected match; status persists independently of document state; duplicate, malformed, and foreign mutations fail without changing another tenant.                                                                                                                                                                                                                                      |
+| AD-22 | Deal document                     | Upload valid draft/signed PDFs at size boundaries; try empty, oversized, wrong-extension, wrong-MIME, spoofed-signature, and foreign deal requests; reload, review, replace, cancel delete, and confirm delete.                                                                                                                                                                                                                     | Only valid PDFs up to 10 MiB enter the private tenant/deal path; review uses an authorized 60-second URL; replacement removes the superseded object; confirmed delete removes object and metadata but retains the MOU; matched Vendors can read and unrelated users cannot enumerate or open it.                                                                                                                                    |
+| AD-23 | Communications action/API         | Create Draft, Queued, and Sent announcements for all audiences over email, notification, and both; test invalid body and wrong role.                                                                                                                                                                                                                                                                                           | Announcement status/sent time are correct; notification channels create tenant-scoped notifications; email remains queued/adapter unless delivery is configured; unauthorized calls return 401/403.                                                                                                                                                                                                                                                                                            |
+| AD-24 | URL resource                      | Create each resource category/audience using a valid URL; submit invalid/overlong data.                                                                                                                                                                                                                                                                                                                                        | Valid metadata persists within tenant, invalid input is rejected, and audience/visibility are honored.                                                                                                                                                                                                                                                                                                                                                                                         |
+| AD-25 | File resource upload              | Upload allowed PDF/DOCX/PPTX/PNG/JPEG/WebP files; try over 15 MiB, unsupported MIME, malformed multipart, unsafe name, and forced metadata failure.                                                                                                                                                                                                                                                                            | File is private, filename/path is sanitized and tenant-scoped; invalid files do not write; insert failure removes the uploaded object.                                                                                                                                                                                                                                                                                                                                                         |
+| AD-26 | Resource visibility/download      | Toggle Delegation visibility and open as Admin, eligible Delegation, ineligible Delegation, Partner, foreign tenant, anonymous, and malformed ID.                                                                                                                                                                                                                                                                              | RLS/audience control access; stored files use a 60-second signed URL; URL-only records redirect safely; unauthorized requests reveal neither path nor object.                                                                                                                                                                                                                                                                                                                                  |
+| AD-27 | Partner check-in simulation       | Check in an invited/confirmed Partner; retry and use foreign/invalid ID.                                                                                                                                                                                                                                                                                                                                                       | Attendance becomes Arrived and `arrived=true` only in own tenant; UI labels the QR/manual flow as simulation rather than secure access control.                                                                                                                                                                                                                                                                                                                                                |
+| AD-28 | Itinerary publication             | Publish/unpublish own slots, verify ordering, and try foreign/invalid slot.                                                                                                                                                                                                                                                                                                                                                    | State toggles only for own tenant; Delegation sees only published entries; Partner sees none.                                                                                                                                                                                                                                                                                                                                                                                                  |
+| AD-29 | Site visits and liaison           | Review empty/populated site visits, assignments, notes, status, liaison protocol, and readiness.                                                                                                                                                                                                                                                                                                                               | Current read model is accurate and tenant-scoped; screen does not imply unsupported edit behavior.                                                                                                                                                                                                                                                                                                                                                                                             |
+| AD-30 | Reports and exports               | Generate pre-visit CSV, post-event CSV, and tenant meeting ICS with commas, quotes, newlines, Chinese, empty and populated rows.                                                                                                                                                                                                                                                                                               | Files have safe names, UTF-8/Excel-ready CSV escaping, valid VCALENDAR/VEVENT escaping, correct totals, and only own-tenant rows.                                                                                                                                                                                                                                                                                                                                                              |
+| AD-31 | Compliance adapter/API            | Query vendor status and submit valid/invalid Malaysia and non-Malaysia screening requests with provider success/failure/timeout.                                                                                                                                                                                                                                                                                               | Auth and schema checks run; SSM/CTOS skip non-Malaysia; responses normalize status; provider credentials stay server-only; paid calls require approval.                                                                                                                                                                                                                                                                                                                                        |
+| AD-32 | Admin role denial                 | Directly open Superadmin/Vendor routes and invoke create-Admin, transfer, settings, cross-tenant, or critical-retry actions.                                                                                                                                                                                                                                                                                                   | Caller returns to Admin workspace or receives denial; no platform/foreign mutation or extra data occurs.                                                                                                                                                                                                                                                                                                                                                                                       |
+
+## Shared Vendor test cases
+
+Run each shared case once as Delegation and once as Partner unless the case says
+otherwise.
+
+| ID    | Function under test          | Procedure                                                                                                                                                                                                                                                                                                                                                                                  | Expected three-layer result                                                                                                                                                                                                                                                                                                                                                                                               |
+| ----- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| VE-01 | Vendor dashboard             | Open the unified Vendor workspace with empty and populated workflows; update the own company profile, participating matches, related meetings, and related MOU records from a second authorized session while the dashboard remains open; interrupt and restore Realtime.                                                                                                                  | Own identity, completion, match summary, next meeting, and metrics update without reload; the live-state indicator reflects the connection; focus/visibility and periodic recovery repair interrupted subscriptions; unrelated tenant/company changes never reach the Vendor.                                                                                                                                             |
+| VE-02 | Account settings             | Update own display name, switch locale, initiate recovery, and logout.                                                                                                                                                                                                                                                                                                                     | Only own display name/session preference changes; trusted IDs and bindings are hidden and immutable.                                                                                                                                                                                                                                                                                                                      |
+| VE-03 | Registration profile         | Confirm the signed-in company has no account selector; collapse/reopen every section; verify the live overall score and answered/total counters beside each section chevron; search and select international calling codes; save minimum, partial, complete, boundary-length, invalid-year/URL/email/phone/introduction/date, and consent/no-consent profiles at desktop and phone widths. | Only own subtype/company updates; every section counter reacts to valid answers and respects conditional requirements; every supported country/region code is available and one international phone value is stored; overall completion recalculates 0–100; section state remains usable; browser and Server Action reject invalid formats before persistence; status/verification/urgent behavior follows subtype rules. |
+| VE-04 | Profile authorization        | Change request kind/ID to another own-tenant or foreign company and submit authorization fields in the payload.                                                                                                                                                                                                                                                                            | Server identity and RLS reject the mutation; no other profile or binding changes.                                                                                                                                                                                                                                                                                                                                         |
+| VE-05 | Profile document library     | Upload valid PDFs at size boundaries; try empty, oversized, wrong-extension, wrong-MIME, and spoofed-signature files; reload, review, cancel deletion, confirm deletion, and attempt another company's ID/path.                                                                                                                                                                            | Only a valid PDF up to 6 MiB is stored under the own tenant/company path; metadata survives reload; review uses a short-lived authorized link; confirmed delete removes object and row; foreign access fails without disclosure.                                                                                                                                                                                          |
+| VE-06 | Discovery directory          | Open discovery from My matches, retain the white-label responsive workspace navigation, use the header action to return to My matches, browse, and search by English name, Chinese name, and sector.                                                                                                                                                                                       | My matches remains active, the header return action preserves the locale and opens the Vendor's own match list, every sidebar destination returns to its Vendor section, and only active opposite-subtype candidates in the same tenant appear; the response exposes only ID, names, and sector, not contacts/profile/private fields.                                                                                     |
+| VE-07 | Match request                | Request an eligible counterpart; repeat; request same subtype, own ID, foreign ID, malformed ID, and hidden candidate.                                                                                                                                                                                                                                                                     | One Proposed match is created with deterministic score/note; duplicate and ineligible requests fail without information leakage.                                                                                                                                                                                                                                                                                          |
+| VE-08 | Own match read               | Review proposed, accepted, rejected, and scheduled participating matches; open match details, verify the Your company ↔ Linked Vendor relationship and state-aware actions, then inspect an unrelated match URL/request.                                                                                                                                                                   | Only participating matches/deals/meetings are readable; the tenant-scoped candidate directory supplies the linked Vendor name and sector without private profile/contact fields; confidence, both decisions, and actions match stored state; unrelated rows are absent.                                                                                                                                                   |
+| VE-09 | First acceptance             | Delegation accepts a Proposed match while Partner has not accepted.                                                                                                                                                                                                                                                                                                                        | Only `delegation_accepted_at` is set, status remains Proposed, and no creation job/provider call occurs. Repeat symmetrically for Partner-first.                                                                                                                                                                                                                                                                          |
+| VE-10 | Second acceptance/automation | Second Vendor accepts; submit concurrent second-acceptance requests.                                                                                                                                                                                                                                                                                                                       | Trigger derives Accepted, one unique creation job claims provider work, at most one provider meeting/link is created, and successful match becomes Session Scheduled.                                                                                                                                                                                                                                                     |
+| VE-11 | Request change/reject        | Each Vendor separately requests change after proposed/one-sided/mutual states.                                                                                                                                                                                                                                                                                                             | Only its acceptance field is controlled directly; status becomes Rejected as designed; no Vendor can write the other side's decision or force Accepted/Scheduled.                                                                                                                                                                                                                                                         |
+| VE-12 | Meeting preferences          | Submit 3–6 distinct future weekday one-hour slots at allowed Kuala Lumpur hours and an available interpreter preference.                                                                                                                                                                                                                                                                   | Preference is stored only for a participating accepted match; first slot and preference summary persist; Admin sees requested interpreter.                                                                                                                                                                                                                                                                                |
+| VE-13 | Invalid meeting preference   | Submit 0–2 or 7+ slots, duplicates as applicable, past/weekend/off-hour/bad-offset values, unavailable/foreign interpreter, unaccepted or unrelated match.                                                                                                                                                                                                                                 | Server validation/authorization rejects the request and no meeting/provider state is changed.                                                                                                                                                                                                                                                                                                                             |
+| VE-14 | Meeting read/join            | View own meeting, download ICS, and open its opaque Plexus link during the active window.                                                                                                                                                                                                                                                                                                  | Vendor receives only wrapped link; ICS is valid; public gate counts one access and redirects with no-referrer to HTTPS provider URL without exposing it elsewhere.                                                                                                                                                                                                                                                        |
+| VE-15 | MOU read                     | View own deals with present/missing private PDF across all statuses, open a signed review URL, and try an unrelated match/deal/document ID.                                                                                                                                                                                                                                                 | Status and signatory check are correct; missing document shows pending; only a participating Vendor can receive the short-lived PDF redirect; unrelated metadata, object path, and content remain absent.                                                                                                                                                                                                                  |
+| VE-16 | Role denial                  | Open Admin, Superadmin, compliance, and other Vendor-company resources; call Admin APIs/actions directly.                                                                                                                                                                                                                                                                                  | Vendor returns to its workspace or receives 403/404 as appropriate; no privileged data or mutation occurs.                                                                                                                                                                                                                                                                                                                |
+
+## Delegation Vendor test cases
+
+| ID    | Function under test  | Procedure                                                                                             | Expected three-layer result                                                                            |
+| ----- | -------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| VD-01 | Published itinerary  | Compare published/unpublished and Tenant-A/Tenant-B slots.                                            | Only published own-tenant slots render in sort order.                                                  |
+| VD-02 | Delegation resources | Open resources with `all`, `delegation`, `partner`, and `admin` audiences and both visibility states. | Only `all`/`delegation` resources explicitly visible to Delegation are readable/downloadable.          |
+| VD-03 | Itinerary CSV        | Export published itinerary with multilingual and punctuation data.                                    | CSV is UTF-8/Excel-ready, correctly escaped, and contains only visible own-tenant slots.               |
+| VD-04 | Delegation progress  | Inspect coordinator, accepted/scheduled match counts, and two-match target.                           | Values match the own company and participating matches; no Partner-only attendance/QR control appears. |
+
+## Partner Vendor test cases
+
+| ID    | Function under test     | Procedure                                                                         | Expected three-layer result                                                                                               |
+| ----- | ----------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| VP-01 | Attendance confirmation | Confirm own attendance from Invited; retry; try another Partner ID.               | Own attendance/status becomes Confirmed; idempotent retry is safe; another company is unchanged.                          |
+| VP-02 | QR-style status         | Display the status identifier before/after confirmation and after Admin check-in. | Identifier/status changes consistently but is labeled simulation; it is not accepted as a production security credential. |
+| VP-03 | Arrival state           | After Admin check-in, refresh Partner dashboard.                                  | Own attendance shows Arrived and venue context correctly; Partner cannot mark itself arrived.                             |
+| VP-04 | Subtype boundaries      | Try Delegation itinerary/resource exports and profile kind substitution.          | Partner cannot access Delegation-only data or update a Delegation profile.                                                |
+
+## End-to-end three-role production journey
+
+| ID     | Stage                  | Procedure                                                                                                                                          | Expected result                                                                                                                            |
+| ------ | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| E2E-01 | Tenant onboarding      | Superadmin creates and brands a QA Admin tenant, previews login, and sends the Admin recovery path if approved.                                    | Exact Auth/profile/tenant binding exists, branded login works, privileged events are audited, and no password/recovery secret is exposed.  |
+| E2E-02 | Vendor onboarding      | Admin signs in and provisions one Delegation and one Partner account.                                                                              | Both identities are tenant-bound, active, independently usable, and visible only to the owning Admin/Superadmin.                           |
+| E2E-03 | Profiles and discovery | Both Vendors complete profiles; each searches for the other.                                                                                       | Completeness/status update, discovery exposes limited fields, and no cross-tenant/private data appears.                                    |
+| E2E-04 | Matching agreement     | One Vendor requests the match, the first accepts, then the second accepts.                                                                         | One match progresses Proposed → Accepted; acceptances are actor-owned; one creation job starts.                                            |
+| E2E-05 | Automatic meeting      | Configured provider creates the meeting or a controlled incident; Vendor submits allowed preferences and Admin confirms interpreter as applicable. | Success yields one opaque link and Session Scheduled; failure preserves agreement and produces a sanitized Superadmin incident/retry path. |
+| E2E-06 | Meeting completion/MOU | Both Vendors open the active wrapped link, Admin completes the meeting, then advances the deal to Signed.                                          | Access count, meeting summary/status, dashboard totals, deal status, and available PDF behavior are consistent.                            |
+| E2E-07 | Event operations       | Admin publishes itinerary/resources, Partner confirms, Admin checks in Partner, and Delegation views its permitted material.                       | Audience, publication, attendance, and subtype boundaries remain correct at UI/API/RLS layers.                                             |
+| E2E-08 | Communications/reports | Admin sends an in-app announcement and exports pre/post CSV plus meeting ICS.                                                                      | Correct Vendors see applicable notification, adapter email state is truthful, and exports contain complete own-tenant data only.           |
+| E2E-09 | Governance/cleanup     | Superadmin reviews audit/reporting, suspends a fixture session, then removes all run-tagged records and external artifacts.                        | Audit/report totals reconcile, stale session is denied, and final Auth/table/Storage/provider checks find no test residue.                 |
+
+## API and provider contract test cases
+
+| ID     | Endpoint/contract                         | Required cases                                                                                                                               | Expected result                                                                                                    |
+| ------ | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| API-01 | `POST /api/admin/communications`          | Anonymous, Vendor, Admin, malformed JSON/body, each audience/channel/status, database failure                                                | 401/403/400/success statuses are correct; own-tenant announcement/notification only; safe errors                   |
+| API-02 | `POST/PATCH /api/admin/resources`         | Anonymous, Vendor, Admin, invalid schema/UUID, create/toggle, foreign resource                                                               | Auth/schema/tenant checks hold and only own metadata changes                                                       |
+| API-03 | `POST /api/admin/resources/upload`        | Multipart failures, missing file, size/MIME/name boundaries, upload/insert failure, success                                                  | Private tenant path, rollback on insert failure, no unsafe filename/path                                           |
+| API-04 | `GET /api/resources/[id]/file`            | Invalid ID, anonymous, each audience/role/tenant, URL-only, stored file, signing failure                                                     | 400/401/404/redirect behavior is safe; 60-second signed access only when authorized                                |
+| API-05 | `POST /api/tenant-branding/logo`          | Role/tenant/file signature/size/storage/update/cleanup variants                                                                              | Only Superadmin/owning Admin succeeds; owned-object cleanup and rollback are correct                               |
+| API-06 | `GET /api/compliance/vendors`             | Anonymous, Vendor, Admin, Superadmin, configuration variants                                                                                 | 401/403/success; readiness contains no credentials                                                                 |
+| API-07 | `POST /api/compliance/screening`          | Auth roles, invalid JSON/schema, market routing, success, non-JSON error, 429, timeout, network failure                                      | Validated normalized result; Malaysia-only routing; safe provider errors and no key leakage                        |
+| API-08 | `POST /api/meetings`                      | Auth roles, invalid body, missing/foreign/unaccepted match, both providers, duplicate, provider failure                                      | Correct 401/403/400/404/409/201/502; only owning operator and mutual agreement can create                          |
+| API-09 | `GET /api/lark/login`                     | Anonymous, Admin, Vendor, Superadmin, missing config                                                                                         | Only Superadmin starts exact PKCE/state flow; secure short-lived cookies                                           |
+| API-10 | `GET /api/lark/callback`                  | Provider denial, bad state, missing code/verifier, wrong role, exchange failure/success                                                      | Cookies clear, timing-safe state check, safe status, server-only token rotation                                    |
+| API-11 | `GET /m/[slug]`                           | Malformed/missing slug, DB error, not-started, active, expired, access limit, non-HTTPS/bad URL, concurrent opens                            | 404/502/425/302/410/403/503 are correct; optimistic count prevents over-consumption; no-store/no-referrer headers  |
+| API-12 | Zoom adapter                              | Missing env, token error, cached token, create success, 401/429/5xx, invalid JSON, timeout                                                   | Token caching is safe, only attendee join URL/ID return, `start_url` and credentials never escape                  |
+| API-13 | Lark adapter                              | Missing env/token, refresh rotation/expiry, create success, error/timeout/malformed response                                                 | Refresh/access tokens remain server-only, authorization failure is classified, safe join data only                 |
+| API-14 | Automatic meeting job                     | First claim, duplicate claim, processing/succeeded/failed state, every failure class, retry, audit failure                                   | One job per match, deterministic safe state, capped retry, sanitized incident/audit, no duplicate provider action  |
+| API-15 | Provider idempotency                      | Repeat meeting create after a valid unexpired protected link; repeat after expiry/exhaustion                                                 | Reuses live protected meeting; new provider flow occurs only when policy requires it; one current link per meeting |
+| API-16 | `/api/vendor/profile-documents`           | Anonymous/non-Vendor, list, invalid multipart/UUID, empty/oversized/spoofed PDF, upload/insert rollback, own/foreign delete, Storage failure | Correct 401/403/400/404/201/success states; exact own-company scope, safe errors, private object/row consistency   |
+| API-17 | `/api/vendor/profile-documents/[id]/file` | Invalid ID, anonymous/non-Vendor, own/foreign document, signing failure, success                                                             | Safe 401/403/404/500 behavior; success redirects only to a 60-second signed private URL with no-referrer/no-store  |
+
+Every production adapter must also cover authentication failure, timeout,
+network failure, rate limiting, malformed/provider-changed response, retry,
+idempotency, tenant isolation, and log redaction.
+
+## Database, RLS, constraint, and storage test cases
+
+| ID    | Data boundary             | Required proof                                                                                                                                                                                    |
+| ----- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DB-01 | Active actor gate         | Anonymous and inactive profiles have no business-table access; stale JWT after suspension fails closed.                                                                                           |
+| DB-02 | Superadmin scope          | Active Superadmin reads platform business data but cannot write server-only token/link/job stores through the authenticated role.                                                                 |
+| DB-03 | Admin tenant scope        | Admin reads/writes only own tenant rows across tenants, Vendors, profiles, subtypes, matches, meetings, deals, operations, communications, and resources.                                         |
+| DB-04 | Vendor company scope      | Vendor reads own canonical/subtype/profile plus only participating/shared workflow rows and permitted audience data.                                                                              |
+| DB-05 | Binding constraints       | Role, `admin_id`, Vendor company, and subtype combinations reject incomplete or inconsistent records.                                                                                             |
+| DB-06 | Binding protection        | Admin/Vendor cannot change authorization binding fields; only approved Superadmin/server workflows can do so.                                                                                     |
+| DB-07 | Tenant foreign keys       | Cross-tenant Vendor subtype, match, meeting, deal, site-visit assignment, and transfer relationships are rejected.                                                                                |
+| DB-08 | Enum/range checks         | All documented status/type/audience/provider enums, score/completeness 0–100, duration, link count, and date constraints reject invalid values.                                                   |
+| DB-09 | Match uniqueness/state    | Pair is unique; Admin cannot accept; each Vendor changes only its decision; one-sided remains Proposed; second acceptance derives Accepted.                                                       |
+| DB-10 | Provider secrecy          | `oauth_tokens` and `meeting_provider_links` deny anon/authenticated grants and policies; browser roles cannot read raw token/link data.                                                           |
+| DB-11 | Meeting job control       | Job is unique per match, service-written, Superadmin read-only, Vendor/Admin invisible, and only sanitized fields are exposed.                                                                    |
+| DB-12 | Audit immutability        | Privileged actions create actor/tenant/target evidence; normal application roles cannot insert, update, or delete audit history.                                                                  |
+| DB-13 | Updated timestamps        | `touch_updated_at()` changes timestamps on relevant updates without altering unrelated values.                                                                                                    |
+| DB-14 | Discovery function        | `match_candidates()` returns only eligible opposite-subtype own-tenant ID/names/sector and excludes private data.                                                                                 |
+| DB-15 | Claim helpers             | `current_app_role()`, `current_admin_id()`, `current_vendor_company_id()`, `current_vendor_type()`, and legacy helpers use trusted claims and return safe null/denial for malformed claims.       |
+| DB-16 | Vendor transfer function  | `transfer_vendor(uuid, uuid)` requires Superadmin, moves the documented graph atomically, and writes actor-attributed audit.                                                                      |
+| DB-17 | Event resources Storage   | Private bucket enforces 15 MiB and allowed MIME contract; direct public access fails; authorized signed access expires.                                                                           |
+| DB-18 | Tenant branding Storage   | Public reads work, writes remain server-authorized, 2 MiB/MIME/path rules hold, and one tenant cannot replace another tenant's object.                                                            |
+| DB-19 | Vendor profile documents  | Metadata and private Storage enforce exact active tenant/company scope; only Vendor inserts, PDF/6 MiB constraints hold, Admin/Superadmin governance scope is bounded, and signed access expires. |
+| DB-20 | Migration integrity       | Every local migration is present in the approved project in order; no drift, destructive surprise, or advisor error exists.                                                                       |
+| DB-21 | Backup/rollback readiness | The release owner can identify the recovery point and the documented rollback/forward-fix path before consequential schema execution.                                                             |
+
+The pgTAP suite must retain its named checks for own-tenant reads, cross-tenant
+writes, binding protection, mutual acceptance, token/link secrecy, incident
+visibility, transfer audit, audit append-only behavior, malformed claims, and
+suspended-account denial.
+
+## Business table coverage checklist
+
+Each table must have a positive owner read, positive allowed mutation where one
+exists, wrong-role denial, cross-tenant/company denial, invalid constraint
+case, and cleanup proof.
+
+| Data group               | Tables/views                                                                                      |
+| ------------------------ | ------------------------------------------------------------------------------------------------- |
+| Identity/governance      | `admin_tenants`, `vendor_companies`, `user_profiles`, `platform_settings`, `audit_events`         |
+| Vendor operations        | `delegation_companies`, `partner_companies`, `match_candidate_directory`                          |
+| Commercial workflow      | `matches`, `meetings`, `meeting_provider_links`, `oauth_tokens`, `meeting_creation_jobs`, `deals` |
+| Event operations         | `interpreters`, `itinerary_slots`, `site_visits`, `site_visit_delegations`, `liaison_contacts`    |
+| Communications/resources | `announcements`, `notifications`, `event_resources`, `vendor_profile_documents`                   |
+
+## Non-functional test cases
+
+| ID    | Area                     | Procedure and acceptance                                                                                                                                                                                                                      |
+| ----- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NF-01 | Browser/device           | Run critical journeys on current Chrome, Safari, Edge, iOS Safari, and Android Chrome at 390 px, tablet, and desktop. No blocked action, overlap, clipped dialog, or inaccessible navigation.                                                 |
+| NF-02 | Keyboard                 | Complete login, recovery, settings, provisioning, matching, meeting, resource, and logout flows without a mouse. Focus order is logical, focus is visible, dialogs trap/restore focus, and Escape behavior is safe.                           |
+| NF-03 | Screen reader/semantics  | Check landmarks, headings, labels, descriptions, tables, status changes, errors, and dialog names. Every control has a meaningful accessible name and errors are announced.                                                                   |
+| NF-04 | Color/motion             | Check text/control contrast in platform and tenant colors, focus contrast, dark/light behavior if exposed, and reduced-motion preference. Branding never makes authentication or errors unreadable.                                           |
+| NF-05 | Localization             | Check all protected screens in `en`, `zh`, `zh-Hant`, and `th`, long labels, date/time, CSV/ICS Unicode, and fallback copy. No raw key, overflow, or mixed unsupported locale.                                                                |
+| NF-06 | Performance              | Record production Core Web Vitals and route/API latency for public, login, each dashboard, directory search, and key mutation. Compare with the approved baseline and investigate regression before release.                                  |
+| NF-07 | Load/concurrency         | Exercise concurrent login within provider limits, duplicate provisioning submission, Vendor second acceptance, meeting creation, protected-link consumption, upload, and incident retry. No duplicate consequential object or lost isolation. |
+| NF-08 | Resilience               | Simulate Supabase/provider timeout, transient 5xx, network loss, and browser refresh during mutations. UI recovers safely, retries are controlled, and partial writes are rolled back or visible for repair.                                  |
+| NF-09 | Security headers/browser | Verify HTTPS, secure cookies, no-store on auth/link responses, no-referrer on provider redirect, clickjacking/CSP posture, and absence of mixed content.                                                                                      |
+| NF-10 | Injection/file abuse     | Test XSS/HTML, SQL-like strings, CSV formula prefixes, path traversal, Unicode filenames, spoofed MIME, oversized payloads, and external redirects. Content is escaped/sanitized or rejected with no execution.                               |
+| NF-11 | Privacy/logging          | Search browser bundle, HTML, network responses, Vercel logs, Supabase logs, and screenshots for secrets, raw provider URLs/tokens, recovery material, passwords, and unnecessary personal data. None may appear.                              |
+| NF-12 | Observability            | Confirm request/error logs for safe failures and provider incidents, correlation/request IDs where implemented, and no new production errors after the run. Monitoring gaps are recorded, not silently passed.                                |
+
+## Source-to-test traceability
+
+### Server Actions
+
+| Source                      | Exported product functions                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Primary cases                                      |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `app/actions/auth.ts`       | `loginAction`, `requestPasswordResetAction`, `updatePasswordAction`, `updateOwnProfileAction`, `logoutAction`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | AUTH-02–AUTH-18                                    |
+| `app/actions/management.ts` | `createAdminAccountAction`, `createVendorAccountAction`, `setTenantStatusAction`, `sendAdminPasswordResetAction`, `updateTenantProfileAction`, `setVendorStatusAction`, `updateVendorDirectoryAction`, `setAccountActiveAction`, `syncAccountClaimsAction`, `transferVendorAction`, `updatePlatformSettingAction`, `retryMeetingCreationAction`                                                                                                                                                                                                                                                                   | SA-02–SA-20, AD-05–AD-08                           |
+| `app/actions/plexus.ts`     | `createCompanyAction`, `updateCompanyAction`, `deleteCompanyAction`, `addMatchAction`, `requestMatchAction`, `updateMatchStatusAction`, `scheduleMeetingAction`, `createManualMeetingAction`, `updateMeetingAction`, `createProviderMeetingAction`, `completeMeetingAction`, `createInterpreterAction`, `updateInterpreterAction`, `deleteInterpreterAction`, `assignMeetingInterpreterAction`, `updateDealAction`, `confirmAttendanceAction`, `checkInPartnerAction`, `publishItineraryAction`, `updateCompanyProfileAction`, `sendAnnouncementAction`, `createResourceAction`, `toggleResourceVisibilityAction` | AD-09–AD-30, VE-03–VE-15, VD-01–VD-04, VP-01–VP-04 |
+
+### Route handlers
+
+| Source route                              | Method            | Primary cases        |
+| ----------------------------------------- | ----------------- | -------------------- |
+| `/auth/callback`                          | GET               | AUTH-13–AUTH-15      |
+| `/api/admin/communications`               | POST              | AD-23, API-01        |
+| `/api/admin/resources`                    | POST, PATCH       | AD-24, AD-26, API-02 |
+| `/api/admin/resources/upload`             | POST              | AD-25, API-03        |
+| `/api/resources/[id]/file`                | GET               | AD-26, VD-02, API-04 |
+| `/api/tenant-branding/logo`               | POST              | SA-05, AD-03, API-05 |
+| `/api/compliance/vendors`                 | GET               | SA-22, AD-31, API-06 |
+| `/api/compliance/screening`               | POST              | SA-22, AD-31, API-07 |
+| `/api/meetings`                           | POST              | AD-17, API-08        |
+| `/api/lark/login`                         | GET               | SA-21, API-09        |
+| `/api/lark/callback`                      | GET               | SA-21, API-10        |
+| `/m/[slug]`                               | GET               | VE-14, API-11        |
+| `/api/vendor/profile-documents`           | GET, POST, DELETE | VE-05, API-16, DB-19 |
+| `/api/vendor/profile-documents/[id]/file` | GET               | VE-05, API-17, DB-19 |
+
+### Page routes
+
+| Route group          | Pages covered                                                                                                                           | Primary cases                             |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| Public marketing     | `/`, `/[locale]`, `/for-vendors`, `/for-businesses`, `/how-it-works`, `/pricing`, `/about`, `/contact`, `/help`, `/blog`, `/app`        | PUB-01–PUB-08                             |
+| Public legal         | `/privacy`, `/terms`, `/cookies`, `/pdpa`, `/legal/privacy`, `/legal/terms`, `/legal/cookies`, `/legal/dpa`, and localized legal routes | PUB-02–PUB-04                             |
+| Public auth          | `/[locale]/login`, `/[locale]/forgot-password`, `/[locale]/reset-password`, `/auth/callback` and English aliases                        | AUTH-01–AUTH-18                           |
+| Platform workspace   | `/[locale]/superadmin` and `/[locale]/login-preview`                                                                                    | AUTH-09–AUTH-10, SA-01–SA-23              |
+| Tenant workspace     | `/[locale]/admin`, `/[locale]/admin/vendors`                                                                                            | AUTH-10, AD-01–AD-32                      |
+| Vendor workspace     | `/[locale]/vendor`, `/[locale]/vendor/discover`                                                                                         | AUTH-10, VE-01–VE-16                      |
+| Vendor compatibility | `/[locale]/delegation`, `/[locale]/delegation/discover`, `/[locale]/partner`, `/[locale]/partner/discover` and root aliases             | PUB-04, AUTH-10, VD-01–VD-04, VP-01–VP-04 |
+| Compliance           | `/[locale]/compliance`, `/[locale]/compliance/world-check`, `/[locale]/compliance/malaysia-ssm-ctos` and root aliases                   | SA-22, AD-31, API-06–API-07               |
+| Error/access         | `/[locale]/unauthorized`, localized loading/error UI, global error, and not found                                                       | PUB-06, AUTH-04–AUTH-10                   |
+
+### Domain and infrastructure functions
+
+| Module                                                           | Functions/contracts covered                                                                                                                                                                    | Primary cases                                    |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `lib/auth.ts`                                                    | `isAppRole`, `isVendorType`, `getAppMetadata`, `getRoleBindingError`, `hasValidRoleBinding`, `getRolePortalPath`                                                                               | AUTH-02–AUTH-11, DB-01–DB-06                     |
+| `lib/authorization.ts`                                           | `validateAuthenticatedUser`, `getAuthenticatedIdentity`, `canOperateTenant`                                                                                                                    | AUTH-02–AUTH-11, API-01–API-10, DB-01–DB-06      |
+| `lib/password-recovery.ts`                                       | `getForgotPasswordPath`, `getResetPasswordPath`, `getLoginPath`, `resolvePasswordRecoveryOrigin`, `getPasswordRecoveryRedirectUrl`, `parsePasswordResetPath`, `getPasswordRecoveryFailurePath` | AUTH-12–AUTH-15                                  |
+| `lib/admin-password-recovery.ts`, `lib/password-confirmation.ts` | `isActiveAdminRecoveryAccount`, `hasMatchingPasswordConfirmation`                                                                                                                              | AUTH-14, SA-02–SA-03, SA-07                      |
+| `lib/tenant-login.ts`                                            | `normalizeTenantSlug`, `tenantSlugFromHostname`, `normalizeLogoUrl`, `normalizeBrandColor`, `readableForeground`                                                                               | AUTH-06–AUTH-09                                  |
+| `lib/login-branding.ts`, `lib/public-site.ts`                    | `getTenantLoginBranding`, `getLoginBranding`, `normalizePublicLocale`, `getPublicContent`, `withLocale`, `getTenantBranding`                                                                   | PUB-01–PUB-08, AUTH-06–AUTH-09                   |
+| `lib/tenant-logo-upload.ts`                                      | `detectTenantLogoMimeType`, `getTenantLogoStoragePath`, `getOwnedTenantLogoStoragePath`                                                                                                        | SA-05, AD-03, API-05, DB-18                      |
+| `lib/vendor-profile-documents.ts`                                | PDF signature, Unicode-safe filename, tenant/company path, and safe document response contracts                                                                                                | VE-05, API-16–API-17, DB-19                      |
+| `lib/matching.ts`                                                | `scoreMatch`, `matchNoteFromScore`                                                                                                                                                             | AD-12–AD-13, VE-06–VE-07                         |
+| `lib/meetings.ts`                                                | `getMeetingProviderReadiness`, `normalizeMeetingDuration`, `normalizeMeetingStart`, `buildMeetingShareUrl`, `getMeetingWindowStatus`, `createMeeting`                                          | AD-15–AD-17, VE-12–VE-14, API-08, API-11, API-15 |
+| `lib/manual-meeting.ts`                                          | `manualMeetingInputSchema`, `meetingAmendmentInputSchema`, `validateManualMeetingInput`, `validateMeetingAmendmentInput`, `extractMeetingAgenda`                                               | AD-15                                            |
+| `lib/meeting-provider-readiness.ts`                              | `classifyMeetingProviderReadiness` and unavailable-state contract                                                                                                                              | AD-16, API-12–API-13                             |
+| `lib/meeting-automation.ts`                                      | `getAutomaticMeetingProvider`, `classifyMeetingCreationFailure`, `meetingCreationFailureSummary`, `ensureAutomaticMeetingAfterAcceptance`, `retryAutomaticMeetingCreation`                     | SA-19–SA-20, VE-09–VE-10, API-14                 |
+| `lib/zoom.ts`                                                    | `createZoomMeeting`, test-only token-cache reset                                                                                                                                               | API-12, API-15                                   |
+| `lib/lark.ts`                                                    | `createLarkCodeChallenge`, `getLarkAuthorizationUrl`, `exchangeLarkAuthorizationCode`, `getLarkUserAccessToken`, `createLarkMeeting`                                                           | SA-21, API-09–API-13                             |
+| `lib/compliance.ts`                                              | `getComplianceVendorStatus`, `requireComplianceAdmin`, `runComplianceScreening` and screening schema                                                                                           | SA-22, AD-31, API-06–API-07                      |
+| `lib/markets.ts`                                                 | Supported-market contract and `isMalaysiaMarket`                                                                                                                                               | PUB-02, AD-31, API-07                            |
+| `lib/export.ts`                                                  | `toCsv`, `downloadCsv`, `toIcs`, `downloadIcs`                                                                                                                                                 | AD-30, VD-03, VE-14                              |
+| `lib/i18n.ts`                                                    | `isLocale`, `isLocaleParam`, `normalizeLocale`, `isChineseLocale` and locale contracts                                                                                                         | PUB-02, AUTH-11, NF-05                           |
+| `lib/management-data.ts`                                         | `getSuperadminManagementData`, `getAdminManagementData`                                                                                                                                        | SA-01, SA-08, SA-17–SA-18, AD-01, AD-04          |
+| `lib/plexus-data.ts`, `lib/local-db.ts`                          | `loadPlexusDb`, `getProtectedPortalData`, `getLoginRedirect`, `getCompanyName`, and seed/read-model contracts                                                                                  | AUTH-02, AD-01, VE-01, PUB-05                    |
+| `lib/vendor-dashboard.ts`                                        | Company-scoped Vendor metric derivation and Realtime table/filter targets                                                                                                                      | VE-01, VE-08, VE-14–VE-15                        |
+| `lib/supabase/*`, `lib/supabaseAdmin.ts`                         | Configuration plus browser/server/admin client construction and server-secret readiness                                                                                                        | AUTH-01–AUTH-18, DB-01–DB-19, NF-11              |
+
+Internal React display helpers and shared UI primitives are covered through
+their owning route/component cases, static analysis, accessibility tests, and
+responsive visual checks. They do not define independent business authority.
+
+## Existing automated evidence
+
+The current automated baseline includes:
+
+- Unit coverage for role parsing/bindings, matching, exports, localization,
+  recovery, password confirmation, tenant login/branding/logo validation,
+  Vendor profile-document validation/path safety, meeting
+  normalization/readiness/gates/automation, Zoom, Lark, and recovery email
+  structure.
+- pgTAP coverage for the three-tier authorization model, tenant isolation,
+  binding protection, mutual Vendor acceptance, provider secret tables,
+  critical meeting incidents, audited transfer, append-only audit, malformed
+  claims, and inactive accounts.
+- Playwright coverage for shared login, recovery availability, missing-route
+  safety, invalid credentials, Superadmin/Admin/Vendor route isolation,
+  Admin settings/provisioning/meeting readiness, Vendor profile-document
+  upload/review/delete, and legacy Vendor redirects.
+- Production build, deployment-target checks, and the controlled production
+  role verifier.
+
+Automation is evidence for a case, not a substitute for provider, browser,
+accessibility, cleanup, or production observability evidence when the run
+profile requires those checks.
 
 ## Verified production evidence
 
@@ -76,15 +514,22 @@ On 2026-07-28:
 
 - The `tenant-branding` public Storage bucket was applied and read back with
   its 2 MiB limit and PNG/JPEG/WebP allowlist.
-- Supabase security advisors reported no findings after the migration.
+- The `vendor-profile-documents` private Storage bucket, metadata table,
+  exact tenant/company RLS, PDF-only 6 MiB limits, and covering foreign-key
+  indexes were applied and read back from the approved Supabase project.
+- A real authenticated browser upload, signed review, confirmed delete, and
+  database/Storage cleanup completed successfully.
+- Supabase security advisors reported no error or warning findings after the
+  migration; the remaining informational notices are intentional server-only
+  tables.
 
 On 2026-07-27:
 
-- All 19 public business tables had RLS enabled.
+- All then-current public business tables had RLS enabled.
 - Supabase exposed 70 reviewed policies and zero security-advisor findings.
-- All 20 migrations were present in the approved project.
-- Lint, TypeScript, 25 unit tests, and the production build passed locally and
-  in GitHub CI.
+- All then-current migrations were present in the approved project.
+- Lint, TypeScript, unit tests, and the production build passed locally and in
+  GitHub CI.
 - Public production routes returned expected responses.
 - Protected Admin, Superadmin, and Vendor routes redirected anonymous users to
   login.
@@ -94,63 +539,45 @@ On 2026-07-27:
   temporary Auth and database records.
 - Vercel production error logs were clean after verification.
 
-## Production role verifier
+Historic evidence does not automatically pass a new production run. Re-run the
+cases required by the selected profile against the release candidate.
 
-The verifier intentionally creates and deletes temporary production QA
-identities. Run it only with an approved Superadmin and server secret:
-
-```bash
-E2E_BASE_URL=https://production.example \
-  node --env-file=.env.local scripts/verify-production-roles.mjs
-```
-
-The script uses unique `.invalid` emails, verifies cleanup, and fails if any
-temporary profile, tenant, Vendor, or Auth user remains.
-
-## Browser and responsive matrix
-
-Before public launch or major UI release, test:
-
-- Current Chrome desktop.
-- Current Safari desktop and iOS.
-- Current Edge desktop.
-- Android Chrome.
-- Keyboard-only navigation.
-- 390 px mobile, tablet, and desktop widths.
-- English, Simplified Chinese, Traditional Chinese, and Thai.
-- Loading, empty, validation, permission, network, and server-error states.
-
-## Integration testing requirements
-
-Every production provider adapter must test:
-
-- Valid request and normalized response.
-- Authentication/credential failure.
-- Timeout and network failure.
-- Retry and idempotency behavior.
-- Rate limiting.
-- Malformed/provider-changed response.
-- Tenant and permission isolation.
-- Redaction of credentials and sensitive payloads from logs.
-
-The secure-meeting unit suite covers duration/start normalization, wrapped URL
-construction, time/access gate classification, automatic-provider selection,
-sanitized failure classification, Zoom token caching and `start_url`
-exclusion, plus Lark PKCE, state, scopes, and exact redirect URI. The database
-suite covers one-sided acceptance, one creation job per match, Superadmin-only
-incident reads, and server-only raw link/token writes. Live provider success,
-rate limiting, and provider-side cancellation remain deployment
-smoke/integration evidence.
-
-## Known gaps
+## Known gaps and explicit non-passes
 
 - Authenticated browser tests are credential-gated rather than running in
   normal pull-request CI.
-- Meeting providers, email, signing, notifications, QR, and some compliance
-  flows need recorded production integration tests.
-- Safari/Edge, accessibility, performance, and Core Web Vitals need recorded
-  baselines.
-- Error tracking, uptime monitoring, and user-journey telemetry remain roadmap
-  work.
+- Live Zoom/Lark, compliance, SMTP email, signing, notification delivery, and
+  provider-side cancellation/reconciliation require recorded production
+  integration evidence.
+- Secure MOU upload/e-signature and production QR scanning are not
+  implemented; their placeholder/simulation honesty tests must pass.
+- Safari/Edge, accessibility, performance, and Core Web Vitals do not yet have
+  durable recorded baselines.
+- Error tracking, uptime monitoring, product analytics, and user-journey
+  telemetry remain roadmap work.
 
-These gaps are tracked in the [roadmap](../project-management/roadmap.md).
+These gaps are tracked in the [roadmap](../project-management/roadmap.md). A
+known gap is not a pass: the release owner must explicitly accept or block it.
+
+## Final release sign-off
+
+The release owner records:
+
+| Field                                  | Value |
+| -------------------------------------- | ----- |
+| Run ID                                 |       |
+| Git commit                             |       |
+| Deployment URL/ID                      |       |
+| Supabase project/migration state       |       |
+| Operator and approver                  |       |
+| Run profile                            |       |
+| Passed / Failed / Blocked / N/A totals |       |
+| Accepted adapter/simulation gaps       |       |
+| Defect links                           |       |
+| Cleanup query/result                   |       |
+| Vercel/Supabase log review             |       |
+| Security advisor result                |       |
+| Final decision and timestamp           |       |
+
+Release only when all required cases pass, every blocked/N/A case has an
+approved reason, no release blocker remains, and cleanup is proven.

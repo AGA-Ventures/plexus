@@ -19,6 +19,24 @@ export type MeetingProvider = (typeof meetingProviders)[number]
 const MIN_DURATION_MINUTES = 30
 const MAX_DURATION_MINUTES = 480
 
+// Participants join a few minutes early and meetings run over, so the
+// protected link opens before the start and survives a short overrun instead
+// of being valid only for the exact scheduled window.
+export const JOIN_WINDOW_LEAD_MINUTES = 15
+export const JOIN_WINDOW_GRACE_MINUTES = 30
+
+export function getMeetingJoinWindow(startsAt: Date, durationMinutes: number) {
+  return {
+    availableAt: new Date(
+      startsAt.getTime() - JOIN_WINDOW_LEAD_MINUTES * 60 * 1000
+    ),
+    expiresAt: new Date(
+      startsAt.getTime() +
+        (durationMinutes + JOIN_WINDOW_GRACE_MINUTES) * 60 * 1000
+    ),
+  }
+}
+
 function hasCompleteConfiguration(names: string[]) {
   return names.every((name) => Boolean(process.env[name]))
 }
@@ -133,10 +151,20 @@ export async function createMeeting(input: {
   topic: string
   durationMinutes?: number
   startsAt?: Date
+  /** Provision the link for one specific meeting row instead of the latest. */
+  meetingId?: string
+  /** Tenant Admins may schedule a protected link before the Vendors accept. */
+  allowWithoutMutualAcceptance?: boolean
+  /** Re-provision a fresh provider meeting when the schedule is amended. */
+  replaceExistingLink?: boolean
+  summary?: string
 }) {
   const durationMinutes = normalizeMeetingDuration(input.durationMinutes)
   const startsAt = normalizeMeetingStart(input.startsAt)
-  const expiresAt = new Date(startsAt.getTime() + durationMinutes * 60 * 1000)
+  const { availableAt, expiresAt } = getMeetingJoinWindow(
+    startsAt,
+    durationMinutes
+  )
   const supabase = createSupabaseAdminClient()
 
   const matchResult = await supabase
@@ -150,7 +178,11 @@ export async function createMeeting(input: {
     throw new Error("Unable to verify the accepted match.")
   }
 
-  if (
+  if (input.allowWithoutMutualAcceptance) {
+    if (!matchResult.data) {
+      throw new Error("The selected match is no longer available.")
+    }
+  } else if (
     !matchResult.data?.delegation_accepted_at ||
     !matchResult.data.partner_accepted_at ||
     !["Accepted", "Session Scheduled"].includes(matchResult.data.status)
@@ -158,20 +190,32 @@ export async function createMeeting(input: {
     throw new Error("Both Vendors must accept before creating a meeting.")
   }
 
-  const existingMeetingResult = await supabase
-    .from("meetings")
-    .select("id")
-    .eq("match_id", input.matchId)
-    .eq("admin_id", input.adminId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle()
+  const existingMeetingResult = input.meetingId
+    ? await supabase
+        .from("meetings")
+        .select("id")
+        .eq("id", input.meetingId)
+        .eq("match_id", input.matchId)
+        .eq("admin_id", input.adminId)
+        .maybeSingle()
+    : await supabase
+        .from("meetings")
+        .select("id")
+        .eq("match_id", input.matchId)
+        .eq("admin_id", input.adminId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
 
   if (existingMeetingResult.error) {
     throw new Error("Unable to check the existing meeting.")
   }
 
-  if (existingMeetingResult.data?.id) {
+  if (input.meetingId && !existingMeetingResult.data) {
+    throw new Error("The selected meeting is no longer available.")
+  }
+
+  if (existingMeetingResult.data?.id && !input.replaceExistingLink) {
     const existingLinkResult = await supabase
       .from("meeting_provider_links")
       .select("slug, expires_at, open_count, max_opens")
@@ -211,6 +255,9 @@ export async function createMeeting(input: {
   const shareUrl = buildMeetingShareUrl(slug)
   const platform = input.provider === "zoom" ? "Zoom" : "Lark"
   const existingMeetingId = existingMeetingResult.data?.id
+  const summary =
+    input.summary ??
+    "Secure provider meeting created after both Vendors accepted the match."
 
   const meetingResult = existingMeetingId
     ? await supabase
@@ -221,8 +268,7 @@ export async function createMeeting(input: {
           platform,
           link: shareUrl,
           status: "Scheduled",
-          summary:
-            "Secure provider meeting created after both Vendors accepted the match.",
+          summary,
         })
         .eq("id", existingMeetingId)
         .eq("admin_id", input.adminId)
@@ -240,8 +286,7 @@ export async function createMeeting(input: {
           interpreter: "To be confirmed",
           host: "Plexus meeting host",
           status: "Scheduled",
-          summary:
-            "Secure provider meeting created after both Vendors accepted the match.",
+          summary,
         })
         .select("id")
         .single()
@@ -258,7 +303,7 @@ export async function createMeeting(input: {
       topic: input.topic,
       join_url: providerMeeting.joinUrl,
       provider_meeting_id: providerMeeting.providerMeetingId,
-      available_at: startsAt.toISOString(),
+      available_at: availableAt.toISOString(),
       expires_at: expiresAt.toISOString(),
       open_count: 0,
     },
@@ -269,14 +314,24 @@ export async function createMeeting(input: {
     throw new Error("Unable to store the protected meeting link.")
   }
 
-  const matchUpdateResult = await supabase
-    .from("matches")
-    .update({ status: "Session Scheduled" })
-    .eq("id", input.matchId)
-    .eq("admin_id", input.adminId)
+  // Only a mutually accepted match advances. An Admin-authorized link never
+  // stands in for a Vendor decision, so an unaccepted match keeps its status
+  // and its empty acceptance record until each Vendor decides for itself.
+  const mutuallyAccepted = Boolean(
+    matchResult.data?.delegation_accepted_at &&
+    matchResult.data.partner_accepted_at
+  )
 
-  if (matchUpdateResult.error) {
-    throw new Error("Unable to advance the accepted match.")
+  if (mutuallyAccepted) {
+    const matchUpdateResult = await supabase
+      .from("matches")
+      .update({ status: "Session Scheduled" })
+      .eq("id", input.matchId)
+      .eq("admin_id", input.adminId)
+
+    if (matchUpdateResult.error) {
+      throw new Error("Unable to advance the accepted match.")
+    }
   }
 
   return {

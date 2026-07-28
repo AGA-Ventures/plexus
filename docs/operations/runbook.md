@@ -11,7 +11,7 @@
 | Application | `https://plexus-gules.vercel.app`             |
 | GitHub      | `AGA-Ventures/plexus`                         |
 | Supabase    | `Plexus` / `pnjblggcdigekluualin`             |
-| Vercel      | `plexus` / `prj_FUkKgAm7UXkFGTgmtFM8ynaSHKuE` |
+| Vercel      | `plexus` / `prj_vQpMXPAmIiSrED4IB0s1ZqAwDD0C` |
 
 Run `npm run whereami` from the repository before any operational action.
 
@@ -22,6 +22,8 @@ Run `npm run whereami` from the repository before any operational action.
 - Vercel runtime errors and failed deployments are reviewed.
 - Supabase Auth and API errors are reviewed.
 - New Vendors can save their registration profile.
+- Vendors can upload, review, and delete an approved test PDF without leaving
+  a temporary object behind.
 - No unexpected tenant or account suspension exists.
 - Known provider adapters are not represented as completed production actions.
 
@@ -149,6 +151,12 @@ authorized provider request replaces the wrapper and resets its access count.
 | Cross-tenant data concern  | Disable affected account, preserve evidence, review RLS/audit immediately   |
 | File upload fails          | Bucket policy, size/type, Storage logs, tenant scope                        |
 | Tenant logo upload fails   | `tenant-branding` bucket, 2 MiB/type limit, server secret, tenant scope     |
+| Vendor PDF upload fails    | `vendor-profile-documents` bucket, 6 MiB/PDF signature, active Vendor binding, Storage/API logs |
+| Vendor PDF review fails    | Metadata row, private object path, select RLS, signed-URL creation, active session |
+| Vendor PDF delete fails    | Delete RLS, object existence, Storage/API logs; retry before manual cleanup |
+| Admin MOU upload fails     | `mou-documents` bucket, 10 MiB/PDF signature, own-tenant deal, Storage/API logs |
+| MOU review fails           | `mou_documents` row, participating match, private object, select RLS, active session |
+| MOU replacement/delete fails | Audit event, metadata/object consistency, Admin tenant binding; retry before orphan cleanup |
 | Meeting creation is locked | Confirm both Vendor acceptance timestamps and owning Admin tenant           |
 | Zoom creation fails        | Superadmin Critical incidents; check S2S app/scopes, Vercel vars and Zoom status, then retry |
 | Lark creation fails        | Superadmin Critical incidents; check host authorization, callback/scopes and Lark status, then retry |

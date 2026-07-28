@@ -324,11 +324,34 @@ test.describe("Admin tenant flow", () => {
 
   test("Admin can open its Vendor provisioning workflow", async ({ page }) => {
     await login(page, adminEmail!, adminPassword!, /\/en\/admin/)
+    await openMobilePortalMenu(page)
     await page.getByRole("link", { name: "Vendor accounts" }).click()
     await expect(page).toHaveURL(/\/en\/admin\/vendors/)
     await expect(
       page.getByRole("heading", { name: /Vendor management$/ })
     ).toBeVisible()
+    await openMobilePortalMenu(page)
+    await expect(
+      page.getByRole("link", { name: "Vendor accounts" })
+    ).toHaveAttribute("data-state", "active")
+    await expect(page.getByRole("link", { name: "Dashboard" })).toHaveAttribute(
+      "href",
+      "/en/admin?section=dashboard"
+    )
+    const viewport = page.viewportSize()
+    if (viewport && viewport.width < 1024) {
+      const mobileDrawer = page.getByRole("dialog", {
+        name: "Plexus Connect",
+      })
+      const drawerBox = await mobileDrawer.boundingBox()
+      const dashboardBox = await page
+        .getByRole("link", { name: "Dashboard" })
+        .boundingBox()
+
+      expect(drawerBox?.width).toBeGreaterThanOrEqual(viewport.width - 28)
+      expect(dashboardBox?.height).toBeGreaterThanOrEqual(48)
+    }
+    await page.keyboard.press("Escape")
     await page.getByRole("button", { name: "Provision Vendor account" }).click()
     const dialog = page.getByRole("dialog", {
       name: "Create a Vendor in your tenant",
@@ -363,6 +386,80 @@ test.describe("Admin tenant flow", () => {
     await expect(page.getByText("Zoom", { exact: true }).first()).toBeVisible()
     await expect(page.getByText("Lark", { exact: true }).first()).toBeVisible()
 
+    await page.getByRole("button", { name: "Create meeting" }).click()
+    const manualMeetingDialog = page.getByRole("dialog", {
+      name: "Create a meeting",
+    })
+    await expect(manualMeetingDialog).toBeVisible()
+    await expect(
+      manualMeetingDialog.getByRole("combobox", {
+        name: "Delegation Vendor",
+      })
+    ).toBeVisible()
+    await expect(
+      manualMeetingDialog.getByRole("combobox", {
+        name: "Malaysian partner",
+      })
+    ).toBeVisible()
+    await expect(
+      manualMeetingDialog.getByRole("combobox", {
+        name: "Meeting platform",
+      })
+    ).toContainText("Zoom")
+    await expect(manualMeetingDialog.getByLabel("Date and time")).toBeVisible()
+    await expect(manualMeetingDialog.getByLabel("Meeting agenda")).toBeVisible()
+    await expect(
+      manualMeetingDialog.getByText("Provider-link protection")
+    ).toBeVisible()
+    await manualMeetingDialog.getByRole("button", { name: "Cancel" }).click()
+
+    const calendarEntries = page.getByRole("button", {
+      name: /View or edit meeting with/,
+    })
+    const calendarEntryCount = await calendarEntries.count()
+
+    if (calendarEntryCount > 0) {
+      await calendarEntries.first().click()
+      const meetingDetailsDialog = page.getByRole("dialog", {
+        name: "Meeting details",
+      })
+      await expect(meetingDetailsDialog).toBeVisible()
+      await expect(
+        meetingDetailsDialog.getByRole("button", { name: "Edit meeting" })
+      ).toBeVisible()
+      await page.keyboard.press("Escape")
+    }
+
+    const rowDetailsActions = page.getByRole("button", {
+      name: "View / edit",
+    })
+    const rowDetailsActionCount = await rowDetailsActions.count()
+
+    if (rowDetailsActionCount > 0) {
+      const copyJoinActions = page.getByRole("button", {
+        name: "Copy join link",
+      })
+      const copyJoinActionCount = await copyJoinActions.count()
+      expect(copyJoinActionCount).toBeGreaterThan(0)
+      await expect(copyJoinActions.first()).toBeVisible()
+
+      await rowDetailsActions.first().click()
+      const meetingDetailsDialog = page.getByRole("dialog", {
+        name: "Meeting details",
+      })
+      await meetingDetailsDialog
+        .getByRole("button", { name: "Edit meeting" })
+        .click()
+      await expect(
+        page.getByRole("dialog", { name: "Edit meeting" })
+      ).toBeVisible()
+      await expect(page.getByLabel("Meeting platform")).toBeVisible()
+      await expect(page.getByLabel("Date and time")).toBeVisible()
+      await expect(page.getByLabel("Meeting agenda")).toBeVisible()
+      await page.getByRole("button", { name: "Cancel editing" }).click()
+      await page.keyboard.press("Escape")
+    }
+
     await page.getByRole("button", { name: "Meeting settings" }).click()
     await expect(
       page.getByText("Meeting settings", { exact: true }).last()
@@ -391,6 +488,25 @@ test.describe("Vendor flow", () => {
         name: /delegation company workspace|partner enterprise workspace/i,
       })
     ).toBeVisible()
+    const viewport = page.viewportSize()
+    await expect(
+      page.getByTestId(
+        viewport && viewport.width < 1024
+          ? "tenant-workspace-brand-mobile"
+          : "tenant-workspace-brand-desktop"
+      )
+    ).toBeVisible()
+    const vendorMetrics = page.getByTestId("vendor-dashboard-metrics")
+    await expect(page.getByTestId("vendor-realtime-status")).toHaveText(
+      "Live data"
+    )
+    await expect(vendorMetrics).toContainText("Profile readiness")
+    await expect(vendorMetrics).toContainText("Pending matches")
+    await expect(vendorMetrics).toContainText("Upcoming meetings")
+    await expect(vendorMetrics).toContainText("Active MOUs")
+    await expect(
+      page.getByText(/Supabase.*Auth.*RLS/, { exact: false })
+    ).toHaveCount(0)
     await expectNoHorizontalOverflow(page)
     await openMobilePortalMenu(page)
   })
@@ -403,6 +519,136 @@ test.describe("Vendor flow", () => {
     await expect(page).toHaveURL(/\/en\/vendor/)
     await page.goto("/en/superadmin")
     await expect(page).toHaveURL(/\/en\/vendor/)
+  })
+
+  test("Vendor profile is single-account, collapsible, and validates typed fields", async ({
+    page,
+  }) => {
+    await login(page, vendorEmail!, vendorPassword!, /\/en\/vendor/)
+    await page
+      .getByRole("tab", { name: /company profile|partner profile/i })
+      .click()
+
+    await expect(page.getByText("Production account")).toHaveCount(0)
+    await expect(page.getByTestId("company-profile-completion")).toBeVisible()
+
+    const companySection = page.getByRole("button", {
+      name: "1. Company information",
+    })
+    await expect(companySection).toHaveAttribute("aria-expanded", "true")
+    await expect(
+      companySection.getByLabel(/\d+ of 7 questions complete/)
+    ).toBeVisible()
+    await expect(page.getByLabel("Year established")).toHaveAttribute(
+      "type",
+      "number"
+    )
+    await expect(page.getByLabel("Website")).toHaveAttribute("type", "url")
+
+    const callingCode = page.getByTestId("mobile-country-code")
+    await expect(callingCode).toContainText(/[A-Z]{2} \+\d+/)
+    await callingCode.click()
+    await page
+      .getByRole("combobox", {
+        name: "Search country or region calling codes",
+      })
+      .fill("+853")
+    await page.getByRole("option", { name: /MO Macao \+853/ }).click()
+    await expect(callingCode).toContainText("MO +853")
+
+    const mobile = page.getByRole("textbox", { name: "Mobile number" })
+    await mobile.fill("6612 3456")
+    await expect(mobile).toHaveValue("6612 3456")
+    await expectNoHorizontalOverflow(page)
+
+    const email = page.getByLabel("Email")
+    await expect(email).toHaveAttribute("type", "email")
+    await email.fill("not-an-email")
+    await email.blur()
+    await expect(page.getByText("Enter a valid email address.")).toBeVisible()
+
+    await companySection.click()
+    await expect(companySection).toHaveAttribute("aria-expanded", "false")
+  })
+
+  test("Vendor can upload and delete a private profile PDF", async ({
+    page,
+  }) => {
+    await login(page, vendorEmail!, vendorPassword!, /\/en\/vendor/)
+    await page
+      .getByRole("tab", { name: /company profile|partner profile/i })
+      .click()
+
+    const fileName = `vendor-profile-e2e-${Date.now()}.pdf`
+    await page.getByLabel("Upload PDF document").setInputFiles({
+      name: fileName,
+      mimeType: "application/pdf",
+      buffer: Buffer.from("%PDF-1.7\n%%EOF\n"),
+    })
+
+    const library = page.getByTestId("vendor-profile-document-library")
+    await expect(library.getByText(fileName)).toBeVisible()
+    await expect(library.getByRole("link", { name: "Review" })).toHaveAttribute(
+      "target",
+      "_blank"
+    )
+
+    await library.getByRole("button", { name: `Delete ${fileName}` }).click()
+    await page.getByRole("button", { name: "Delete PDF" }).click()
+    await expect(library.getByText(fileName)).toHaveCount(0)
+  })
+
+  test("Vendor discovery keeps the workspace sidebar and returns to tab routes", async ({
+    page,
+  }) => {
+    await login(page, vendorEmail!, vendorPassword!, /\/en\/vendor/)
+    await page.getByRole("tab", { name: "My matches" }).click()
+    await page.getByRole("link", { name: "Find companies" }).click()
+
+    await expect(page).toHaveURL(/\/en\/vendor\/discover$/)
+    await expect(
+      page.getByRole("heading", { name: "Search for your match" })
+    ).toBeVisible()
+    const backToMatches = page.getByRole("link", {
+      name: "Back to My matches",
+    })
+    await expect(backToMatches).toHaveAttribute(
+      "href",
+      "/en/vendor?section=matches"
+    )
+    await backToMatches.click()
+    await expect(page).toHaveURL(/\/en\/vendor\?section=matches$/)
+    await expect(
+      page.getByRole("link", { name: "Find companies" })
+    ).toBeVisible()
+    const matchCard = page
+      .locator('[data-slot="card"]')
+      .filter({ hasText: "Matched with" })
+      .first()
+    await expect(matchCard.getByText("Linked Vendor")).toBeVisible()
+    await matchCard.getByRole("button", { name: "View details" }).click()
+    const matchDetails = page.getByRole("dialog", { name: "Match details" })
+    await expect(matchDetails.getByText("Decision progress")).toBeVisible()
+    await matchDetails.getByRole("button", { name: "Close" }).click()
+    await page.getByRole("link", { name: "Find companies" }).click()
+    await expect(page).toHaveURL(/\/en\/vendor\/discover$/)
+    await expectNoHorizontalOverflow(page)
+    await openMobilePortalMenu(page)
+
+    const navigation =
+      (page.viewportSize()?.width ?? 1024) >= 1024
+        ? page.getByRole("complementary")
+        : page.getByRole("dialog")
+    await expect(
+      navigation.getByRole("link", { name: "My matches" })
+    ).toHaveAttribute("data-state", "active")
+    await navigation.getByRole("link", { name: "Dashboard" }).click()
+    await expect(page).toHaveURL(/\/en\/vendor\?section=dashboard$/)
+    await expect(
+      page.getByRole("heading", {
+        name: /delegation company workspace|partner enterprise workspace/i,
+      })
+    ).toBeVisible()
   })
 
   test("legacy subtype route resolves to the Vendor workspace", async ({

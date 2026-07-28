@@ -3,13 +3,10 @@ import "server-only"
 import { redirect } from "next/navigation"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
-import {
-  getRolePortalPath,
-  type AppRole,
-  type VendorType,
-} from "@/lib/auth"
+import { getRolePortalPath, type AppRole, type VendorType } from "@/lib/auth"
 import { validateAuthenticatedUser } from "@/lib/authorization"
 import type { Locale } from "@/lib/i18n"
+import { resolveCompanyIndustrySector } from "@/lib/industry-sectors"
 import { seedDb } from "@/lib/local-db"
 import type {
   CompanyRegistrationProfile,
@@ -62,6 +59,13 @@ type PartnerCompanyRow = {
   profile_data: CompanyRegistrationProfile | null
 }
 
+type MatchCandidateRow = {
+  id: string
+  name_en: string
+  name_cn: string
+  sector: string
+}
+
 type MatchRow = {
   id: string
   delegation_company_id: string
@@ -102,6 +106,14 @@ type DealRow = {
   status: Deal["status"]
   document: string
   signatory_check: Deal["signatoryCheck"]
+}
+
+type MouDocumentRow = {
+  id: string
+  deal_id: string
+  file_name: string
+  file_size: number
+  updated_at: string
 }
 
 type ItinerarySlotRow = {
@@ -213,10 +225,12 @@ export async function loadPlexusDb(supabase: DbClient): Promise<LocalDb> {
   const [
     delegationCompaniesResult,
     partnerCompaniesResult,
+    matchCandidatesResult,
     matchesResult,
     interpretersResult,
     meetingsResult,
     dealsResult,
+    mouDocumentsResult,
     itineraryResult,
     siteVisitsResult,
     siteVisitDelegationsResult,
@@ -233,6 +247,7 @@ export async function loadPlexusDb(supabase: DbClient): Promise<LocalDb> {
       .from("partner_companies")
       .select("*")
       .order("created_at", { ascending: true }),
+    supabase.rpc("match_candidates"),
     supabase
       .from("matches")
       .select("*")
@@ -246,6 +261,9 @@ export async function loadPlexusDb(supabase: DbClient): Promise<LocalDb> {
       .select("*")
       .order("starts_at", { ascending: true }),
     supabase.from("deals").select("*").order("created_at", { ascending: true }),
+    supabase
+      .from("mou_documents")
+      .select("id, deal_id, file_name, file_size, updated_at"),
     supabase
       .from("itinerary_slots")
       .select("*")
@@ -286,6 +304,11 @@ export async function loadPlexusDb(supabase: DbClient): Promise<LocalDb> {
     partnerCompaniesResult.error,
     "Load partner companies"
   )
+  const matchCandidateRows = optionalRows<MatchCandidateRow>(
+    matchCandidatesResult.data,
+    matchCandidatesResult.error,
+    []
+  )
   const matchRows = assertRows<MatchRow>(
     matchesResult.data,
     matchesResult.error,
@@ -305,6 +328,11 @@ export async function loadPlexusDb(supabase: DbClient): Promise<LocalDb> {
     dealsResult.data,
     dealsResult.error,
     "Load deals"
+  )
+  const mouDocumentRows = optionalRows<MouDocumentRow>(
+    mouDocumentsResult.data,
+    mouDocumentsResult.error,
+    []
   )
   const itineraryRows = assertRows<ItinerarySlotRow>(
     itineraryResult.data,
@@ -343,40 +371,54 @@ export async function loadPlexusDb(supabase: DbClient): Promise<LocalDb> {
   )
 
   return {
-    delegationCompanies: delegationRows.map((row) => ({
+    delegationCompanies: delegationRows.map((row) => {
+      const profileData = profileDataOrUndefined(row.profile_data)
+
+      return {
+        id: row.id,
+        role: "delegation",
+        nameEn: row.name_en,
+        nameCn: row.name_cn,
+        sector: resolveCompanyIndustrySector(row.sector, profileData),
+        origin: row.origin,
+        size: row.company_size,
+        needs: row.needs,
+        contact: row.contact,
+        contactMeta: row.contact_meta,
+        status: row.status,
+        profileComplete: row.profile_complete,
+        urgent: row.urgent,
+        coordinator: row.coordinator,
+        profileData,
+      }
+    }),
+    partnerCompanies: partnerRows.map((row) => {
+      const profileData = profileDataOrUndefined(row.profile_data)
+
+      return {
+        id: row.id,
+        role: "partner",
+        nameEn: row.name_en,
+        nameCn: row.name_cn,
+        sector: resolveCompanyIndustrySector(row.sector, profileData),
+        type: row.partner_type,
+        size: row.company_size,
+        offerings: row.offerings,
+        contact: row.contact,
+        contactMeta: row.contact_meta,
+        status: row.status,
+        profileComplete: row.profile_complete,
+        verified: row.verified,
+        attendance: row.attendance,
+        arrived: row.arrived,
+        profileData,
+      }
+    }),
+    matchCompanies: matchCandidateRows.map((row) => ({
       id: row.id,
-      role: "delegation",
       nameEn: row.name_en,
       nameCn: row.name_cn,
       sector: row.sector,
-      origin: row.origin,
-      size: row.company_size,
-      needs: row.needs,
-      contact: row.contact,
-      contactMeta: row.contact_meta,
-      status: row.status,
-      profileComplete: row.profile_complete,
-      urgent: row.urgent,
-      coordinator: row.coordinator,
-      profileData: profileDataOrUndefined(row.profile_data),
-    })),
-    partnerCompanies: partnerRows.map((row) => ({
-      id: row.id,
-      role: "partner",
-      nameEn: row.name_en,
-      nameCn: row.name_cn,
-      sector: row.sector,
-      type: row.partner_type,
-      size: row.company_size,
-      offerings: row.offerings,
-      contact: row.contact,
-      contactMeta: row.contact_meta,
-      status: row.status,
-      profileComplete: row.profile_complete,
-      verified: row.verified,
-      attendance: row.attendance,
-      arrived: row.arrived,
-      profileData: profileDataOrUndefined(row.profile_data),
     })),
     matches: matchRows.map((row) => ({
       id: row.id,
@@ -409,13 +451,20 @@ export async function loadPlexusDb(supabase: DbClient): Promise<LocalDb> {
       status: row.status,
       summary: row.summary,
     })),
-    deals: dealRows.map((row) => ({
-      id: row.id,
-      matchId: row.match_id,
-      status: row.status,
-      document: row.document,
-      signatoryCheck: row.signatory_check,
-    })),
+    deals: dealRows.map((row) => {
+      const document = mouDocumentRows.find((item) => item.deal_id === row.id)
+
+      return {
+        id: row.id,
+        matchId: row.match_id,
+        status: row.status,
+        document: document?.file_name ?? row.document,
+        documentId: document?.id ?? null,
+        documentFileSize: document ? Number(document.file_size) : null,
+        documentUploadedAt: document?.updated_at ?? null,
+        signatoryCheck: row.signatory_check,
+      }
+    }),
     itinerary: itineraryRows.map((row) => ({
       id: row.id,
       day: row.day_label,
@@ -497,7 +546,9 @@ export async function getProtectedPortalData(
     redirect(`/${locale}/unauthorized`)
   }
 
-  const allowedRoles = Array.isArray(expectedRole) ? expectedRole : [expectedRole]
+  const allowedRoles = Array.isArray(expectedRole)
+    ? expectedRole
+    : [expectedRole]
 
   if (!allowedRoles.includes(authorization.identity.role)) {
     redirect(getRolePortalPath(locale, authorization.identity.role))

@@ -4,6 +4,14 @@ import { z } from "zod"
 
 import type { AppRole } from "@/lib/auth"
 import { validateAuthenticatedUser } from "@/lib/authorization"
+import {
+  getCompanyProfileCompletion,
+  registrationProfileSchema,
+} from "@/lib/company-profile"
+import {
+  getSubmittedCompanyIndustrySector,
+  isPlaceholderIndustrySector,
+} from "@/lib/industry-sectors"
 import { matchNoteFromScore, scoreMatch } from "@/lib/matching"
 import { ensureAutomaticMeetingAfterAcceptance } from "@/lib/meeting-automation"
 import {
@@ -11,12 +19,17 @@ import {
   meetingProviders,
   type MeetingProvider,
 } from "@/lib/meetings"
+import {
+  type MeetingAmendmentInput,
+  type ManualMeetingInput,
+  validateMeetingAmendmentInput,
+  validateManualMeetingInput,
+} from "@/lib/manual-meeting"
 import { loadPlexusDb } from "@/lib/plexus-data"
 import type {
   Announcement,
   AnnouncementChannel,
   AnnouncementTarget,
-  CompanyRegistrationProfile,
   Deal,
   DelegationCompany,
   EventResource,
@@ -27,7 +40,9 @@ import type {
 } from "@/lib/local-db"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
-type ActionResult = { ok: true; db: LocalDb } | { ok: false; error: string }
+type ActionResult =
+  | { ok: true; db: LocalDb; warning?: string }
+  | { ok: false; error: string }
 
 const uuidSchema = z.uuid()
 const delegationStatusSchema = z.enum([
@@ -45,6 +60,15 @@ const partnerStatusSchema = z.enum([
 const partnerTypeSchema = z.enum(["Government", "Association", "Enterprise"])
 const verifiedSchema = z.enum(["Verified", "Pending", "Flagged"])
 const attendanceSchema = z.enum(["Invited", "Confirmed", "Declined", "Arrived"])
+const industrySectorSchema = z
+  .string()
+  .trim()
+  .min(2)
+  .max(120)
+  .refine(
+    (value) => !isPlaceholderIndustrySector(value),
+    "Select an industry sector."
+  )
 const matchStatusSchema = z.enum([
   "Proposed",
   "Accepted",
@@ -77,55 +101,12 @@ const meetingSlotSchema = z
   .min(3)
   .max(6)
   .optional()
-const registrationProfileSchema = z.object({
-  companyNameEn: z.string().trim().min(1).max(240),
-  companyNameCn: z.string().trim().max(240).default(""),
-  countryRegion: z.string().trim().max(80).default(""),
-  countryOther: z.string().trim().max(120).default(""),
-  yearEstablished: z.string().trim().max(20).default(""),
-  registrationNumber: z.string().trim().max(120).default(""),
-  website: z.string().trim().max(240).default(""),
-  address: z.string().trim().max(500).default(""),
-  employeeRange: z.string().trim().max(40).default(""),
-  annualRevenueRange: z.string().trim().max(80).default(""),
-  contactName: z.string().trim().max(160).default(""),
-  contactPosition: z.string().trim().max(160).default(""),
-  contactEmail: z.email().or(z.literal("")).default(""),
-  mobileNumber: z.string().trim().max(80).default(""),
-  chatId: z.string().trim().max(120).default(""),
-  preferredLanguages: z.array(z.string().trim().max(40)).default([]),
-  industries: z.array(z.string().trim().max(100)).default([]),
-  industryOther: z.string().trim().max(160).default(""),
-  introduction: z.string().trim().max(3000).default(""),
-  productsServices: z.string().trim().max(3000).default(""),
-  certifications: z.array(z.string().trim().max(80)).default([]),
-  certificationOther: z.string().trim().max(160).default(""),
-  offers: z.array(z.string().trim().max(100)).default([]),
-  offerOther: z.string().trim().max(160).default(""),
-  lookingFor: z.array(z.string().trim().max(120)).default([]),
-  lookingForOther: z.string().trim().max(160).default(""),
-  preferredPartnerTypes: z.array(z.string().trim().max(120)).default([]),
-  preferredPartnerOther: z.string().trim().max(160).default(""),
-  expectedOutcomes: z.array(z.string().trim().max(120)).default([]),
-  idealPartner: z.string().trim().max(2500).default(""),
-  opportunity: z.string().trim().max(2500).default(""),
-  exportsInternationally: z.string().trim().max(12).default(""),
-  exportMarkets: z.string().trim().max(1000).default(""),
-  meetingFormat: z.string().trim().max(40).default(""),
-  availableMeetingDates: z.string().trim().max(1000).default(""),
-  maxMeetings: z.string().trim().max(40).default(""),
-  supportingDocuments: z.array(z.string().trim().max(120)).default([]),
-  consent: z.boolean().default(false),
-  consentName: z.string().trim().max(160).default(""),
-  consentDate: z.string().trim().max(40).default(""),
-})
-
 const delegationCompanySchema = z.object({
   id: z.string(),
   role: z.literal("delegation"),
   nameEn: z.string().trim().min(1),
   nameCn: z.string().trim().min(1),
-  sector: z.string().trim().min(1),
+  sector: industrySectorSchema,
   origin: z.string().trim().min(1),
   size: z.string().trim().min(1),
   needs: z.string().trim().min(1),
@@ -143,7 +124,7 @@ const partnerCompanySchema = z.object({
   role: z.literal("partner"),
   nameEn: z.string().trim().min(1),
   nameCn: z.string().trim().min(1),
-  sector: z.string().trim().min(1),
+  sector: industrySectorSchema,
   type: partnerTypeSchema,
   size: z.string().trim().min(1),
   offerings: z.string().trim().min(1),
@@ -172,7 +153,10 @@ async function runMutation(
 async function withSession(
   operation: (
     context: Awaited<ReturnType<typeof createActionContext>>
-  ) => Promise<{ error?: { message: string } | null } | void>,
+  ) => Promise<{
+    error?: { message: string } | null
+    warning?: string
+  } | void>,
   options?: { role?: AppRole }
 ): Promise<ActionResult> {
   const context = await createActionContext()
@@ -198,7 +182,11 @@ async function withSession(
     return { ok: false, error: result.error.message }
   }
 
-  return { ok: true, db: await loadPlexusDb(context.supabase) }
+  const db = await loadPlexusDb(context.supabase)
+
+  return result?.warning
+    ? { ok: true, db, warning: result.warning }
+    : { ok: true, db }
 }
 
 async function createActionContext() {
@@ -222,6 +210,22 @@ async function createActionContext() {
     supabase,
     identity: authorization.identity,
     userRole: authorization.identity.role,
+  }
+}
+
+export async function refreshPortalDbAction(): Promise<ActionResult> {
+  try {
+    const context = await createActionContext()
+
+    return { ok: true, db: await loadPlexusDb(context.supabase) }
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "The live workspace data could not be refreshed.",
+    }
   }
 }
 
@@ -260,46 +264,6 @@ function toPartnerPayload(company: PartnerCompany) {
     arrived: company.arrived,
     profile_data: company.profileData ?? {},
   }
-}
-
-function profileCompleteness(profile: CompanyRegistrationProfile) {
-  const requiredValues = [
-    profile.countryRegion,
-    profile.companyNameEn,
-    profile.yearEstablished,
-    profile.registrationNumber,
-    profile.website,
-    profile.address,
-    profile.employeeRange,
-    profile.contactName,
-    profile.contactPosition,
-    profile.contactEmail,
-    profile.mobileNumber,
-    profile.introduction,
-    profile.productsServices,
-    profile.idealPartner,
-    profile.opportunity,
-    profile.exportsInternationally,
-    profile.meetingFormat,
-    profile.availableMeetingDates,
-    profile.maxMeetings,
-    profile.consentName,
-    profile.consentDate,
-  ]
-  const requiredLists = [
-    profile.preferredLanguages,
-    profile.industries,
-    profile.offers,
-    profile.lookingFor,
-    profile.preferredPartnerTypes,
-    profile.expectedOutcomes,
-  ]
-  const filled =
-    requiredValues.filter(Boolean).length +
-    requiredLists.filter((items) => items.length > 0).length +
-    (profile.consent ? 1 : 0)
-
-  return Math.min(100, Math.round((filled / 28) * 100))
 }
 
 function isUuid(value: string) {
@@ -432,6 +396,405 @@ export async function addMatchAction(
         score: result.score,
         note: matchNoteFromScore(result),
       })
+    },
+    { role: "admin" }
+  )
+}
+
+export async function createManualMeetingAction(
+  input: ManualMeetingInput
+): Promise<ActionResult> {
+  const parsed = validateManualMeetingInput(input)
+
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error }
+  }
+
+  return runMutation(
+    async ({ supabase, identity }) => {
+      if (!identity.adminId) {
+        return {
+          error: {
+            message:
+              "Manual meetings require an Admin account bound to a tenant.",
+          },
+        }
+      }
+
+      const { delegationId, partnerId } = parsed.data
+      const [delegationResult, partnerResult] = await Promise.all([
+        supabase
+          .from("delegation_companies")
+          .select("id, name_en, sector, needs, profile_complete")
+          .eq("id", delegationId)
+          .eq("admin_id", identity.adminId)
+          .maybeSingle(),
+        supabase
+          .from("partner_companies")
+          .select("id, name_en, sector, offerings, verified, profile_complete")
+          .eq("id", partnerId)
+          .eq("admin_id", identity.adminId)
+          .maybeSingle(),
+      ])
+
+      if (
+        delegationResult.error ||
+        partnerResult.error ||
+        !delegationResult.data ||
+        !partnerResult.data
+      ) {
+        return {
+          error: {
+            message:
+              "Both selected Vendors must belong to your Admin workspace.",
+          },
+        }
+      }
+
+      let interpreter:
+        | { id: string; name: string; languages: string }
+        | undefined
+
+      if (parsed.data.requestedInterpreterId) {
+        const interpreterResult = await supabase
+          .from("interpreters")
+          .select("id, name, languages")
+          .eq("id", parsed.data.requestedInterpreterId)
+          .eq("admin_id", identity.adminId)
+          .eq("available", true)
+          .maybeSingle()
+
+        if (interpreterResult.error || !interpreterResult.data) {
+          return {
+            error: {
+              message:
+                "The selected interpreter is no longer available in this workspace.",
+            },
+          }
+        }
+
+        interpreter = interpreterResult.data
+      }
+
+      const existingMatchResult = await supabase
+        .from("matches")
+        .select("id, status")
+        .eq("delegation_company_id", delegationId)
+        .eq("partner_company_id", partnerId)
+        .eq("admin_id", identity.adminId)
+        .maybeSingle()
+
+      if (existingMatchResult.error) {
+        return {
+          error: { message: "Unable to check the selected Vendor pair." },
+        }
+      }
+
+      if (existingMatchResult.data?.status === "Rejected") {
+        return {
+          error: {
+            message:
+              "This Vendor pair rejected its match. Reopen the match before scheduling a meeting.",
+          },
+        }
+      }
+
+      let matchId = existingMatchResult.data?.id
+
+      if (!matchId) {
+        const score = scoreMatch({
+          delegation: {
+            sector: delegationResult.data.sector,
+            needs: delegationResult.data.needs,
+            profileComplete: delegationResult.data.profile_complete,
+          },
+          partner: {
+            sector: partnerResult.data.sector,
+            offerings: partnerResult.data.offerings,
+            verified: partnerResult.data.verified,
+            profileComplete: partnerResult.data.profile_complete,
+          },
+        })
+        const matchResult = await supabase
+          .from("matches")
+          .insert({
+            admin_id: identity.adminId,
+            delegation_company_id: delegationId,
+            partner_company_id: partnerId,
+            status: "Proposed",
+            score: score.score,
+            note: `Manually paired by the tenant Admin for a scheduled meeting. ${matchNoteFromScore(score)}`,
+          })
+          .select("id")
+          .single()
+
+        if (matchResult.error || !matchResult.data) {
+          return {
+            error: {
+              message: "Unable to create the match for this meeting.",
+            },
+          }
+        }
+
+        matchId = matchResult.data.id
+      }
+
+      const duplicateResult = await supabase
+        .from("meetings")
+        .select("id")
+        .eq("match_id", matchId)
+        .eq("admin_id", identity.adminId)
+        .eq("starts_at", parsed.data.startsAt)
+        .limit(1)
+
+      if (duplicateResult.error) {
+        return {
+          error: { message: "Unable to check the meeting calendar." },
+        }
+      }
+
+      if ((duplicateResult.data ?? []).length > 0) {
+        return {
+          error: {
+            message:
+              "This Vendor pair already has a meeting at the selected time.",
+          },
+        }
+      }
+
+      const interpreterLabel = interpreter
+        ? `${interpreter.name} · ${interpreter.languages}`
+        : "To be confirmed"
+      const summary = [
+        `Admin-arranged meeting between ${delegationResult.data.name_en} and ${partnerResult.data.name_en}.`,
+        `Preferred provider: ${parsed.data.platform === "zoom" ? "Zoom" : "Lark"}.`,
+        `Agenda: ${parsed.data.agenda}`,
+        "The tenant Admin authorized the protected provider link directly.",
+      ].join(" ")
+
+      const meetingResult = await supabase
+        .from("meetings")
+        .insert({
+          admin_id: identity.adminId,
+          match_id: matchId,
+          starts_at: parsed.data.startsAt,
+          duration_minutes: parsed.data.durationMinutes,
+          platform: parsed.data.platform === "zoom" ? "Zoom" : "Lark",
+          link: "",
+          interpreter: interpreterLabel,
+          requested_interpreter_id: interpreter?.id ?? null,
+          host: identity.displayName,
+          status: "Scheduled",
+          summary,
+        })
+        .select("id")
+        .single()
+
+      if (meetingResult.error || !meetingResult.data) {
+        return {
+          error: { message: "Unable to add the meeting to the calendar." },
+        }
+      }
+
+      // An Admin who arranges the meeting is the scheduling authority, so the
+      // protected link is issued now instead of waiting for mutual acceptance.
+      try {
+        await createMeeting({
+          matchId,
+          adminId: identity.adminId,
+          meetingId: meetingResult.data.id,
+          provider: parsed.data.platform,
+          topic: `${delegationResult.data.name_en} ↔ ${partnerResult.data.name_en}`,
+          durationMinutes: parsed.data.durationMinutes,
+          startsAt: new Date(parsed.data.startsAt),
+          allowWithoutMutualAcceptance: true,
+          summary,
+        })
+      } catch (error) {
+        return {
+          warning: `The meeting is on both calendars, but the protected ${
+            parsed.data.platform === "zoom" ? "Zoom" : "Lark"
+          } link could not be created: ${
+            error instanceof Error
+              ? error.message
+              : "the meeting provider is unavailable."
+          }`,
+        }
+      }
+    },
+    { role: "admin" }
+  )
+}
+
+export async function updateMeetingAction(
+  input: MeetingAmendmentInput
+): Promise<ActionResult> {
+  const parsed = validateMeetingAmendmentInput(input)
+
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error }
+  }
+
+  return runMutation(
+    async ({ supabase, identity }) => {
+      if (!identity.adminId) {
+        return {
+          error: {
+            message:
+              "Meeting changes require an Admin account bound to a tenant.",
+          },
+        }
+      }
+
+      const meetingResult = await supabase
+        .from("meetings")
+        .select(
+          "id, match_id, starts_at, duration_minutes, platform, link, status"
+        )
+        .eq("id", parsed.data.meetingId)
+        .eq("admin_id", identity.adminId)
+        .maybeSingle()
+
+      if (meetingResult.error || !meetingResult.data) {
+        return {
+          error: {
+            message: "This meeting is not available in your Admin workspace.",
+          },
+        }
+      }
+
+      if (["Completed", "Cancelled"].includes(meetingResult.data.status)) {
+        return {
+          error: {
+            message: "Completed or cancelled meetings cannot be amended.",
+          },
+        }
+      }
+
+      let interpreter:
+        | { id: string; name: string; languages: string }
+        | undefined
+
+      if (parsed.data.requestedInterpreterId) {
+        const interpreterResult = await supabase
+          .from("interpreters")
+          .select("id, name, languages")
+          .eq("id", parsed.data.requestedInterpreterId)
+          .eq("admin_id", identity.adminId)
+          .eq("available", true)
+          .maybeSingle()
+
+        if (interpreterResult.error || !interpreterResult.data) {
+          return {
+            error: {
+              message:
+                "The selected interpreter is no longer available in this workspace.",
+            },
+          }
+        }
+
+        interpreter = interpreterResult.data
+      }
+
+      const platform = parsed.data.platform === "zoom" ? "Zoom" : "Lark"
+      const scheduleChanged =
+        new Date(meetingResult.data.starts_at).getTime() !==
+          new Date(parsed.data.startsAt).getTime() ||
+        meetingResult.data.duration_minutes !== parsed.data.durationMinutes ||
+        meetingResult.data.platform !== platform
+
+      const needsReprovision =
+        Boolean(meetingResult.data.link) && scheduleChanged
+
+      const duplicateResult = await supabase
+        .from("meetings")
+        .select("id")
+        .eq("match_id", meetingResult.data.match_id)
+        .eq("admin_id", identity.adminId)
+        .eq("starts_at", parsed.data.startsAt)
+        .neq("id", parsed.data.meetingId)
+        .limit(1)
+
+      if (duplicateResult.error) {
+        return {
+          error: { message: "Unable to check the meeting calendar." },
+        }
+      }
+
+      if ((duplicateResult.data ?? []).length > 0) {
+        return {
+          error: {
+            message:
+              "This Vendor pair already has a meeting at the selected time.",
+          },
+        }
+      }
+
+      const interpreterLabel = interpreter
+        ? `${interpreter.name} · ${interpreter.languages}`
+        : "To be confirmed"
+      const summary = [
+        "Admin-amended meeting.",
+        `Preferred provider: ${platform}.`,
+        `Agenda: ${parsed.data.agenda}`,
+        needsReprovision
+          ? "A fresh protected provider link replaced the previous one."
+          : meetingResult.data.link
+            ? "Protected provider link retained."
+            : "The calendar slot is confirmed; a protected Zoom or Lark link remains unavailable until both Vendors accept the match.",
+      ].join(" ")
+
+      // Rescheduling a provider-backed meeting books a new provider meeting and
+      // retires the previous protected link, so the old join URL cannot outlive
+      // the schedule it was issued for.
+      if (needsReprovision) {
+        try {
+          await createMeeting({
+            matchId: meetingResult.data.match_id,
+            adminId: identity.adminId,
+            meetingId: meetingResult.data.id,
+            provider: parsed.data.platform,
+            topic: "Plexus business matching meeting",
+            durationMinutes: parsed.data.durationMinutes,
+            startsAt: new Date(parsed.data.startsAt),
+            allowWithoutMutualAcceptance: true,
+            replaceExistingLink: true,
+            summary,
+          })
+        } catch (error) {
+          return {
+            error: {
+              message: `The ${platform} meeting could not be rescheduled: ${
+                error instanceof Error
+                  ? error.message
+                  : "the meeting provider is unavailable."
+              }`,
+            },
+          }
+        }
+
+        return supabase
+          .from("meetings")
+          .update({
+            interpreter: interpreterLabel,
+            requested_interpreter_id: interpreter?.id ?? null,
+          })
+          .eq("id", parsed.data.meetingId)
+          .eq("admin_id", identity.adminId)
+      }
+
+      return supabase
+        .from("meetings")
+        .update({
+          starts_at: parsed.data.startsAt,
+          duration_minutes: parsed.data.durationMinutes,
+          platform,
+          interpreter: interpreterLabel,
+          requested_interpreter_id: interpreter?.id ?? null,
+          summary,
+        })
+        .eq("id", parsed.data.meetingId)
+        .eq("admin_id", identity.adminId)
     },
     { role: "admin" }
   )
@@ -751,7 +1114,9 @@ export async function scheduleMeetingAction(
 
       if (interpreterResult.error) {
         return {
-          error: { message: "The selected interpreter is no longer available." },
+          error: {
+            message: "The selected interpreter is no longer available.",
+          },
         }
       }
 
@@ -1073,13 +1438,71 @@ export async function updateDealAction(
     async ({ supabase }) =>
       await supabase
         .from("deals")
-        .update({
-          status: parsed.data,
-          ...(parsed.data === "Signed"
-            ? { document: "Signed-MOU-production.pdf" }
-            : {}),
-        })
+        .update({ status: parsed.data })
         .eq("id", dealId),
+    { role: "admin" }
+  )
+}
+
+export async function createDealAction(matchId: string): Promise<ActionResult> {
+  if (!isUuid(matchId)) {
+    return { ok: false, error: "Select a valid Vendor match." }
+  }
+
+  return runMutation(
+    async ({ supabase, identity }) => {
+      if (identity.role !== "admin" || !identity.adminId) {
+        return {
+          error: {
+            message: "Only an Admin tenant operator can create an MOU.",
+          },
+        }
+      }
+
+      const matchResult = await supabase
+        .from("matches")
+        .select("id")
+        .eq("id", matchId)
+        .eq("admin_id", identity.adminId)
+        .maybeSingle()
+
+      if (matchResult.error) {
+        return { error: matchResult.error }
+      }
+
+      if (!matchResult.data) {
+        return {
+          error: { message: "The selected Vendor match was not found." },
+        }
+      }
+
+      const existingResult = await supabase
+        .from("deals")
+        .select("id")
+        .eq("match_id", matchId)
+        .eq("admin_id", identity.adminId)
+        .limit(1)
+
+      if (existingResult.error) {
+        return { error: existingResult.error }
+      }
+
+      if (existingResult.data.length) {
+        return {
+          error: {
+            message: "This Vendor match already has an MOU record.",
+          },
+        }
+      }
+
+      return supabase.from("deals").insert({
+        match_id: matchId,
+        admin_id: identity.adminId,
+        status: "Under Discussion",
+        document: "Pending upload",
+        signatory_check: "Pending",
+      })
+    },
     { role: "admin" }
   )
 }
@@ -1157,7 +1580,8 @@ export async function updateCompanyProfileAction(
   }
 
   const profile = parsed.data
-  const profileComplete = profileCompleteness(profile)
+  const profileComplete = getCompanyProfileCompletion(profile).percentage
+  const submittedSector = getSubmittedCompanyIndustrySector(profile)
 
   return runMutation(async ({ supabase, identity, userRole }) => {
     if (
@@ -1173,7 +1597,7 @@ export async function updateCompanyProfileAction(
       return await supabase
         .from("delegation_companies")
         .update({
-          sector: profile.industries.join(", ") || "Pending profile",
+          ...(submittedSector ? { sector: submittedSector } : {}),
           name_en: profile.companyNameEn,
           name_cn: profile.companyNameCn || profile.companyNameEn,
           origin: profile.countryOther || profile.countryRegion || "Pending",
@@ -1200,7 +1624,7 @@ export async function updateCompanyProfileAction(
     return await supabase
       .from("partner_companies")
       .update({
-        sector: profile.industries.join(", ") || "Pending profile",
+        ...(submittedSector ? { sector: submittedSector } : {}),
         name_en: profile.companyNameEn,
         name_cn: profile.companyNameCn || profile.companyNameEn,
         company_size: profile.employeeRange || "Pending",

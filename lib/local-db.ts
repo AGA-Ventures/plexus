@@ -113,6 +113,13 @@ export type Match = {
   partnerAcceptedAt: string | null
 }
 
+export type MatchCompanySummary = {
+  id: string
+  nameEn: string
+  nameCn: string
+  sector: string
+}
+
 export type Interpreter = {
   id: string
   name: string
@@ -141,6 +148,9 @@ export type Deal = {
   matchId: string
   status: SigningStatus
   document: string
+  documentId: string | null
+  documentFileSize: number | null
+  documentUploadedAt: string | null
   signatoryCheck: "Verified" | "Pending" | "Flagged"
 }
 
@@ -202,6 +212,7 @@ export type EventResource = {
 export type LocalDb = {
   delegationCompanies: DelegationCompany[]
   partnerCompanies: PartnerCompany[]
+  matchCompanies: MatchCompanySummary[]
   matches: Match[]
   interpreters: Interpreter[]
   meetings: Meeting[]
@@ -345,6 +356,7 @@ export const seedDb: LocalDb = {
       arrived: true,
     },
   ],
+  matchCompanies: [],
   matches: [
     {
       id: "mat-1",
@@ -458,6 +470,9 @@ export const seedDb: LocalDb = {
       matchId: "mat-4",
       status: "Agreement Reached",
       document: "AgriCloud-JohorHub-MOU-draft.pdf",
+      documentId: null,
+      documentFileSize: null,
+      documentUploadedAt: null,
       signatoryCheck: "Verified",
     },
     {
@@ -465,6 +480,9 @@ export const seedDb: LocalDb = {
       matchId: "mat-1",
       status: "Under Discussion",
       document: "Pending upload",
+      documentId: null,
+      documentFileSize: null,
+      documentUploadedAt: null,
       signatoryCheck: "Pending",
     },
   ],
@@ -588,6 +606,16 @@ export function getCompanyName(db: LocalDb, id: string) {
   return (
     db.delegationCompanies.find((company) => company.id === id)?.nameEn ??
     db.partnerCompanies.find((company) => company.id === id)?.nameEn ??
+    db.matchCompanies.find((company) => company.id === id)?.nameEn ??
     "Unknown company"
+  )
+}
+
+export function getCompanySector(db: LocalDb, id: string) {
+  return (
+    db.delegationCompanies.find((company) => company.id === id)?.sector ??
+    db.partnerCompanies.find((company) => company.id === id)?.sector ??
+    db.matchCompanies.find((company) => company.id === id)?.sector ??
+    ""
   )
 }

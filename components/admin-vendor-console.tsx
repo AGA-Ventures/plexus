@@ -27,6 +27,7 @@ import type {
   VendorStatus,
 } from "@/lib/management-data"
 import { AdminVendorProvision } from "@/components/admin-vendor-provision"
+import { AdminWorkspaceRouteNavigation } from "@/components/malayconnect-mvp"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -159,332 +160,366 @@ export function AdminVendorConsole({
   }
 
   return (
-    <main className="min-h-svh bg-muted/20">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
-        <header className="flex flex-col gap-4 rounded-lg border bg-card p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <div className="mb-2 flex flex-wrap gap-2">
-              <Badge>Admin tenant</Badge>
-              {statusBadge(tenant.status)}
-            </div>
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              {tenant.name} Vendor management
-            </h1>
-            <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
-              This directory is restricted by RLS to your tenant. Other Admins
-              and their Vendors are not queryable from this workspace.
-            </p>
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <Button asChild variant="outline">
-              <Link href={`/${locale}/admin`}>Back to operations</Link>
-            </Button>
-            <AdminVendorProvision
-              locale={locale}
-              adminId={tenant.id}
-              disabled={
-                !provisioningConfigured || !vendorProvisioningEnabled
-              }
-            />
-          </div>
-        </header>
-
-        {!provisioningConfigured || !vendorProvisioningEnabled ? (
-          <Alert>
-            <HugeiconsIcon icon={ShieldUserIcon} />
-            <AlertTitle>Trusted Auth administration is not configured</AlertTitle>
-            <AlertDescription>
-              Vendor directory updates remain available. Account creation
-              requires both the server-only Supabase secret and the platform
-              provisioning permission; suspension and restoration require the
-              secret.
-            </AlertDescription>
-          </Alert>
-        ) : null}
-
-        <div className="grid gap-3 sm:grid-cols-3">
-          <Card>
-            <CardHeader className="flex-row items-start justify-between">
+    <main className="min-h-svh bg-background">
+      <div className="mx-auto w-full max-w-7xl px-4 py-5 pb-8 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
+          <AdminWorkspaceRouteNavigation
+            locale={locale}
+            session={session}
+            activeHref={`/${locale}/admin/vendors`}
+          />
+          <div className="flex min-w-0 flex-col gap-5">
+            <header className="flex flex-col gap-4 rounded-lg border bg-card p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <CardDescription>Tenant Vendors</CardDescription>
-                <CardTitle className="mt-1 text-2xl">{vendors.length}</CardTitle>
+                <div className="mb-2 flex flex-wrap gap-2">
+                  <Badge>Admin tenant</Badge>
+                  {statusBadge(tenant.status)}
+                </div>
+                <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+                  {tenant.name} Vendor management
+                </h1>
+                <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+                  This directory is restricted by RLS to your tenant. Other
+                  Admins and their Vendors are not queryable from this
+                  workspace.
+                </p>
               </div>
-              <HugeiconsIcon icon={Building01Icon} />
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="flex-row items-start justify-between">
-              <div>
-                <CardDescription>Delegation / Partner</CardDescription>
-                <CardTitle className="mt-1 text-2xl">
-                  {
-                    vendors.filter(
-                      (vendor) => vendor.vendor_type === "delegation"
-                    ).length
-                  }{" "}
-                  /{" "}
-                  {
-                    vendors.filter(
-                      (vendor) => vendor.vendor_type === "partner"
-                    ).length
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Button asChild variant="outline">
+                  <Link href={`/${locale}/admin`}>Back to operations</Link>
+                </Button>
+                <AdminVendorProvision
+                  locale={locale}
+                  adminId={tenant.id}
+                  disabled={
+                    !provisioningConfigured || !vendorProvisioningEnabled
                   }
-                </CardTitle>
-              </div>
-              <HugeiconsIcon icon={UserGroupIcon} />
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="flex-row items-start justify-between">
-              <div>
-                <CardDescription>Active Vendor accounts</CardDescription>
-                <CardTitle className="mt-1 text-2xl">
-                  {activeAccounts} / {accounts.length}
-                </CardTitle>
-              </div>
-              <HugeiconsIcon icon={ShieldUserIcon} />
-            </CardHeader>
-          </Card>
-        </div>
-
-        <Tabs defaultValue="vendors">
-          <div className="overflow-x-auto pb-1">
-            <TabsList className="min-w-max">
-              <TabsTrigger value="vendors">Vendors</TabsTrigger>
-              <TabsTrigger value="accounts">Accounts</TabsTrigger>
-              <TabsTrigger value="audit">Tenant audit</TabsTrigger>
-            </TabsList>
-          </div>
-
-          <TabsContent value="vendors">
-            <Card>
-              <CardHeader>
-                <CardTitle>Tenant Vendor directory</CardTitle>
-                <CardDescription>
-                  Edit profiles and control company access within this tenant.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                <Input
-                  placeholder="Search Vendors"
-                  value={search}
-                  onChange={(event) => setSearch(event.target.value)}
                 />
-                <div className="hidden md:block">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Vendor</TableHead>
-                        <TableHead>Subtype</TableHead>
-                        <TableHead>Sector</TableHead>
-                        <TableHead>Accounts</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Controls</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+              </div>
+            </header>
+
+            {!provisioningConfigured || !vendorProvisioningEnabled ? (
+              <Alert>
+                <HugeiconsIcon icon={ShieldUserIcon} />
+                <AlertTitle>
+                  Trusted Auth administration is not configured
+                </AlertTitle>
+                <AlertDescription>
+                  Vendor directory updates remain available. Account creation
+                  requires both the server-only Supabase secret and the platform
+                  provisioning permission; suspension and restoration require
+                  the secret.
+                </AlertDescription>
+              </Alert>
+            ) : null}
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Card>
+                <CardHeader className="flex-row items-start justify-between">
+                  <div>
+                    <CardDescription>Tenant Vendors</CardDescription>
+                    <CardTitle className="mt-1 text-2xl">
+                      {vendors.length}
+                    </CardTitle>
+                  </div>
+                  <HugeiconsIcon icon={Building01Icon} />
+                </CardHeader>
+              </Card>
+              <Card>
+                <CardHeader className="flex-row items-start justify-between">
+                  <div>
+                    <CardDescription>Delegation / Partner</CardDescription>
+                    <CardTitle className="mt-1 text-2xl">
+                      {
+                        vendors.filter(
+                          (vendor) => vendor.vendor_type === "delegation"
+                        ).length
+                      }{" "}
+                      /{" "}
+                      {
+                        vendors.filter(
+                          (vendor) => vendor.vendor_type === "partner"
+                        ).length
+                      }
+                    </CardTitle>
+                  </div>
+                  <HugeiconsIcon icon={UserGroupIcon} />
+                </CardHeader>
+              </Card>
+              <Card>
+                <CardHeader className="flex-row items-start justify-between">
+                  <div>
+                    <CardDescription>Active Vendor accounts</CardDescription>
+                    <CardTitle className="mt-1 text-2xl">
+                      {activeAccounts} / {accounts.length}
+                    </CardTitle>
+                  </div>
+                  <HugeiconsIcon icon={ShieldUserIcon} />
+                </CardHeader>
+              </Card>
+            </div>
+
+            <Tabs defaultValue="vendors">
+              <div className="overflow-x-auto pb-1">
+                <TabsList className="min-w-max">
+                  <TabsTrigger value="vendors">Vendors</TabsTrigger>
+                  <TabsTrigger value="accounts">Accounts</TabsTrigger>
+                  <TabsTrigger value="audit">Tenant audit</TabsTrigger>
+                </TabsList>
+              </div>
+
+              <TabsContent value="vendors">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Tenant Vendor directory</CardTitle>
+                    <CardDescription>
+                      Edit profiles and control company access within this
+                      tenant.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid gap-4">
+                    <Input
+                      placeholder="Search Vendors"
+                      value={search}
+                      onChange={(event) => setSearch(event.target.value)}
+                    />
+                    <div className="hidden md:block">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Vendor</TableHead>
+                            <TableHead>Subtype</TableHead>
+                            <TableHead>Sector</TableHead>
+                            <TableHead>Accounts</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Controls</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredVendors.map((vendor) => (
+                            <TableRow key={vendor.id}>
+                              <TableCell>
+                                <div className="font-medium">
+                                  {vendor.name_en}
+                                </div>
+                                <div className="text-muted-foreground">
+                                  {vendor.name_cn || vendor.id}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline">
+                                  {vendor.vendor_type}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{vendor.sector}</TableCell>
+                              <TableCell>
+                                {
+                                  accounts.filter(
+                                    (account) =>
+                                      account.vendor_company_id === vendor.id
+                                  ).length
+                                }
+                              </TableCell>
+                              <TableCell>
+                                {statusBadge(vendor.status)}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-col gap-2">
+                                  <VendorDirectoryDialog
+                                    locale={locale}
+                                    vendor={vendor}
+                                    accounts={accounts.filter(
+                                      (account) =>
+                                        account.vendor_company_id === vendor.id
+                                    )}
+                                    accountEditingEnabled={
+                                      provisioningConfigured
+                                    }
+                                  />
+                                  <VendorStatusControl
+                                    vendor={vendor}
+                                    pending={pending}
+                                    onApply={(status) =>
+                                      runAction(
+                                        () =>
+                                          setVendorStatusAction({
+                                            locale,
+                                            vendorId: vendor.id,
+                                            status,
+                                          }),
+                                        "Vendor status updated."
+                                      )
+                                    }
+                                  />
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    <div className="grid gap-3 md:hidden">
                       {filteredVendors.map((vendor) => (
-                        <TableRow key={vendor.id}>
-                          <TableCell>
-                            <div className="font-medium">{vendor.name_en}</div>
-                            <div className="text-muted-foreground">
-                              {vendor.name_cn || vendor.id}
+                        <Card key={vendor.id}>
+                          <CardHeader>
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <CardTitle className="text-sm">
+                                  {vendor.name_en}
+                                </CardTitle>
+                                <CardDescription>
+                                  {vendor.vendor_type} · {vendor.sector}
+                                </CardDescription>
+                              </div>
+                              {statusBadge(vendor.status)}
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {vendor.vendor_type}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{vendor.sector}</TableCell>
-                          <TableCell>
-                            {
-                              accounts.filter(
+                          </CardHeader>
+                          <CardContent className="grid gap-2">
+                            <VendorDirectoryDialog
+                              locale={locale}
+                              vendor={vendor}
+                              accounts={accounts.filter(
                                 (account) =>
                                   account.vendor_company_id === vendor.id
-                              ).length
-                            }
-                          </TableCell>
-                          <TableCell>{statusBadge(vendor.status)}</TableCell>
-                          <TableCell>
-                            <div className="flex flex-col gap-2">
-                              <VendorDirectoryDialog
-                                locale={locale}
-                                vendor={vendor}
-                              />
-                              <VendorStatusControl
-                                vendor={vendor}
-                                pending={pending}
-                                onApply={(status) =>
-                                  runAction(
-                                    () =>
-                                      setVendorStatusAction({
-                                        locale,
-                                        vendorId: vendor.id,
-                                        status,
-                                      }),
-                                    "Vendor status updated."
-                                  )
-                                }
-                              />
-                            </div>
-                          </TableCell>
-                        </TableRow>
+                              )}
+                              accountEditingEnabled={provisioningConfigured}
+                            />
+                            <VendorStatusControl
+                              vendor={vendor}
+                              pending={pending}
+                              onApply={(status) =>
+                                runAction(
+                                  () =>
+                                    setVendorStatusAction({
+                                      locale,
+                                      vendorId: vendor.id,
+                                      status,
+                                    }),
+                                  "Vendor status updated."
+                                )
+                              }
+                            />
+                          </CardContent>
+                        </Card>
                       ))}
-                    </TableBody>
-                  </Table>
-                </div>
-                <div className="grid gap-3 md:hidden">
-                  {filteredVendors.map((vendor) => (
-                    <Card key={vendor.id}>
-                      <CardHeader>
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <CardTitle className="text-sm">
-                              {vendor.name_en}
-                            </CardTitle>
-                            <CardDescription>
-                              {vendor.vendor_type} · {vendor.sector}
-                            </CardDescription>
-                          </div>
-                          {statusBadge(vendor.status)}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="accounts">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Vendor accounts</CardTitle>
+                    <CardDescription>
+                      Suspension immediately closes RLS access, including stale
+                      JWTs.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid gap-3">
+                    {accounts.map((account) => (
+                      <div
+                        key={account.id}
+                        className="flex flex-col gap-3 rounded-md border p-3 sm:flex-row sm:items-center sm:justify-between"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">
+                            {account.display_name}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {account.email} ·{" "}
+                            {vendors.find(
+                              (vendor) =>
+                                vendor.id === account.vendor_company_id
+                            )?.name_en ?? "Unknown Vendor"}
+                          </p>
                         </div>
-                      </CardHeader>
-                      <CardContent className="grid gap-2">
-                        <VendorDirectoryDialog
-                          locale={locale}
-                          vendor={vendor}
-                        />
-                        <VendorStatusControl
-                          vendor={vendor}
-                          pending={pending}
-                          onApply={(status) =>
-                            runAction(
-                              () =>
-                                setVendorStatusAction({
-                                  locale,
-                                  vendorId: vendor.id,
-                                  status,
-                                }),
-                              "Vendor status updated."
-                            )
-                          }
-                        />
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                        <div className="flex items-center gap-2">
+                          {statusBadge(account.active ? "active" : "suspended")}
+                          <Button
+                            className="flex-1 sm:flex-none"
+                            variant="outline"
+                            disabled={pending || !provisioningConfigured}
+                            onClick={() =>
+                              runAction(
+                                () =>
+                                  syncAccountClaimsAction({
+                                    locale,
+                                    userId: account.id,
+                                  }),
+                                "Trusted Auth claims synchronized."
+                              )
+                            }
+                          >
+                            Sync claims
+                          </Button>
+                          <Button
+                            className="flex-1 sm:flex-none"
+                            variant={account.active ? "destructive" : "outline"}
+                            disabled={pending || !provisioningConfigured}
+                            onClick={() =>
+                              runAction(
+                                () =>
+                                  setAccountActiveAction({
+                                    locale,
+                                    userId: account.id,
+                                    active: !account.active,
+                                  }),
+                                account.active
+                                  ? "Vendor account suspended."
+                                  : "Vendor account restored."
+                              )
+                            }
+                          >
+                            {account.active ? "Suspend" : "Restore"}
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-          <TabsContent value="accounts">
-            <Card>
-              <CardHeader>
-                <CardTitle>Vendor accounts</CardTitle>
-                <CardDescription>
-                  Suspension immediately closes RLS access, including stale JWTs.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-3">
-                {accounts.map((account) => (
-                  <div
-                    key={account.id}
-                    className="flex flex-col gap-3 rounded-md border p-3 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">
-                        {account.display_name}
-                      </p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {account.email} ·{" "}
-                        {vendors.find(
-                          (vendor) =>
-                            vendor.id === account.vendor_company_id
-                        )?.name_en ?? "Unknown Vendor"}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {statusBadge(account.active ? "active" : "suspended")}
-                      <Button
-                        className="flex-1 sm:flex-none"
-                        variant="outline"
-                        disabled={pending || !provisioningConfigured}
-                        onClick={() =>
-                          runAction(
-                            () =>
-                              syncAccountClaimsAction({
-                                locale,
-                                userId: account.id,
-                              }),
-                            "Trusted Auth claims synchronized."
-                          )
-                        }
+              <TabsContent value="audit">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Tenant audit history</CardTitle>
+                    <CardDescription>
+                      Privileged changes visible only within this Admin tenant.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid gap-2">
+                    {auditEvents.map((event) => (
+                      <div
+                        key={event.id}
+                        className="flex flex-col gap-2 rounded-md border p-3 text-xs sm:flex-row sm:items-center sm:justify-between"
                       >
-                        Sync claims
-                      </Button>
-                      <Button
-                        className="flex-1 sm:flex-none"
-                        variant={account.active ? "destructive" : "outline"}
-                        disabled={pending || !provisioningConfigured}
-                        onClick={() =>
-                          runAction(
-                            () =>
-                              setAccountActiveAction({
-                                locale,
-                                userId: account.id,
-                                active: !account.active,
-                              }),
-                            account.active
-                              ? "Vendor account suspended."
-                              : "Vendor account restored."
-                          )
-                        }
-                      >
-                        {account.active ? "Suspend" : "Restore"}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant="outline">
+                            {event.action.toUpperCase()}
+                          </Badge>
+                          <span className="font-medium">
+                            {event.target_table}
+                          </span>
+                          <span className="break-all text-muted-foreground">
+                            {event.target_id ?? "—"}
+                          </span>
+                        </div>
+                        <span className="text-muted-foreground">
+                          {formatDate(event.created_at)}
+                        </span>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
 
-          <TabsContent value="audit">
-            <Card>
-              <CardHeader>
-                <CardTitle>Tenant audit history</CardTitle>
-                <CardDescription>
-                  Privileged changes visible only within this Admin tenant.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-2">
-                {auditEvents.map((event) => (
-                  <div
-                    key={event.id}
-                    className="flex flex-col gap-2 rounded-md border p-3 text-xs sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="outline">
-                        {event.action.toUpperCase()}
-                      </Badge>
-                      <span className="font-medium">{event.target_table}</span>
-                      <span className="break-all text-muted-foreground">
-                        {event.target_id ?? "—"}
-                      </span>
-                    </div>
-                    <span className="text-muted-foreground">
-                      {formatDate(event.created_at)}
-                    </span>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-
-        <p className="text-xs text-muted-foreground">
-          Signed in as {session.displayName} · {session.email}
-        </p>
+            <p className="text-xs text-muted-foreground">
+              Signed in as {session.displayName} · {session.email}
+            </p>
+          </div>
+        </div>
       </div>
     </main>
   )

@@ -87,15 +87,15 @@ external Admin and Vendor recipients.
 
 ## Canonical protected routes
 
-| Route                       | Allowed role      | Scope                               |
-| --------------------------- | ----------------- | ----------------------------------- |
-| `/[locale]/superadmin`      | Superadmin        | All tenants                         |
-| `/[locale]/admin`           | Admin             | Own tenant                          |
-| `/[locale]/admin/vendors`   | Admin             | Own tenant Vendors and users        |
-| `/[locale]/login-preview`   | Superadmin, Admin | Any tenant or own tenant            |
-| `/[locale]/vendor`          | Vendor            | Own company                         |
-| `/[locale]/vendor/discover` | Vendor            | Eligible opposite-subtype directory |
-| `/[locale]/compliance`      | Superadmin, Admin | Platform or own tenant              |
+| Route                       | Allowed role      | Scope                                                                 |
+| --------------------------- | ----------------- | --------------------------------------------------------------------- |
+| `/[locale]/superadmin`      | Superadmin        | All tenants                                                           |
+| `/[locale]/admin`           | Admin             | Own tenant                                                            |
+| `/[locale]/admin/vendors`   | Admin             | Own tenant Vendors and users                                          |
+| `/[locale]/login-preview`   | Superadmin, Admin | Any tenant or own tenant                                              |
+| `/[locale]/vendor`          | Vendor            | Own company                                                           |
+| `/[locale]/vendor/discover` | Vendor            | Eligible opposite-subtype directory inside the Vendor workspace shell |
+| `/[locale]/compliance`      | Superadmin, Admin | Platform or own tenant                                                |
 
 Root aliases such as `/login`, `/admin`, `/vendor`, and `/superadmin` redirect
 to English. Legacy `/delegation` and `/partner` routes are compatibility
@@ -106,12 +106,12 @@ paths. The route table above is internal engineering documentation.
 
 ## Meeting routes
 
-| Route                | Access                                      | Purpose                                      |
-| -------------------- | ------------------------------------------- | -------------------------------------------- |
+| Route                | Access                                       | Purpose                                      |
+| -------------------- | -------------------------------------------- | -------------------------------------------- |
 | `POST /api/meetings` | Superadmin or owning Admin; both acceptances | Create a Zoom/Lark meeting and wrapped link  |
 | `/api/lark/login`    | Superadmin                                   | Start one-time Lark host authorization       |
 | `/api/lark/callback` | Superadmin, matching state, PKCE verifier    | Store/rotate the server-only Lark host token |
-| `/m/[slug]`          | Opaque time-limited link                      | Count access and redirect to the provider    |
+| `/m/[slug]`          | Opaque time-limited link                     | Count access and redirect to the provider    |
 
 `POST /api/meetings` requires `matchId`, which binds provider creation to an
 existing tenant-scoped match. The route refuses creation until both the
@@ -119,6 +119,23 @@ Delegation and Partner acceptance timestamps exist. The public `/m/[slug]`
 route reveals no database or provider identifier, is inactive before its
 meeting time, expires after the meeting, and enforces the configured open
 limit.
+
+The Admin meeting dashboard also calls the tenant-scoped
+`createManualMeetingAction`. It selects one delegation Vendor and one partner,
+creates or reuses their proposed match, and inserts a calendar meeting with the
+Admin's validated Zoom or Lark preference. This action never records acceptance
+for either Vendor and never creates or exposes a provider URL. When the second
+Vendor accepts, automatic provider creation honors the stored preference; the
+existing mutually accepted provider workflow remains the only path to the
+protected link.
+
+Calendar entries and list rows open the same meeting-details dialog. Its
+`updateMeetingAction` revalidates the current Admin tenant, meeting state,
+future schedule, duplicate slot, and available interpreter. The Vendor pair is
+match-bound and cannot be changed. Once a protected provider link exists, its
+platform, date, and duration are locked in this workflow because provider-side
+rescheduling is a separate privileged operation; the Admin may still amend the
+agenda and interpreter without receiving the provider URL.
 
 ## Trusted claim contract
 
@@ -202,3 +219,31 @@ requires a valid PNG, JPEG, or WebP file signature, enforces the 2 MiB limit,
 stores the object under the tenant UUID in the public `tenant-branding` bucket,
 and updates `admin_tenants.logo_url`. If the database update fails, the new
 object is removed; after success, a previous application-owned logo is removed.
+
+## Vendor profile documents
+
+| Route                                     | Method | Access | Purpose                                        |
+| ----------------------------------------- | ------ | ------ | ---------------------------------------------- |
+| `/api/vendor/profile-documents`           | GET    | Vendor | List own-company PDF metadata                  |
+| `/api/vendor/profile-documents`           | POST   | Vendor | Validate and upload one private PDF            |
+| `/api/vendor/profile-documents`           | DELETE | Vendor | Delete one own-company PDF and metadata row    |
+| `/api/vendor/profile-documents/[id]/file` | GET    | Vendor | Open an authorized 60-second signed review URL |
+
+Every handler revalidates the active Vendor identity and exact
+tenant/company/subtype binding. The client never supplies an authorization
+binding or receives the private Storage path. Upload accepts multipart form
+data with one `file`; delete accepts only a validated document UUID.
+
+## Admin MOU documents
+
+| Route                                    | Method | Access        | Purpose                                      |
+| ---------------------------------------- | ------ | ------------- | -------------------------------------------- |
+| `/api/admin/deals/[id]/document`         | POST   | Owning Admin  | Validate and upload or replace one MOU PDF   |
+| `/api/admin/deals/[id]/document`         | DELETE | Owning Admin  | Remove the private PDF but retain the deal   |
+| `/api/mou-documents/[id]/file`           | GET    | Admin, Vendor | Open an authorized 60-second signed review URL |
+
+`createDealAction` creates the tenant-scoped MOU record from an existing
+Vendor match; `updateDealAction` changes only its signing status. The upload
+handler derives the tenant, deal, uploader, object path, and replacement
+target from the verified session and database. Participating Vendors have
+read-only access through deal/match RLS and never receive a Storage path.

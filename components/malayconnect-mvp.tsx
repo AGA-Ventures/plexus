@@ -1,11 +1,13 @@
 "use client"
 
 import {
+  useCallback,
   useEffect,
   useId,
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   useTransition,
   type FormEvent,
   type ReactNode,
@@ -113,6 +115,7 @@ import {
   type ResourceAudience,
   type ResourceCategory,
 } from "@/lib/local-db"
+import { formatCountdown, getMeetingCountdown } from "@/lib/meeting-countdown"
 import {
   getProtectedMeetingPath,
   toMeetingHref,
@@ -7754,6 +7757,84 @@ function shareableMeetingLink(link?: string) {
   return toShareableMeetingLink(link, window.location.origin)
 }
 
+/**
+ * The clock is external state, so it is subscribed to rather than pushed into
+ * a state setter. The snapshot is truncated to whole seconds so repeated reads
+ * within a tick are identical, and the server snapshot is `null` so nothing
+ * renders until the browser has a real clock.
+ */
+function useNow(intervalMs = 1000) {
+  const subscribe = useCallback(
+    (onTick: () => void) => {
+      const timer = setInterval(onTick, intervalMs)
+
+      return () => clearInterval(timer)
+    },
+    [intervalMs]
+  )
+
+  return useSyncExternalStore(
+    subscribe,
+    () => Math.floor(Date.now() / 1000) * 1000,
+    () => null
+  )
+}
+
+function MeetingCountdownBadge({
+  meeting,
+  locale = "en",
+}: {
+  meeting: Meeting
+  locale?: Locale
+}) {
+  const now = useNow()
+
+  if (now === null || ["Completed", "Cancelled"].includes(meeting.status)) {
+    return null
+  }
+
+  const countdown = getMeetingCountdown({
+    now,
+    startsAt: new Date(meeting.startsAt).getTime(),
+    durationMinutes: meeting.duration,
+  })
+
+  if (!countdown) {
+    return null
+  }
+
+  const remaining = formatCountdown(countdown.ms, {
+    day: textFor(locale, "d", "天"),
+    hour: textFor(locale, "h", "时"),
+    minute: textFor(locale, "m", "分"),
+    second: textFor(locale, "s", "秒"),
+  })
+
+  if (countdown.phase === "ended") {
+    return (
+      <Badge variant="outline">
+        {textFor(locale, "Ended", "已结束")} · {remaining}{" "}
+        {textFor(locale, "ago", "前")}
+      </Badge>
+    )
+  }
+
+  if (countdown.phase === "live") {
+    return (
+      <Badge>
+        {textFor(locale, "Live now", "进行中")} · {remaining}{" "}
+        {textFor(locale, "left", "剩余")}
+      </Badge>
+    )
+  }
+
+  return (
+    <Badge variant="secondary">
+      {textFor(locale, "Starts in", "距开始")} {remaining}
+    </Badge>
+  )
+}
+
 function ManualMeetingDialog({
   db,
   locale = "en",
@@ -8522,6 +8603,7 @@ function MeetingDetailsDialog({
               <Badge variant={statusVariant(meeting.status)}>
                 {statusLabel(meeting.status, locale)}
               </Badge>
+              <MeetingCountdownBadge meeting={meeting} locale={locale} />
               <Badge variant="outline">{meeting.platform}</Badge>
               <Badge variant={meeting.link ? "default" : "outline"}>
                 {meeting.link
@@ -8712,6 +8794,7 @@ function SessionList({
                   <Badge variant={statusVariant(meeting.status)}>
                     {statusLabel(meeting.status, locale)}
                   </Badge>
+                  <MeetingCountdownBadge meeting={meeting} locale={locale} />
                   <Badge variant="outline">{meeting.platform}</Badge>
                 </div>
                 <p className="mt-2 font-medium">
@@ -9267,6 +9350,10 @@ function MeetingCalendarView({
                               {meeting.duration}{" "}
                               {textFor(locale, "min", "分钟")}
                             </Badge>
+                            <MeetingCountdownBadge
+                              meeting={meeting}
+                              locale={locale}
+                            />
                           </span>
                           <span className="mt-2 block text-sm font-medium">
                             {companyPair}

@@ -8,6 +8,13 @@ reviewed together.
 
 ### 2026-07-28
 
+- Added a live countdown badge to every meeting card, calendar entry, and
+  meeting details view. It counts down to the start, switches to the time
+  remaining once the meeting is running, and reports how long ago a meeting
+  ended, using the two most significant units so it stays readable from days
+  away down to the final seconds. Completed and cancelled meetings show none.
+  The clock is read through a subscription rather than during render, so
+  server and client output agree.
 - Stopped copied join links, Join buttons, and calendar exports from handing
   out the origin that happened to create the meeting. A meeting created against
   a development server stored an absolute `http://localhost:3000/m/...` URL and

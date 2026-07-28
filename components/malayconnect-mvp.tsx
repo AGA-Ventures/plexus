@@ -7768,6 +7768,38 @@ function ManualMeetingDialog({
   const selectedPartner = db.partnerCompanies.find(
     (company) => company.id === partnerId
   )
+  const MIN_AGENDA_LENGTH = 3
+  // Comparing against the current time belongs in the submit handler; render
+  // stays pure and only checks that a parseable date was chosen.
+  const hasStart =
+    Boolean(startsAt) && Number.isFinite(new Date(startsAt).getTime())
+  // The submit button used to sit disabled with no explanation, so name every
+  // outstanding requirement while the Admin fills the form.
+  const missingRequirements = [
+    !hasVendorPair
+      ? textFor(
+          locale,
+          "one delegation Vendor and one Malaysian partner in this workspace",
+          "本工作区至少一家代表团供应商和一家马来西亚合作伙伴"
+        )
+      : null,
+    hasVendorPair && !delegationId
+      ? textFor(locale, "a delegation Vendor", "代表团供应商")
+      : null,
+    hasVendorPair && !partnerId
+      ? textFor(locale, "a Malaysian partner", "马来西亚合作伙伴")
+      : null,
+    !hasStart
+      ? textFor(locale, "a meeting date and time", "会议日期与时间")
+      : null,
+    agenda.trim().length < MIN_AGENDA_LENGTH
+      ? textFor(
+          locale,
+          `an agenda of at least ${MIN_AGENDA_LENGTH} characters`,
+          `至少 ${MIN_AGENDA_LENGTH} 个字符的议程`
+        )
+      : null,
+  ].filter((requirement): requirement is string => Boolean(requirement))
 
   function reset() {
     setDelegationId("")
@@ -7782,18 +7814,56 @@ function ManualMeetingDialog({
   async function submit() {
     const selectedDate = new Date(startsAt)
 
-    if (
-      !delegationId ||
-      !partnerId ||
-      !Number.isFinite(selectedDate.getTime()) ||
-      selectedDate.getTime() <= Date.now() ||
-      agenda.trim().length < 3
-    ) {
+    if (!hasVendorPair) {
       toast.error(
         textFor(
           locale,
-          "Select both Vendors, a future time, and a short agenda.",
-          "请选择双方供应商、未来时间并填写简短议程。"
+          "Create at least one delegation Vendor and one Malaysian partner first.",
+          "请先建立至少一家代表团供应商和一家马来西亚合作伙伴。"
+        )
+      )
+      return
+    }
+
+    if (!delegationId || !partnerId) {
+      toast.error(
+        textFor(
+          locale,
+          "Select both the delegation Vendor and the Malaysian partner.",
+          "请同时选择代表团供应商与马来西亚合作伙伴。"
+        )
+      )
+      return
+    }
+
+    if (!startsAt || !Number.isFinite(selectedDate.getTime())) {
+      toast.error(
+        textFor(
+          locale,
+          "Choose the meeting date and time.",
+          "请选择会议日期与时间。"
+        )
+      )
+      return
+    }
+
+    if (selectedDate.getTime() <= Date.now()) {
+      toast.error(
+        textFor(
+          locale,
+          "Choose a meeting time in the future.",
+          "请选择未来的会议时间。"
+        )
+      )
+      return
+    }
+
+    if (agenda.trim().length < MIN_AGENDA_LENGTH) {
+      toast.error(
+        textFor(
+          locale,
+          `Add an agenda of at least ${MIN_AGENDA_LENGTH} characters.`,
+          `请填写至少 ${MIN_AGENDA_LENGTH} 个字符的议程。`
         )
       )
       return
@@ -7910,8 +7980,8 @@ function ManualMeetingDialog({
             <p className="text-xs text-muted-foreground">
               {textFor(
                 locale,
-                "Choose the preferred provider now. The protected join link is created after both Vendors accept the match.",
-                "現在選擇首選平台；雙方供應商接受配對後，系統才會建立受保護的加入連結。"
+                "Plexus books this provider and issues the protected join link as soon as you create the meeting.",
+                "建立會議後，Plexus 會立即預約此平台並簽發受保護的加入連結。"
               )}
             </p>
           </div>
@@ -8105,11 +8175,24 @@ function ManualMeetingDialog({
             />
             <p className="text-xs text-muted-foreground">
               {agenda.trim().length} / 1000
+              {agenda.trim().length < MIN_AGENDA_LENGTH
+                ? textFor(
+                    locale,
+                    ` · at least ${MIN_AGENDA_LENGTH} characters`,
+                    ` · 至少 ${MIN_AGENDA_LENGTH} 个字符`
+                  )
+                : null}
             </p>
           </div>
         </div>
 
         <DialogFooter>
+          {missingRequirements.length ? (
+            <p className="text-xs text-muted-foreground sm:mr-auto sm:self-center">
+              {textFor(locale, "Still needed: ", "仍需填写：")}
+              {missingRequirements.join(textFor(locale, ", ", "、"))}
+            </p>
+          ) : null}
           <Button
             variant="outline"
             disabled={submitting}
@@ -8118,14 +8201,8 @@ function ManualMeetingDialog({
             {textFor(locale, "Cancel", "取消")}
           </Button>
           <Button
-            disabled={
-              submitting ||
-              !delegationId ||
-              !partnerId ||
-              !startsAt ||
-              agenda.trim().length < 3 ||
-              !hasVendorPair
-            }
+            disabled={submitting}
+            aria-disabled={missingRequirements.length > 0}
             onClick={submit}
           >
             {submitting ? (
@@ -8202,14 +8279,24 @@ function MeetingDetailsDialog({
 
     if (
       Number.isNaN(selectedDate.getTime()) ||
-      agenda.trim().length < 3 ||
       !Number.isFinite(Number(durationMinutes))
     ) {
       toast.error(
         textFor(
           locale,
-          "Check the meeting schedule and agenda.",
-          "请检查会议时间与议程。"
+          "Check the meeting date, time, and duration.",
+          "请检查会议日期、时间与时长。"
+        )
+      )
+      return
+    }
+
+    if (agenda.trim().length < 3) {
+      toast.error(
+        textFor(
+          locale,
+          "Add an agenda of at least 3 characters.",
+          "请填写至少 3 个字符的议程。"
         )
       )
       return
@@ -8403,7 +8490,8 @@ function MeetingDetailsDialog({
               </Button>
               <Button
                 type="submit"
-                disabled={submitting || agenda.trim().length < 3}
+                disabled={submitting}
+                aria-disabled={agenda.trim().length < 3}
               >
                 <Icon
                   icon={submitting ? Loading03Icon : SaveIcon}

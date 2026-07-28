@@ -8,6 +8,13 @@ reviewed together.
 
 ### 2026-07-28
 
+- Stopped the manual meeting dialog from stranding Admins behind a silently
+  disabled **Create meeting** button. The footer now lists every outstanding
+  requirement while the form is filled in, the agenda counter states its
+  three-character minimum, and the button stays clickable so a click always
+  answers what is missing with a specific message for the Vendor pair, the
+  date and time, a past start, or a short agenda, instead of one combined
+  sentence. The meeting details dialog reports a short agenda the same way.
 - Resolved the conflict between Admin-arranged meetings and provider-link
   protection. The arranging Admin is the scheduling authority, so manual
   meeting creation now books the Zoom or Lark meeting and issues its protected

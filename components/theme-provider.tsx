@@ -34,6 +34,10 @@ function isTypingTarget(target: EventTarget | null) {
   )
 }
 
+function isThemeToggleKey(key: unknown) {
+  return key === "d" || key === "D"
+}
+
 function ThemeHotkey() {
   const { resolvedTheme, setTheme } = useTheme()
 
@@ -47,7 +51,7 @@ function ThemeHotkey() {
         return
       }
 
-      if (event.key.toLowerCase() !== "d") {
+      if (!isThemeToggleKey(event.key)) {
         return
       }
 
@@ -68,4 +72,4 @@ function ThemeHotkey() {
   return null
 }
 
-export { ThemeProvider }
+export { ThemeProvider, isThemeToggleKey }

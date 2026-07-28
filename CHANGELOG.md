@@ -6,8 +6,15 @@ reviewed together.
 
 ## Unreleased
 
+### 2026-07-29
+
+- Restored wheel and touch scrolling inside industry-sector pickers nested in
+  Vendor dialogs while keeping the surrounding dialog stationary.
+
 ### 2026-07-28
 
+- Prevented the global theme keyboard shortcut from crashing when a synthetic
+  or malformed keydown event omits the keyboard `key` value.
 - Fixed the industry sector picker overflowing its dialog and scrolling badly.
   The panel had a fixed 24rem list inside an unbounded popover, so on shorter
   screens it ran past the viewport and its lower entries could not be reached.

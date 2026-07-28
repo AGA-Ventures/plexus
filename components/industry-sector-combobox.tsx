@@ -61,7 +61,7 @@ export function IndustrySectorCombobox({
 
   return (
     <div className="grid gap-1.5">
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover modal open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             id={id}
@@ -232,7 +232,7 @@ export function IndustrySectorMultiCombobox({
         </p>
       )}
 
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover modal open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             id={id}

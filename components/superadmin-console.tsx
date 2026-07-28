@@ -53,6 +53,7 @@ import type {
   TenantStatus,
   VendorStatus,
 } from "@/lib/management-data"
+import { IndustrySectorCombobox } from "@/components/industry-sector-combobox"
 import {
   Alert,
   AlertAction,
@@ -456,7 +457,7 @@ function CreateVendorDialog({
           </div>
           <div className="grid gap-1.5">
             <Label htmlFor="vendorSector">Sector</Label>
-            <Input id="vendorSector" name="sector" required />
+            <IndustrySectorCombobox id="vendorSector" name="sector" required />
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="grid gap-1.5">
@@ -1220,6 +1221,11 @@ export function SuperadminConsole(props: Props) {
                               <VendorDirectoryDialog
                                 locale={locale}
                                 vendor={vendor}
+                                accounts={accounts.filter(
+                                  (account) =>
+                                    account.vendor_company_id === vendor.id
+                                )}
+                                accountEditingEnabled={provisioningConfigured}
                               />
                               <StatusControl
                                 value={vendor.status}
@@ -1268,7 +1274,14 @@ export function SuperadminConsole(props: Props) {
                       subtitle={`${tenantNames.get(vendor.admin_id) ?? "Unknown Admin"} · ${labelStatus(vendor.vendor_type)} · ${vendor.sector}`}
                       status={vendor.status}
                     >
-                      <VendorDirectoryDialog locale={locale} vendor={vendor} />
+                      <VendorDirectoryDialog
+                        locale={locale}
+                        vendor={vendor}
+                        accounts={accounts.filter(
+                          (account) => account.vendor_company_id === vendor.id
+                        )}
+                        accountEditingEnabled={provisioningConfigured}
+                      />
                       <StatusControl
                         value={vendor.status}
                         options={["active", "suspended", "archived"]}

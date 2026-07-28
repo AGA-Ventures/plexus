@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080">
+  <style>.eyebrow{font:700 30px Arial;letter-spacing:3px;fill:#20b7ff}.title{font:700 70px Arial;fill:white}.body{font:400 30px Arial;fill:#b8c9dc}</style>
+  <text class="eyebrow" x="190" y="315">COMPANY BRAIN</text>
+  <text class="title" x="190" y="410">Understand every</text>
+  <text class="title" x="190" y="495">opportunity.</text>
+  <text class="body" x="194" y="578">Bring capability, trust, signals and risk</text>
+  <text class="body" x="194" y="620">into one clear business profile.</text>
+  <rect x="192" y="682" width="560" height="3" fill="#16adff"/>
+</svg>

@@ -36,10 +36,7 @@ type ProfileRow = {
   active: boolean
 }
 
-function profileMatchesMetadata(
-  profile: ProfileRow,
-  metadata: AppMetadata
-) {
+function profileMatchesMetadata(profile: ProfileRow, metadata: AppMetadata) {
   return (
     profile.role === metadata.role &&
     profile.admin_id === (metadata.admin_id ?? null) &&
@@ -52,8 +49,7 @@ export async function validateAuthenticatedUser(
   supabase: SupabaseClient,
   user: User
 ): Promise<
-  | { ok: true; identity: AuthenticatedIdentity }
-  | { ok: false; error: string }
+  { ok: true; identity: AuthenticatedIdentity } | { ok: false; error: string }
 > {
   const metadata = getAppMetadata(user)
   const bindingError = getRoleBindingError(metadata)
@@ -100,21 +96,6 @@ export async function validateAuthenticatedUser(
       }
     | undefined
 
-  if (metadata.role === "admin") {
-    const tenantResult = await supabase
-      .from("admin_tenants")
-      .select("id, status, name, support_email, primary_color, logo_url")
-      .eq("id", metadata.admin_id!)
-      .eq("status", "active")
-      .maybeSingle()
-
-    if (tenantResult.error || !tenantResult.data) {
-      return { ok: false, error: "This Admin tenant is not active." }
-    }
-
-    tenantDetails = tenantResult.data
-  }
-
   if (metadata.role === "vendor") {
     const vendorResult = await supabase
       .from("vendor_companies")
@@ -128,6 +109,27 @@ export async function validateAuthenticatedUser(
     if (vendorResult.error || !vendorResult.data) {
       return { ok: false, error: "This Vendor company is not active." }
     }
+  }
+
+  if (metadata.role === "admin" || metadata.role === "vendor") {
+    const tenantResult = await supabase
+      .from("admin_tenants")
+      .select("id, status, name, support_email, primary_color, logo_url")
+      .eq("id", metadata.admin_id!)
+      .eq("status", "active")
+      .maybeSingle()
+
+    if (tenantResult.error || !tenantResult.data) {
+      return {
+        ok: false,
+        error:
+          metadata.role === "admin"
+            ? "This Admin tenant is not active."
+            : "This Vendor's Admin tenant is not active.",
+      }
+    }
+
+    tenantDetails = tenantResult.data
   }
 
   return {

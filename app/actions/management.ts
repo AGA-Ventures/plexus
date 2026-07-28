@@ -13,8 +13,10 @@ import {
 } from "@/lib/password-recovery"
 import { type TenantStatus, type VendorStatus } from "@/lib/management-data"
 import { hasMatchingPasswordConfirmation } from "@/lib/password-confirmation"
+import { isPlaceholderIndustrySector } from "@/lib/industry-sectors"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { buildVendorDirectoryUpdate } from "@/lib/vendor-directory"
 
 export type ManagementActionResult = {
   ok: boolean
@@ -26,6 +28,15 @@ const localeSchema = z.enum(["en", "zh", "zh-Hant", "th"])
 const tenantStatusSchema = z.enum(["active", "suspended", "archived"])
 const vendorStatusSchema = z.enum(["active", "suspended", "archived"])
 const vendorTypeSchema = z.enum(["delegation", "partner"])
+const industrySectorSchema = z
+  .string()
+  .trim()
+  .min(2)
+  .max(120)
+  .refine(
+    (value) => !isPlaceholderIndustrySector(value),
+    "Select an industry sector."
+  )
 
 const createAdminSchema = z
   .object({
@@ -61,7 +72,7 @@ const createVendorSchema = z.object({
   vendorType: vendorTypeSchema,
   companyName: z.string().trim().min(2).max(180),
   companyNameCn: z.string().trim().max(180).default(""),
-  sector: z.string().trim().min(2).max(120),
+  sector: industrySectorSchema,
   displayName: z.string().trim().min(2).max(120),
   email: z.email().trim(),
   temporaryPassword: z.string().min(12).max(128),
@@ -87,14 +98,44 @@ const updateTenantSchema = z.object({
     ),
 })
 
-const updateVendorSchema = z.object({
-  locale: localeSchema,
-  vendorId: uuidSchema,
-  vendorType: vendorTypeSchema,
-  nameEn: z.string().trim().min(2).max(180),
-  nameCn: z.string().trim().max(180),
-  sector: z.string().trim().min(2).max(120),
-})
+const updateVendorSchema = z
+  .object({
+    locale: localeSchema,
+    vendorId: uuidSchema,
+    vendorType: vendorTypeSchema,
+    nameEn: z.string().trim().min(2).max(180),
+    nameCn: z.string().trim().max(180),
+    sector: industrySectorSchema,
+    companySize: z.string().trim().min(1).max(120),
+    contactName: z.string().trim().max(160),
+    contactDetails: z.string().trim().max(240),
+    origin: z.string().trim().max(120),
+    partnerType: z.enum(["Government", "Association", "Enterprise"]),
+    description: z.string().trim().max(4_000),
+    coordinator: z.string().trim().max(120),
+    accountId: uuidSchema.nullable(),
+    accountDisplayName: z.string().trim().max(120),
+    accountEmail: z.union([z.literal(""), z.email().trim()]),
+  })
+  .superRefine((value, context) => {
+    if (!value.accountId) return
+
+    if (value.accountDisplayName.length < 2) {
+      context.addIssue({
+        code: "custom",
+        message: "Enter the account holder's name.",
+        path: ["accountDisplayName"],
+      })
+    }
+
+    if (!value.accountEmail) {
+      context.addIssue({
+        code: "custom",
+        message: "Enter a valid login email.",
+        path: ["accountEmail"],
+      })
+    }
+  })
 
 const updatePlatformSettingSchema = z.object({
   locale: localeSchema,
@@ -596,23 +637,163 @@ export async function updateVendorDirectoryAction(
 
   try {
     const authorization = await requireOperator()
+    const { supabase } = authorization
     const table =
       parsed.data.vendorType === "delegation"
         ? "delegation_companies"
         : "partner_companies"
-    const result = await authorization.supabase
+
+    const existingVendorResult = await supabase
       .from(table)
-      .update({
-        name_en: parsed.data.nameEn,
-        name_cn: parsed.data.nameCn,
-        sector: parsed.data.sector,
-      })
-      .eq("id", parsed.data.vendorId)
+      .select("*")
+      .eq("vendor_company_id", parsed.data.vendorId)
+      .maybeSingle()
+
+    if (existingVendorResult.error || !existingVendorResult.data) {
+      return { ok: false, error: "Vendor is outside your permitted scope." }
+    }
+
+    const existingVendor = existingVendorResult.data
+    const previousCompanyValues = buildVendorDirectoryUpdate({
+      vendorType: parsed.data.vendorType,
+      nameEn: existingVendor.name_en,
+      nameCn: existingVendor.name_cn,
+      sector: existingVendor.sector,
+      companySize: existingVendor.company_size,
+      contactName: existingVendor.contact,
+      contactDetails: existingVendor.contact_meta,
+      origin:
+        parsed.data.vendorType === "delegation" ? existingVendor.origin : "",
+      partnerType:
+        parsed.data.vendorType === "partner"
+          ? existingVendor.partner_type
+          : "Enterprise",
+      description:
+        parsed.data.vendorType === "delegation"
+          ? existingVendor.needs
+          : existingVendor.offerings,
+      coordinator:
+        parsed.data.vendorType === "delegation"
+          ? existingVendor.coordinator
+          : "",
+    })
+
+    let existingAccount:
+      | {
+          id: string
+          display_name: string
+          email: string
+        }
+      | undefined
+    let existingAuthMetadata: Record<string, unknown> = {}
+
+    if (parsed.data.accountId) {
+      const accountResult = await supabase
+        .from("user_profiles")
+        .select(
+          "id, display_name, email, role, admin_id, vendor_company_id, vendor_type"
+        )
+        .eq("id", parsed.data.accountId)
+        .eq("vendor_company_id", parsed.data.vendorId)
+        .maybeSingle()
+
+      if (
+        accountResult.error ||
+        !accountResult.data ||
+        accountResult.data.role !== "vendor" ||
+        accountResult.data.vendor_type !== parsed.data.vendorType ||
+        accountResult.data.admin_id !== existingVendor.admin_id
+      ) {
+        return {
+          ok: false,
+          error: "The selected login account is outside this Vendor.",
+        }
+      }
+
+      existingAccount = accountResult.data
+      const adminClient = createSupabaseAdminClient()
+      const authUserResult = await adminClient.auth.admin.getUserById(
+        parsed.data.accountId
+      )
+
+      if (authUserResult.error || !authUserResult.data.user) {
+        return {
+          ok: false,
+          error: "The selected login account could not be verified.",
+        }
+      }
+
+      existingAuthMetadata = authUserResult.data.user.user_metadata ?? {}
+    }
+
+    const companyResult = await supabase
+      .from(table)
+      .update(buildVendorDirectoryUpdate(parsed.data))
+      .eq("vendor_company_id", parsed.data.vendorId)
       .select("id")
       .single()
 
-    if (result.error) {
-      return { ok: false, error: result.error.message }
+    if (companyResult.error) {
+      return { ok: false, error: companyResult.error.message }
+    }
+
+    if (parsed.data.accountId && existingAccount) {
+      const restoreCompany = () =>
+        supabase
+          .from(table)
+          .update(previousCompanyValues)
+          .eq("vendor_company_id", parsed.data.vendorId)
+
+      const profileResult = await supabase
+        .from("user_profiles")
+        .update({
+          display_name: parsed.data.accountDisplayName,
+          email: parsed.data.accountEmail,
+        })
+        .eq("id", parsed.data.accountId)
+
+      if (profileResult.error) {
+        const companyRollback = await restoreCompany()
+        return {
+          ok: false,
+          error: companyRollback.error
+            ? "The account update failed and the company profile could not be fully restored. Contact a Superadmin."
+            : "The account update failed. The original company details were restored.",
+        }
+      }
+
+      const adminClient = createSupabaseAdminClient()
+      const authResult = await adminClient.auth.admin.updateUserById(
+        parsed.data.accountId,
+        {
+          email: parsed.data.accountEmail,
+          user_metadata: {
+            ...existingAuthMetadata,
+            display_name: parsed.data.accountDisplayName,
+          },
+        }
+      )
+
+      if (authResult.error) {
+        const [profileRollback, companyRollback] = await Promise.all([
+          supabase
+            .from("user_profiles")
+            .update({
+              display_name: existingAccount.display_name,
+              email: existingAccount.email,
+            })
+            .eq("id", existingAccount.id),
+          restoreCompany(),
+        ])
+
+        return {
+          ok: false,
+          error:
+            profileRollback.error || companyRollback.error
+              ? "The login change failed and the original profile could not be fully restored. Contact a Superadmin."
+              : "The login change was rejected. The original Vendor details were restored.",
+        }
+      }
     }
 
     refreshManagement(parsed.data.locale)

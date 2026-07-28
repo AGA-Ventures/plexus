@@ -1,9 +1,19 @@
 "use client"
 
-import { useMemo, useState, useTransition } from "react"
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+  type FormEvent,
+  type ReactNode,
+} from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
+import type { CountryCode } from "libphonenumber-js"
 import {
   AddIcon,
   Alert02Icon,
@@ -13,8 +23,11 @@ import {
   Calendar03Icon,
   CameraVideoIcon,
   CheckmarkCircle02Icon,
+  Copy01Icon,
+  Delete02Icon,
   Download01Icon,
   File01Icon,
+  Loading03Icon,
   Logout01Icon,
   Menu01Icon,
   PaintBoardIcon,
@@ -26,6 +39,7 @@ import {
   Upload01Icon,
   UserAccountIcon,
   UserGroupIcon,
+  ViewIcon,
 } from "@hugeicons/core-free-icons"
 import { toast } from "sonner"
 
@@ -37,12 +51,15 @@ import {
   completeMeetingAction,
   confirmAttendanceAction,
   createCompanyAction,
+  createDealAction,
   createInterpreterAction,
+  createManualMeetingAction,
   createProviderMeetingAction,
   createResourceAction,
   deleteCompanyAction,
   deleteInterpreterAction,
   publishItineraryAction,
+  refreshPortalDbAction,
   scheduleMeetingAction,
   sendAnnouncementAction,
   toggleResourceVisibilityAction,
@@ -50,6 +67,7 @@ import {
   updateCompanyProfileAction,
   updateDealAction,
   updateInterpreterAction,
+  updateMeetingAction,
   updateMatchStatusAction,
 } from "@/app/actions/plexus"
 import { downloadCsv, downloadIcs } from "@/lib/export"
@@ -59,6 +77,22 @@ import {
   protectedPortalLocales,
   type Locale,
 } from "@/lib/i18n"
+import {
+  getCompanyProfileCompletion,
+  getCompanyProfileSectionCompletion,
+  getMalaysiaToday,
+  validateCompanyRegistrationProfile,
+} from "@/lib/company-profile"
+import {
+  IndustrySectorCombobox,
+  IndustrySectorMultiCombobox,
+} from "@/components/industry-sector-combobox"
+import {
+  composeInternationalPhoneNumber,
+  countryCallingCodeOptions,
+  getCountryCodeForRegion,
+  splitInternationalPhoneNumber,
+} from "@/lib/international-phone"
 import { supportedMarketNames } from "@/lib/markets"
 import {
   type Announcement,
@@ -66,6 +100,7 @@ import {
   type AnnouncementTarget,
   type CompanyRegistrationProfile,
   getCompanyName,
+  getCompanySector,
   type Deal,
   type DelegationCompany,
   type EventResource,
@@ -83,9 +118,20 @@ import {
   type MeetingProviderState,
   unavailableMeetingProviderReadiness,
 } from "@/lib/meeting-provider-readiness"
+import {
+  extractMeetingAgenda,
+  type ManualMeetingInput,
+  type MeetingAmendmentInput,
+} from "@/lib/manual-meeting"
 import { scoreMatch } from "@/lib/matching"
 import type { PortalSession } from "@/lib/plexus-data"
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import { cn } from "@/lib/utils"
+import {
+  getVendorDashboardMetrics,
+  getVendorRealtimeTargets,
+} from "@/lib/vendor-dashboard"
+import type { VendorProfileDocument } from "@/lib/vendor-profile-documents"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { TenantProfileForm } from "@/components/tenant-profile-dialog"
 import {
@@ -112,6 +158,14 @@ import {
 } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -128,6 +182,11 @@ import {
   FieldTitle,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { Progress } from "@/components/ui/progress"
 import {
   Select,
@@ -727,6 +786,23 @@ function toTraditional(value: string) {
     ["检查", "檢查"],
     ["系统会", "系統會"],
     ["系统", "系統"],
+    ["手动", "手動"],
+    ["代表团", "代表團"],
+    ["日历", "日曆"],
+    ["翻译", "翻譯"],
+    ["时区", "時區"],
+    ["输入", "輸入"],
+    ["议程", "議程"],
+    ["产品", "產品"],
+    ["介绍", "介紹"],
+    ["分销", "分銷"],
+    ["后续", "後續"],
+    ["步骤", "步驟"],
+    ["才会", "才會"],
+    ["将", "將"],
+    ["并", "並"],
+    ["后", "後"],
+    ["长", "長"],
     ["会收到", "會收到"],
     ["参与者", "參與者"],
     ["会议时", "會議時"],
@@ -750,12 +826,20 @@ function toTraditional(value: string) {
     ["环境", "環境"],
     ["来源", "來源"],
     ["相关", "相關"],
+    ["关联", "關聯"],
+    ["详情", "詳情"],
+    ["决定", "決定"],
+    ["进度", "進度"],
+    ["说明", "說明"],
     ["配对", "配對"],
     ["企业", "企業"],
     ["会议", "會議"],
     ["请求", "請求"],
     ["请", "請"],
     ["调整", "調整"],
+    ["回应", "回應"],
+    ["即将", "即將"],
+    ["举行", "舉行"],
     ["补充", "補充"],
     ["选择", "選擇"],
     ["首选", "首選"],
@@ -786,6 +870,7 @@ function toTraditional(value: string) {
     ["确认", "確認"],
     ["马来西亚", "馬來西亞"],
     ["伙伴", "夥伴"],
+    ["机会", "機會"],
     ["状态", "狀態"],
     ["出席", "出席"],
     ["二维码", "二維碼"],
@@ -868,29 +953,6 @@ const profileOptionGroups = {
     "Spanish",
     "French",
     "Russian",
-  ],
-  industries: [
-    "Food & Beverage",
-    "Halal Products",
-    "Tourism & Hospitality",
-    "Hotels & Resorts",
-    "Gaming & Entertainment",
-    "Retail & E-commerce",
-    "Healthcare & Medical",
-    "Pharmaceuticals",
-    "Beauty & Wellness",
-    "Education & Training",
-    "Financial Services & FinTech",
-    "Information Technology & Digital Solutions",
-    "AI & Emerging Technologies",
-    "Smart City Solutions",
-    "Manufacturing",
-    "Electronics & Electrical",
-    "Construction & Property",
-    "Green Technology & Sustainability",
-    "Logistics & Supply Chain",
-    "Professional Services",
-    "Franchise Opportunities",
   ],
   certifications: ["Halal", "ISO", "HACCP", "GMP", "CE", "FDA"],
   offers: [
@@ -1338,11 +1400,20 @@ function getInitials(name: string) {
 function Icon({
   icon,
   inline,
+  className,
 }: {
   icon: Parameters<typeof HugeiconsIcon>[0]["icon"]
   inline?: "inline-start" | "inline-end"
+  className?: string
 }) {
-  return <HugeiconsIcon icon={icon} data-icon={inline} strokeWidth={1.7} />
+  return (
+    <HugeiconsIcon
+      icon={icon}
+      data-icon={inline}
+      strokeWidth={1.7}
+      className={className}
+    />
+  )
 }
 
 function statusVariant(
@@ -1384,24 +1455,29 @@ export function PlexusConnectMvp({
   locale = "en",
   initialDb,
   session,
+  initialAdminSection,
+  initialVendorSection,
   meetingProviderReadiness = unavailableMeetingProviderReadiness,
 }: {
   role: PortalRole
   locale?: Locale
   initialDb: LocalDb
   session: PortalSession
+  initialAdminSection?: string
+  initialVendorSection?: string
   meetingProviderReadiness?: MeetingProviderReadiness
 }) {
   const router = useRouter()
   const [db, setDb] = useState<LocalDb>(initialDb)
   const [, setIsSaving] = useState(false)
   const [query, setQuery] = useState("")
+  const [vendorRealtimeStatus, setVendorRealtimeStatus] = useState<
+    "connecting" | "live" | "degraded"
+  >("connecting")
   const [selectedDelegation, setSelectedDelegation] = useState(
     initialDb.delegationCompanies[0]?.id ?? ""
   )
-  const [selectedPartner, setSelectedPartner] = useState(
-    initialDb.partnerCompanies[0]?.id ?? ""
-  )
+  const [selectedPartner] = useState(initialDb.partnerCompanies[0]?.id ?? "")
 
   const selectedDelegationCompany =
     db.delegationCompanies.find(
@@ -1416,6 +1492,154 @@ export function PlexusConnectMvp({
 
   const metrics = useMemo(() => getMetrics(db), [db])
   const copy = getPortalCopy(locale, role)
+  const vendorMatchIds = useMemo(() => {
+    if (role === "admin" || !session.vendorCompanyId) {
+      return []
+    }
+
+    return db.matches
+      .filter((match) =>
+        role === "delegation"
+          ? match.delegationId === session.vendorCompanyId
+          : match.partnerId === session.vendorCompanyId
+      )
+      .map((match) => match.id)
+      .sort()
+  }, [db.matches, role, session.vendorCompanyId])
+  const vendorMatchKey = vendorMatchIds.join(",")
+
+  useEffect(() => {
+    if (role === "admin" || !session.vendorCompanyId || !session.vendorType) {
+      return
+    }
+
+    let active = true
+    let refreshRunning = false
+    let refreshQueued = false
+    let refreshTimeout: ReturnType<typeof setTimeout> | undefined
+    const supabase = createSupabaseBrowserClient()
+    const targets = getVendorRealtimeTargets({
+      vendorType: session.vendorType,
+      vendorCompanyId: session.vendorCompanyId,
+      matchIds: vendorMatchKey ? vendorMatchKey.split(",") : [],
+    })
+
+    async function refreshWorkspace() {
+      if (refreshRunning) {
+        refreshQueued = true
+        return
+      }
+
+      refreshRunning = true
+
+      try {
+        do {
+          refreshQueued = false
+          const result = await refreshPortalDbAction()
+
+          if (!active) {
+            return
+          }
+
+          if (!result.ok) {
+            setVendorRealtimeStatus("degraded")
+            return
+          }
+
+          setDb(result.db)
+          setVendorRealtimeStatus("live")
+        } while (active && refreshQueued)
+      } catch {
+        if (active) {
+          setVendorRealtimeStatus("degraded")
+        }
+      } finally {
+        refreshRunning = false
+      }
+    }
+
+    function scheduleRefresh() {
+      if (refreshTimeout) {
+        clearTimeout(refreshTimeout)
+      }
+
+      refreshTimeout = setTimeout(() => {
+        void refreshWorkspace()
+      }, 150)
+    }
+
+    let channel = supabase.channel(`vendor-dashboard-${session.userId}`)
+
+    for (const target of targets) {
+      channel = channel
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: target.table,
+            filter: target.filter,
+          },
+          scheduleRefresh
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: target.table,
+            filter: target.filter,
+          },
+          scheduleRefresh
+        )
+    }
+
+    channel.subscribe((status, error) => {
+      if (!active) {
+        return
+      }
+
+      if (status === "SUBSCRIBED" && !error) {
+        setVendorRealtimeStatus("live")
+        return
+      }
+
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || error) {
+        setVendorRealtimeStatus("degraded")
+      }
+    })
+
+    const fallbackRefresh = window.setInterval(() => {
+      void refreshWorkspace()
+    }, 60_000)
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") {
+        scheduleRefresh()
+      }
+    }
+
+    window.addEventListener("focus", scheduleRefresh)
+    document.addEventListener("visibilitychange", refreshWhenVisible)
+
+    return () => {
+      active = false
+
+      if (refreshTimeout) {
+        clearTimeout(refreshTimeout)
+      }
+
+      window.clearInterval(fallbackRefresh)
+      window.removeEventListener("focus", scheduleRefresh)
+      document.removeEventListener("visibilitychange", refreshWhenVisible)
+      void supabase.removeChannel(channel)
+    }
+  }, [
+    role,
+    session.userId,
+    session.vendorCompanyId,
+    session.vendorType,
+    vendorMatchKey,
+  ])
 
   async function applyServerResult(
     action: Promise<{ ok: true; db: LocalDb } | { ok: false; error: string }>,
@@ -1427,16 +1651,18 @@ export function PlexusConnectMvp({
 
       if (!result.ok) {
         toast.error(result.error)
-        return
+        return false
       }
 
       setDb(result.db)
       toast.success(successMessage)
       router.refresh()
+      return true
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Supabase action failed."
       )
+      return false
     } finally {
       setIsSaving(false)
     }
@@ -1511,6 +1737,27 @@ export function PlexusConnectMvp({
     )
   }
 
+  function createManualMeeting(values: ManualMeetingInput) {
+    const delegation = db.delegationCompanies.find(
+      (company) => company.id === values.delegationId
+    )
+    const partner = db.partnerCompanies.find(
+      (company) => company.id === values.partnerId
+    )
+
+    return applyServerResult(
+      createManualMeetingAction(values),
+      `${delegation?.nameEn ?? "Delegation Vendor"} ↔ ${partner?.nameEn ?? "Partner Vendor"} meeting added to the calendar.`
+    )
+  }
+
+  function updateMeeting(values: MeetingAmendmentInput) {
+    return applyServerResult(
+      updateMeetingAction(values),
+      "Meeting details updated."
+    )
+  }
+
   function completeMeeting(meetingId: string) {
     void applyServerResult(
       completeMeetingAction(meetingId),
@@ -1575,6 +1822,17 @@ export function PlexusConnectMvp({
       updateDealAction(dealId, status),
       `Deal marked ${status}.`
     )
+  }
+
+  function createDeal(matchId: string) {
+    return applyServerResult(
+      createDealAction(matchId),
+      "MOU record created for the selected Vendor match."
+    )
+  }
+
+  function refreshDeals(successMessage: string) {
+    return applyServerResult(refreshPortalDbAction(), successMessage)
   }
 
   function confirmAttendance(partnerId: string) {
@@ -1729,6 +1987,7 @@ export function PlexusConnectMvp({
             locale={locale}
             copy={copy}
             session={session}
+            initialSection={initialAdminSection}
             query={query}
             setQuery={setQuery}
             metrics={metrics}
@@ -1739,13 +1998,17 @@ export function PlexusConnectMvp({
             updateManagedCompany={updateManagedCompany}
             deleteManagedCompany={deleteManagedCompany}
             addMatch={addMatch}
+            createManualMeeting={createManualMeeting}
+            updateMeeting={updateMeeting}
             createProviderMeeting={createProviderMeeting}
             completeMeeting={completeMeeting}
             assignMeetingInterpreter={assignMeetingInterpreter}
             createInterpreter={createInterpreter}
             updateInterpreter={updateInterpreter}
             deleteInterpreter={deleteInterpreter}
+            createDeal={createDeal}
             updateDeal={updateDeal}
+            refreshDeals={refreshDeals}
             checkInPartner={checkInPartner}
             publishItinerary={publishItinerary}
             sendAnnouncement={sendAnnouncement}
@@ -1758,14 +2021,21 @@ export function PlexusConnectMvp({
           <DelegationPortal
             company={selectedDelegationCompany}
             dashboardHeader={
-              <DashboardHeader copy={copy} metrics={metrics} locale={locale} />
+              <VendorDashboardHeader
+                copy={copy}
+                company={selectedDelegationCompany}
+                matches={visibleMatches}
+                meetings={visibleMeetings}
+                db={db}
+                locale={locale}
+                realtimeStatus={vendorRealtimeStatus}
+              />
             }
             role={role}
             locale={locale}
             session={session}
             logout={logout}
-            companies={db.delegationCompanies}
-            setCompany={setSelectedDelegation}
+            initialSection={initialVendorSection}
             matches={visibleMatches}
             meetings={visibleMeetings}
             db={db}
@@ -1777,14 +2047,21 @@ export function PlexusConnectMvp({
           <PartnerPortal
             company={selectedPartnerCompany}
             dashboardHeader={
-              <DashboardHeader copy={copy} metrics={metrics} locale={locale} />
+              <VendorDashboardHeader
+                copy={copy}
+                company={selectedPartnerCompany}
+                matches={visibleMatches}
+                meetings={visibleMeetings}
+                db={db}
+                locale={locale}
+                realtimeStatus={vendorRealtimeStatus}
+              />
             }
             role={role}
             locale={locale}
             session={session}
             logout={logout}
-            companies={db.partnerCompanies}
-            setCompany={setSelectedPartner}
+            initialSection={initialVendorSection}
             matches={visibleMatches}
             meetings={visibleMeetings}
             db={db}
@@ -1923,23 +2200,119 @@ function DashboardHeader({
   )
 }
 
-function OperationalAlert({
-  message,
+function VendorDashboardHeader({
+  copy,
+  company,
+  matches,
+  meetings,
+  db,
   locale,
+  realtimeStatus,
 }: {
-  message: string
+  copy: Record<string, string>
+  company: DelegationCompany | PartnerCompany
+  matches: Match[]
+  meetings: Meeting[]
+  db: LocalDb
   locale: Locale
+  realtimeStatus: "connecting" | "live" | "degraded"
 }) {
-  const t = getUiCopy(locale)
+  const dashboardMetrics = getVendorDashboardMetrics({
+    company,
+    matches,
+    meetings,
+    deals: db.deals,
+  })
 
   return (
-    <Alert>
-      <Icon icon={Alert02Icon} />
-      <AlertTitle>{t.operationalAlerts}</AlertTitle>
-      <AlertDescription>
-        {message} {t.persistedNotice}
-      </AlertDescription>
-    </Alert>
+    <section className="flex flex-col gap-5 rounded-lg border bg-card p-4 sm:p-5">
+      <div className="flex min-w-0 flex-col gap-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-col gap-2">
+            <p className="text-xs font-medium text-muted-foreground">
+              {copy.eyebrow}
+            </p>
+            <h1 className="text-2xl font-semibold tracking-normal sm:text-3xl">
+              {copy.title}
+            </h1>
+            <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+              {copy.subtitle}
+            </p>
+          </div>
+          <Badge
+            variant="outline"
+            className="h-7 gap-2 rounded-full px-3 text-xs"
+            data-testid="vendor-realtime-status"
+          >
+            <span
+              className={cn(
+                "size-1.5 rounded-full",
+                realtimeStatus === "live"
+                  ? "bg-emerald-500"
+                  : realtimeStatus === "connecting"
+                    ? "animate-pulse bg-amber-500"
+                    : "bg-muted-foreground"
+              )}
+              aria-hidden="true"
+            />
+            {realtimeStatus === "live"
+              ? textFor(locale, "Live data", "实时数据")
+              : realtimeStatus === "connecting"
+                ? textFor(locale, "Connecting", "正在连接")
+                : textFor(locale, "Auto-refreshing", "自动刷新")}
+          </Badge>
+        </div>
+      </div>
+      <div
+        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+        data-testid="vendor-dashboard-metrics"
+      >
+        <MetricCard
+          label={textFor(locale, "Profile readiness", "资料完成度")}
+          value={`${dashboardMetrics.profileComplete}%`}
+          detail={
+            dashboardMetrics.profileRemaining
+              ? textFor(
+                  locale,
+                  `${dashboardMetrics.profileRemaining}% remaining`,
+                  `${dashboardMetrics.profileRemaining}% 待完成`
+                )
+              : textFor(locale, "Profile ready", "资料已完成")
+          }
+          icon={UserAccountIcon}
+        />
+        <MetricCard
+          label={textFor(locale, "Pending matches", "待回应配对")}
+          value={dashboardMetrics.pendingMatches}
+          detail={textFor(
+            locale,
+            `${dashboardMetrics.totalMatches} total opportunities`,
+            `共 ${dashboardMetrics.totalMatches} 个配对机会`
+          )}
+          icon={UserGroupIcon}
+        />
+        <MetricCard
+          label={textFor(locale, "Upcoming meetings", "即将举行会议")}
+          value={dashboardMetrics.upcomingMeetings}
+          detail={textFor(
+            locale,
+            `${dashboardMetrics.completedMeetings} completed`,
+            `${dashboardMetrics.completedMeetings} 场已完成`
+          )}
+          icon={CameraVideoIcon}
+        />
+        <MetricCard
+          label={textFor(locale, "Active MOUs", "进行中 MOU")}
+          value={dashboardMetrics.activeMous}
+          detail={textFor(
+            locale,
+            `${dashboardMetrics.signedMous} signed agreements`,
+            `${dashboardMetrics.signedMous} 份已签署`
+          )}
+          icon={File01Icon}
+        />
+      </div>
+    </section>
   )
 }
 
@@ -1949,6 +2322,7 @@ function AdminPortal(props: {
   locale: Locale
   copy: Record<string, string>
   session: PortalSession
+  initialSection?: string
   query: string
   setQuery: (value: string) => void
   metrics: ReturnType<typeof getMetrics>
@@ -1959,6 +2333,8 @@ function AdminPortal(props: {
   updateManagedCompany: (kind: CompanyKind, values: ManagedCompany) => void
   deleteManagedCompany: (kind: CompanyKind, id: string) => void
   addMatch: (partnerId: string) => void
+  createManualMeeting: (values: ManualMeetingInput) => Promise<boolean>
+  updateMeeting: (values: MeetingAmendmentInput) => Promise<boolean>
   createProviderMeeting: (match: Match, provider: "zoom" | "lark") => void
   completeMeeting: (meetingId: string) => void
   assignMeetingInterpreter: (
@@ -1971,7 +2347,9 @@ function AdminPortal(props: {
     values: InterpreterFormValues
   ) => void
   deleteInterpreter: (interpreterId: string) => void
+  createDeal: (matchId: string) => Promise<boolean>
   updateDeal: (dealId: string, status: Deal["status"]) => void
+  refreshDeals: (successMessage: string) => Promise<boolean>
   checkInPartner: (partnerId: string) => void
   publishItinerary: (slotId: string) => void
   sendAnnouncement: (values: {
@@ -2003,6 +2381,7 @@ function AdminPortal(props: {
     locale,
     copy,
     session,
+    initialSection,
     query,
     setQuery,
     metrics,
@@ -2013,13 +2392,17 @@ function AdminPortal(props: {
     updateManagedCompany,
     deleteManagedCompany,
     addMatch,
+    createManualMeeting,
+    updateMeeting,
     createProviderMeeting,
     completeMeeting,
     assignMeetingInterpreter,
     createInterpreter,
     updateInterpreter,
     deleteInterpreter,
+    createDeal,
     updateDeal,
+    refreshDeals,
     checkInPartner,
     publishItinerary,
     sendAnnouncement,
@@ -2028,8 +2411,16 @@ function AdminPortal(props: {
     toggleResourceVisibility,
     meetingProviderReadiness,
   } = props
-  const [activeTab, setActiveTab] = useState("dashboard")
   const navigationCopy = getUiCopy(locale)
+  const navigationItems = adminTabItems(locale)
+  const validSections = navigationItems.flatMap((item) =>
+    item.children ? item.children.map((child) => child.value) : [item.value]
+  )
+  const [activeTab, setActiveTab] = useState(
+    initialSection && validSections.includes(initialSection)
+      ? initialSection
+      : "dashboard"
+  )
   const filteredDelegationCompanies = db.delegationCompanies.filter((company) =>
     matchCompanyQuery(company, query)
   )
@@ -2102,7 +2493,7 @@ function AdminPortal(props: {
       className="flex-col gap-4 lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start"
     >
       <ResponsiveTabsNav
-        items={adminTabItems(locale)}
+        items={navigationItems}
         externalItems={[
           {
             href: `/${locale}/admin/vendors`,
@@ -2162,6 +2553,7 @@ function AdminPortal(props: {
                   db={db}
                   meetings={db.meetings}
                   onComplete={completeMeeting}
+                  onUpdateMeeting={updateMeeting}
                   locale={locale}
                 />
               </CardContent>
@@ -2502,14 +2894,21 @@ function AdminPortal(props: {
                 )}
               </CardDescription>
             </div>
-            <Button
-              className="sm:shrink-0"
-              variant="outline"
-              onClick={() => setActiveTab("meeting-settings")}
-            >
-              <Icon icon={SecurityCheckIcon} inline="inline-start" />
-              {textFor(locale, "Meeting settings", "会议设置")}
-            </Button>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <ManualMeetingDialog
+                db={db}
+                locale={locale}
+                onCreate={createManualMeeting}
+              />
+              <Button
+                className="sm:shrink-0"
+                variant="outline"
+                onClick={() => setActiveTab("meeting-settings")}
+              >
+                <Icon icon={SecurityCheckIcon} inline="inline-start" />
+                {textFor(locale, "Meeting settings", "会议设置")}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <MeetingProviderStatusStrip
@@ -2519,6 +2918,7 @@ function AdminPortal(props: {
             <MeetingCalendarView
               db={db}
               meetings={db.meetings}
+              onUpdateMeeting={updateMeeting}
               locale={locale}
             />
             <Separator />
@@ -2544,6 +2944,7 @@ function AdminPortal(props: {
               meetings={db.meetings}
               onComplete={completeMeeting}
               onAssignInterpreter={assignMeetingInterpreter}
+              onUpdateMeeting={updateMeeting}
               locale={locale}
             />
           </CardContent>
@@ -2586,7 +2987,9 @@ function AdminPortal(props: {
             <DealTable
               db={db}
               deals={db.deals}
+              onCreateDeal={createDeal}
               onDeal={updateDeal}
+              onRefresh={refreshDeals}
               locale={locale}
             />
           </CardContent>
@@ -2638,8 +3041,7 @@ function DelegationPortal(props: {
   locale: Locale
   session: PortalSession
   logout: () => void
-  companies: DelegationCompany[]
-  setCompany: (value: string) => void
+  initialSection?: string
   matches: Match[]
   meetings: Meeting[]
   db: LocalDb
@@ -2662,8 +3064,7 @@ function DelegationPortal(props: {
     locale,
     session,
     logout,
-    companies,
-    setCompany,
+    initialSection,
     matches,
     meetings,
     db,
@@ -2679,10 +3080,10 @@ function DelegationPortal(props: {
       locale={locale}
       session={session}
       logout={logout}
+      initialSection={initialSection}
       dashboard={
         <div className="flex flex-col gap-4">
           {dashboardHeader}
-          <OperationalAlert message={db.notifications[0]} locale={locale} />
           <UserDashboard
             title={`Welcome, ${company.nameEn}`}
             subtitle={`${company.nameCn} · Coordinator: ${company.coordinator}`}
@@ -2696,9 +3097,7 @@ function DelegationPortal(props: {
       profile={
         <ProfileForm
           key={company.id}
-          selectedId={company.id}
-          companies={companies}
-          onSelect={setCompany}
+          company={company}
           onSave={(profile) =>
             updateCompanyProfile("delegation", company.id, profile)
           }
@@ -2728,8 +3127,7 @@ function PartnerPortal(props: {
   locale: Locale
   session: PortalSession
   logout: () => void
-  companies: PartnerCompany[]
-  setCompany: (value: string) => void
+  initialSection?: string
   matches: Match[]
   meetings: Meeting[]
   db: LocalDb
@@ -2753,8 +3151,7 @@ function PartnerPortal(props: {
     locale,
     session,
     logout,
-    companies,
-    setCompany,
+    initialSection,
     matches,
     meetings,
     db,
@@ -2771,10 +3168,10 @@ function PartnerPortal(props: {
       locale={locale}
       session={session}
       logout={logout}
+      initialSection={initialSection}
       dashboard={
         <div className="flex flex-col gap-4">
           {dashboardHeader}
-          <OperationalAlert message={db.notifications[0]} locale={locale} />
           <UserDashboard
             title={`Welcome, ${company.nameEn}`}
             subtitle={`${company.nameCn} · ${company.contact}`}
@@ -2794,9 +3191,7 @@ function PartnerPortal(props: {
       profile={
         <ProfileForm
           key={company.id}
-          selectedId={company.id}
-          companies={companies}
-          onSelect={setCompany}
+          company={company}
           onSave={(profile) =>
             updateCompanyProfile("partner", company.id, profile)
           }
@@ -2836,6 +3231,7 @@ function PortalTabs({
   locale,
   session,
   logout,
+  initialSection,
 }: {
   dashboard: React.ReactNode
   profile: React.ReactNode
@@ -2848,9 +3244,15 @@ function PortalTabs({
   locale: Locale
   session: PortalSession
   logout: () => void
+  initialSection?: string
 }) {
   const items = portalTabItems(locale, profileLabel)
-  const [activeTab, setActiveTab] = useState("dashboard")
+  const validSections = items.map((item) => item.value)
+  const [activeTab, setActiveTab] = useState(
+    initialSection && validSections.includes(initialSection)
+      ? initialSection
+      : "dashboard"
+  )
 
   return (
     <Tabs
@@ -2890,10 +3292,71 @@ function PortalTabs({
   )
 }
 
+function TenantWorkspaceBrand({
+  session,
+  subtitle,
+  testId,
+  prominence = "compact",
+}: {
+  session: PortalSession
+  subtitle: string
+  testId: string
+  prominence?: "compact" | "mobile" | "sheet"
+}) {
+  const workspaceName = session.tenantName?.trim() || "Plexus Connect"
+  const large = prominence !== "compact"
+
+  return (
+    <div className="flex min-w-0 items-center gap-3" data-testid={testId}>
+      <Avatar
+        className={cn(
+          "shrink-0 rounded-md border border-sidebar-border bg-background",
+          large ? "size-10" : "size-8"
+        )}
+      >
+        {session.tenantLogoUrl ? (
+          <AvatarImage
+            src={session.tenantLogoUrl}
+            alt={`${workspaceName} workspace logo`}
+            className="rounded-md bg-background object-contain p-1"
+          />
+        ) : null}
+        <AvatarFallback className="rounded-md text-[0.625rem] font-semibold">
+          {getInitials(workspaceName)}
+        </AvatarFallback>
+      </Avatar>
+      <div className="min-w-0 flex-1">
+        <p
+          className={cn(
+            "truncate font-semibold text-sidebar-foreground",
+            prominence === "sheet"
+              ? "text-base"
+              : prominence === "mobile"
+                ? "text-sm"
+                : "text-xs"
+          )}
+        >
+          {workspaceName}
+        </p>
+        <p
+          className={cn(
+            "mt-0.5 truncate text-muted-foreground",
+            large ? "text-sm" : "text-xs"
+          )}
+        >
+          {subtitle}
+        </p>
+      </div>
+    </div>
+  )
+}
+
 function ResponsiveTabsNav({
   items,
   externalItems = [],
   activeValue,
+  activeExternalHref,
+  itemHref,
   onValueChange,
   role,
   locale,
@@ -2903,6 +3366,8 @@ function ResponsiveTabsNav({
   items: NavItem[]
   externalItems?: ExternalNavItem[]
   activeValue?: string
+  activeExternalHref?: string
+  itemHref?: (value: string) => string
   onValueChange?: (value: string) => void
   role: PortalRole
   locale: Locale
@@ -2912,8 +3377,12 @@ function ResponsiveTabsNav({
   const t = getUiCopy(locale)
   const navTriggerClass =
     "h-10 w-full justify-start gap-2 rounded-md px-3 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-sidebar-ring/45 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:hover:bg-primary"
+  const mobileNavTriggerClass =
+    "h-12 w-full flex-none shrink-0 justify-start gap-3 rounded-lg px-4 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-sidebar-ring/45 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:hover:bg-primary"
   const childTriggerClass =
     "h-8 w-full justify-start gap-2 rounded-md px-3 pl-8 text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[state=active]:bg-sidebar-accent data-[state=active]:text-sidebar-accent-foreground data-[state=active]:shadow-none"
+  const mobileChildTriggerClass =
+    "h-12 w-full flex-none shrink-0 justify-start gap-3 rounded-lg px-4 pl-12 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[state=active]:bg-sidebar-accent data-[state=active]:text-sidebar-accent-foreground data-[state=active]:shadow-none"
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const activeLabel =
@@ -2923,6 +3392,7 @@ function ResponsiveTabsNav({
         ...(item.children ?? []),
       ])
       .find((item) => item.value === activeValue)?.label ??
+    externalItems.find((item) => item.href === activeExternalHref)?.label ??
     items[0]?.label ??
     t.navigation
 
@@ -2932,20 +3402,58 @@ function ResponsiveTabsNav({
     return openGroups[item.value] ?? isActive
   }
 
-  function renderNavItems(onNavigate?: () => void) {
+  function renderNavItems(
+    onNavigate?: () => void,
+    surface: "desktop" | "mobile" = "desktop"
+  ) {
+    const isMobile = surface === "mobile"
+    const triggerClass = isMobile ? mobileNavTriggerClass : navTriggerClass
+    const nestedTriggerClass = isMobile
+      ? mobileChildTriggerClass
+      : childTriggerClass
+    const iconClass = isMobile ? "size-5" : "size-4"
+    const childIconClass = isMobile ? "size-[1.125rem]" : "size-3.5"
+
     return items.map((item) => {
       if (!item.children) {
+        if (itemHref) {
+          return (
+            <Button
+              key={item.value}
+              asChild
+              variant="ghost"
+              data-state={item.value === activeValue ? "active" : "inactive"}
+              className={cn(
+                triggerClass,
+                isMobile ? "text-sm font-medium" : "text-xs font-medium"
+              )}
+            >
+              <Link href={itemHref(item.value)} onClick={onNavigate}>
+                <HugeiconsIcon
+                  icon={item.icon}
+                  strokeWidth={1.7}
+                  className={iconClass}
+                />
+                {item.label}
+              </Link>
+            </Button>
+          )
+        }
+
         return (
           <TabsTrigger
             key={item.value}
             value={item.value}
-            className={navTriggerClass}
-            onClick={onNavigate}
+            className={triggerClass}
+            onClick={() => {
+              onValueChange?.(item.value)
+              onNavigate?.()
+            }}
           >
             <HugeiconsIcon
               icon={item.icon}
               strokeWidth={1.7}
-              className="size-4"
+              className={iconClass}
             />
             {item.label}
           </TabsTrigger>
@@ -2964,8 +3472,9 @@ function ResponsiveTabsNav({
             aria-expanded={groupOpen}
             data-state={childActive ? "active" : "inactive"}
             className={cn(
-              "relative inline-flex flex-1 items-center border border-transparent py-0.5 text-xs font-medium whitespace-nowrap transition-all outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
-              navTriggerClass
+              "relative inline-flex flex-1 items-center border border-transparent py-0.5 font-medium whitespace-nowrap transition-all outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
+              isMobile ? "text-sm" : "text-xs",
+              triggerClass
             )}
             onClick={() =>
               setOpenGroups((current) => ({
@@ -2977,38 +3486,64 @@ function ResponsiveTabsNav({
             <HugeiconsIcon
               icon={item.icon}
               strokeWidth={1.7}
-              className="size-4"
+              className={iconClass}
             />
             <span className="min-w-0 flex-1 text-left">{item.label}</span>
             <HugeiconsIcon
               icon={ArrowDown01Icon}
               strokeWidth={1.7}
               className={cn(
-                "size-3.5 transition-transform",
+                isMobile
+                  ? "size-4 transition-transform"
+                  : "size-3.5 transition-transform",
                 groupOpen ? "rotate-180" : ""
               )}
             />
           </button>
           {groupOpen ? (
             <div className="flex flex-col gap-1">
-              {item.children.map((child) => (
-                <TabsTrigger
-                  key={child.value}
-                  value={child.value}
-                  className={childTriggerClass}
-                  onClick={() => {
-                    onValueChange?.(child.value)
-                    onNavigate?.()
-                  }}
-                >
-                  <HugeiconsIcon
-                    icon={child.icon}
-                    strokeWidth={1.7}
-                    className="size-3.5"
-                  />
-                  {child.label}
-                </TabsTrigger>
-              ))}
+              {item.children.map((child) =>
+                itemHref ? (
+                  <Button
+                    key={child.value}
+                    asChild
+                    variant="ghost"
+                    data-state={
+                      child.value === activeValue ? "active" : "inactive"
+                    }
+                    className={cn(
+                      nestedTriggerClass,
+                      isMobile ? "text-sm font-medium" : "text-xs font-medium"
+                    )}
+                  >
+                    <Link href={itemHref(child.value)} onClick={onNavigate}>
+                      <HugeiconsIcon
+                        icon={child.icon}
+                        strokeWidth={1.7}
+                        className={childIconClass}
+                      />
+                      {child.label}
+                    </Link>
+                  </Button>
+                ) : (
+                  <TabsTrigger
+                    key={child.value}
+                    value={child.value}
+                    className={nestedTriggerClass}
+                    onClick={() => {
+                      onValueChange?.(child.value)
+                      onNavigate?.()
+                    }}
+                  >
+                    <HugeiconsIcon
+                      icon={child.icon}
+                      strokeWidth={1.7}
+                      className={childIconClass}
+                    />
+                    {child.label}
+                  </TabsTrigger>
+                )
+              )}
             </div>
           ) : null}
         </div>
@@ -3016,19 +3551,28 @@ function ResponsiveTabsNav({
     })
   }
 
-  function renderExternalItems(onNavigate?: () => void) {
+  function renderExternalItems(
+    onNavigate?: () => void,
+    surface: "desktop" | "mobile" = "desktop"
+  ) {
+    const isMobile = surface === "mobile"
+
     return externalItems.map((item) => (
       <Button
         key={item.href}
         asChild
         variant="ghost"
-        className={cn(navTriggerClass, "text-xs font-medium")}
+        data-state={item.href === activeExternalHref ? "active" : "inactive"}
+        className={cn(
+          isMobile ? mobileNavTriggerClass : navTriggerClass,
+          isMobile ? "text-sm font-medium" : "text-xs font-medium"
+        )}
       >
         <Link href={item.href} onClick={onNavigate}>
           <HugeiconsIcon
             icon={item.icon}
             strokeWidth={1.7}
-            className="size-4"
+            className={isMobile ? "size-5" : "size-4"}
           />
           {item.label}
         </Link>
@@ -3041,16 +3585,24 @@ function ResponsiveTabsNav({
       <aside className="hidden self-stretch lg:block">
         <div className="sticky top-4 flex min-h-[calc(100svh-12rem)] flex-col rounded-lg border border-sidebar-border bg-sidebar p-3 text-sidebar-foreground shadow-sm">
           <div className="mb-3 rounded-md border border-sidebar-border bg-background/70 px-3 py-2">
-            <p className="text-xs font-semibold text-sidebar-foreground">
-              Plexus Connect
-            </p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {t.workspaceSubtitle}
-            </p>
+            <TenantWorkspaceBrand
+              session={session}
+              subtitle={t.workspaceSubtitle}
+              testId="tenant-workspace-brand-desktop"
+            />
           </div>
-          <TabsList className="h-auto w-full flex-col items-stretch gap-1 bg-transparent p-0">
-            {renderNavItems()}
-          </TabsList>
+          {itemHref ? (
+            <nav
+              aria-label={t.navigation}
+              className="flex h-auto w-full flex-col items-stretch gap-1"
+            >
+              {renderNavItems()}
+            </nav>
+          ) : (
+            <TabsList className="h-auto w-full flex-col items-stretch gap-1 bg-transparent p-0">
+              {renderNavItems()}
+            </TabsList>
+          )}
           {externalItems.length ? (
             <div className="mt-1 flex flex-col gap-1 border-t border-sidebar-border pt-2">
               {renderExternalItems()}
@@ -3065,21 +3617,21 @@ function ResponsiveTabsNav({
         </div>
       </aside>
       <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-        <div className="sticky top-3 z-30 flex items-center gap-3 rounded-lg border border-sidebar-border bg-sidebar/95 p-2.5 text-sidebar-foreground shadow-sm backdrop-blur-sm lg:hidden">
+        <div className="sticky top-3 z-30 flex min-h-16 items-center gap-3 rounded-lg border border-sidebar-border bg-sidebar/95 p-2.5 text-sidebar-foreground shadow-sm backdrop-blur-sm lg:hidden">
           <div className="min-w-0 flex-1 px-1.5">
-            <p className="truncate text-xs font-semibold text-sidebar-foreground">
-              Plexus Connect
-            </p>
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">
-              {activeLabel}
-            </p>
+            <TenantWorkspaceBrand
+              session={session}
+              subtitle={activeLabel}
+              testId="tenant-workspace-brand-mobile"
+              prominence="mobile"
+            />
           </div>
           <SheetTrigger asChild>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="h-10 shrink-0 gap-2 border-sidebar-border bg-background/80 px-3 text-sidebar-foreground"
+              className="h-11 shrink-0 gap-2 border-sidebar-border bg-background/80 px-3.5 text-sm text-sidebar-foreground"
               aria-label={`${t.menu}: ${activeLabel}`}
             >
               <HugeiconsIcon
@@ -3093,25 +3645,41 @@ function ResponsiveTabsNav({
         </div>
         <SheetContent
           side="left"
-          className="w-[min(86vw,20rem)] border-sidebar-border bg-sidebar p-0 text-sidebar-foreground"
+          className="border-sidebar-border bg-sidebar p-0 text-sidebar-foreground data-[side=left]:w-[calc(100vw-1.5rem)] data-[side=left]:max-w-[24rem]"
         >
-          <SheetHeader className="border-b border-sidebar-border px-5 py-4">
-            <SheetTitle className="text-sidebar-foreground">
-              Plexus Connect
+          <SheetHeader className="border-b border-sidebar-border px-5 py-5">
+            <SheetTitle className="sr-only">
+              {session.tenantName?.trim() || "Plexus Connect"}
             </SheetTitle>
-            <SheetDescription>{t.workspaceSubtitle}</SheetDescription>
+            <SheetDescription asChild>
+              <TenantWorkspaceBrand
+                session={session}
+                subtitle={t.workspaceSubtitle}
+                testId="tenant-workspace-brand-sheet"
+                prominence="sheet"
+              />
+            </SheetDescription>
           </SheetHeader>
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
-              <p className="mb-2 px-3 text-[0.6875rem] font-medium tracking-wide text-muted-foreground uppercase">
+              <p className="mb-2.5 px-4 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                 {t.navigation}
               </p>
-              <TabsList className="h-auto w-full flex-col items-stretch gap-1 bg-transparent p-0">
-                {renderNavItems(() => setMobileNavOpen(false))}
-              </TabsList>
+              {itemHref ? (
+                <nav
+                  aria-label={t.navigation}
+                  className="flex h-auto w-full flex-col items-stretch gap-1.5"
+                >
+                  {renderNavItems(() => setMobileNavOpen(false), "mobile")}
+                </nav>
+              ) : (
+                <TabsList className="h-auto w-full flex-col items-stretch gap-1.5 bg-transparent p-0">
+                  {renderNavItems(() => setMobileNavOpen(false), "mobile")}
+                </TabsList>
+              )}
               {externalItems.length ? (
-                <div className="mt-2 flex flex-col gap-1 border-t border-sidebar-border pt-2">
-                  {renderExternalItems(() => setMobileNavOpen(false))}
+                <div className="mt-3 flex flex-col gap-1.5 border-t border-sidebar-border pt-3">
+                  {renderExternalItems(() => setMobileNavOpen(false), "mobile")}
                 </div>
               ) : null}
             </div>
@@ -3127,6 +3695,81 @@ function ResponsiveTabsNav({
         </SheetContent>
       </Sheet>
     </>
+  )
+}
+
+export function AdminWorkspaceRouteNavigation({
+  locale,
+  session,
+  activeHref,
+}: {
+  locale: Locale
+  session: PortalSession
+  activeHref: string
+}) {
+  const router = useRouter()
+  const copy = getUiCopy(locale)
+
+  async function logout() {
+    const result = await logoutAction(locale)
+    router.push(result.redirectTo)
+  }
+
+  return (
+    <ResponsiveTabsNav
+      items={adminTabItems(locale)}
+      externalItems={[
+        {
+          href: `/${locale}/admin/vendors`,
+          label: copy.vendorAccounts,
+          icon: UserAccountIcon,
+        },
+        {
+          href: `/${locale}/compliance`,
+          label: copy.compliance,
+          icon: SecurityCheckIcon,
+        },
+      ]}
+      itemHref={(value) => `/${locale}/admin?section=${value}`}
+      activeExternalHref={activeHref}
+      role="admin"
+      locale={locale}
+      session={session}
+      logout={logout}
+    />
+  )
+}
+
+export function VendorWorkspaceRouteNavigation({
+  locale,
+  session,
+  activeSection,
+}: {
+  locale: Locale
+  session: PortalSession
+  activeSection: string
+}) {
+  const router = useRouter()
+  const profileLabel =
+    session.vendorType === "partner"
+      ? getUiCopy(locale).partnerProfile
+      : getUiCopy(locale).companyProfile
+
+  async function logout() {
+    const result = await logoutAction(locale)
+    router.push(result.redirectTo)
+  }
+
+  return (
+    <ResponsiveTabsNav
+      items={portalTabItems(locale, profileLabel)}
+      itemHref={(value) => `/${locale}/vendor?section=${value}`}
+      activeValue={activeSection}
+      role={session.vendorType ?? "delegation"}
+      locale={locale}
+      session={session}
+      logout={logout}
+    />
   )
 }
 
@@ -3212,9 +3855,9 @@ function SidebarUserAccount({
       <DialogTrigger asChild>
         <button
           type="button"
-          className="mt-3 flex w-full items-center gap-3 rounded-md border border-sidebar-border bg-background/80 px-3 py-2.5 text-left shadow-xs transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring/45 focus-visible:outline-none lg:mt-auto"
+          className="mt-3 flex min-h-14 w-full items-center gap-3 rounded-lg border border-sidebar-border bg-background/80 px-3.5 py-3 text-left shadow-xs transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring/45 focus-visible:outline-none lg:mt-auto lg:min-h-0 lg:rounded-md lg:px-3 lg:py-2.5"
         >
-          <Avatar className="size-8">
+          <Avatar className="size-9 lg:size-8">
             {session.tenantLogoUrl ? (
               <AvatarImage
                 src={session.tenantLogoUrl}
@@ -3227,10 +3870,10 @@ function SidebarUserAccount({
             </AvatarFallback>
           </Avatar>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-xs font-semibold text-sidebar-foreground">
+            <span className="block truncate text-sm font-semibold text-sidebar-foreground lg:text-xs">
               {displayName}
             </span>
-            <span className="block truncate text-xs text-muted-foreground">
+            <span className="block truncate text-sm text-muted-foreground lg:text-xs">
               {roleLabel} {t.account}
             </span>
           </span>
@@ -3563,20 +4206,124 @@ function UserDashboard({
   )
 }
 
+const vendorProfileSections = [
+  "company",
+  "contact",
+  "industry",
+  "profile",
+  "offer",
+  "looking-for",
+  "preferences",
+  "needs",
+  "export",
+  "meeting",
+  "documents",
+  "consent",
+] as const
+
+type VendorProfileSectionId = (typeof vendorProfileSections)[number]
+
+const profileFieldSections: Partial<
+  Record<keyof CompanyRegistrationProfile, VendorProfileSectionId>
+> = {
+  companyNameEn: "company",
+  companyNameCn: "company",
+  countryRegion: "company",
+  countryOther: "company",
+  yearEstablished: "company",
+  registrationNumber: "company",
+  website: "company",
+  address: "company",
+  contactName: "contact",
+  contactPosition: "contact",
+  contactEmail: "contact",
+  mobileNumber: "contact",
+  chatId: "contact",
+  introduction: "profile",
+  productsServices: "profile",
+  industryOther: "industry",
+  certificationOther: "profile",
+  offerOther: "offer",
+  lookingForOther: "looking-for",
+  preferredPartnerOther: "preferences",
+  idealPartner: "needs",
+  opportunity: "needs",
+  exportMarkets: "export",
+  availableMeetingDates: "meeting",
+  consentName: "consent",
+  consentDate: "consent",
+}
+
 function ProfileForm({
-  selectedId,
-  companies,
-  onSelect,
+  company,
   onSave,
 }: {
-  selectedId: string
-  companies: Array<DelegationCompany | PartnerCompany>
-  onSelect: (value: string) => void
+  company: DelegationCompany | PartnerCompany
   onSave: (profile: CompanyRegistrationProfile) => void
 }) {
-  const company =
-    companies.find((item) => item.id === selectedId) ?? companies[0]
   const [profile, setProfile] = useState(() => getRegistrationProfile(company))
+  const [openSections, setOpenSections] = useState<Set<VendorProfileSectionId>>(
+    () => new Set(vendorProfileSections)
+  )
+  const [touchedFields, setTouchedFields] = useState<
+    Set<keyof CompanyRegistrationProfile>
+  >(() => new Set())
+  const [validationRequested, setValidationRequested] = useState(false)
+  const [profileDocuments, setProfileDocuments] = useState<
+    VendorProfileDocument[]
+  >([])
+  const [documentsLoading, setDocumentsLoading] = useState(true)
+  const [documentUploading, setDocumentUploading] = useState(false)
+  const [deletingDocumentId, setDeletingDocumentId] = useState<string>()
+  const documentInputRef = useRef<HTMLInputElement>(null)
+  const validationErrors = validateCompanyRegistrationProfile(profile)
+  const completion = getCompanyProfileCompletion(profile)
+  const sectionCompletion = getCompanyProfileSectionCompletion(profile)
+  const introductionWords = profile.introduction.trim()
+    ? profile.introduction.trim().split(/\s+/).length
+    : 0
+
+  useEffect(() => {
+    const controller = new AbortController()
+
+    async function loadProfileDocuments() {
+      setDocumentsLoading(true)
+
+      try {
+        const response = await fetch("/api/vendor/profile-documents", {
+          signal: controller.signal,
+        })
+        const payload = (await response.json()) as {
+          documents?: VendorProfileDocument[]
+          error?: string
+        }
+
+        if (!response.ok || !payload.documents) {
+          throw new Error(payload.error ?? "Profile documents could not load.")
+        }
+
+        setProfileDocuments(payload.documents)
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return
+        }
+
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Profile documents could not load."
+        )
+      } finally {
+        if (!controller.signal.aborted) {
+          setDocumentsLoading(false)
+        }
+      }
+    }
+
+    void loadProfileDocuments()
+
+    return () => controller.abort()
+  }, [])
 
   function setValue<K extends keyof CompanyRegistrationProfile>(
     field: K,
@@ -3602,363 +4349,1015 @@ function ProfileForm({
     })
   }
 
+  function setSectionOpen(section: VendorProfileSectionId, open: boolean) {
+    setOpenSections((current) => {
+      const next = new Set(current)
+
+      if (open) {
+        next.add(section)
+      } else {
+        next.delete(section)
+      }
+
+      return next
+    })
+  }
+
+  function fieldState(field: keyof CompanyRegistrationProfile) {
+    return {
+      error:
+        validationRequested || touchedFields.has(field)
+          ? validationErrors[field]
+          : undefined,
+      onBlur: () => setTouchedFields((current) => new Set(current).add(field)),
+    }
+  }
+
+  function saveProfile() {
+    const invalidFields = Object.keys(validationErrors) as Array<
+      keyof CompanyRegistrationProfile
+    >
+
+    if (invalidFields.length) {
+      setValidationRequested(true)
+      setOpenSections((current) => {
+        const next = new Set(current)
+
+        invalidFields.forEach((field) => {
+          const section = profileFieldSections[field]
+
+          if (section) {
+            next.add(section)
+          }
+        })
+
+        return next
+      })
+      toast.error("Check the highlighted profile fields and try again.")
+      return
+    }
+
+    onSave(profile)
+  }
+
+  async function uploadProfileDocument(file?: File) {
+    if (!file) {
+      return
+    }
+
+    setDocumentUploading(true)
+
+    try {
+      const formData = new FormData()
+      formData.set("file", file)
+      const response = await fetch("/api/vendor/profile-documents", {
+        method: "POST",
+        body: formData,
+      })
+      const payload = (await response.json()) as {
+        document?: VendorProfileDocument
+        error?: string
+      }
+
+      if (!response.ok || !payload.document) {
+        throw new Error(payload.error ?? "The PDF could not be uploaded.")
+      }
+
+      setProfileDocuments((current) => [payload.document!, ...current])
+      toast.success("PDF uploaded to your private document library.")
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "The PDF could not be uploaded."
+      )
+    } finally {
+      setDocumentUploading(false)
+
+      if (documentInputRef.current) {
+        documentInputRef.current.value = ""
+      }
+    }
+  }
+
+  async function deleteProfileDocument(document: VendorProfileDocument) {
+    setDeletingDocumentId(document.id)
+
+    try {
+      const response = await fetch("/api/vendor/profile-documents", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: document.id }),
+      })
+      const payload = (await response.json()) as {
+        error?: string
+      }
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "The PDF could not be deleted.")
+      }
+
+      setProfileDocuments((current) =>
+        current.filter((item) => item.id !== document.id)
+      )
+      toast.success("PDF deleted from private storage.")
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "The PDF could not be deleted."
+      )
+    } finally {
+      setDeletingDocumentId(undefined)
+    }
+  }
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Macau-Malaysia B2B registration profile</CardTitle>
-        <CardDescription>
-          Admin creates the company shell with name and email. Participants
-          complete the detailed matchmaking profile here.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <FieldGroup>
-          <Field>
-            <FieldLabel>Production account</FieldLabel>
-            <Select value={selectedId} onValueChange={onSelect}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {companies.map((item) => (
-                    <SelectItem key={item.id} value={item.id}>
-                      {item.nameEn}
-                    </SelectItem>
+      <form
+        noValidate
+        onSubmit={(event) => {
+          event.preventDefault()
+          saveProfile()
+        }}
+      >
+        <CardHeader className="border-b">
+          <CardTitle>Macau-Malaysia B2B registration profile</CardTitle>
+          <CardDescription>
+            Complete your company details to improve matching quality and
+            meeting readiness.
+          </CardDescription>
+          <div
+            className="mt-3 rounded-md border bg-muted/35 p-3"
+            data-testid="company-profile-completion"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium">
+                  Company profile completion
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {completion.completed} of {completion.total} profile items
+                  complete
+                </p>
+              </div>
+              <span className="text-lg font-semibold tabular-nums">
+                {completion.percentage}%
+              </span>
+            </div>
+            <Progress
+              value={completion.percentage}
+              className="mt-3"
+              aria-label={`Company profile ${completion.percentage}% complete`}
+            />
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4 pt-5">
+          <ProfileSection
+            title="1. Company information"
+            collapsible
+            progress={sectionCompletion.company}
+            open={openSections.has("company")}
+            onOpenChange={(open) => setSectionOpen("company", open)}
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              <ProfileTextField
+                id="company-name-en"
+                label="Company name (English)"
+                required
+                maxLength={240}
+                value={profile.companyNameEn}
+                onChange={(value) => setValue("companyNameEn", value)}
+                {...fieldState("companyNameEn")}
+              />
+              <ProfileTextField
+                id="company-name-cn"
+                label="Company name (Chinese, if applicable)"
+                maxLength={240}
+                value={profile.companyNameCn}
+                onChange={(value) => setValue("companyNameCn", value)}
+                {...fieldState("companyNameCn")}
+              />
+            </div>
+            <ProfileRadioGroup
+              label="Country / Region"
+              options={profileOptionGroups.countryRegion}
+              value={profile.countryRegion}
+              onChange={(value) => setValue("countryRegion", value)}
+            />
+            {profile.countryRegion === "Other" ? (
+              <ProfileTextField
+                id="country-other"
+                label="Other country / region"
+                required
+                maxLength={120}
+                value={profile.countryOther}
+                onChange={(value) => setValue("countryOther", value)}
+                {...fieldState("countryOther")}
+              />
+            ) : null}
+            <div className="grid gap-4 md:grid-cols-2">
+              <ProfileTextField
+                id="year-established"
+                label="Year established"
+                type="number"
+                inputMode="numeric"
+                min={1800}
+                max={Number(getMalaysiaToday().slice(0, 4))}
+                placeholder="e.g. 2018"
+                value={profile.yearEstablished}
+                onChange={(value) => setValue("yearEstablished", value)}
+                {...fieldState("yearEstablished")}
+              />
+              <ProfileTextField
+                id="registration-number"
+                label="Company registration number"
+                maxLength={120}
+                value={profile.registrationNumber}
+                onChange={(value) => setValue("registrationNumber", value)}
+                {...fieldState("registrationNumber")}
+              />
+              <ProfileTextField
+                id="website"
+                label="Website"
+                type="url"
+                inputMode="url"
+                autoComplete="url"
+                maxLength={240}
+                placeholder="https://example.com"
+                value={profile.website}
+                onChange={(value) => setValue("website", value)}
+                {...fieldState("website")}
+              />
+              <ProfileTextField
+                id="address"
+                label="Company address"
+                autoComplete="street-address"
+                maxLength={500}
+                value={profile.address}
+                onChange={(value) => setValue("address", value)}
+                {...fieldState("address")}
+              />
+            </div>
+            <ProfileRadioGroup
+              label="Number of employees"
+              options={profileOptionGroups.employeeRange}
+              value={profile.employeeRange}
+              onChange={(value) => setValue("employeeRange", value)}
+            />
+            <ProfileRadioGroup
+              label="Annual revenue range (optional)"
+              options={profileOptionGroups.annualRevenueRange}
+              value={profile.annualRevenueRange}
+              onChange={(value) => setValue("annualRevenueRange", value)}
+            />
+          </ProfileSection>
+
+          <ProfileSection
+            title="2. Contact person"
+            collapsible
+            progress={sectionCompletion.contact}
+            open={openSections.has("contact")}
+            onOpenChange={(open) => setSectionOpen("contact", open)}
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              <ProfileTextField
+                id="contact-name"
+                label="Name"
+                autoComplete="name"
+                maxLength={160}
+                value={profile.contactName}
+                onChange={(value) => setValue("contactName", value)}
+                {...fieldState("contactName")}
+              />
+              <ProfileTextField
+                id="contact-position"
+                label="Position"
+                autoComplete="organization-title"
+                maxLength={160}
+                value={profile.contactPosition}
+                onChange={(value) => setValue("contactPosition", value)}
+                {...fieldState("contactPosition")}
+              />
+              <ProfileTextField
+                id="contact-email"
+                label="Email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                maxLength={254}
+                placeholder="name@company.com"
+                value={profile.contactEmail}
+                onChange={(value) => setValue("contactEmail", value)}
+                {...fieldState("contactEmail")}
+              />
+              <InternationalPhoneField
+                id="mobile-number"
+                label="Mobile number"
+                value={profile.mobileNumber}
+                onChange={(value) => setValue("mobileNumber", value)}
+                preferredRegion={profile.countryRegion}
+                {...fieldState("mobileNumber")}
+              />
+              <ProfileTextField
+                id="chat-id"
+                label="WhatsApp / WeChat ID"
+                maxLength={120}
+                value={profile.chatId}
+                onChange={(value) => setValue("chatId", value)}
+                {...fieldState("chatId")}
+              />
+            </div>
+            <ProfileCheckboxGroup
+              label="Preferred language"
+              options={profileOptionGroups.preferredLanguages}
+              values={profile.preferredLanguages}
+              onToggle={(value) => toggleList("preferredLanguages", value)}
+            />
+          </ProfileSection>
+
+          <ProfileSection
+            title="3. Industry / sector"
+            collapsible
+            progress={sectionCompletion.industry}
+            open={openSections.has("industry")}
+            onOpenChange={(open) => setSectionOpen("industry", open)}
+          >
+            <Field>
+              <FieldLabel>Select all applicable</FieldLabel>
+              <IndustrySectorMultiCombobox
+                id="profile-industries"
+                values={profile.industries}
+                onToggle={(value) => toggleList("industries", value)}
+              />
+            </Field>
+            <ProfileTextField
+              id="industry-other"
+              label="Other industry"
+              maxLength={160}
+              value={profile.industryOther}
+              onChange={(value) => setValue("industryOther", value)}
+              {...fieldState("industryOther")}
+            />
+          </ProfileSection>
+
+          <ProfileSection
+            title="4. Company profile"
+            collapsible
+            progress={sectionCompletion.profile}
+            open={openSections.has("profile")}
+            onOpenChange={(open) => setSectionOpen("profile", open)}
+          >
+            <ProfileTextareaField
+              id="company-introduction"
+              label="Brief company introduction (100-200 words)"
+              maxLength={3000}
+              description={`${introductionWords} words · target 100-200`}
+              value={profile.introduction}
+              onChange={(value) => setValue("introduction", value)}
+              {...fieldState("introduction")}
+            />
+            <ProfileTextareaField
+              id="products-services"
+              label="Key products / services"
+              maxLength={3000}
+              value={profile.productsServices}
+              onChange={(value) => setValue("productsServices", value)}
+              {...fieldState("productsServices")}
+            />
+            <ProfileCheckboxGroup
+              label="Certifications"
+              options={profileOptionGroups.certifications}
+              values={profile.certifications}
+              onToggle={(value) => toggleList("certifications", value)}
+            />
+            <ProfileTextField
+              id="certification-other"
+              label="Other certification"
+              maxLength={160}
+              value={profile.certificationOther}
+              onChange={(value) => setValue("certificationOther", value)}
+              {...fieldState("certificationOther")}
+            />
+          </ProfileSection>
+
+          <ProfileSection
+            title="5. What does your company offer?"
+            collapsible
+            progress={sectionCompletion.offer}
+            open={openSections.has("offer")}
+            onOpenChange={(open) => setSectionOpen("offer", open)}
+          >
+            <ProfileCheckboxGroup
+              label="Select all that apply"
+              options={profileOptionGroups.offers}
+              values={profile.offers}
+              onToggle={(value) => toggleList("offers", value)}
+            />
+            <ProfileTextField
+              id="offer-other"
+              label="Other offer"
+              maxLength={160}
+              value={profile.offerOther}
+              onChange={(value) => setValue("offerOther", value)}
+              {...fieldState("offerOther")}
+            />
+          </ProfileSection>
+
+          <ProfileSection
+            title="6. What are you looking for?"
+            collapsible
+            progress={sectionCompletion["looking-for"]}
+            open={openSections.has("looking-for")}
+            onOpenChange={(open) => setSectionOpen("looking-for", open)}
+          >
+            <ProfileCheckboxGroup
+              label="Select all that apply"
+              options={profileOptionGroups.lookingFor}
+              values={profile.lookingFor}
+              onToggle={(value) => toggleList("lookingFor", value)}
+            />
+            <ProfileTextField
+              id="looking-for-other"
+              label="Other requirement"
+              maxLength={160}
+              value={profile.lookingForOther}
+              onChange={(value) => setValue("lookingForOther", value)}
+              {...fieldState("lookingForOther")}
+            />
+          </ProfileSection>
+
+          <ProfileSection
+            title="7. Matchmaking preferences"
+            collapsible
+            progress={sectionCompletion.preferences}
+            open={openSections.has("preferences")}
+            onOpenChange={(open) => setSectionOpen("preferences", open)}
+          >
+            <ProfileCheckboxGroup
+              label="Preferred partner type"
+              options={profileOptionGroups.preferredPartnerTypes}
+              values={profile.preferredPartnerTypes}
+              onToggle={(value) => toggleList("preferredPartnerTypes", value)}
+            />
+            <ProfileTextField
+              id="preferred-partner-other"
+              label="Other preferred partner type"
+              maxLength={160}
+              value={profile.preferredPartnerOther}
+              onChange={(value) => setValue("preferredPartnerOther", value)}
+              {...fieldState("preferredPartnerOther")}
+            />
+            <ProfileCheckboxGroup
+              label="Expected outcome"
+              options={profileOptionGroups.expectedOutcomes}
+              values={profile.expectedOutcomes}
+              onToggle={(value) => toggleList("expectedOutcomes", value)}
+            />
+          </ProfileSection>
+
+          <ProfileSection
+            title="8. Specific business needs"
+            collapsible
+            progress={sectionCompletion.needs}
+            open={openSections.has("needs")}
+            onOpenChange={(open) => setSectionOpen("needs", open)}
+          >
+            <ProfileTextareaField
+              id="ideal-partner"
+              label="Describe your ideal business partner"
+              maxLength={2500}
+              value={profile.idealPartner}
+              onChange={(value) => setValue("idealPartner", value)}
+              {...fieldState("idealPartner")}
+            />
+            <ProfileTextareaField
+              id="opportunity"
+              label="Describe the opportunity you wish to discuss"
+              maxLength={2500}
+              value={profile.opportunity}
+              onChange={(value) => setValue("opportunity", value)}
+              {...fieldState("opportunity")}
+            />
+          </ProfileSection>
+
+          <ProfileSection
+            title="9. Export / international experience"
+            collapsible
+            progress={sectionCompletion.export}
+            open={openSections.has("export")}
+            onOpenChange={(open) => setSectionOpen("export", open)}
+          >
+            <ProfileRadioGroup
+              label="Do you currently export internationally?"
+              options={profileOptionGroups.exportsInternationally}
+              value={profile.exportsInternationally}
+              onChange={(value) => setValue("exportsInternationally", value)}
+            />
+            <ProfileTextField
+              id="export-markets"
+              label="If yes, list markets"
+              required={profile.exportsInternationally === "Yes"}
+              maxLength={1000}
+              value={profile.exportMarkets}
+              onChange={(value) => setValue("exportMarkets", value)}
+              {...fieldState("exportMarkets")}
+            />
+          </ProfileSection>
+
+          <ProfileSection
+            title="10. Meeting arrangement"
+            collapsible
+            progress={sectionCompletion.meeting}
+            open={openSections.has("meeting")}
+            onOpenChange={(open) => setSectionOpen("meeting", open)}
+          >
+            <ProfileRadioGroup
+              label="Meeting format"
+              options={profileOptionGroups.meetingFormat}
+              value={profile.meetingFormat}
+              onChange={(value) => setValue("meetingFormat", value)}
+            />
+            <ProfileTextareaField
+              id="meeting-dates"
+              label="Available meeting dates"
+              maxLength={1000}
+              value={profile.availableMeetingDates}
+              onChange={(value) => setValue("availableMeetingDates", value)}
+              {...fieldState("availableMeetingDates")}
+            />
+            <ProfileRadioGroup
+              label="Maximum number of meetings requested"
+              options={profileOptionGroups.maxMeetings}
+              value={profile.maxMeetings}
+              onChange={(value) => setValue("maxMeetings", value)}
+            />
+          </ProfileSection>
+
+          <ProfileSection
+            title="11. Supporting documents"
+            collapsible
+            progress={sectionCompletion.documents}
+            open={openSections.has("documents")}
+            onOpenChange={(open) => setSectionOpen("documents", open)}
+          >
+            <ProfileCheckboxGroup
+              label="Please upload or prepare"
+              options={profileOptionGroups.supportingDocuments}
+              values={profile.supportingDocuments}
+              onToggle={(value) => toggleList("supportingDocuments", value)}
+            />
+            <div
+              className="rounded-lg border bg-muted/20 p-3 sm:p-4"
+              data-testid="vendor-profile-document-library"
+            >
+              <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <p className="text-sm font-medium">
+                    Private document library
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    PDF only · maximum 6 MB · visible to your company and
+                    authorized tenant operators
+                  </p>
+                </div>
+                <Badge variant="outline" className="mt-1 w-fit sm:mt-0">
+                  {profileDocuments.length}{" "}
+                  {profileDocuments.length === 1 ? "file" : "files"}
+                </Badge>
+              </div>
+
+              <Input
+                ref={documentInputRef}
+                type="file"
+                accept="application/pdf,.pdf"
+                className="sr-only"
+                aria-label="Upload PDF document"
+                onChange={(event) =>
+                  void uploadProfileDocument(event.target.files?.[0])
+                }
+              />
+
+              {documentsLoading ? (
+                <div className="mt-4 flex items-center gap-2 rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                  <Icon icon={Loading03Icon} className="animate-spin" />
+                  Loading private documents…
+                </div>
+              ) : profileDocuments.length ? (
+                <div className="mt-4 grid gap-2">
+                  {profileDocuments.map((document) => (
+                    <div
+                      key={document.id}
+                      className="flex flex-col gap-3 rounded-md border bg-background p-3 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="flex min-w-0 items-start gap-3">
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-muted/35 text-muted-foreground">
+                          <Icon icon={File01Icon} />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">
+                            {document.fileName}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDocumentSize(document.fileSize)} ·{" "}
+                            {formatDocumentDate(document.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 sm:shrink-0">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          asChild
+                        >
+                          <a
+                            href={document.reviewUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <Icon icon={ViewIcon} inline="inline-start" />
+                            Review
+                          </a>
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={deletingDocumentId === document.id}
+                              aria-label={`Delete ${document.fileName}`}
+                            >
+                              <Icon
+                                icon={
+                                  deletingDocumentId === document.id
+                                    ? Loading03Icon
+                                    : Delete02Icon
+                                }
+                                className={cn(
+                                  deletingDocumentId === document.id &&
+                                    "animate-spin"
+                                )}
+                              />
+                              Delete
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                Delete this PDF?
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {document.fileName} will be permanently removed
+                                from your private document library.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Keep PDF</AlertDialogCancel>
+                              <AlertDialogAction
+                                variant="destructive"
+                                onClick={() =>
+                                  void deleteProfileDocument(document)
+                                }
+                              >
+                                Delete PDF
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
                   ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </Field>
-        </FieldGroup>
+                </div>
+              ) : (
+                <div className="mt-4 rounded-md border border-dashed p-4">
+                  <p className="text-sm font-medium">No PDFs uploaded yet</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Add a company profile, catalogue, license, certification, or
+                    presentation when it is ready.
+                  </p>
+                </div>
+              )}
+            </div>
+          </ProfileSection>
 
-        <ProfileSection title="1. Company information">
-          <div className="grid gap-4 md:grid-cols-2">
-            <ProfileTextField
-              id="company-name-en"
-              label="Company name (English)"
-              value={profile.companyNameEn}
-              onChange={(value) => setValue("companyNameEn", value)}
+          <ProfileSection
+            title="12. Consent"
+            collapsible
+            progress={sectionCompletion.consent}
+            open={openSections.has("consent")}
+            onOpenChange={(open) => setSectionOpen("consent", open)}
+          >
+            <Field orientation="horizontal" className="rounded-md border p-3">
+              <Checkbox
+                checked={profile.consent}
+                onCheckedChange={(checked) =>
+                  setValue("consent", checked === true)
+                }
+              />
+              <FieldTitle>
+                I agree that my company information may be shared with relevant
+                participants and organizers for B2B matchmaking purposes.
+              </FieldTitle>
+            </Field>
+            <div className="grid gap-4 md:grid-cols-2">
+              <ProfileTextField
+                id="consent-name"
+                label="Name"
+                required={profile.consent}
+                autoComplete="name"
+                maxLength={160}
+                value={profile.consentName}
+                onChange={(value) => setValue("consentName", value)}
+                {...fieldState("consentName")}
+              />
+              <ProfileTextField
+                id="consent-date"
+                label="Date"
+                type="date"
+                required={profile.consent}
+                max={getMalaysiaToday()}
+                value={profile.consentDate}
+                onChange={(value) => setValue("consentDate", value)}
+                {...fieldState("consentDate")}
+              />
+            </div>
+          </ProfileSection>
+        </CardContent>
+        <CardFooter className="flex flex-wrap gap-2 border-t pt-5">
+          <Button type="submit">
+            <Icon icon={CheckmarkCircle02Icon} inline="inline-start" />
+            Save registration profile
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={documentUploading}
+            onClick={() => documentInputRef.current?.click()}
+          >
+            <Icon
+              icon={documentUploading ? Loading03Icon : Upload01Icon}
+              inline="inline-start"
+              className={cn(documentUploading && "animate-spin")}
             />
-            <ProfileTextField
-              id="company-name-cn"
-              label="Company name (Chinese, if applicable)"
-              value={profile.companyNameCn}
-              onChange={(value) => setValue("companyNameCn", value)}
-            />
-          </div>
-          <ProfileRadioGroup
-            label="Country / Region"
-            options={profileOptionGroups.countryRegion}
-            value={profile.countryRegion}
-            onChange={(value) => setValue("countryRegion", value)}
-          />
-          {profile.countryRegion === "Other" ? (
-            <ProfileTextField
-              id="country-other"
-              label="Other country / region"
-              value={profile.countryOther}
-              onChange={(value) => setValue("countryOther", value)}
-            />
-          ) : null}
-          <div className="grid gap-4 md:grid-cols-2">
-            <ProfileTextField
-              id="year-established"
-              label="Year established"
-              value={profile.yearEstablished}
-              onChange={(value) => setValue("yearEstablished", value)}
-            />
-            <ProfileTextField
-              id="registration-number"
-              label="Company registration number"
-              value={profile.registrationNumber}
-              onChange={(value) => setValue("registrationNumber", value)}
-            />
-            <ProfileTextField
-              id="website"
-              label="Website"
-              value={profile.website}
-              onChange={(value) => setValue("website", value)}
-            />
-            <ProfileTextField
-              id="address"
-              label="Company address"
-              value={profile.address}
-              onChange={(value) => setValue("address", value)}
-            />
-          </div>
-          <ProfileRadioGroup
-            label="Number of employees"
-            options={profileOptionGroups.employeeRange}
-            value={profile.employeeRange}
-            onChange={(value) => setValue("employeeRange", value)}
-          />
-          <ProfileRadioGroup
-            label="Annual revenue range (optional)"
-            options={profileOptionGroups.annualRevenueRange}
-            value={profile.annualRevenueRange}
-            onChange={(value) => setValue("annualRevenueRange", value)}
-          />
-        </ProfileSection>
-
-        <ProfileSection title="2. Contact person">
-          <div className="grid gap-4 md:grid-cols-2">
-            <ProfileTextField
-              id="contact-name"
-              label="Name"
-              value={profile.contactName}
-              onChange={(value) => setValue("contactName", value)}
-            />
-            <ProfileTextField
-              id="contact-position"
-              label="Position"
-              value={profile.contactPosition}
-              onChange={(value) => setValue("contactPosition", value)}
-            />
-            <ProfileTextField
-              id="contact-email"
-              label="Email"
-              type="email"
-              value={profile.contactEmail}
-              onChange={(value) => setValue("contactEmail", value)}
-            />
-            <ProfileTextField
-              id="mobile-number"
-              label="Mobile number"
-              value={profile.mobileNumber}
-              onChange={(value) => setValue("mobileNumber", value)}
-            />
-            <ProfileTextField
-              id="chat-id"
-              label="WhatsApp / WeChat ID"
-              value={profile.chatId}
-              onChange={(value) => setValue("chatId", value)}
-            />
-          </div>
-          <ProfileCheckboxGroup
-            label="Preferred language"
-            options={profileOptionGroups.preferredLanguages}
-            values={profile.preferredLanguages}
-            onToggle={(value) => toggleList("preferredLanguages", value)}
-          />
-        </ProfileSection>
-
-        <ProfileSection title="3. Industry / sector">
-          <ProfileCheckboxGroup
-            label="Select all applicable"
-            options={profileOptionGroups.industries}
-            values={profile.industries}
-            onToggle={(value) => toggleList("industries", value)}
-          />
-          <ProfileTextField
-            id="industry-other"
-            label="Other industry"
-            value={profile.industryOther}
-            onChange={(value) => setValue("industryOther", value)}
-          />
-        </ProfileSection>
-
-        <ProfileSection title="4. Company profile">
-          <ProfileTextareaField
-            id="company-introduction"
-            label="Brief company introduction (100-200 words)"
-            value={profile.introduction}
-            onChange={(value) => setValue("introduction", value)}
-          />
-          <ProfileTextareaField
-            id="products-services"
-            label="Key products / services"
-            value={profile.productsServices}
-            onChange={(value) => setValue("productsServices", value)}
-          />
-          <ProfileCheckboxGroup
-            label="Certifications"
-            options={profileOptionGroups.certifications}
-            values={profile.certifications}
-            onToggle={(value) => toggleList("certifications", value)}
-          />
-          <ProfileTextField
-            id="certification-other"
-            label="Other certification"
-            value={profile.certificationOther}
-            onChange={(value) => setValue("certificationOther", value)}
-          />
-        </ProfileSection>
-
-        <ProfileSection title="5. What does your company offer?">
-          <ProfileCheckboxGroup
-            label="Select all that apply"
-            options={profileOptionGroups.offers}
-            values={profile.offers}
-            onToggle={(value) => toggleList("offers", value)}
-          />
-          <ProfileTextField
-            id="offer-other"
-            label="Other offer"
-            value={profile.offerOther}
-            onChange={(value) => setValue("offerOther", value)}
-          />
-        </ProfileSection>
-
-        <ProfileSection title="6. What are you looking for?">
-          <ProfileCheckboxGroup
-            label="Select all that apply"
-            options={profileOptionGroups.lookingFor}
-            values={profile.lookingFor}
-            onToggle={(value) => toggleList("lookingFor", value)}
-          />
-          <ProfileTextField
-            id="looking-for-other"
-            label="Other requirement"
-            value={profile.lookingForOther}
-            onChange={(value) => setValue("lookingForOther", value)}
-          />
-        </ProfileSection>
-
-        <ProfileSection title="7. Matchmaking preferences">
-          <ProfileCheckboxGroup
-            label="Preferred partner type"
-            options={profileOptionGroups.preferredPartnerTypes}
-            values={profile.preferredPartnerTypes}
-            onToggle={(value) => toggleList("preferredPartnerTypes", value)}
-          />
-          <ProfileTextField
-            id="preferred-partner-other"
-            label="Other preferred partner type"
-            value={profile.preferredPartnerOther}
-            onChange={(value) => setValue("preferredPartnerOther", value)}
-          />
-          <ProfileCheckboxGroup
-            label="Expected outcome"
-            options={profileOptionGroups.expectedOutcomes}
-            values={profile.expectedOutcomes}
-            onToggle={(value) => toggleList("expectedOutcomes", value)}
-          />
-        </ProfileSection>
-
-        <ProfileSection title="8. Specific business needs">
-          <ProfileTextareaField
-            id="ideal-partner"
-            label="Describe your ideal business partner"
-            value={profile.idealPartner}
-            onChange={(value) => setValue("idealPartner", value)}
-          />
-          <ProfileTextareaField
-            id="opportunity"
-            label="Describe the opportunity you wish to discuss"
-            value={profile.opportunity}
-            onChange={(value) => setValue("opportunity", value)}
-          />
-        </ProfileSection>
-
-        <ProfileSection title="9. Export / international experience">
-          <ProfileRadioGroup
-            label="Do you currently export internationally?"
-            options={profileOptionGroups.exportsInternationally}
-            value={profile.exportsInternationally}
-            onChange={(value) => setValue("exportsInternationally", value)}
-          />
-          <ProfileTextField
-            id="export-markets"
-            label="If yes, list markets"
-            value={profile.exportMarkets}
-            onChange={(value) => setValue("exportMarkets", value)}
-          />
-        </ProfileSection>
-
-        <ProfileSection title="10. Meeting arrangement">
-          <ProfileRadioGroup
-            label="Meeting format"
-            options={profileOptionGroups.meetingFormat}
-            value={profile.meetingFormat}
-            onChange={(value) => setValue("meetingFormat", value)}
-          />
-          <ProfileTextareaField
-            id="meeting-dates"
-            label="Available meeting dates"
-            value={profile.availableMeetingDates}
-            onChange={(value) => setValue("availableMeetingDates", value)}
-          />
-          <ProfileRadioGroup
-            label="Maximum number of meetings requested"
-            options={profileOptionGroups.maxMeetings}
-            value={profile.maxMeetings}
-            onChange={(value) => setValue("maxMeetings", value)}
-          />
-        </ProfileSection>
-
-        <ProfileSection title="11. Supporting documents">
-          <ProfileCheckboxGroup
-            label="Please upload or prepare"
-            options={profileOptionGroups.supportingDocuments}
-            values={profile.supportingDocuments}
-            onToggle={(value) => toggleList("supportingDocuments", value)}
-          />
-          <FieldDescription>
-            Upload storage can be connected to the existing Documents &
-            Resources module when files are ready.
-          </FieldDescription>
-        </ProfileSection>
-
-        <ProfileSection title="12. Consent">
-          <Field orientation="horizontal" className="rounded-md border p-3">
-            <Checkbox
-              checked={profile.consent}
-              onCheckedChange={(checked) =>
-                setValue("consent", checked === true)
-              }
-            />
-            <FieldTitle>
-              I agree that my company information may be shared with relevant
-              participants and organizers for B2B matchmaking purposes.
-            </FieldTitle>
-          </Field>
-          <div className="grid gap-4 md:grid-cols-2">
-            <ProfileTextField
-              id="consent-name"
-              label="Name"
-              value={profile.consentName}
-              onChange={(value) => setValue("consentName", value)}
-            />
-            <ProfileTextField
-              id="consent-date"
-              label="Date"
-              type="date"
-              value={profile.consentDate}
-              onChange={(value) => setValue("consentDate", value)}
-            />
-          </div>
-        </ProfileSection>
-      </CardContent>
-      <CardFooter className="flex flex-wrap gap-2">
-        <Button onClick={() => onSave(profile)}>
-          <Icon icon={CheckmarkCircle02Icon} inline="inline-start" />
-          Save registration profile
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => toast.success("Document upload placeholder saved.")}
-        >
-          <Icon icon={Upload01Icon} inline="inline-start" />
-          Upload PDF
-        </Button>
-      </CardFooter>
+            {documentUploading ? "Uploading PDF…" : "Upload PDF"}
+          </Button>
+        </CardFooter>
+      </form>
     </Card>
   )
+}
+
+function formatDocumentSize(bytes: number) {
+  if (bytes < 1024) {
+    return `${bytes} B`
+  }
+
+  if (bytes < 1024 * 1024) {
+    return `${Math.round(bytes / 1024)} KB`
+  }
+
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function formatDocumentDate(value: string) {
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return "Uploaded recently"
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date)
 }
 
 function ProfileSection({
   title,
   children,
+  collapsible = false,
+  open = true,
+  onOpenChange,
+  progress,
 }: {
   title: string
   children: React.ReactNode
+  collapsible?: boolean
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  progress?: {
+    completed: number
+    total: number
+  }
 }) {
+  const contentId = useId()
+
+  if (!collapsible) {
+    return (
+      <section className="rounded-md border p-4">
+        <h3 className="text-base font-semibold">{title}</h3>
+        <div className="mt-4 grid gap-4">{children}</div>
+      </section>
+    )
+  }
+
   return (
-    <section className="rounded-md border p-4">
-      <h3 className="text-base font-semibold">{title}</h3>
-      <div className="mt-4 grid gap-4">{children}</div>
+    <section className="overflow-hidden rounded-md border">
+      <button
+        type="button"
+        className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/45 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none focus-visible:ring-inset"
+        aria-expanded={open}
+        aria-controls={contentId}
+        onClick={() => onOpenChange?.(!open)}
+      >
+        <span className="text-base font-semibold">{title}</span>
+        <span className="flex shrink-0 items-center gap-2">
+          {progress ? (
+            <Badge
+              variant="outline"
+              className={cn(
+                "min-w-10 justify-center rounded-full text-[0.6875rem] text-muted-foreground tabular-nums",
+                progress.completed === progress.total &&
+                  "border-primary/30 bg-primary/10 text-primary"
+              )}
+              aria-label={`${progress.completed} of ${progress.total} questions complete`}
+            >
+              {progress.completed}/{progress.total}
+            </Badge>
+          ) : null}
+          <HugeiconsIcon
+            icon={ArrowDown01Icon}
+            className={cn(
+              "size-4 shrink-0 text-muted-foreground transition-transform",
+              open && "rotate-180"
+            )}
+            strokeWidth={1.7}
+          />
+        </span>
+      </button>
+      {open ? (
+        <div id={contentId} className="grid gap-4 border-t px-4 pt-4 pb-4">
+          {children}
+        </div>
+      ) : null}
     </section>
+  )
+}
+
+function InternationalPhoneField({
+  id,
+  label,
+  value,
+  onChange,
+  onBlur,
+  error,
+  preferredRegion,
+}: {
+  id: string
+  label: string
+  value: string
+  onChange: (value: string) => void
+  onBlur?: () => void
+  error?: string
+  preferredRegion: string
+}) {
+  const preferredCountry = getCountryCodeForRegion(preferredRegion)
+  const [countryPickerOpen, setCountryPickerOpen] = useState(false)
+  const [selectedCountryOverride, setSelectedCountryOverride] =
+    useState<CountryCode>()
+  const errorId = `${id}-error`
+  const descriptionId = `${id}-description`
+  const resolvedPhone = splitInternationalPhoneNumber(value, preferredCountry)
+  const selectedCountry = selectedCountryOverride ?? resolvedPhone.countryCode
+  const selectedOption =
+    countryCallingCodeOptions.find(
+      (option) => option.countryCode === selectedCountry
+    ) ??
+    countryCallingCodeOptions.find((option) => option.countryCode === "MY")!
+  const phoneParts = splitInternationalPhoneNumber(value, selectedCountry)
+
+  function selectCountry(countryCode: CountryCode) {
+    setSelectedCountryOverride(countryCode)
+    onChange(
+      composeInternationalPhoneNumber(countryCode, phoneParts.nationalNumber)
+    )
+    setCountryPickerOpen(false)
+  }
+
+  function updateNationalNumber(nextValue: string) {
+    if (nextValue.trimStart().startsWith("+")) {
+      const parsed = splitInternationalPhoneNumber(nextValue, selectedCountry)
+
+      setSelectedCountryOverride(parsed.countryCode)
+      onChange(
+        composeInternationalPhoneNumber(
+          parsed.countryCode,
+          parsed.nationalNumber
+        )
+      )
+      return
+    }
+
+    onChange(composeInternationalPhoneNumber(selectedCountry, nextValue))
+  }
+
+  return (
+    <Field data-invalid={Boolean(error) || undefined}>
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      <div
+        className="grid grid-cols-[7.5rem_minmax(0,1fr)] gap-2"
+        role="group"
+        aria-label={label}
+      >
+        <Popover open={countryPickerOpen} onOpenChange={setCountryPickerOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-7 w-full justify-between bg-input/20 px-2 text-sm tabular-nums md:text-xs dark:bg-input/30"
+              role="combobox"
+              aria-label={`Country or region calling code: ${selectedOption.countryName} +${selectedOption.callingCode}`}
+              aria-expanded={countryPickerOpen}
+              aria-controls={`${id}-country-list`}
+              data-testid="mobile-country-code"
+              title={`${selectedOption.countryName} +${selectedOption.callingCode}`}
+            >
+              <span className="truncate">
+                {selectedOption.countryCode} +{selectedOption.callingCode}
+              </span>
+              <HugeiconsIcon
+                icon={ArrowDown01Icon}
+                className="size-3.5 shrink-0 text-muted-foreground"
+                strokeWidth={1.7}
+              />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            align="start"
+            className="w-[min(22rem,calc(100vw-2rem))] p-0"
+          >
+            <Command>
+              <CommandInput
+                placeholder="Search country, region, or code…"
+                aria-label="Search country or region calling codes"
+              />
+              <CommandList id={`${id}-country-list`} className="max-h-80">
+                <CommandEmpty>No calling code found.</CommandEmpty>
+                <CommandGroup heading="All countries and regions">
+                  {countryCallingCodeOptions.map((option) => (
+                    <CommandItem
+                      key={option.countryCode}
+                      value={`${option.countryName} ${option.countryCode} +${option.callingCode}`}
+                      data-checked={
+                        option.countryCode === selectedCountry || undefined
+                      }
+                      aria-selected={option.countryCode === selectedCountry}
+                      onSelect={() => selectCountry(option.countryCode)}
+                    >
+                      <span className="w-7 shrink-0 font-medium">
+                        {option.countryCode}
+                      </span>
+                      <span className="min-w-0 flex-1 truncate">
+                        {option.countryName}
+                      </span>
+                      <span className="shrink-0 text-muted-foreground tabular-nums">
+                        +{option.callingCode}
+                      </span>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
+        <Input
+          id={id}
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel-national"
+          maxLength={25}
+          placeholder="12 345 6789"
+          value={phoneParts.nationalNumber}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? errorId : descriptionId}
+          onChange={(event) => updateNationalNumber(event.target.value)}
+          onBlur={onBlur}
+        />
+      </div>
+      {error ? (
+        <FieldDescription
+          id={errorId}
+          className="text-destructive"
+          role="alert"
+        >
+          {error}
+        </FieldDescription>
+      ) : (
+        <FieldDescription id={descriptionId}>
+          Choose any country or region code, then enter the local number.
+        </FieldDescription>
+      )}
+    </Field>
   )
 }
 
@@ -3968,22 +5367,64 @@ function ProfileTextField({
   type = "text",
   value,
   onChange,
+  onBlur,
+  error,
+  required,
+  inputMode,
+  autoComplete,
+  placeholder,
+  min,
+  max,
+  maxLength,
 }: {
   id: string
   label: string
   type?: string
   value: string
   onChange: (value: string) => void
+  onBlur?: () => void
+  error?: string
+  required?: boolean
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"]
+  autoComplete?: string
+  placeholder?: string
+  min?: string | number
+  max?: string | number
+  maxLength?: number
 }) {
+  const errorId = `${id}-error`
+
   return (
-    <Field>
-      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+    <Field data-invalid={Boolean(error) || undefined}>
+      <FieldLabel htmlFor={id}>
+        {label}
+        {required ? <span className="text-destructive"> *</span> : null}
+      </FieldLabel>
       <Input
         id={id}
         type={type}
+        required={required}
+        inputMode={inputMode}
+        autoComplete={autoComplete}
+        placeholder={placeholder}
+        min={min}
+        max={max}
+        maxLength={maxLength}
         value={value}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? errorId : undefined}
         onChange={(event) => onChange(event.target.value)}
+        onBlur={onBlur}
       />
+      {error ? (
+        <FieldDescription
+          id={errorId}
+          className="text-destructive"
+          role="alert"
+        >
+          {error}
+        </FieldDescription>
+      ) : null}
     </Field>
   )
 }
@@ -3993,20 +5434,48 @@ function ProfileTextareaField({
   label,
   value,
   onChange,
+  onBlur,
+  error,
+  description,
+  maxLength,
 }: {
   id: string
   label: string
   value: string
   onChange: (value: string) => void
+  onBlur?: () => void
+  error?: string
+  description?: string
+  maxLength?: number
 }) {
+  const descriptionId = `${id}-description`
+  const errorId = `${id}-error`
+
   return (
-    <Field>
+    <Field data-invalid={Boolean(error) || undefined}>
       <FieldLabel htmlFor={id}>{label}</FieldLabel>
       <Textarea
         id={id}
+        maxLength={maxLength}
         value={value}
+        aria-invalid={Boolean(error)}
+        aria-describedby={
+          error ? errorId : description ? descriptionId : undefined
+        }
         onChange={(event) => onChange(event.target.value)}
+        onBlur={onBlur}
       />
+      {error ? (
+        <FieldDescription
+          id={errorId}
+          className="text-destructive"
+          role="alert"
+        >
+          {error}
+        </FieldDescription>
+      ) : description ? (
+        <FieldDescription id={descriptionId}>{description}</FieldDescription>
+      ) : null}
     </Field>
   )
 }
@@ -4122,7 +5591,7 @@ function UserMatches({
             </CardDescription>
           </div>
           <Button asChild>
-            <Link href={`/${locale}/${perspective}/discover`}>
+            <Link href={`/${locale}/vendor/discover`}>
               <Icon icon={UserGroupIcon} inline="inline-start" />
               {textFor(locale, "Find companies", "查找企业")}
             </Link>
@@ -4142,9 +5611,25 @@ function UserMatches({
 
       <div className="grid gap-4 md:grid-cols-2">
         {matches.map((match) => {
+          const ownCompanyId =
+            perspective === "delegation" ? match.delegationId : match.partnerId
           const counterpartId =
             perspective === "delegation" ? match.partnerId : match.delegationId
-          const counterpartName = getCompanyName(db, counterpartId)
+          const ownCompanyName = getCompanyName(db, ownCompanyId)
+          const rawCounterpartName = getCompanyName(db, counterpartId)
+          const counterpartName =
+            rawCounterpartName === "Unknown company"
+              ? textFor(locale, "Company record pending", "企业记录待补充")
+              : rawCounterpartName
+          const counterpartSector = getCompanySector(db, counterpartId)
+          const counterpartRole =
+            perspective === "delegation"
+              ? textFor(
+                  locale,
+                  "Malaysian Partner Vendor",
+                  "马来西亚伙伴供应商"
+                )
+              : textFor(locale, "Delegation Vendor", "代表团供应商")
           const isAccepted = match.status === "Accepted"
           const isScheduled = match.status === "Session Scheduled"
           const ownAcceptedAt =
@@ -4162,17 +5647,17 @@ function UserMatches({
             <Card key={match.id}>
               <CardHeader>
                 <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <CardTitle>
-                      {counterpartName === "Unknown company"
-                        ? textFor(
-                            locale,
-                            "Company record pending",
-                            "企业记录待补充"
-                          )
-                        : counterpartName}
+                  <div className="min-w-0">
+                    <p className="mb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                      {textFor(locale, "Matched with", "配对对象")}
+                    </p>
+                    <CardTitle className="truncate">
+                      {counterpartName}
                     </CardTitle>
-                    <CardDescription>{match.note}</CardDescription>
+                    <CardDescription className="mt-1">
+                      {counterpartRole}
+                      {counterpartSector ? ` · ${counterpartSector}` : ""}
+                    </CardDescription>
                   </div>
                   <Badge variant={statusVariant(match.status)}>
                     {statusLabel(match.status, locale)}
@@ -4180,6 +5665,30 @@ function UserMatches({
                 </div>
               </CardHeader>
               <CardContent className="flex flex-col gap-3">
+                <div className="grid items-center gap-2 rounded-md border bg-muted/20 p-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+                  <div className="min-w-0">
+                    <p className="text-xs text-muted-foreground">
+                      {textFor(locale, "Your company", "您的企业")}
+                    </p>
+                    <p className="truncate text-sm font-medium">
+                      {ownCompanyName}
+                    </p>
+                  </div>
+                  <span
+                    aria-hidden="true"
+                    className="hidden text-muted-foreground sm:inline"
+                  >
+                    ↔
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-xs text-muted-foreground">
+                      {textFor(locale, "Linked Vendor", "已关联供应商")}
+                    </p>
+                    <p className="truncate text-sm font-medium">
+                      {counterpartName}
+                    </p>
+                  </div>
+                </div>
                 <Progress value={match.score} />
                 <p className="text-sm text-muted-foreground">
                   {textFor(locale, "Match confidence", "匹配信心")}:{" "}
@@ -4205,8 +5714,11 @@ function UserMatches({
               </CardContent>
               <CardFooter className="flex flex-wrap gap-2">
                 {isScheduled ? (
-                  <Button disabled>
-                    {textFor(locale, "Meeting created", "会议已创建")}
+                  <Button asChild>
+                    <Link href={`/${locale}/vendor?section=meetings`}>
+                      <Icon icon={Calendar03Icon} inline="inline-start" />
+                      {textFor(locale, "View meeting", "查看会议")}
+                    </Link>
                   </Button>
                 ) : isAccepted ? (
                   <MeetingSlotPickerDialog
@@ -4237,12 +5749,145 @@ function UserMatches({
                     {textFor(locale, "Request change", "请求调整")}
                   </Button>
                 ) : null}
+                <MatchDetailsDialog
+                  match={match}
+                  locale={locale}
+                  ownCompanyName={ownCompanyName}
+                  counterpartName={counterpartName}
+                  counterpartRole={counterpartRole}
+                  counterpartSector={counterpartSector}
+                  ownAccepted={Boolean(ownAcceptedAt)}
+                  counterpartAccepted={Boolean(counterpartAcceptedAt)}
+                />
               </CardFooter>
             </Card>
           )
         })}
       </div>
     </div>
+  )
+}
+
+function MatchDetailsDialog({
+  match,
+  locale,
+  ownCompanyName,
+  counterpartName,
+  counterpartRole,
+  counterpartSector,
+  ownAccepted,
+  counterpartAccepted,
+}: {
+  match: Match
+  locale: Locale
+  ownCompanyName: string
+  counterpartName: string
+  counterpartRole: string
+  counterpartSector: string
+  ownAccepted: boolean
+  counterpartAccepted: boolean
+}) {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline">
+          <Icon icon={ViewIcon} inline="inline-start" />
+          {textFor(locale, "View details", "查看详情")}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>
+            {textFor(locale, "Match details", "配对详情")}
+          </DialogTitle>
+          <DialogDescription>
+            {textFor(
+              locale,
+              "Review the linked Vendor, match confidence, and both parties' decisions.",
+              "查看已关联供应商、匹配信心及双方决定。"
+            )}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-4">
+          <div className="grid items-center gap-3 rounded-md border bg-muted/20 p-4 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">
+                {textFor(locale, "Your company", "您的企业")}
+              </p>
+              <p className="mt-1 font-semibold">{ownCompanyName}</p>
+            </div>
+            <span
+              aria-hidden="true"
+              className="hidden text-lg text-muted-foreground sm:inline"
+            >
+              ↔
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">
+                {textFor(locale, "Linked Vendor", "已关联供应商")}
+              </p>
+              <p className="mt-1 font-semibold">{counterpartName}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {counterpartRole}
+                {counterpartSector ? ` · ${counterpartSector}` : ""}
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">
+                {textFor(locale, "Status", "状态")}
+              </p>
+              <p className="mt-1 text-sm font-medium">
+                {statusLabel(match.status, locale)}
+              </p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">
+                {textFor(locale, "Match confidence", "匹配信心")}
+              </p>
+              <p className="mt-1 text-sm font-medium">{match.score}%</p>
+            </div>
+            <div className="rounded-md border p-3">
+              <p className="text-xs text-muted-foreground">
+                {textFor(locale, "Decision progress", "决定进度")}
+              </p>
+              <p className="mt-1 text-sm font-medium">
+                {[ownAccepted, counterpartAccepted].filter(Boolean).length}/2
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-md border p-4">
+            <p className="text-sm font-medium">
+              {textFor(locale, "Why this match", "配对说明")}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">{match.note}</p>
+          </div>
+
+          <div className="grid gap-2 text-sm sm:grid-cols-2">
+            <div className="flex items-center justify-between rounded-md border px-3 py-2">
+              <span>{textFor(locale, "Your decision", "您的决定")}</span>
+              <Badge variant={ownAccepted ? "default" : "outline"}>
+                {ownAccepted
+                  ? textFor(locale, "Accepted", "已接受")
+                  : textFor(locale, "Pending", "待处理")}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between rounded-md border px-3 py-2">
+              <span>{textFor(locale, "Linked Vendor", "已关联供应商")}</span>
+              <Badge variant={counterpartAccepted ? "default" : "outline"}>
+                {counterpartAccepted
+                  ? textFor(locale, "Accepted", "已接受")
+                  : textFor(locale, "Pending", "待处理")}
+              </Badge>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -5121,6 +6766,11 @@ function CompanyDialog({
       return
     }
 
+    if (!form.sector.trim()) {
+      toast.error("Select an industry sector.")
+      return
+    }
+
     onSave({
       ...form,
       nameCn: form.nameCn || form.nameEn,
@@ -5172,6 +6822,18 @@ function CompanyDialog({
                   onChange={(event) =>
                     updateField("nameEn", event.target.value)
                   }
+                  required
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor={`${form.id}-sector`}>
+                  Industry sector
+                </FieldLabel>
+                <IndustrySectorCombobox
+                  id={`${form.id}-sector`}
+                  name="sector"
+                  value={form.sector}
+                  onValueChange={(value) => updateField("sector", value)}
                   required
                 />
               </Field>
@@ -5228,13 +6890,13 @@ function CompanyDialog({
               <div className="grid gap-4 md:grid-cols-3">
                 <Field>
                   <FieldLabel htmlFor={`${form.id}-sector`}>Sector</FieldLabel>
-                  <Input
+                  <IndustrySectorCombobox
                     id={`${form.id}-sector`}
+                    name="sector"
                     value={form.sector}
-                    onChange={(event) =>
-                      updateField("sector", event.target.value)
-                    }
-                    readOnly={readOnly}
+                    onValueChange={(value) => updateField("sector", value)}
+                    disabled={readOnly}
+                    required
                   />
                 </Field>
                 <Field>
@@ -5570,7 +7232,7 @@ function makeBlankCompany(kind: CompanyKind): ManagedCompany {
       role: "delegation",
       nameEn: "",
       nameCn: "",
-      sector: "Pending profile",
+      sector: "",
       origin: "Pending",
       size: "Pending",
       needs: "Pending profile",
@@ -5588,7 +7250,7 @@ function makeBlankCompany(kind: CompanyKind): ManagedCompany {
     role: "partner",
     nameEn: "",
     nameCn: "",
-    sector: "Pending profile",
+    sector: "",
     type: "Enterprise",
     size: "Pending",
     offerings: "Pending profile",
@@ -6055,11 +7717,849 @@ function InterpreterFormDialog({
   )
 }
 
+function getDefaultMeetingDateTime() {
+  const value = new Date(Date.now() + 24 * 60 * 60 * 1000)
+  value.setSeconds(0, 0)
+  value.setMinutes(Math.ceil(value.getMinutes() / 30) * 30)
+
+  return new Date(value.getTime() - value.getTimezoneOffset() * 60_000)
+    .toISOString()
+    .slice(0, 16)
+}
+
+function toLocalMeetingDateTime(value: string) {
+  const date = new Date(value)
+
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60_000)
+    .toISOString()
+    .slice(0, 16)
+}
+
+function ManualMeetingDialog({
+  db,
+  locale = "en",
+  onCreate,
+}: {
+  db: LocalDb
+  locale?: Locale
+  onCreate: (values: ManualMeetingInput) => Promise<boolean>
+}) {
+  const [open, setOpen] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [delegationId, setDelegationId] = useState("")
+  const [partnerId, setPartnerId] = useState("")
+  const [platform, setPlatform] =
+    useState<ManualMeetingInput["platform"]>("zoom")
+  const [startsAt, setStartsAt] = useState("")
+  const [durationMinutes, setDurationMinutes] = useState("60")
+  const [requestedInterpreterId, setRequestedInterpreterId] = useState("none")
+  const [agenda, setAgenda] = useState("")
+  const hasVendorPair =
+    db.delegationCompanies.length > 0 && db.partnerCompanies.length > 0
+  const selectedDelegation = db.delegationCompanies.find(
+    (company) => company.id === delegationId
+  )
+  const selectedPartner = db.partnerCompanies.find(
+    (company) => company.id === partnerId
+  )
+
+  function reset() {
+    setDelegationId("")
+    setPartnerId("")
+    setPlatform("zoom")
+    setStartsAt("")
+    setDurationMinutes("60")
+    setRequestedInterpreterId("none")
+    setAgenda("")
+  }
+
+  async function submit() {
+    const selectedDate = new Date(startsAt)
+
+    if (
+      !delegationId ||
+      !partnerId ||
+      !Number.isFinite(selectedDate.getTime()) ||
+      selectedDate.getTime() <= Date.now() ||
+      agenda.trim().length < 3
+    ) {
+      toast.error(
+        textFor(
+          locale,
+          "Select both Vendors, a future time, and a short agenda.",
+          "请选择双方供应商、未来时间并填写简短议程。"
+        )
+      )
+      return
+    }
+
+    setSubmitting(true)
+    const created = await onCreate({
+      delegationId,
+      partnerId,
+      platform,
+      startsAt: selectedDate.toISOString(),
+      durationMinutes: Number(durationMinutes),
+      requestedInterpreterId:
+        requestedInterpreterId === "none" ? null : requestedInterpreterId,
+      agenda: agenda.trim(),
+    })
+    setSubmitting(false)
+
+    if (created) {
+      setOpen(false)
+      reset()
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!submitting) {
+          setOpen(nextOpen)
+          if (nextOpen && !startsAt) {
+            setStartsAt(getDefaultMeetingDateTime())
+          }
+        }
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button>
+          <Icon icon={AddIcon} inline="inline-start" />
+          {textFor(locale, "Create meeting", "手动创建会议")}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>
+            {textFor(locale, "Create a meeting", "手动创建会议")}
+          </DialogTitle>
+          <DialogDescription>
+            {textFor(
+              locale,
+              "Select one delegation Vendor and one Malaysian partner. Plexus creates or reuses their match and adds the confirmed time to both Vendor calendars.",
+              "选择一家代表团供应商和一家马来西亚合作伙伴。Plexus 将建立或沿用双方配对，并把确认时间加入双方日历。"
+            )}
+          </DialogDescription>
+        </DialogHeader>
+
+        <Alert>
+          <Icon icon={SecurityCheckIcon} />
+          <AlertTitle>
+            {textFor(locale, "Provider-link protection", "会议链接保护")}
+          </AlertTitle>
+          <AlertDescription>
+            {textFor(
+              locale,
+              "This schedules the calendar record immediately. A protected Zoom or Lark link is created only after both Vendors accept the match.",
+              "系统会立即建立日历记录；只有双方供应商接受配对后，才会建立受保护的 Zoom 或 Lark 链接。"
+            )}
+          </AlertDescription>
+        </Alert>
+
+        {!hasVendorPair ? (
+          <Alert>
+            <Icon icon={Alert02Icon} />
+            <AlertTitle>
+              {textFor(locale, "Vendor pair required", "需要双方供应商")}
+            </AlertTitle>
+            <AlertDescription>
+              {textFor(
+                locale,
+                "Create at least one delegation Vendor and one Malaysian partner before scheduling a meeting.",
+                "安排会议前，请先建立至少一家代表团供应商和一家马来西亚合作伙伴。"
+              )}
+            </AlertDescription>
+          </Alert>
+        ) : null}
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid min-w-0 gap-2 sm:col-span-2">
+            <FieldLabel htmlFor="manualMeetingPlatform">
+              {textFor(locale, "Meeting platform", "會議平台")}
+            </FieldLabel>
+            <Select
+              value={platform}
+              onValueChange={(value) =>
+                setPlatform(value as ManualMeetingInput["platform"])
+              }
+            >
+              <SelectTrigger
+                id="manualMeetingPlatform"
+                className="w-full"
+                aria-label={textFor(locale, "Meeting platform", "會議平台")}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="zoom">Zoom</SelectItem>
+                <SelectItem value="lark">Lark</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              {textFor(
+                locale,
+                "Choose the preferred provider now. The protected join link is created after both Vendors accept the match.",
+                "現在選擇首選平台；雙方供應商接受配對後，系統才會建立受保護的加入連結。"
+              )}
+            </p>
+          </div>
+
+          <div className="grid min-w-0 gap-2">
+            <FieldLabel htmlFor="manualMeetingDelegation">
+              {textFor(locale, "Delegation Vendor", "代表团供应商")}
+            </FieldLabel>
+            <Select value={delegationId} onValueChange={setDelegationId}>
+              <SelectTrigger
+                id="manualMeetingDelegation"
+                className="w-full min-w-0 overflow-hidden"
+                aria-label={textFor(
+                  locale,
+                  "Delegation Vendor",
+                  "代表团供应商"
+                )}
+              >
+                <SelectValue
+                  className="min-w-0 flex-1 truncate text-left"
+                  placeholder={textFor(
+                    locale,
+                    "Select a delegation Vendor",
+                    "选择代表团供应商"
+                  )}
+                >
+                  {selectedDelegation?.nameEn}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                className="max-w-[min(32rem,calc(100vw-2rem))]"
+              >
+                {db.delegationCompanies.map((company) => (
+                  <SelectItem
+                    key={company.id}
+                    value={company.id}
+                    textValue={`${company.nameEn} ${company.sector}`}
+                    className="py-2 pr-8"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate font-medium">
+                        {company.nameEn}
+                      </span>
+                      <span className="block truncate text-muted-foreground">
+                        {company.sector}
+                      </span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid min-w-0 gap-2">
+            <FieldLabel htmlFor="manualMeetingPartner">
+              {textFor(locale, "Malaysian partner", "马来西亚合作伙伴")}
+            </FieldLabel>
+            <Select value={partnerId} onValueChange={setPartnerId}>
+              <SelectTrigger
+                id="manualMeetingPartner"
+                className="w-full min-w-0 overflow-hidden"
+                aria-label={textFor(
+                  locale,
+                  "Malaysian partner",
+                  "马来西亚合作伙伴"
+                )}
+              >
+                <SelectValue
+                  className="min-w-0 flex-1 truncate text-left"
+                  placeholder={textFor(
+                    locale,
+                    "Select a Malaysian partner",
+                    "选择马来西亚合作伙伴"
+                  )}
+                >
+                  {selectedPartner?.nameEn}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent
+                position="popper"
+                className="max-w-[min(32rem,calc(100vw-2rem))]"
+              >
+                {db.partnerCompanies.map((company) => (
+                  <SelectItem
+                    key={company.id}
+                    value={company.id}
+                    textValue={`${company.nameEn} ${company.sector}`}
+                    className="py-2 pr-8"
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate font-medium">
+                        {company.nameEn}
+                      </span>
+                      <span className="block truncate text-muted-foreground">
+                        {company.sector}
+                      </span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2">
+            <FieldLabel htmlFor="manualMeetingStartsAt">
+              {textFor(locale, "Date and time", "日期与时间")}
+            </FieldLabel>
+            <Input
+              id="manualMeetingStartsAt"
+              type="datetime-local"
+              value={startsAt}
+              onChange={(event) => setStartsAt(event.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              {textFor(
+                locale,
+                "Entered in your local timezone; calendars display Malaysia time.",
+                "按您的本地时区输入；日历将显示马来西亚时间。"
+              )}
+            </p>
+          </div>
+
+          <div className="grid gap-2">
+            <FieldLabel htmlFor="manualMeetingDuration">
+              {textFor(locale, "Duration", "会议时长")}
+            </FieldLabel>
+            <Select value={durationMinutes} onValueChange={setDurationMinutes}>
+              <SelectTrigger
+                id="manualMeetingDuration"
+                className="w-full"
+                aria-label={textFor(locale, "Duration", "会议时长")}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[30, 45, 60, 90, 120].map((minutes) => (
+                  <SelectItem key={minutes} value={String(minutes)}>
+                    {minutes} {textFor(locale, "minutes", "分钟")}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2 sm:col-span-2">
+            <FieldLabel htmlFor="manualMeetingInterpreter">
+              {textFor(locale, "Interpreter", "翻译")}
+            </FieldLabel>
+            <Select
+              value={requestedInterpreterId}
+              onValueChange={setRequestedInterpreterId}
+            >
+              <SelectTrigger
+                id="manualMeetingInterpreter"
+                className="w-full"
+                aria-label={textFor(locale, "Interpreter", "翻译")}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">
+                  {textFor(locale, "Assign later", "稍后分配")}
+                </SelectItem>
+                {db.interpreters
+                  .filter((interpreter) => interpreter.available)
+                  .map((interpreter) => (
+                    <SelectItem key={interpreter.id} value={interpreter.id}>
+                      {interpreter.name} · {interpreter.languages}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid gap-2 sm:col-span-2">
+            <FieldLabel htmlFor="manualMeetingAgenda">
+              {textFor(locale, "Meeting agenda", "会议议程")}
+            </FieldLabel>
+            <Textarea
+              id="manualMeetingAgenda"
+              value={agenda}
+              onChange={(event) => setAgenda(event.target.value)}
+              maxLength={1000}
+              rows={4}
+              placeholder={textFor(
+                locale,
+                "Example: Product introduction, distribution requirements, and next steps.",
+                "例如：产品介绍、分销需求及后续步骤。"
+              )}
+            />
+            <p className="text-xs text-muted-foreground">
+              {agenda.trim().length} / 1000
+            </p>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            disabled={submitting}
+            onClick={() => setOpen(false)}
+          >
+            {textFor(locale, "Cancel", "取消")}
+          </Button>
+          <Button
+            disabled={
+              submitting ||
+              !delegationId ||
+              !partnerId ||
+              !startsAt ||
+              agenda.trim().length < 3 ||
+              !hasVendorPair
+            }
+            onClick={submit}
+          >
+            {submitting ? (
+              <Icon icon={Loading03Icon} inline="inline-start" />
+            ) : (
+              <Icon icon={Calendar03Icon} inline="inline-start" />
+            )}
+            {submitting
+              ? textFor(locale, "Creating meeting…", "正在创建会议…")
+              : textFor(locale, "Create meeting", "创建会议")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function MeetingDetailsDialog({
+  db,
+  meeting,
+  locale = "en",
+  onUpdate,
+  trigger,
+}: {
+  db: LocalDb
+  meeting: Meeting
+  locale?: Locale
+  onUpdate: (values: MeetingAmendmentInput) => Promise<boolean>
+  trigger: ReactNode
+}) {
+  const match = db.matches.find((item) => item.id === meeting.matchId)
+  const deal = db.deals.find((item) => item.matchId === meeting.matchId)
+  const assignedInterpreter = db.interpreters.find(
+    (item) => `${item.name} · ${item.languages}` === meeting.interpreter
+  )
+  const companyPair = match
+    ? `${getCompanyName(db, match.delegationId)} ↔ ${getCompanyName(db, match.partnerId)}`
+    : textFor(locale, "Meeting participants", "会议参与方")
+  const isProtected = Boolean(meeting.link)
+  const isReadOnly = ["Completed", "Cancelled"].includes(meeting.status)
+  const [open, setOpen] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [platform, setPlatform] = useState<MeetingAmendmentInput["platform"]>(
+    meeting.platform === "Lark" ? "lark" : "zoom"
+  )
+  const [startsAt, setStartsAt] = useState(
+    toLocalMeetingDateTime(meeting.startsAt)
+  )
+  const [durationMinutes, setDurationMinutes] = useState(
+    String(meeting.duration)
+  )
+  const [requestedInterpreterId, setRequestedInterpreterId] = useState(
+    meeting.requestedInterpreterId ?? assignedInterpreter?.id ?? "none"
+  )
+  const [agenda, setAgenda] = useState(
+    extractMeetingAgenda(meeting.summary) || meeting.summary
+  )
+
+  function resetDraft() {
+    setEditing(false)
+    setPlatform(meeting.platform === "Lark" ? "lark" : "zoom")
+    setStartsAt(toLocalMeetingDateTime(meeting.startsAt))
+    setDurationMinutes(String(meeting.duration))
+    setRequestedInterpreterId(
+      meeting.requestedInterpreterId ?? assignedInterpreter?.id ?? "none"
+    )
+    setAgenda(extractMeetingAgenda(meeting.summary) || meeting.summary)
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const selectedDate = new Date(startsAt)
+
+    if (
+      Number.isNaN(selectedDate.getTime()) ||
+      agenda.trim().length < 3 ||
+      !Number.isFinite(Number(durationMinutes))
+    ) {
+      toast.error(
+        textFor(
+          locale,
+          "Check the meeting schedule and agenda.",
+          "请检查会议时间与议程。"
+        )
+      )
+      return
+    }
+
+    setSubmitting(true)
+    const updated = await onUpdate({
+      meetingId: meeting.id,
+      platform,
+      startsAt: selectedDate.toISOString(),
+      durationMinutes: Number(durationMinutes),
+      requestedInterpreterId:
+        requestedInterpreterId === "none" ? null : requestedInterpreterId,
+      agenda: agenda.trim(),
+    })
+    setSubmitting(false)
+
+    if (updated) {
+      setOpen(false)
+      setEditing(false)
+    }
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (submitting) {
+          return
+        }
+
+        setOpen(nextOpen)
+        if (nextOpen) {
+          resetDraft()
+        }
+      }}
+    >
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>
+            {editing
+              ? textFor(locale, "Edit meeting", "编辑会议")
+              : textFor(locale, "Meeting details", "会议详情")}
+          </DialogTitle>
+          <DialogDescription>
+            {companyPair} · {formatDateTime(meeting.startsAt, locale)}
+          </DialogDescription>
+        </DialogHeader>
+
+        {editing ? (
+          <form className="grid gap-5" onSubmit={submit}>
+            {isProtected ? (
+              <Alert>
+                <Icon icon={SecurityCheckIcon} />
+                <AlertTitle>
+                  {textFor(
+                    locale,
+                    "Protected link retained",
+                    "保留受保护会议链接"
+                  )}
+                </AlertTitle>
+                <AlertDescription>
+                  {textFor(
+                    locale,
+                    "This meeting already has a protected provider link. Its platform, date, and duration are locked here; the agenda and interpreter can still be amended.",
+                    "此会议已有受保护的平台链接。平台、日期和时长会在此锁定，但仍可修改议程与翻译。"
+                  )}
+                </AlertDescription>
+              </Alert>
+            ) : null}
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <FieldLabel htmlFor={`meetingPlatform-${meeting.id}`}>
+                  {textFor(locale, "Meeting platform", "会议平台")}
+                </FieldLabel>
+                <Select
+                  value={platform}
+                  disabled={isProtected}
+                  onValueChange={(value) =>
+                    setPlatform(value as MeetingAmendmentInput["platform"])
+                  }
+                >
+                  <SelectTrigger
+                    id={`meetingPlatform-${meeting.id}`}
+                    className="w-full"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="zoom">Zoom</SelectItem>
+                    <SelectItem value="lark">Lark</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <FieldLabel htmlFor={`meetingDuration-${meeting.id}`}>
+                  {textFor(locale, "Duration", "会议时长")}
+                </FieldLabel>
+                <Select
+                  value={durationMinutes}
+                  disabled={isProtected}
+                  onValueChange={setDurationMinutes}
+                >
+                  <SelectTrigger
+                    id={`meetingDuration-${meeting.id}`}
+                    className="w-full"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[30, 45, 60, 90, 120].map((minutes) => (
+                      <SelectItem key={minutes} value={String(minutes)}>
+                        {minutes} {textFor(locale, "minutes", "分钟")}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2 sm:col-span-2">
+                <FieldLabel htmlFor={`meetingStartsAt-${meeting.id}`}>
+                  {textFor(locale, "Date and time", "日期与时间")}
+                </FieldLabel>
+                <Input
+                  id={`meetingStartsAt-${meeting.id}`}
+                  type="datetime-local"
+                  value={startsAt}
+                  disabled={isProtected}
+                  onChange={(event) => setStartsAt(event.target.value)}
+                />
+              </div>
+
+              <div className="grid gap-2 sm:col-span-2">
+                <FieldLabel htmlFor={`meetingInterpreter-${meeting.id}`}>
+                  {textFor(locale, "Interpreter", "翻译")}
+                </FieldLabel>
+                <Select
+                  value={requestedInterpreterId}
+                  onValueChange={setRequestedInterpreterId}
+                >
+                  <SelectTrigger
+                    id={`meetingInterpreter-${meeting.id}`}
+                    className="w-full"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">
+                      {textFor(locale, "Assign later", "稍后分配")}
+                    </SelectItem>
+                    {db.interpreters
+                      .filter(
+                        (interpreter) =>
+                          interpreter.available ||
+                          interpreter.id === requestedInterpreterId
+                      )
+                      .map((interpreter) => (
+                        <SelectItem key={interpreter.id} value={interpreter.id}>
+                          {interpreter.name} · {interpreter.languages}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2 sm:col-span-2">
+                <FieldLabel htmlFor={`meetingAgenda-${meeting.id}`}>
+                  {textFor(locale, "Meeting agenda", "会议议程")}
+                </FieldLabel>
+                <Textarea
+                  id={`meetingAgenda-${meeting.id}`}
+                  value={agenda}
+                  maxLength={1000}
+                  rows={5}
+                  onChange={(event) => setAgenda(event.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {agenda.trim().length} / 1000
+                </p>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={submitting}
+                onClick={resetDraft}
+              >
+                {textFor(locale, "Cancel editing", "取消编辑")}
+              </Button>
+              <Button
+                type="submit"
+                disabled={submitting || agenda.trim().length < 3}
+              >
+                <Icon
+                  icon={submitting ? Loading03Icon : SaveIcon}
+                  inline="inline-start"
+                />
+                {submitting
+                  ? textFor(locale, "Saving…", "正在保存…")
+                  : textFor(locale, "Save changes", "保存更改")}
+              </Button>
+            </DialogFooter>
+          </form>
+        ) : (
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant={statusVariant(meeting.status)}>
+                {statusLabel(meeting.status, locale)}
+              </Badge>
+              <Badge variant="outline">{meeting.platform}</Badge>
+              <Badge variant={meeting.link ? "default" : "outline"}>
+                {meeting.link
+                  ? textFor(locale, "Protected link ready", "受保护链接已就绪")
+                  : textFor(locale, "Awaiting secure link", "等待安全会议链接")}
+              </Badge>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <InfoTile
+                label={textFor(locale, "Schedule", "会议时间")}
+                value={formatDateTime(meeting.startsAt, locale)}
+              />
+              <InfoTile
+                label={textFor(locale, "Duration", "会议时长")}
+                value={`${meeting.duration} ${textFor(locale, "min", "分钟")}`}
+              />
+              <InfoTile
+                label={textFor(locale, "Host", "主持人")}
+                value={meeting.host}
+              />
+              <InfoTile
+                label={textFor(locale, "Interpreter", "翻译")}
+                value={meeting.interpreter}
+              />
+              <InfoTile
+                label={textFor(locale, "Agreement", "协议")}
+                value={
+                  deal?.status
+                    ? statusLabel(deal.status, locale)
+                    : textFor(locale, "No deal yet", "暂无协议")
+                }
+              />
+              <InfoTile
+                label={textFor(locale, "Vendor pair", "供应商配对")}
+                value={companyPair}
+              />
+            </div>
+
+            <div className="rounded-md border bg-muted/20 p-4">
+              <p className="text-sm font-medium">
+                {textFor(locale, "Agenda and notes", "议程与备注")}
+              </p>
+              <p className="mt-2 text-sm whitespace-pre-wrap text-muted-foreground">
+                {meeting.summary}
+              </p>
+            </div>
+
+            <Alert>
+              <Icon icon={SecurityCheckIcon} />
+              <AlertTitle>
+                {textFor(locale, "Protected meeting access", "受保护会议访问")}
+              </AlertTitle>
+              <AlertDescription>
+                {meeting.link
+                  ? textFor(
+                      locale,
+                      "The provider join URL stays hidden. Use Join to open the protected Plexus route.",
+                      "平台加入网址保持隐藏；请使用“加入”打开受保护的 Plexus 路由。"
+                    )
+                  : textFor(
+                      locale,
+                      "The protected Zoom or Lark route becomes available after both Vendors accept the match.",
+                      "双方供应商接受配对后，受保护的 Zoom 或 Lark 路由才会开放。"
+                    )}
+              </AlertDescription>
+            </Alert>
+
+            <DialogFooter>
+              {meeting.link ? (
+                <>
+                  <CopyMeetingLinkButton link={meeting.link} locale={locale} />
+                  <Button asChild variant="outline">
+                    <a href={meeting.link} target="_blank" rel="noreferrer">
+                      <Icon icon={CameraVideoIcon} inline="inline-start" />
+                      {textFor(locale, "Join meeting", "加入会议")}
+                    </a>
+                  </Button>
+                </>
+              ) : null}
+              {!isReadOnly ? (
+                <Button onClick={() => setEditing(true)}>
+                  <Icon icon={SaveIcon} inline="inline-start" />
+                  {textFor(locale, "Edit meeting", "编辑会议")}
+                </Button>
+              ) : null}
+            </DialogFooter>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function CopyMeetingLinkButton({
+  link,
+  locale = "en",
+}: {
+  link?: string
+  locale?: Locale
+}) {
+  async function copyLink() {
+    if (!link) {
+      return
+    }
+
+    try {
+      const shareUrl = new URL(link, window.location.origin)
+
+      if (!/^\/m\/[^/]+$/.test(shareUrl.pathname)) {
+        throw new Error("Only protected meeting links can be copied.")
+      }
+
+      await navigator.clipboard.writeText(shareUrl.toString())
+      toast.success(
+        textFor(
+          locale,
+          "Protected join link copied.",
+          "受保护的加入链接已复制。"
+        )
+      )
+    } catch {
+      toast.error(
+        textFor(
+          locale,
+          "Unable to copy the join link. Open the meeting details and try again.",
+          "无法复制加入链接，请打开会议详情后重试。"
+        )
+      )
+    }
+  }
+
+  return (
+    <Button type="button" variant="outline" disabled={!link} onClick={copyLink}>
+      <Icon icon={Copy01Icon} inline="inline-start" />
+      {textFor(locale, "Copy join link", "复制加入链接")}
+    </Button>
+  )
+}
+
 function SessionList({
   db,
   meetings,
   onComplete,
   onAssignInterpreter,
+  onUpdateMeeting,
   locale = "en",
 }: {
   db: LocalDb
@@ -6069,6 +8569,7 @@ function SessionList({
     meetingId: string,
     interpreterId: string | null
   ) => void
+  onUpdateMeeting?: (values: MeetingAmendmentInput) => Promise<boolean>
   locale?: Locale
 }) {
   if (!meetings.length) {
@@ -6171,6 +8672,20 @@ function SessionList({
                 ) : null}
               </div>
               <div className="flex flex-wrap gap-2">
+                {onUpdateMeeting ? (
+                  <MeetingDetailsDialog
+                    db={db}
+                    meeting={meeting}
+                    locale={locale}
+                    onUpdate={onUpdateMeeting}
+                    trigger={
+                      <Button variant="outline">
+                        <Icon icon={ViewIcon} inline="inline-start" />
+                        {textFor(locale, "View / edit", "查看 / 编辑")}
+                      </Button>
+                    }
+                  />
+                ) : null}
                 {meeting.link ? (
                   <Button asChild>
                     <a href={meeting.link} target="_blank" rel="noreferrer">
@@ -6188,6 +8703,7 @@ function SessionList({
                     )}
                   </Button>
                 )}
+                <CopyMeetingLinkButton link={meeting.link} locale={locale} />
                 {onComplete ? (
                   <Button
                     variant="outline"
@@ -6471,10 +8987,12 @@ function MeetingSettings({
 function MeetingCalendarView({
   db,
   meetings,
+  onUpdateMeeting,
   locale = "en",
 }: {
   db: LocalDb
   meetings: Meeting[]
+  onUpdateMeeting?: (values: MeetingAmendmentInput) => Promise<boolean>
   locale?: Locale
 }) {
   const sortedMeetings = [...meetings].sort(
@@ -6610,44 +9128,71 @@ function MeetingCalendarView({
                       (item) => item.matchId === meeting.matchId
                     )
 
-                    return (
-                      <div
-                        key={meeting.id}
-                        className="border-l-2 border-primary/70 pl-3"
+                    const companyPair = match
+                      ? `${getCompanyName(db, match.delegationId)} ↔ ${getCompanyName(db, match.partnerId)}`
+                      : meeting.id
+                    const calendarEntry = (
+                      <Button
+                        variant="ghost"
+                        className="h-auto w-full min-w-0 justify-start rounded-md border-l-2 border-primary/70 px-3 py-2 text-left whitespace-normal hover:bg-muted focus-visible:ring-2"
+                        aria-label={textFor(
+                          locale,
+                          `View or edit meeting with ${companyPair}`,
+                          `查看或编辑会议：${companyPair}`
+                        )}
                       >
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Badge variant={statusVariant(meeting.status)}>
-                            {meeting.status}
-                          </Badge>
-                          <Badge variant="outline">
-                            {formatMeetingTime(meeting.startsAt, locale)} ·{" "}
-                            {meeting.duration} {textFor(locale, "min", "分钟")}
-                          </Badge>
-                        </div>
-                        <p className="mt-2 text-sm font-medium">
-                          {match
-                            ? `${getCompanyName(db, match.delegationId)} ↔ ${getCompanyName(db, match.partnerId)}`
-                            : meeting.id}
-                        </p>
-                        <div className="mt-2 grid gap-1 text-xs text-muted-foreground">
-                          <p>
-                            {meeting.platform} ·{" "}
-                            {textFor(locale, "Host", "主持人")}: {meeting.host}
-                          </p>
-                          <p>
-                            {textFor(locale, "Interpreter", "翻译")}:{" "}
-                            {meeting.interpreter}
-                          </p>
-                          <p>
-                            {textFor(locale, "Agreement", "协议")}:{" "}
-                            <span className="font-medium text-foreground">
-                              {deal?.status
-                                ? statusLabel(deal.status, locale)
-                                : textFor(locale, "No deal yet", "暂无协议")}
+                        <span className="min-w-0 flex-1">
+                          <span className="flex flex-wrap items-center gap-2">
+                            <Badge variant={statusVariant(meeting.status)}>
+                              {meeting.status}
+                            </Badge>
+                            <Badge variant="outline">
+                              {formatMeetingTime(meeting.startsAt, locale)} ·{" "}
+                              {meeting.duration}{" "}
+                              {textFor(locale, "min", "分钟")}
+                            </Badge>
+                          </span>
+                          <span className="mt-2 block text-sm font-medium">
+                            {companyPair}
+                          </span>
+                          <span className="mt-2 grid gap-1 text-xs text-muted-foreground">
+                            <span>
+                              {meeting.platform} ·{" "}
+                              {textFor(locale, "Host", "主持人")}:{" "}
+                              {meeting.host}
                             </span>
-                          </p>
-                        </div>
-                      </div>
+                            <span>
+                              {textFor(locale, "Interpreter", "翻译")}:{" "}
+                              {meeting.interpreter}
+                            </span>
+                            <span>
+                              {textFor(locale, "Agreement", "协议")}:{" "}
+                              <span className="font-medium text-foreground">
+                                {deal?.status
+                                  ? statusLabel(deal.status, locale)
+                                  : textFor(locale, "No deal yet", "暂无协议")}
+                              </span>
+                            </span>
+                          </span>
+                        </span>
+                        <Icon
+                          icon={ViewIcon}
+                          className="ml-2 shrink-0 self-start"
+                        />
+                      </Button>
+                    )
+
+                    return onUpdateMeeting ? (
+                      <MeetingDetailsDialog
+                        key={meeting.id}
+                        db={db}
+                        meeting={meeting}
+                        locale={locale}
+                        onUpdate={onUpdateMeeting}
+                        trigger={calendarEntry}
+                      />
+                    ) : (
+                      <div key={meeting.id}>{calendarEntry}</div>
                     )
                   })}
                 </div>
@@ -6702,77 +9247,434 @@ function formatMeetingTime(value: string, locale: Locale = "en") {
 function DealTable({
   db,
   deals,
+  onCreateDeal,
   onDeal,
+  onRefresh,
   locale = "en",
 }: {
   db: LocalDb
   deals: Deal[]
+  onCreateDeal?: (matchId: string) => Promise<boolean>
   onDeal?: (dealId: string, status: Deal["status"]) => void
+  onRefresh?: (successMessage: string) => Promise<boolean>
   locale?: Locale
 }) {
+  const availableMatches = db.matches.filter(
+    (match) => !deals.some((deal) => deal.matchId === match.id)
+  )
+  const [createOpen, setCreateOpen] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [selectedMatchId, setSelectedMatchId] = useState(
+    availableMatches[0]?.id ?? ""
+  )
+
+  async function createMou() {
+    if (!selectedMatchId || !onCreateDeal) {
+      return
+    }
+
+    setCreating(true)
+    const created = await onCreateDeal(selectedMatchId)
+    setCreating(false)
+
+    if (created) {
+      setCreateOpen(false)
+      setSelectedMatchId("")
+    }
+  }
+
   return (
-    <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{textFor(locale, "Deal", "协议")}</TableHead>
-            <TableHead>{textFor(locale, "Status", "状态")}</TableHead>
-            <TableHead>{textFor(locale, "Document", "文件")}</TableHead>
-            <TableHead>{textFor(locale, "Action", "操作")}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {deals.map((deal) => {
-            const match = db.matches.find((item) => item.id === deal.matchId)
-            const documentHref = getDealDocumentHref(deal.document)
-            return (
-              <TableRow key={deal.id}>
-                <TableCell>
-                  <p className="font-medium">
-                    {match
-                      ? `${getCompanyName(db, match.delegationId)} ↔ ${getCompanyName(db, match.partnerId)}`
-                      : deal.id}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {textFor(locale, "Signatory check", "签署人核验")}:{" "}
-                    {statusLabel(deal.signatoryCheck, locale)}
-                  </p>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={statusVariant(deal.status)}>
-                    {statusLabel(deal.status, locale)}
-                  </Badge>
-                </TableCell>
-                <TableCell>{deal.document}</TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-2">
-                    {onDeal ? (
-                      <Button onClick={() => onDeal(deal.id, "Signed")}>
-                        {textFor(locale, "Mark signed", "标记已签署")}
-                      </Button>
-                    ) : null}
-                    <DocumentViewerDialog
-                      deal={deal}
-                      documentHref={documentHref}
-                      locale={locale}
+    <div className="grid gap-4">
+      {onCreateDeal ? (
+        <div className="flex flex-col gap-3 rounded-md border bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-medium">
+              {textFor(locale, "MOU agreements", "MOU 协议")}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {textFor(
+                locale,
+                "Create one agreement for a Vendor match, then attach its draft or signed PDF.",
+                "为供应商配对建立协议，再上传草稿或已签署 PDF。"
+              )}
+            </p>
+          </div>
+          <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <DialogTrigger asChild>
+              <Button disabled={!availableMatches.length}>
+                <Icon icon={AddIcon} inline="inline-start" />
+                {textFor(locale, "Create MOU", "新建 MOU")}
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {textFor(locale, "Create an MOU record", "建立 MOU 记录")}
+                </DialogTitle>
+                <DialogDescription>
+                  {textFor(
+                    locale,
+                    "Choose the two matched Vendors. The agreement starts under discussion and can receive one private PDF.",
+                    "选择已配对的两家供应商。协议会从洽谈中开始，并可附上一份私密 PDF。"
+                  )}
+                </DialogDescription>
+              </DialogHeader>
+              <Field>
+                <FieldLabel>
+                  {textFor(locale, "Vendor match", "供应商配对")}
+                </FieldLabel>
+                <Select
+                  value={selectedMatchId}
+                  onValueChange={setSelectedMatchId}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={textFor(
+                        locale,
+                        "Select a Vendor match",
+                        "选择供应商配对"
+                      )}
                     />
-                  </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableMatches.map((match) => (
+                      <SelectItem key={match.id} value={match.id}>
+                        {getCompanyName(db, match.delegationId)} ↔{" "}
+                        {getCompanyName(db, match.partnerId)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {!availableMatches.length ? (
+                  <FieldDescription>
+                    {textFor(
+                      locale,
+                      "Every current match already has an MOU record.",
+                      "目前每个配对都已有 MOU 记录。"
+                    )}
+                  </FieldDescription>
+                ) : null}
+              </Field>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setCreateOpen(false)}
+                >
+                  {textFor(locale, "Cancel", "取消")}
+                </Button>
+                <Button
+                  type="button"
+                  disabled={!selectedMatchId || creating}
+                  onClick={() => void createMou()}
+                >
+                  <Icon
+                    icon={creating ? Loading03Icon : AddIcon}
+                    inline="inline-start"
+                    className={cn(creating && "animate-spin")}
+                  />
+                  {creating
+                    ? textFor(locale, "Creating…", "建立中…")
+                    : textFor(locale, "Create MOU", "建立 MOU")}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      ) : null}
+
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>{textFor(locale, "Deal", "协议")}</TableHead>
+              <TableHead>{textFor(locale, "Status", "状态")}</TableHead>
+              <TableHead>{textFor(locale, "Document", "文件")}</TableHead>
+              <TableHead>{textFor(locale, "Action", "操作")}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {deals.length ? (
+              deals.map((deal) => {
+                const match = db.matches.find(
+                  (item) => item.id === deal.matchId
+                )
+                const documentHref = getDealDocumentHref(deal)
+                return (
+                  <TableRow key={deal.id}>
+                    <TableCell>
+                      <p className="font-medium">
+                        {match
+                          ? `${getCompanyName(db, match.delegationId)} ↔ ${getCompanyName(db, match.partnerId)}`
+                          : deal.id}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {textFor(locale, "Signatory check", "签署人核验")}:{" "}
+                        {statusLabel(deal.signatoryCheck, locale)}
+                      </p>
+                    </TableCell>
+                    <TableCell>
+                      {onDeal ? (
+                        <Select
+                          value={deal.status}
+                          onValueChange={(value) =>
+                            onDeal(deal.id, value as Deal["status"])
+                          }
+                        >
+                          <SelectTrigger className="min-w-44">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(
+                              [
+                                "Under Discussion",
+                                "Agreement Reached",
+                                "Signed",
+                                "Failed",
+                              ] as Deal["status"][]
+                            ).map((status) => (
+                              <SelectItem key={status} value={status}>
+                                {statusLabel(status, locale)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Badge variant={statusVariant(deal.status)}>
+                          {statusLabel(deal.status, locale)}
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <p className="max-w-64 truncate text-sm font-medium">
+                        {documentHref
+                          ? deal.document
+                          : textFor(locale, "Pending upload", "等待上传")}
+                      </p>
+                      {deal.documentFileSize && deal.documentUploadedAt ? (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {formatDocumentSize(deal.documentFileSize)} ·{" "}
+                          {formatDocumentDate(deal.documentUploadedAt)}
+                        </p>
+                      ) : null}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-2">
+                        {documentHref ? (
+                          <DocumentViewerDialog
+                            deal={deal}
+                            documentHref={documentHref}
+                            locale={locale}
+                          />
+                        ) : null}
+                        {onRefresh ? (
+                          <MouDocumentControls
+                            deal={deal}
+                            onRefresh={onRefresh}
+                            locale={locale}
+                          />
+                        ) : null}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })
+            ) : (
+              <TableRow>
+                <TableCell colSpan={4} className="h-32 text-center">
+                  <p className="font-medium">
+                    {textFor(locale, "No MOU records yet", "尚无 MOU 记录")}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {onCreateDeal
+                      ? textFor(
+                          locale,
+                          "Create an MOU from an existing Vendor match to begin signing.",
+                          "从现有供应商配对建立 MOU，即可开始签约流程。"
+                        )
+                      : textFor(
+                          locale,
+                          "Your Admin has not published an MOU for this workspace yet.",
+                          "管理員尚未在此工作台发布 MOU。"
+                        )}
+                  </p>
                 </TableCell>
               </TableRow>
-            )
-          })}
-        </TableBody>
-      </Table>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   )
 }
 
-function getDealDocumentHref(documentName: string) {
-  if (!documentName.toLowerCase().endsWith(".pdf")) {
+function getDealDocumentHref(deal: Deal) {
+  if (deal.documentId) {
+    return `/api/mou-documents/${deal.documentId}/file`
+  }
+
+  if (!deal.document.toLowerCase().endsWith(".pdf")) {
     return null
   }
 
-  return `/documents/${encodeURIComponent(documentName)}`
+  return `/documents/${encodeURIComponent(deal.document)}`
+}
+
+function MouDocumentControls({
+  deal,
+  onRefresh,
+  locale,
+}: {
+  deal: Deal
+  onRefresh: (successMessage: string) => Promise<boolean>
+  locale: Locale
+}) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  async function uploadDocument(file?: File) {
+    if (!file) {
+      return
+    }
+
+    setUploading(true)
+
+    try {
+      const formData = new FormData()
+      formData.set("file", file)
+      const response = await fetch(`/api/admin/deals/${deal.id}/document`, {
+        method: "POST",
+        body: formData,
+      })
+      const payload = (await response.json().catch(() => null)) as {
+        document?: { fileName: string }
+        error?: string
+      } | null
+
+      if (!response.ok || !payload?.document) {
+        throw new Error(payload?.error ?? "The MOU PDF could not be uploaded.")
+      }
+
+      await onRefresh(
+        deal.documentId
+          ? `${payload.document.fileName} replaced the previous MOU PDF.`
+          : `${payload.document.fileName} uploaded to private MOU storage.`
+      )
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "The MOU PDF could not be uploaded."
+      )
+    } finally {
+      setUploading(false)
+
+      if (inputRef.current) {
+        inputRef.current.value = ""
+      }
+    }
+  }
+
+  async function deleteDocument() {
+    setDeleting(true)
+
+    try {
+      const response = await fetch(`/api/admin/deals/${deal.id}/document`, {
+        method: "DELETE",
+      })
+      const payload = (await response.json().catch(() => null)) as {
+        error?: string
+      } | null
+
+      if (!response.ok) {
+        throw new Error(payload?.error ?? "The MOU PDF could not be deleted.")
+      }
+
+      await onRefresh("MOU PDF deleted from private storage.")
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "The MOU PDF could not be deleted."
+      )
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  return (
+    <>
+      <Input
+        ref={inputRef}
+        type="file"
+        accept="application/pdf,.pdf"
+        className="sr-only"
+        aria-label={`Upload MOU PDF for ${deal.document}`}
+        onChange={(event) => void uploadDocument(event.target.files?.[0])}
+      />
+      <Button
+        type="button"
+        variant={deal.documentId ? "outline" : "default"}
+        disabled={uploading || deleting}
+        onClick={() => inputRef.current?.click()}
+      >
+        <Icon
+          icon={uploading ? Loading03Icon : Upload01Icon}
+          inline="inline-start"
+          className={cn(uploading && "animate-spin")}
+        />
+        {uploading
+          ? textFor(locale, "Uploading…", "上传中…")
+          : deal.documentId
+            ? textFor(locale, "Replace PDF", "替换 PDF")
+            : textFor(locale, "Upload PDF", "上传 PDF")}
+      </Button>
+      {deal.documentId ? (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={uploading || deleting}
+            >
+              <Icon
+                icon={deleting ? Loading03Icon : Delete02Icon}
+                inline="inline-start"
+                className={cn(deleting && "animate-spin")}
+              />
+              {textFor(locale, "Delete", "删除")}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {textFor(locale, "Delete this MOU PDF?", "删除此 MOU PDF？")}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {textFor(
+                  locale,
+                  `${deal.document} will be permanently removed from private storage. The MOU record will remain.`,
+                  `${deal.document} 将从私密存储中永久删除，但 MOU 记录会保留。`
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>
+                {textFor(locale, "Keep PDF", "保留 PDF")}
+              </AlertDialogCancel>
+              <AlertDialogAction
+                variant="destructive"
+                onClick={() => void deleteDocument()}
+              >
+                {textFor(locale, "Delete PDF", "删除 PDF")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      ) : null}
+    </>
+  )
 }
 
 function DocumentViewerDialog({

@@ -5,6 +5,7 @@ vi.mock("server-only", () => ({}))
 import {
   classifyMeetingCreationFailure,
   getAutomaticMeetingProvider,
+  getPreferredMeetingProvider,
   meetingCreationFailureSummary,
 } from "@/lib/meeting-automation"
 
@@ -14,6 +15,12 @@ describe("automatic meeting creation policy", () => {
     expect(getAutomaticMeetingProvider("zoom")).toBe("zoom")
     expect(getAutomaticMeetingProvider("LARK")).toBe("lark")
     expect(getAutomaticMeetingProvider("unexpected")).toBe("zoom")
+  })
+
+  it("honors a stored manual-meeting platform before the tenant default", () => {
+    expect(getPreferredMeetingProvider("Zoom", "lark")).toBe("zoom")
+    expect(getPreferredMeetingProvider("Lark", "zoom")).toBe("lark")
+    expect(getPreferredMeetingProvider("Pending", "lark")).toBe("lark")
   })
 
   it.each([

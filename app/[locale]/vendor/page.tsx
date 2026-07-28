@@ -6,10 +6,13 @@ import { getProtectedPortalData } from "@/lib/plexus-data"
 
 export default async function VendorLocalePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>
+  searchParams: Promise<{ section?: string | string[] }>
 }) {
   const { locale } = await params
+  const query = await searchParams
 
   if (!isLocaleParam(locale)) {
     notFound()
@@ -31,6 +34,9 @@ export default async function VendorLocalePage({
       locale={normalizedLocale}
       initialDb={db}
       session={session}
+      initialVendorSection={
+        typeof query.section === "string" ? query.section : undefined
+      }
     />
   )
 }

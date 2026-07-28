@@ -11,22 +11,19 @@ Committed migrations in `supabase/migrations/` are the schema source of truth.
 This document is a reviewed human-readable snapshot of the live project plus
 the next committed migration where explicitly marked.
 
-Current live inventory, before the pending secure-meeting migration:
+Current live inventory after the Admin MOU document migrations:
 
 - PostgreSQL 17
-- 21 recorded migrations
-- 19 public tables
-- 19 of 19 public tables have RLS enabled
-- 70 public-table RLS policies
+- 30 recorded migrations
+- 24 public tables
+- 24 of 24 public tables have RLS enabled
+- 78 public-table RLS policies
 - 0 public views and 0 public enum types
-- 2 Storage buckets: private `event-resources` and public `tenant-branding`
-- Supabase security advisor: no findings on 2026-07-28
-
-Pending migration `20260727182004_secure_mutual_meeting_links.sql` brings the
-committed schema to 22 migrations and 21 public tables. It adds per-party match
-acceptance, the server-only Lark token store, and the server-only raw meeting
-link store. Apply it before deploying the dependent application code; do not
-count it as live until the post-deploy readback succeeds.
+- 4 Storage buckets: private `event-resources`, public `tenant-branding`,
+  private `vendor-profile-documents`, and private `mou-documents`
+- Supabase security advisor: no error or warning findings on 2026-07-28; the
+  two informational no-policy notices are the intentionally server-only
+  `oauth_tokens` and `meeting_provider_links` tables
 
 Status values are enforced with `CHECK` constraints rather than PostgreSQL enum
 types.
@@ -41,12 +38,14 @@ erDiagram
     VENDOR_COMPANIES ||--|| DELEGATION_COMPANIES : "delegation subtype"
     VENDOR_COMPANIES ||--|| PARTNER_COMPANIES : "partner subtype"
     VENDOR_COMPANIES ||--o{ USER_PROFILES : "binds vendor users"
+    VENDOR_COMPANIES ||--o{ VENDOR_PROFILE_DOCUMENTS : "owns"
     ADMIN_TENANTS ||--o{ MATCHES : "scopes"
     DELEGATION_COMPANIES ||--o{ MATCHES : "participates"
     PARTNER_COMPANIES ||--o{ MATCHES : "participates"
     MATCHES ||--o{ MEETINGS : "schedules"
     MEETINGS ||--o| MEETING_PROVIDER_LINKS : "protects provider URL"
     MATCHES ||--o{ DEALS : "produces"
+    DEALS ||--o| MOU_DOCUMENTS : "attaches"
     ADMIN_TENANTS ||--o{ SITE_VISITS : "scopes"
     SITE_VISITS ||--o{ SITE_VISIT_DELEGATIONS : "assigns"
     DELEGATION_COMPANIES ||--o{ SITE_VISIT_DELEGATIONS : "attends"
@@ -294,7 +293,23 @@ deals (
   document text NOT NULL,
   signatory_check text NOT NULL,
   created_at timestamptz NOT NULL default now(),
-  updated_at timestamptz NOT NULL default now()
+  updated_at timestamptz NOT NULL default now(),
+  UNIQUE (id, admin_id),
+  UNIQUE (match_id)
+)
+
+mou_documents (
+  id uuid PK default gen_random_uuid(),
+  deal_id uuid UNIQUE NOT NULL,
+  admin_id uuid NOT NULL FK -> admin_tenants.id,
+  uploaded_by uuid NOT NULL FK -> user_profiles.id,
+  file_name text NOT NULL,
+  storage_path text UNIQUE NOT NULL,
+  mime_type text NOT NULL default 'application/pdf',
+  file_size bigint NOT NULL,
+  created_at timestamptz NOT NULL default now(),
+  updated_at timestamptz NOT NULL default now(),
+  FK (deal_id, admin_id) -> deals(id, admin_id)
 )
 ```
 
@@ -425,6 +440,21 @@ event_resources (
   created_at timestamptz NOT NULL default now(),
   updated_at timestamptz NOT NULL default now()
 )
+
+vendor_profile_documents (
+  id uuid PK default gen_random_uuid(),
+  admin_id uuid NOT NULL FK -> admin_tenants.id,
+  vendor_company_id uuid NOT NULL,
+  vendor_type text NOT NULL,
+  uploaded_by uuid NOT NULL FK -> user_profiles.id,
+  file_name text NOT NULL,
+  storage_path text NOT NULL UNIQUE,
+  mime_type text NOT NULL default 'application/pdf',
+  file_size bigint NOT NULL,
+  created_at timestamptz NOT NULL default now(),
+  FK (vendor_company_id, admin_id) -> vendor_companies(id, admin_id),
+  FK (vendor_company_id, vendor_type) -> vendor_companies(id, vendor_type)
+)
 ```
 
 Announcement and resource audience is `all`, `delegation`, `partner`, or
@@ -437,40 +467,75 @@ JPEG, and WebP. Logo objects are stored below the owning Admin tenant UUID.
 Uploads are authorized by the application, checked by file signature, and
 written through the server-only Supabase administration client.
 
+The `vendor-profile-documents` Storage bucket is private, accepts only PDF, and
+has a 6 MiB file limit. Objects use
+`<admin_id>/<vendor_company_id>/<document_id>-<sanitized-file-name>` paths.
+The route handler verifies the `.pdf` extension, declared MIME type, file size,
+and `%PDF-` signature before upload. Metadata and object policies both require
+the active Vendor's exact tenant/company binding. Authorized Admins and
+Superadmins may read or delete within their existing governance scope, but the
+Vendor UI exposes only its own company library. Review uses a 60-second signed
+URL; delete removes the object and metadata record.
+
+The `mou-documents` Storage bucket is private, accepts only PDF, and has a
+10 MiB limit. Each deal has at most one authoritative metadata row, while a
+replacement writes a new object before removing the superseded object. Paths
+use `<admin_id>/<deal_id>/<upload_id>-<sanitized-file-name>`. Only the owning
+Admin tenant may insert, replace, or delete; only that Admin and Vendors
+participating in the deal's match may read. Review uses a 60-second signed URL,
+and deal/document changes are written to `audit_events`. A database trigger
+keeps the legacy deal document label synchronized in the same transaction as
+metadata insert, replacement, or deletion.
+
 ## RLS access summary
 
-| Data class              | Superadmin | Admin                     | Vendor                         |
-| ----------------------- | ---------- | ------------------------- | ------------------------------ |
-| Tenants                 | All        | Own tenant                | Own tenant reference           |
-| User profiles           | All        | Own tenant Vendors        | Own active profile             |
-| Vendor directory        | All        | Own tenant                | Own company                    |
-| Subtype profile         | All        | Own tenant                | Own subtype/company            |
-| Candidate directory     | All        | Own tenant                | Opposite subtype in own tenant |
-| Matches/meetings/deals  | All        | Own tenant                | Records involving own company  |
-| Provider links/tokens   | Server only| Server only               | Server only                    |
-| Itinerary               | All        | Own tenant manage         | Published own-tenant entries   |
-| Site visits             | All        | Own tenant manage         | Assigned Delegation only       |
-| Announcements/resources | All        | Own tenant manage         | Permitted audience             |
-| Settings                | All/manage | Provisioning setting read | None                           |
-| Audit events            | All        | Own tenant read           | None                           |
+| Data class              | Superadmin  | Admin                     | Vendor                         |
+| ----------------------- | ----------- | ------------------------- | ------------------------------ |
+| Tenants                 | All         | Own tenant                | Own tenant reference           |
+| User profiles           | All         | Own tenant Vendors        | Own active profile             |
+| Vendor directory        | All         | Own tenant                | Own company                    |
+| Subtype profile         | All         | Own tenant                | Own subtype/company            |
+| Candidate directory     | All         | Own tenant                | Opposite subtype in own tenant |
+| Matches/meetings/deals  | All         | Own tenant                | Records involving own company  |
+| Provider links/tokens   | Server only | Server only               | Server only                    |
+| Itinerary               | All         | Own tenant manage         | Published own-tenant entries   |
+| Site visits             | All         | Own tenant manage         | Assigned Delegation only       |
+| Announcements/resources | All         | Own tenant manage         | Permitted audience             |
+| Profile documents       | All         | Own tenant read/delete    | Own company upload/read/delete |
+| Settings                | All/manage  | Provisioning setting read | None                           |
+| Audit events            | All         | Own tenant read           | None                           |
 
 All policies first require an active actor. Write policies use both `USING` and
 `WITH CHECK` where applicable so a user cannot move a row outside its permitted
 scope.
 
+## Realtime publication
+
+The `supabase_realtime` publication includes `delegation_companies`,
+`partner_companies`, `matches`, `meetings`, and `deals`. The Vendor workspace
+subscribes only to its own subtype/company row, its participating match rows,
+and the meeting/deal rows related to its currently visible match IDs.
+Postgres Changes authorization continues to use the tables' existing RLS
+policies; the browser receives no service-role credential.
+
+The client listens to insert and update events, then reloads the complete
+authorized server read model so all four dashboard cards remain consistent.
+Focus, visibility, and a 60-second recovery refresh cover missed connections
+and deletion events without exposing unfilterable delete payloads.
+
 ## Public functions
 
-| Function                          | Purpose                              |
-| --------------------------------- | ------------------------------------ |
-| `current_app_role()`              | Read trusted role claim              |
-| `current_admin_id()`              | Read trusted tenant binding          |
-| `current_vendor_company_id()`     | Read trusted Vendor binding          |
-| `current_vendor_type()`           | Read trusted Vendor subtype          |
-| `current_delegation_company_id()` | Legacy subtype compatibility         |
-| `current_partner_company_id()`    | Legacy subtype compatibility         |
-| `match_candidates()`              | Return eligible discovery candidates |
-| `transfer_vendor(uuid, uuid)`     | Audited Superadmin Vendor transfer   |
-| `touch_updated_at()`              | Timestamp maintenance trigger        |
+| Function                          | Purpose                                                                           |
+| --------------------------------- | --------------------------------------------------------------------------------- |
+| `current_app_role()`              | Read trusted role claim                                                           |
+| `current_admin_id()`              | Read trusted tenant binding                                                       |
+| `current_vendor_company_id()`     | Read trusted Vendor binding                                                       |
+| `current_vendor_type()`           | Read trusted Vendor subtype                                                       |
+| `current_delegation_company_id()` | Legacy subtype compatibility                                                      |
+| `current_partner_company_id()`    | Legacy subtype compatibility                                                      |
+| `match_candidates()`              | Return eligible name/sector summaries for discovery and participating match cards |
+| `transfer_vendor(uuid, uuid)`     | Audited Superadmin Vendor transfer                                                |
+| `touch_updated_at()`              | Timestamp maintenance trigger                                                     |
 
 The public authorization helpers are invoker functions. Sensitive auditing,
 binding protection, and synchronization logic lives in the unexposed

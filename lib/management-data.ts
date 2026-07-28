@@ -22,7 +22,7 @@ export type AdminTenant = {
   updated_at: string
 }
 
-export type ManagedVendor = {
+type ManagedVendorBase = {
   id: string
   admin_id: string
   vendor_type: VendorType
@@ -32,6 +32,18 @@ export type ManagedVendor = {
   status: VendorStatus
   created_at: string
   updated_at: string
+}
+
+export type ManagedVendor = ManagedVendorBase & {
+  company_size: string
+  contact: string
+  contact_meta: string
+  profile_complete: number
+  origin: string
+  needs: string
+  coordinator: string
+  partner_type: "Government" | "Association" | "Enterprise"
+  offerings: string
 }
 
 export type ManagedAccount = {
@@ -102,6 +114,60 @@ function rowsOrThrow<T>(
   return data ?? []
 }
 
+type DelegationDirectoryDetails = {
+  vendor_company_id: string
+  company_size: string
+  contact: string
+  contact_meta: string
+  profile_complete: number
+  origin: string
+  needs: string
+  coordinator: string
+}
+
+type PartnerDirectoryDetails = {
+  vendor_company_id: string
+  company_size: string
+  contact: string
+  contact_meta: string
+  profile_complete: number
+  partner_type: ManagedVendor["partner_type"]
+  offerings: string
+}
+
+function enrichManagedVendors(
+  vendors: ManagedVendorBase[],
+  delegationDetails: DelegationDirectoryDetails[],
+  partnerDetails: PartnerDirectoryDetails[]
+): ManagedVendor[] {
+  const delegationByVendor = new Map(
+    delegationDetails.map((details) => [details.vendor_company_id, details])
+  )
+  const partnerByVendor = new Map(
+    partnerDetails.map((details) => [details.vendor_company_id, details])
+  )
+
+  return vendors.map((vendor) => {
+    const delegation = delegationByVendor.get(vendor.id)
+    const partner = partnerByVendor.get(vendor.id)
+
+    return {
+      ...vendor,
+      company_size:
+        delegation?.company_size ?? partner?.company_size ?? "Pending",
+      contact: delegation?.contact ?? partner?.contact ?? "",
+      contact_meta: delegation?.contact_meta ?? partner?.contact_meta ?? "",
+      profile_complete:
+        delegation?.profile_complete ?? partner?.profile_complete ?? 0,
+      origin: delegation?.origin ?? "",
+      needs: delegation?.needs ?? "",
+      coordinator: delegation?.coordinator ?? "",
+      partner_type: partner?.partner_type ?? "Enterprise",
+      offerings: partner?.offerings ?? "",
+    }
+  })
+}
+
 export async function getSuperadminManagementData(locale: Locale) {
   const authorization = await getAuthenticatedIdentity()
 
@@ -117,6 +183,8 @@ export async function getSuperadminManagementData(locale: Locale) {
   const [
     tenantsResult,
     vendorsResult,
+    delegationDetailsResult,
+    partnerDetailsResult,
     accountsResult,
     auditResult,
     matchesResult,
@@ -133,6 +201,16 @@ export async function getSuperadminManagementData(locale: Locale) {
       .from("vendor_companies")
       .select("*")
       .order("created_at", { ascending: false }),
+    supabase
+      .from("delegation_companies")
+      .select(
+        "vendor_company_id, company_size, contact, contact_meta, profile_complete, origin, needs, coordinator"
+      ),
+    supabase
+      .from("partner_companies")
+      .select(
+        "vendor_company_id, company_size, contact, contact_meta, profile_complete, partner_type, offerings"
+      ),
     supabase
       .from("user_profiles")
       .select(
@@ -170,10 +248,22 @@ export async function getSuperadminManagementData(locale: Locale) {
       tenantsResult.error,
       "Load Admin tenants"
     ),
-    vendors: rowsOrThrow<ManagedVendor>(
-      vendorsResult.data,
-      vendorsResult.error,
-      "Load Vendors"
+    vendors: enrichManagedVendors(
+      rowsOrThrow<ManagedVendorBase>(
+        vendorsResult.data,
+        vendorsResult.error,
+        "Load Vendors"
+      ),
+      rowsOrThrow<DelegationDirectoryDetails>(
+        delegationDetailsResult.data,
+        delegationDetailsResult.error,
+        "Load Delegation details"
+      ),
+      rowsOrThrow<PartnerDirectoryDetails>(
+        partnerDetailsResult.data,
+        partnerDetailsResult.error,
+        "Load Partner details"
+      )
     ),
     accounts: rowsOrThrow<ManagedAccount>(
       accountsResult.data,
@@ -233,38 +323,49 @@ export async function getAdminManagementData(locale: Locale) {
   const [
     tenantResult,
     vendorsResult,
+    delegationDetailsResult,
+    partnerDetailsResult,
     accountsResult,
     auditResult,
     provisioningPermissionResult,
-  ] =
-    await Promise.all([
-      supabase
-        .from("admin_tenants")
-        .select("*")
-        .eq("id", authorization.identity.adminId)
-        .single(),
-      supabase
-        .from("vendor_companies")
-        .select("*")
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("user_profiles")
-        .select(
-          "id, display_name, email, role, admin_id, vendor_company_id, vendor_type, active, created_at, updated_at"
-        )
-        .eq("role", "vendor")
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("audit_events")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(100),
-      supabase
-        .from("platform_settings")
-        .select("value")
-        .eq("setting_key", "vendor_account_provisioning")
-        .maybeSingle(),
-    ])
+  ] = await Promise.all([
+    supabase
+      .from("admin_tenants")
+      .select("*")
+      .eq("id", authorization.identity.adminId)
+      .single(),
+    supabase
+      .from("vendor_companies")
+      .select("*")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("delegation_companies")
+      .select(
+        "vendor_company_id, company_size, contact, contact_meta, profile_complete, origin, needs, coordinator"
+      ),
+    supabase
+      .from("partner_companies")
+      .select(
+        "vendor_company_id, company_size, contact, contact_meta, profile_complete, partner_type, offerings"
+      ),
+    supabase
+      .from("user_profiles")
+      .select(
+        "id, display_name, email, role, admin_id, vendor_company_id, vendor_type, active, created_at, updated_at"
+      )
+      .eq("role", "vendor")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("audit_events")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(100),
+    supabase
+      .from("platform_settings")
+      .select("value")
+      .eq("setting_key", "vendor_account_provisioning")
+      .maybeSingle(),
+  ])
 
   if (tenantResult.error || !tenantResult.data) {
     throw new Error(
@@ -278,10 +379,22 @@ export async function getAdminManagementData(locale: Locale) {
     vendorProvisioningEnabled:
       provisioningPermissionResult.data?.value === true,
     tenant: tenantResult.data as AdminTenant,
-    vendors: rowsOrThrow<ManagedVendor>(
-      vendorsResult.data,
-      vendorsResult.error,
-      "Load tenant Vendors"
+    vendors: enrichManagedVendors(
+      rowsOrThrow<ManagedVendorBase>(
+        vendorsResult.data,
+        vendorsResult.error,
+        "Load tenant Vendors"
+      ),
+      rowsOrThrow<DelegationDirectoryDetails>(
+        delegationDetailsResult.data,
+        delegationDetailsResult.error,
+        "Load tenant Delegation details"
+      ),
+      rowsOrThrow<PartnerDirectoryDetails>(
+        partnerDetailsResult.data,
+        partnerDetailsResult.error,
+        "Load tenant Partner details"
+      )
     ),
     accounts: rowsOrThrow<ManagedAccount>(
       accountsResult.data,

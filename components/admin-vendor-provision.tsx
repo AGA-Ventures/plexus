@@ -12,6 +12,7 @@ import { toast } from "sonner"
 
 import { createVendorAccountAction } from "@/app/actions/management"
 import type { Locale } from "@/lib/i18n"
+import { IndustrySectorCombobox } from "@/components/industry-sector-combobox"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -180,7 +181,11 @@ export function AdminVendorProvision({
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="adminVendorSector">Sector</Label>
-              <Input id="adminVendorSector" name="sector" required />
+              <IndustrySectorCombobox
+                id="adminVendorSector"
+                name="sector"
+                required
+              />
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">

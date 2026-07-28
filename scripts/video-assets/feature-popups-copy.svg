@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080">
+  <rect width="1920" height="225" fill="#020713" fill-opacity=".58"/>
+  <text x="960" y="78" text-anchor="middle" font-family="Arial" font-size="28" font-weight="700" letter-spacing="4" fill="#2abaff">FROM DISCOVERY TO DELIVERY</text>
+  <text x="960" y="158" text-anchor="middle" font-family="Arial" font-size="62" font-weight="700" fill="white">Build relationships across markets.</text>
+
+  <g font-family="Arial" text-anchor="middle">
+    <rect x="375" y="722" width="250" height="58" rx="29" fill="#041b31" stroke="#22b8ff" stroke-opacity=".75"/>
+    <text x="500" y="760" font-size="24" font-weight="700" fill="white">DISCOVER</text>
+
+    <rect x="660" y="722" width="250" height="58" rx="29" fill="#041b31" stroke="#22b8ff" stroke-opacity=".75"/>
+    <text x="785" y="760" font-size="24" font-weight="700" fill="white">CONNECT</text>
+
+    <rect x="945" y="722" width="250" height="58" rx="29" fill="#041b31" stroke="#22b8ff" stroke-opacity=".75"/>
+    <text x="1070" y="760" font-size="24" font-weight="700" fill="white">AGREE</text>
+
+    <rect x="1230" y="722" width="250" height="58" rx="29" fill="#041b31" stroke="#22b8ff" stroke-opacity=".75"/>
+    <text x="1355" y="760" font-size="24" font-weight="700" fill="white">DELIVER</text>
+  </g>
+</svg>

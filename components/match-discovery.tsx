@@ -1,8 +1,10 @@
 "use client"
 
-import Link from "next/link"
 import { useMemo, useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { ArrowLeft01Icon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 import { toast } from "sonner"
 
 import { requestMatchAction } from "@/app/actions/plexus"
@@ -95,78 +97,95 @@ export function MatchDiscovery({
   }
 
   return (
-    <main className="min-h-svh bg-background">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-5 px-4 py-5 pb-8 sm:px-6 lg:px-8">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-2xl font-semibold">
+    <section
+      className="flex min-w-0 flex-col gap-5"
+      aria-labelledby="match-discovery-title"
+    >
+      <Card>
+        <CardHeader className="gap-4 sm:flex sm:flex-row sm:items-start sm:justify-between">
+          <div className="grid gap-1.5">
+            <CardTitle id="match-discovery-title" className="text-2xl">
               {tr(locale, "Search for your match", "搜索您的配对")}
-            </h1>
-            <p className="text-sm text-muted-foreground">
+            </CardTitle>
+            <CardDescription>
               {tr(
                 locale,
                 `Browse all ${counterpartLabel} and request a match. Only company name and sector are shown.`,
                 `浏览所有${counterpartLabel}并发起配对。仅显示企业名称与行业。`
               )}
-            </p>
+            </CardDescription>
           </div>
-          <Button variant="outline" asChild>
-            <Link href={`/${locale}/vendor`}>
-              {tr(locale, "Back to portal", "返回门户")}
+          <Button
+            asChild
+            variant="outline"
+            className="w-full sm:w-auto"
+            data-testid="back-to-my-matches"
+          >
+            <Link href={`/${locale}/vendor?section=matches`}>
+              <HugeiconsIcon
+                icon={ArrowLeft01Icon}
+                data-icon="inline-start"
+                strokeWidth={1.7}
+              />
+              {locale === "zh-Hant"
+                ? "返回我的配對"
+                : tr(locale, "Back to My matches", "返回我的配对")}
             </Link>
           </Button>
-        </div>
+        </CardHeader>
+        <CardContent className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+          <Input
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={tr(
+              locale,
+              "Search by company name or sector",
+              "按企业名称或行业搜索"
+            )}
+          />
+          <Badge variant="outline" className="w-fit">
+            {filtered.length} {tr(locale, "companies", "家企业")}
+          </Badge>
+        </CardContent>
+      </Card>
 
-        <Input
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder={tr(
-            locale,
-            "Search by company name or sector",
-            "按企业名称或行业搜索"
-          )}
-        />
-
-        <p className="text-sm text-muted-foreground">
-          {filtered.length} {tr(locale, "companies", "家企业")}
-        </p>
-
-        {filtered.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+      {filtered.length === 0 ? (
+        <Card>
+          <CardContent className="py-10 text-center text-sm text-muted-foreground">
             {tr(locale, "No companies found.", "未找到企业。")}
-          </p>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((candidate) => {
-              const isMatched = matched.has(candidate.id)
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((candidate) => {
+            const isMatched = matched.has(candidate.id)
 
-              return (
-                <Card key={candidate.id} className="flex flex-col">
-                  <CardHeader>
-                    <CardTitle className="text-base">
-                      {candidate.name_en}
-                    </CardTitle>
-                    {candidate.name_cn ? (
-                      <CardDescription>{candidate.name_cn}</CardDescription>
-                    ) : null}
-                  </CardHeader>
-                  <CardContent className="mt-auto flex items-center justify-between gap-3">
-                    <Badge variant="secondary">{candidate.sector}</Badge>
-                    <Button
-                      onClick={() => requestMatch(candidate)}
-                      disabled={isMatched || pendingId === candidate.id}
-                    >
-                      {isMatched
-                        ? tr(locale, "Matched", "已配对")
-                        : tr(locale, "Match", "配对")}
-                    </Button>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
-        )}
-      </div>
-    </main>
+            return (
+              <Card key={candidate.id} className="flex flex-col">
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    {candidate.name_en}
+                  </CardTitle>
+                  {candidate.name_cn ? (
+                    <CardDescription>{candidate.name_cn}</CardDescription>
+                  ) : null}
+                </CardHeader>
+                <CardContent className="mt-auto flex items-center justify-between gap-3">
+                  <Badge variant="secondary">{candidate.sector}</Badge>
+                  <Button
+                    onClick={() => requestMatch(candidate)}
+                    disabled={isMatched || pendingId === candidate.id}
+                  >
+                    {isMatched
+                      ? tr(locale, "Matched", "已配对")
+                      : tr(locale, "Match", "配对")}
+                  </Button>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      )}
+    </section>
   )
 }

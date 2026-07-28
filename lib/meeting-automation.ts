@@ -57,6 +57,19 @@ export function getAutomaticMeetingProvider(
   return configuredProvider?.toLowerCase() === "lark" ? "lark" : "zoom"
 }
 
+export function getPreferredMeetingProvider(
+  storedPlatform: string | null | undefined,
+  configuredProvider = process.env.PLEXUS_DEFAULT_MEETING_PROVIDER
+): MeetingProvider {
+  if (storedPlatform === "Lark") {
+    return "lark"
+  }
+  if (storedPlatform === "Zoom") {
+    return "zoom"
+  }
+  return getAutomaticMeetingProvider(configuredProvider)
+}
+
 export function classifyMeetingCreationFailure(
   error: unknown
 ): MeetingCreationFailureCode {
@@ -278,7 +291,19 @@ export async function ensureAutomaticMeetingAfterAcceptance(input: {
   provider?: MeetingProvider
 }): Promise<AutomaticMeetingCreationState> {
   const supabase = createSupabaseAdminClient()
-  const provider = input.provider ?? getAutomaticMeetingProvider()
+  const preferenceResult = input.provider
+    ? null
+    : await supabase
+        .from("meetings")
+        .select("platform")
+        .eq("match_id", input.matchId)
+        .eq("admin_id", input.adminId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+  const provider =
+    input.provider ??
+    getPreferredMeetingProvider(preferenceResult?.data?.platform)
   const now = new Date().toISOString()
   const claimResult = await supabase
     .from("meeting_creation_jobs")

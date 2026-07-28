@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080">
+  <style>.eyebrow{font:700 30px Arial;letter-spacing:3px;fill:#20b7ff}.title{font:700 70px Arial;fill:white}.body{font:400 30px Arial;fill:#b8c9dc}</style>
+  <text class="eyebrow" x="1010" y="315">PLEXUS MATCH</text>
+  <text class="title" x="1010" y="410">Discover partners</text>
+  <text class="title" x="1010" y="495">built to fit.</text>
+  <text class="body" x="1014" y="578">AI-powered matching reveals the right</text>
+  <text class="body" x="1014" y="620">buyers, suppliers and strategic partners.</text>
+  <rect x="1012" y="682" width="560" height="3" fill="#16adff"/>
+</svg>

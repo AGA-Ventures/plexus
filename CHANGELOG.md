@@ -8,6 +8,79 @@ reviewed together.
 
 ### 2026-07-28
 
+- Added a real Admin MOU workflow: tenant operators can create one agreement
+  from an existing Vendor match, move it through signing statuses, upload or
+  replace a validated private PDF up to 10 MiB, review it through a 60-second
+  signed URL, and confirm permanent PDF removal while retaining the agreement
+  record. New `mou_documents` metadata, a private `mou-documents` bucket,
+  matched-Vendor read policies, Admin write policies, audit triggers, and
+  covering indexes enforce the workflow in Supabase.
+- Added an Admin manual-meeting workflow that selects one delegation Vendor
+  and one Malaysian partner, records the Admin's Zoom or Lark preference,
+  creates or reuses their tenant-scoped match, validates the future time,
+  duration, interpreter, and agenda, and publishes the scheduled session to
+  both Vendor calendars without bypassing mutual acceptance for the protected
+  provider link. Calendar entries and meeting-list rows now open a responsive
+  details dialog where Admins can safely amend the schedule, provider
+  preference, interpreter, and agenda; Vendor pairing and protected provider
+  links remain immutable, provider-backed schedules stay locked, and a copy
+  action shares only the protected Plexus join URL once it is ready. Compact
+  selector values now prevent long industry labels from overlapping adjacent
+  fields.
+- Replaced free-text sector fields across Admin/Superadmin Vendor provisioning,
+  operational company create/edit, and the Vendor registration profile with a
+  searchable global industry picker covering every section and division in UN
+  ISIC Revision 5; existing custom values remain visible until deliberately
+  replaced, and company directories now resolve legacy pending labels from the
+  Vendor's submitted sector.
+- Replaced the Vendor match-card fallback with the real tenant-scoped
+  counterpart name and sector from the limited candidate directory; each card
+  now shows the explicit company-to-Vendor relationship, both decisions, a
+  details dialog, and state-aware meeting navigation without exposing private
+  counterpart profile or contact fields.
+- Added a locale-preserving **Back to My matches** action to the Vendor
+  discovery header, with a full-width mobile treatment and verified return to
+  the Vendor's own match list.
+- Made Vendor dashboard profile, match, meeting, and MOU metrics live through
+  tenant-scoped Supabase Realtime subscriptions, with focus/visibility and
+  periodic refresh recovery when a realtime connection is interrupted.
+- Added live validated answered/total counters beside every collapsible Vendor
+  registration-profile section, including conditional-answer and supporting
+  document progress.
+- Added a searchable international calling-code picker covering every
+  supported country and region to the Vendor contact profile, while preserving
+  the existing single international phone value for validation and storage.
+- Kept the white-label Vendor workspace sidebar and responsive mobile
+  navigation visible on company discovery, highlighted My matches during
+  discovery, and made every sidebar destination return to the corresponding
+  Vendor workspace section.
+- Replaced the Vendor profile's placeholder PDF control with a private,
+  tenant/company-scoped document library that validates PDF signatures and a
+  6 MiB limit, supports short-lived review links and confirmed deletion, and is
+  enforced by dedicated Supabase metadata and Storage RLS policies.
+- Simplified the Vendor registration profile to the signed-in company, added a
+  live validated completion score and independently collapsible sections, and
+  enforced client/server formats for year, URL, email, phone, introduction, and
+  consent date before tenant-scoped Supabase persistence.
+- Replaced Plexus branding in tenant portal navigation with the Admin tenant's
+  saved white-label name and logo, changed Vendor dashboard metrics to
+  company-scoped profile, pending-match, upcoming-meeting, and active-MOU
+  indicators, and removed the internal persistence/Auth/RLS notice.
+- Kept the responsive Admin sidebar visible on the dedicated Vendor accounts
+  route, highlighted the active destination, and linked every operational
+  sidebar item back to its corresponding Admin dashboard section; enlarged the
+  phone drawer, navigation text, icons, account control, and touch targets for
+  comfortable mobile use.
+- Expanded the Vendor editor with company size, subtype-specific profile,
+  business contact, account-holder, and login-email controls; synchronized
+  login changes across the tenant-scoped profile and server-only Auth account,
+  with validation and rollback when either side rejects the update.
+- Expanded the canonical testing strategy into a full production test plan
+  covering every implemented product route, Server Action, protected API,
+  domain boundary, and business data group across the Superadmin, Admin,
+  Delegation Vendor, and Partner Vendor layers, with three-layer UI/server/data
+  expectations, production fixtures, evidence, stop conditions, cleanup, and
+  release sign-off.
 - Automated provider meeting creation when the second Vendor accepts, added a
   unique service-only creation job to prevent duplicate provider calls, and
   surfaced sanitized creation failures as critical Superadmin incidents with

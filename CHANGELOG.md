@@ -8,6 +8,14 @@ reviewed together.
 
 ### 2026-07-28
 
+- Made the Vendor provisioning form explain itself. Required fields now carry a
+  marker with a screen-reader equivalent, the one optional field is labelled as
+  such, and every field states its purpose: **Account holder** identifies the
+  person who will sign in and manage the Vendor rather than the company,
+  **Email** is now **Login email** and warns that an address already used by
+  another Plexus account will be rejected, and the temporary password explains
+  it is for the first sign-in and must be shared through a secure channel.
+  Hints are wired to their inputs with `aria-describedby`.
 - Made every Admin company-creation control provision a real Vendor account.
   **Add Delegation**, **Add MY Partner**, and **Add Company** previously wrote a
   company row with no login, so the resulting Vendor could never sign in, while

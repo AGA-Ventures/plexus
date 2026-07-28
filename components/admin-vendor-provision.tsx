@@ -50,6 +50,25 @@ const vendorTypeOptions = [
 
 type VendorType = (typeof vendorTypeOptions)[number]["value"]
 
+function RequiredMark() {
+  return (
+    <>
+      <span aria-hidden="true" className="text-destructive">
+        *
+      </span>
+      <span className="sr-only">required</span>
+    </>
+  )
+}
+
+function FieldHint({ id, children }: { id: string; children: ReactNode }) {
+  return (
+    <p id={id} className="text-[0.6875rem] leading-4 text-muted-foreground">
+      {children}
+    </p>
+  )
+}
+
 export function AdminVendorProvision({
   locale,
   adminId,
@@ -211,7 +230,9 @@ export function AdminVendorProvision({
               <input type="hidden" name="vendorType" value={vendorType} />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="adminVendorSector">Sector</Label>
+              <Label htmlFor="adminVendorSector">
+                Sector <RequiredMark />
+              </Label>
               <IndustrySectorCombobox
                 id="adminVendorSector"
                 name="sector"
@@ -221,38 +242,97 @@ export function AdminVendorProvision({
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="grid gap-1.5">
-              <Label htmlFor="adminCompanyName">Company name</Label>
-              <Input id="adminCompanyName" name="companyName" required />
+              <Label htmlFor="adminCompanyName">
+                Company name <RequiredMark />
+              </Label>
+              <Input
+                id="adminCompanyName"
+                name="companyName"
+                aria-describedby="adminCompanyNameHint"
+                required
+              />
+              <FieldHint id="adminCompanyNameHint">
+                The registered business name, as it should appear to the other
+                side of a match.
+              </FieldHint>
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="adminCompanyNameCn">Chinese name</Label>
-              <Input id="adminCompanyNameCn" name="companyNameCn" />
+              <Label htmlFor="adminCompanyNameCn">
+                Chinese name{" "}
+                <span className="font-normal text-muted-foreground">
+                  (optional)
+                </span>
+              </Label>
+              <Input
+                id="adminCompanyNameCn"
+                name="companyNameCn"
+                aria-describedby="adminCompanyNameCnHint"
+              />
+              <FieldHint id="adminCompanyNameCnHint">
+                Shown to Vendors browsing Plexus in Chinese.
+              </FieldHint>
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="grid gap-1.5">
-              <Label htmlFor="adminVendorName">Account holder</Label>
-              <Input id="adminVendorName" name="displayName" required />
+              <Label htmlFor="adminVendorName">
+                Account holder <RequiredMark />
+              </Label>
+              <Input
+                id="adminVendorName"
+                name="displayName"
+                autoComplete="off"
+                placeholder="e.g. Lim Wei Ming"
+                aria-describedby="adminVendorNameHint"
+                required
+              />
+              <FieldHint id="adminVendorNameHint">
+                The person at this company who will sign in and manage its
+                profile, matches, and meetings.
+              </FieldHint>
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="adminVendorEmail">Email</Label>
-              <Input id="adminVendorEmail" name="email" type="email" required />
+              <Label htmlFor="adminVendorEmail">
+                Login email <RequiredMark />
+              </Label>
+              <Input
+                id="adminVendorEmail"
+                name="email"
+                type="email"
+                autoComplete="off"
+                placeholder="name@company.com"
+                aria-describedby="adminVendorEmailHint"
+                required
+              />
+              <FieldHint id="adminVendorEmailHint">
+                The address the account holder signs in with. It cannot already
+                belong to another Plexus account.
+              </FieldHint>
             </div>
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="adminVendorPassword">Temporary password</Label>
+            <Label htmlFor="adminVendorPassword">
+              Temporary password <RequiredMark />
+            </Label>
             <Input
               id="adminVendorPassword"
               name="temporaryPassword"
               type="password"
               minLength={12}
               autoComplete="new-password"
+              aria-describedby="adminVendorPasswordHint"
               required
             />
-            <p className="text-xs text-muted-foreground">
-              Minimum 12 characters. Share through an approved secure channel.
-            </p>
+            <FieldHint id="adminVendorPasswordHint">
+              At least 12 characters. The account holder uses it for their first
+              sign-in, so share it through an approved secure channel — never by
+              plain email or chat.
+            </FieldHint>
           </div>
+          <p className="text-[0.6875rem] leading-4 text-muted-foreground">
+            <RequiredMark /> Required. Remaining company details can be filled
+            in from the Vendor&rsquo;s profile after it is created.
+          </p>
           <DialogFooter>
             <Button type="submit" disabled={pending}>
               {pending ? "Creating…" : "Create Vendor and account"}

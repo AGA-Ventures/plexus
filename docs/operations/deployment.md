@@ -13,7 +13,7 @@ scripts fail closed when the checkout points elsewhere.
 | -------- | --------------------------------------------- | ---------------------------------- |
 | GitHub   | `AGA-Ventures/plexus`                         | Push only through `origin`         |
 | Supabase | `Plexus` / `pnjblggcdigekluualin`             | Confirmed, forward-only migrations |
-| Vercel   | `plexus` / `prj_FUkKgAm7UXkFGTgmtFM8ynaSHKuE` | Deploy reviewed `main`             |
+| Vercel   | `plexus` / `prj_vQpMXPAmIiSrED4IB0s1ZqAwDD0C` | Deploy reviewed `main`             |
 
 Current public production alias:
 

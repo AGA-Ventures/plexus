@@ -13,7 +13,7 @@
 | Supabase             | `Plexus` (`pnjblggcdigekluualin`), active           |
 | Database             | PostgreSQL 17; all 20 migrations recorded           |
 | Database security    | 19/19 public tables use RLS; security advisor clean |
-| Vercel               | `plexus` (`prj_FUkKgAm7UXkFGTgmtFM8ynaSHKuE`)       |
+| Vercel               | `plexus` (`prj_vQpMXPAmIiSrED4IB0s1ZqAwDD0C`)       |
 | Production URL       | `https://plexus-gules.vercel.app`                   |
 | Deployment           | Manual production deployment verified               |
 | Automatic Git deploy | Blocked pending Vercel GitHub repository access     |

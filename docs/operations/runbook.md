@@ -11,7 +11,7 @@
 | Application | `https://plexus-gules.vercel.app`             |
 | GitHub      | `AGA-Ventures/plexus`                         |
 | Supabase    | `Plexus` / `pnjblggcdigekluualin`             |
-| Vercel      | `plexus` / `prj_FUkKgAm7UXkFGTgmtFM8ynaSHKuE` |
+| Vercel      | `plexus` / `prj_vQpMXPAmIiSrED4IB0s1ZqAwDD0C` |
 
 Run `npm run whereami` from the repository before any operational action.
 

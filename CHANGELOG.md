@@ -8,6 +8,10 @@ reviewed together.
 
 ### 2026-07-29
 
+- Removed meeting format, available dates, and maximum-meeting questions from
+  the public Vendor application at the client PIC's request. Public application
+  validation and completion now cover 25 intake items, while the signed-in
+  Vendor profile retains meeting preferences for later planning.
 - Added approval-gated tenant Vendor onboarding. Every active Admin now has
   separate branded Delegation and Partner application links; applicants submit
   the existing company-profile contract at 100% core completion without

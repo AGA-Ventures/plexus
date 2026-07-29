@@ -40,7 +40,9 @@ export function VendorApplicationForm({
   const [errors, setErrors] = useState<VendorApplicationFieldErrors>({})
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-  const completion = getCompanyProfileCompletion(profile)
+  const completion = getCompanyProfileCompletion(profile, {
+    includeMeetingArrangement: false,
+  })
   const style = {
     "--application-accent": branding.primaryColor,
     "--application-accent-foreground": branding.accentForeground,
@@ -61,7 +63,9 @@ export function VendorApplicationForm({
 
   async function submitApplication(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const coreErrors = getCompanyProfileCoreErrors(profile)
+    const coreErrors = getCompanyProfileCoreErrors(profile, {
+      includeMeetingArrangement: false,
+    })
 
     if (Object.keys(coreErrors).length) {
       setErrors(coreErrors)

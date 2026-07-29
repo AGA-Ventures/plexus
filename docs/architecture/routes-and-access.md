@@ -197,9 +197,11 @@ password for the legacy direct-provisioning path.
 ### Admin approves a Vendor application
 
 1. The public API accepts only tenant slug, fixed Vendor subtype, and the
-   canonical profile. It validates all 28 completion items, request size, and
-   honeypot, resolves the active tenant on the server, and returns the same
-   success for new and duplicate valid submissions.
+   canonical profile. It validates the 25 public-intake completion items,
+   excluding meeting format, availability, and maximum-meeting preferences;
+   validates request size and honeypot; resolves the active tenant on the
+   server; and returns the same success for new and duplicate valid
+   submissions.
 2. The owning active Admin atomically moves `pending` to `provisioning`.
 3. A reserved Vendor UUID is bound into a confirmed passwordless Auth identity
    using trusted `app_metadata`.

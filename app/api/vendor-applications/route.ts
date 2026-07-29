@@ -71,7 +71,8 @@ export async function POST(request: Request) {
     }
 
     const profileComplete = getCompanyProfileCompletion(
-      parsed.data.profile
+      parsed.data.profile,
+      { includeMeetingArrangement: false }
     ).percentage
     const result = await createSupabaseAdminClient()
       .from("vendor_applications")

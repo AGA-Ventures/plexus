@@ -390,38 +390,42 @@ export function CompanyProfileQuestionnaire({
         />
       </QuestionnaireSection>
 
-      <QuestionnaireSection title="10. Meeting arrangement">
-        <SelectField
-          id={`${idPrefix}-meeting-format`}
-          label="Meeting format"
-          required
-          options={companyProfileOptionGroups.meetingFormat}
-          value={profile.meetingFormat}
-          error={errors.meetingFormat}
-          onChange={(value) => onChange("meetingFormat", value)}
-        />
-        <TextareaField
-          id={`${idPrefix}-meeting-dates`}
-          label="Available meeting dates"
-          required
-          maxLength={1000}
-          placeholder="List dates, time windows, and time zone."
-          value={profile.availableMeetingDates}
-          error={errors.availableMeetingDates}
-          onChange={(value) => onChange("availableMeetingDates", value)}
-        />
-        <SelectField
-          id={`${idPrefix}-max-meetings`}
-          label="Maximum number of meetings requested"
-          required
-          options={companyProfileOptionGroups.maxMeetings}
-          value={profile.maxMeetings}
-          error={errors.maxMeetings}
-          onChange={(value) => onChange("maxMeetings", value)}
-        />
-      </QuestionnaireSection>
+      {!publicApplication ? (
+        <QuestionnaireSection title="10. Meeting arrangement">
+          <SelectField
+            id={`${idPrefix}-meeting-format`}
+            label="Meeting format"
+            required
+            options={companyProfileOptionGroups.meetingFormat}
+            value={profile.meetingFormat}
+            error={errors.meetingFormat}
+            onChange={(value) => onChange("meetingFormat", value)}
+          />
+          <TextareaField
+            id={`${idPrefix}-meeting-dates`}
+            label="Available meeting dates"
+            required
+            maxLength={1000}
+            placeholder="List dates, time windows, and time zone."
+            value={profile.availableMeetingDates}
+            error={errors.availableMeetingDates}
+            onChange={(value) => onChange("availableMeetingDates", value)}
+          />
+          <SelectField
+            id={`${idPrefix}-max-meetings`}
+            label="Maximum number of meetings requested"
+            required
+            options={companyProfileOptionGroups.maxMeetings}
+            value={profile.maxMeetings}
+            error={errors.maxMeetings}
+            onChange={(value) => onChange("maxMeetings", value)}
+          />
+        </QuestionnaireSection>
+      ) : null}
 
-      <QuestionnaireSection title="11. Supporting documents">
+      <QuestionnaireSection
+        title={`${publicApplication ? "10" : "11"}. Supporting documents`}
+      >
         <ChoiceGroup
           label="Please prepare"
           options={companyProfileOptionGroups.supportingDocuments}
@@ -442,7 +446,9 @@ export function CompanyProfileQuestionnaire({
         )}
       </QuestionnaireSection>
 
-      <QuestionnaireSection title="12. Consent">
+      <QuestionnaireSection
+        title={`${publicApplication ? "11" : "12"}. Consent`}
+      >
         <label className="flex items-start gap-3 rounded-lg border p-4 text-sm leading-6">
           <Checkbox
             checked={profile.consent}

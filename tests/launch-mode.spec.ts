@@ -395,7 +395,16 @@ test.describe("Admin tenant flow", () => {
     await expect(
       page.getByTestId("public-document-upload-deferred")
     ).toBeVisible()
-    await expect(page.getByText("0 of 28 required items")).toBeVisible()
+    await expect(page.getByText("0 of 25 required items")).toBeVisible()
+    await expect(
+      page.getByRole("heading", { name: "10. Meeting arrangement" })
+    ).toHaveCount(0)
+    await expect(
+      page.getByRole("heading", { name: "10. Supporting documents" })
+    ).toBeVisible()
+    await expect(
+      page.getByRole("heading", { name: "11. Consent" })
+    ).toBeVisible()
     await expectNoHorizontalOverflow(page)
 
     await page.goto(partnerPath!)

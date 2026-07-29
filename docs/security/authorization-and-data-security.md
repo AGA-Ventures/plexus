@@ -156,7 +156,8 @@ For upload/replacement policies, validate:
 
 - The route accepts no `admin_id`; the active tenant is resolved from the
   validated slug and the subtype is fixed by the share URL.
-- Every 28-item core profile answer, including consent, is required. Optional
+- Every 25-item public-intake profile answer, including consent, is required.
+  Meeting-arrangement preferences are deferred until after approval. Optional
   existing fields and the document checklist are retained; file uploads remain
   behind Vendor authentication.
 - Request bodies are capped at 64 KiB, honeypot submissions are discarded, and

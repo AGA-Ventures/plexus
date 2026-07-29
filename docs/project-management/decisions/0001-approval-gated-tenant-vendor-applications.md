@@ -11,8 +11,8 @@ Admins need shareable, branded intake links for Delegation and Partner
 companies. Letting a public form create Supabase Auth identities or choose an
 `admin_id` would move role and tenant binding into an untrusted browser and
 would create dormant/spam accounts before an operator verifies the company.
-The existing Vendor workspace already owns the canonical 28-item company
-profile and private PDF library.
+The existing Vendor workspace already owns the canonical company profile and
+private PDF library.
 
 ## Decision drivers
 
@@ -46,8 +46,10 @@ profile and private PDF library.
 ## Decision
 
 Use two fixed public links per active Admin tenant. The public route validates
-the entire 28-item core profile and stores one `pending` application through a
-server-only client. It never accepts `admin_id`, creates Auth, or uploads files.
+the 25-item public-intake profile and stores one `pending` application through
+a server-only client. Meeting-arrangement preferences are intentionally
+deferred until after approval. The route never accepts `admin_id`, creates
+Auth, or uploads files.
 
 The owning active Admin approves through an atomic
 `pending → provisioning` claim. Approval creates the passwordless confirmed

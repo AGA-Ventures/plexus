@@ -746,7 +746,7 @@ See the [capability map](capability-map.md) and
 
 | Actor      | Available behavior                                                                                                                                                                                                      |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Applicant  | Open the tenant-branded subtype link, complete all 28 core profile items plus any optional information and document checklist, submit without creating credentials, and receive a generic awaiting-review confirmation. |
+| Applicant  | Open the tenant-branded subtype link, complete the 25 public-intake profile items plus any optional information and document checklist, submit without meeting-arrangement questions or credentials, and receive a generic awaiting-review confirmation.                        |
 | Admin      | Copy either subtype link, view own-tenant pending/history applications and complete profiles, approve or reject pending applications, and resend setup email for an approved account.                                   |
 | Superadmin | Read/update application records across tenants for governance under active-role RLS, without tenant impersonation in the Admin UI.                                                                                      |
 | Vendor     | No application-table access. After approval and password setup, enter the existing Vendor workspace with the submitted profile prepopulated and upload private PDFs there.                                              |

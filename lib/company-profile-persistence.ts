@@ -15,9 +15,13 @@ function getContactMeta(profile: CompanyRegistrationProfile) {
 
 export function buildCompanyProfilePersistence(
   kind: CompanyRole,
-  profile: CompanyRegistrationProfile
+  profile: CompanyRegistrationProfile,
+  options: { includeMeetingArrangement?: boolean } = {}
 ) {
-  const profileComplete = getCompanyProfileCompletion(profile).percentage
+  const profileComplete = getCompanyProfileCompletion(
+    profile,
+    options
+  ).percentage
   const submittedSector = getSubmittedCompanyIndustrySector(profile)
   const common = {
     ...(submittedSector ? { sector: submittedSector } : {}),
@@ -71,7 +75,9 @@ export function buildApprovedCompanyInsert({
   vendorType: CompanyRole
   profile: CompanyRegistrationProfile
 }) {
-  const persistence = buildCompanyProfilePersistence(vendorType, profile)
+  const persistence = buildCompanyProfilePersistence(vendorType, profile, {
+    includeMeetingArrangement: false,
+  })
   const common = {
     ...persistence.values,
     id: vendorId,

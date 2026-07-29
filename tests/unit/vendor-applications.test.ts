@@ -49,9 +49,9 @@ function createCompleteProfile(
     opportunity: "A regional distribution and private-label partnership.",
     exportsInternationally: "No",
     exportMarkets: "",
-    meetingFormat: "Either",
-    availableMeetingDates: "Weekdays in August 2026, MYT",
-    maxMeetings: "5",
+    meetingFormat: "",
+    availableMeetingDates: "",
+    maxMeetings: "",
     supportingDocuments: [],
     consent: true,
     consentName: "Amina Vendor",
@@ -77,9 +77,6 @@ const requiredTextFields = [
   "idealPartner",
   "opportunity",
   "exportsInternationally",
-  "meetingFormat",
-  "availableMeetingDates",
-  "maxMeetings",
   "consentName",
   "consentDate",
 ] as const
@@ -94,7 +91,7 @@ const requiredListFields = [
 ] as const
 
 describe("Vendor application contract", () => {
-  it("accepts a complete 28-item core profile and preserves optional fields", () => {
+  it("accepts the 25-item application profile without meeting arrangements", () => {
     const profile = createCompleteProfile({
       companyNameCn: "完整供应商",
       annualRevenueRange: "USD 1M-10M",

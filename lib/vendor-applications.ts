@@ -37,7 +37,9 @@ export type VendorApplication = {
 
 export const vendorApplicationProfileSchema =
   registrationProfileSchema.superRefine((profile, context) => {
-    const errors = getCompanyProfileCoreErrors(profile)
+    const errors = getCompanyProfileCoreErrors(profile, {
+      includeMeetingArrangement: false,
+    })
 
     for (const [field, message] of Object.entries(errors)) {
       context.addIssue({

@@ -366,12 +366,22 @@ const companyProfileCoreFields: readonly (keyof CompanyRegistrationProfile)[] =
   ]
 
 export function getCompanyProfileCoreErrors(
-  profile: CompanyRegistrationProfile
+  profile: CompanyRegistrationProfile,
+  options: { includeMeetingArrangement?: boolean } = {}
 ) {
   const errors = validateCompanyRegistrationProfile(profile)
   const coreErrors: CompanyProfileValidationErrors = { ...errors }
+  const fields =
+    options.includeMeetingArrangement === false
+      ? companyProfileCoreFields.filter(
+          (field) =>
+            !["meetingFormat", "availableMeetingDates", "maxMeetings"].includes(
+              field
+            )
+        )
+      : companyProfileCoreFields
 
-  for (const field of companyProfileCoreFields) {
+  for (const field of fields) {
     const value = profile[field]
     const isComplete = Array.isArray(value)
       ? value.length > 0
@@ -512,10 +522,11 @@ export function getCompanyProfileSectionCompletion(
 }
 
 export function getCompanyProfileCompletion(
-  profile: CompanyRegistrationProfile
+  profile: CompanyRegistrationProfile,
+  options: { includeMeetingArrangement?: boolean } = {}
 ) {
   const errors = validateCompanyRegistrationProfile(profile)
-  const requiredValues: Array<
+  let requiredValues: Array<
     [keyof CompanyRegistrationProfile, string | boolean]
   > = [
     ["countryRegion", profile.countryRegion],
@@ -540,6 +551,14 @@ export function getCompanyProfileCompletion(
     ["consentName", profile.consentName],
     ["consentDate", profile.consentDate],
   ]
+  if (options.includeMeetingArrangement === false) {
+    requiredValues = requiredValues.filter(
+      ([field]) =>
+        !["meetingFormat", "availableMeetingDates", "maxMeetings"].includes(
+          field
+        )
+    )
+  }
   const requiredLists: Array<[keyof CompanyRegistrationProfile, string[]]> = [
     ["preferredLanguages", profile.preferredLanguages],
     ["industries", profile.industries],
@@ -557,7 +576,7 @@ export function getCompanyProfileCompletion(
     ([field, values]) => !errors[field] && values.length > 0
   ).length
   const completed = validValues + validLists + (profile.consent ? 1 : 0)
-  const total = 28
+  const total = requiredValues.length + requiredLists.length + 1
 
   return {
     completed,

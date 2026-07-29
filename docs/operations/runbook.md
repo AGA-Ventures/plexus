@@ -2,7 +2,7 @@
 
 **Owner:** Operations/release owner
 **Review trigger:** Support process, provider, monitoring, or operational change
-**Last reviewed:** 2026-07-28
+**Last reviewed:** 2026-07-29
 
 ## System endpoints
 
@@ -52,7 +52,35 @@ Use the Superadmin control center. Confirm:
 - Secure password delivery.
 - Successful first login and tenant scope.
 
-### Create Vendor
+### Approve a Vendor application
+
+Use the owning Admin's **Vendor management → Applications** tab:
+
+1. Open the complete submitted profile and verify the company, contact email,
+   fixed subtype, consent, and tenant.
+2. Approve once. `provisioning` means another request has claimed the
+   application; do not manually create a second Auth user.
+3. Confirm the approved row has Auth/Vendor IDs and a setup-email timestamp.
+4. If approval warns that email failed, keep the approved account and choose
+   **Resend setup email** after checking Supabase Auth/SMTP health.
+5. Ask the applicant to use the one-time tenant-branded link, set a compliant
+   password, and sign in. Never request or transmit their password.
+
+If provisioning fails, confirm the application returned to `pending` and that
+no Auth user, `user_profiles`, subtype, or canonical Vendor record remains
+before retrying. Rejection creates no account and sends no email in this
+release.
+
+Before production enablement:
+
+- Apply the migration and run RLS/advisor tests.
+- Configure production SMTP and the approved Site URL/callback redirects.
+- Approve the application-data retention/deletion policy.
+- Upgrade Vercel CLI, stage the `/api/vendor-applications` Firewall rule in log
+  mode, inspect legitimate traffic, enforce in Preview, and publish the
+  production rate limit only after release-owner approval.
+
+### Directly create a Vendor
 
 Use Superadmin or the owning Admin. Confirm:
 
@@ -62,9 +90,8 @@ Use Superadmin or the owning Admin. Confirm:
 - Secure email/password delivery.
 - Successful first login and profile save.
 
-Until invitation and first-time password setup are implemented, initial
-credential delivery is a controlled manual process and must not use public
-chat or repository files.
+The legacy direct path still uses an operator-supplied temporary password. Use
+the application approval path for externally invited Vendors.
 
 ### Password recovery
 
@@ -142,27 +169,30 @@ authorized provider request replaces the wrapper and resets its access count.
 
 ## Triage by symptom
 
-| Symptom                    | First checks                                                                |
-| -------------------------- | --------------------------------------------------------------------------- |
-| Everyone cannot log in     | Vercel status/env, Supabase Auth/API logs, public variables                 |
-| One user cannot log in     | Auth user exists, active profile, exact app metadata, active tenant/company |
-| Admin cannot create Vendor | `vendor_account_provisioning`, tenant status, production secret             |
-| User sees wrong portal     | App metadata, profile binding, token refresh/sign-out                       |
-| Cross-tenant data concern  | Disable affected account, preserve evidence, review RLS/audit immediately   |
-| File upload fails          | Bucket policy, size/type, Storage logs, tenant scope                        |
-| Tenant logo upload fails   | `tenant-branding` bucket, 2 MiB/type limit, server secret, tenant scope     |
-| Vendor PDF upload fails    | `vendor-profile-documents` bucket, 6 MiB/PDF signature, active Vendor binding, Storage/API logs |
-| Vendor PDF review fails    | Metadata row, private object path, select RLS, signed-URL creation, active session |
-| Vendor PDF delete fails    | Delete RLS, object existence, Storage/API logs; retry before manual cleanup |
-| Admin MOU upload fails     | `mou-documents` bucket, 10 MiB/PDF signature, own-tenant deal, Storage/API logs |
-| MOU review fails           | `mou_documents` row, participating match, private object, select RLS, active session |
-| MOU replacement/delete fails | Audit event, metadata/object consistency, Admin tenant binding; retry before orphan cleanup |
-| Meeting creation is locked | Confirm both Vendor acceptance timestamps and owning Admin tenant           |
-| Zoom creation fails        | Superadmin Critical incidents; check S2S app/scopes, Vercel vars and Zoom status, then retry |
-| Lark creation fails        | Superadmin Critical incidents; check host authorization, callback/scopes and Lark status, then retry |
-| Meeting link is 425/410/403| Start time / expiry / ten-open limit; do not reveal the raw provider URL     |
-| Deployment fails           | Vercel build log, environment variables, target verification                |
-| Migration fails            | Stop app promotion, retain error, inspect plan/history, create forward fix  |
+| Symptom                         | First checks                                                                                         |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Everyone cannot log in          | Vercel status/env, Supabase Auth/API logs, public variables                                          |
+| One user cannot log in          | Auth user exists, active profile, exact app metadata, active tenant/company                          |
+| Admin cannot create Vendor      | `vendor_account_provisioning`, tenant status, production secret                                      |
+| Application link is unavailable | Active tenant slug, server secret, subtype path, Supabase API health                                 |
+| Application approval is stuck   | Row status, latest audit, Auth conflict, feature flag; never create a duplicate manually             |
+| Setup email fails               | Approved application state, Supabase Auth/SMTP logs, redirect allowlist; use Admin resend            |
+| User sees wrong portal          | App metadata, profile binding, token refresh/sign-out                                                |
+| Cross-tenant data concern       | Disable affected account, preserve evidence, review RLS/audit immediately                            |
+| File upload fails               | Bucket policy, size/type, Storage logs, tenant scope                                                 |
+| Tenant logo upload fails        | `tenant-branding` bucket, 2 MiB/type limit, server secret, tenant scope                              |
+| Vendor PDF upload fails         | `vendor-profile-documents` bucket, 6 MiB/PDF signature, active Vendor binding, Storage/API logs      |
+| Vendor PDF review fails         | Metadata row, private object path, select RLS, signed-URL creation, active session                   |
+| Vendor PDF delete fails         | Delete RLS, object existence, Storage/API logs; retry before manual cleanup                          |
+| Admin MOU upload fails          | `mou-documents` bucket, 10 MiB/PDF signature, own-tenant deal, Storage/API logs                      |
+| MOU review fails                | `mou_documents` row, participating match, private object, select RLS, active session                 |
+| MOU replacement/delete fails    | Audit event, metadata/object consistency, Admin tenant binding; retry before orphan cleanup          |
+| Meeting creation is locked      | Confirm both Vendor acceptance timestamps and owning Admin tenant                                    |
+| Zoom creation fails             | Superadmin Critical incidents; check S2S app/scopes, Vercel vars and Zoom status, then retry         |
+| Lark creation fails             | Superadmin Critical incidents; check host authorization, callback/scopes and Lark status, then retry |
+| Meeting link is 425/410/403     | Start time / expiry / ten-open limit; do not reveal the raw provider URL                             |
+| Deployment fails                | Vercel build log, environment variables, target verification                                         |
+| Migration fails                 | Stop app promotion, retain error, inspect plan/history, create forward fix                           |
 
 ## Logs and diagnostics
 

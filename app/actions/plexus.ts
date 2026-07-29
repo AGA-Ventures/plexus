@@ -4,14 +4,9 @@ import { z } from "zod"
 
 import type { AppRole } from "@/lib/auth"
 import { validateAuthenticatedUser } from "@/lib/authorization"
-import {
-  getCompanyProfileCompletion,
-  registrationProfileSchema,
-} from "@/lib/company-profile"
-import {
-  getSubmittedCompanyIndustrySector,
-  isPlaceholderIndustrySector,
-} from "@/lib/industry-sectors"
+import { registrationProfileSchema } from "@/lib/company-profile"
+import { buildCompanyProfilePersistence } from "@/lib/company-profile-persistence"
+import { isPlaceholderIndustrySector } from "@/lib/industry-sectors"
 import { matchNoteFromScore, scoreMatch } from "@/lib/matching"
 import { ensureAutomaticMeetingAfterAcceptance } from "@/lib/meeting-automation"
 import {
@@ -1580,8 +1575,7 @@ export async function updateCompanyProfileAction(
   }
 
   const profile = parsed.data
-  const profileComplete = getCompanyProfileCompletion(profile).percentage
-  const submittedSector = getSubmittedCompanyIndustrySector(profile)
+  const persistence = buildCompanyProfilePersistence(kind, profile)
 
   return runMutation(async ({ supabase, identity, userRole }) => {
     if (
@@ -1593,59 +1587,16 @@ export async function updateCompanyProfileAction(
       }
     }
 
-    if (kind === "delegation") {
+    if (persistence.kind === "delegation") {
       return await supabase
         .from("delegation_companies")
-        .update({
-          ...(submittedSector ? { sector: submittedSector } : {}),
-          name_en: profile.companyNameEn,
-          name_cn: profile.companyNameCn || profile.companyNameEn,
-          origin: profile.countryOther || profile.countryRegion || "Pending",
-          company_size: profile.employeeRange || "Pending",
-          needs:
-            profile.opportunity || profile.idealPartner || "Pending profile",
-          contact: profile.contactName || "Pending contact",
-          contact_meta: [
-            profile.contactPosition,
-            profile.contactEmail,
-            profile.mobileNumber,
-            profile.chatId,
-          ]
-            .filter(Boolean)
-            .join(" · "),
-          profile_complete: profileComplete,
-          status: profileComplete >= 90 ? "Locked" : "Incomplete",
-          urgent: !profile.consent,
-          profile_data: profile,
-        })
+        .update(persistence.values)
         .eq("id", id)
     }
 
     return await supabase
       .from("partner_companies")
-      .update({
-        ...(submittedSector ? { sector: submittedSector } : {}),
-        name_en: profile.companyNameEn,
-        name_cn: profile.companyNameCn || profile.companyNameEn,
-        company_size: profile.employeeRange || "Pending",
-        offerings:
-          profile.productsServices ||
-          profile.offers.join(", ") ||
-          "Pending profile",
-        contact: profile.contactName || "Pending contact",
-        contact_meta: [
-          profile.contactPosition,
-          profile.contactEmail,
-          profile.mobileNumber,
-          profile.chatId,
-        ]
-          .filter(Boolean)
-          .join(" · "),
-        profile_complete: profileComplete,
-        verified:
-          profileComplete >= 90 && profile.consent ? "Verified" : "Pending",
-        profile_data: profile,
-      })
+      .update(persistence.values)
       .eq("id", id)
   })
 }

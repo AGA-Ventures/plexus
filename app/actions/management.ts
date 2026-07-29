@@ -5,7 +5,9 @@ import { z } from "zod"
 
 import { isActiveAdminRecoveryAccount } from "@/lib/admin-password-recovery"
 import { getAuthenticatedIdentity } from "@/lib/authorization"
+import { buildApprovedCompanyInsert } from "@/lib/company-profile-persistence"
 import type { Locale } from "@/lib/i18n"
+import type { CompanyRegistrationProfile } from "@/lib/local-db"
 import { retryAutomaticMeetingCreation } from "@/lib/meeting-automation"
 import {
   getPasswordRecoveryRedirectUrl,
@@ -14,13 +16,18 @@ import {
 import { type TenantStatus, type VendorStatus } from "@/lib/management-data"
 import { hasMatchingPasswordConfirmation } from "@/lib/password-confirmation"
 import { isPlaceholderIndustrySector } from "@/lib/industry-sectors"
-import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import {
+  createSupabaseAdminClient,
+  hasSupabaseAdminSecret,
+} from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { vendorApplicationProfileSchema } from "@/lib/vendor-applications"
 import { buildVendorDirectoryUpdate } from "@/lib/vendor-directory"
 
 export type ManagementActionResult = {
   ok: boolean
   error?: string
+  warning?: string
 }
 
 const uuidSchema = z.uuid()
@@ -146,6 +153,10 @@ const retryMeetingCreationSchema = z.object({
   locale: localeSchema,
   jobId: uuidSchema,
 })
+const vendorApplicationActionSchema = z.object({
+  locale: localeSchema,
+  applicationId: uuidSchema,
+})
 
 function actionError(error: unknown) {
   return {
@@ -160,6 +171,96 @@ function actionError(error: unknown) {
 function refreshManagement(locale: Locale) {
   revalidatePath(`/${locale}/superadmin`)
   revalidatePath(`/${locale}/admin`)
+}
+
+async function sendVendorSetupEmail({
+  locale,
+  tenantSlug,
+  email,
+}: {
+  locale: Locale
+  tenantSlug: string
+  email: string
+}) {
+  const origin = resolvePasswordRecoveryOrigin({
+    productionUrl: process.env.VERCEL_PROJECT_PRODUCTION_URL,
+    siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+  })
+  const redirectTo = getPasswordRecoveryRedirectUrl({
+    origin,
+    locale,
+    tenantSlug,
+    mode: "setup",
+  })
+  const supabase = await createSupabaseServerClient()
+  return supabase.auth.resetPasswordForEmail(email, { redirectTo })
+}
+
+async function resetClaimedVendorApplication(
+  applicationId: string,
+  adminClient: ReturnType<typeof createSupabaseAdminClient>
+) {
+  const result = await adminClient
+    .from("vendor_applications")
+    .update({
+      status: "pending",
+      reviewed_by: null,
+      reviewed_at: null,
+      vendor_company_id: null,
+      auth_user_id: null,
+    })
+    .eq("id", applicationId)
+    .eq("status", "provisioning")
+
+  return !result.error
+}
+
+async function removeProvisionedVendor({
+  adminClient,
+  vendorId,
+  vendorType,
+  authUserId,
+}: {
+  adminClient: ReturnType<typeof createSupabaseAdminClient>
+  vendorId: string
+  vendorType: "delegation" | "partner"
+  authUserId?: string
+}) {
+  const cleanupErrors: string[] = []
+
+  if (authUserId) {
+    const profileResult = await adminClient
+      .from("user_profiles")
+      .delete()
+      .eq("id", authUserId)
+
+    if (profileResult.error) cleanupErrors.push("account profile")
+  }
+
+  const table =
+    vendorType === "delegation" ? "delegation_companies" : "partner_companies"
+
+  const subtypeResult = await adminClient
+    .from(table)
+    .delete()
+    .eq("id", vendorId)
+
+  if (subtypeResult.error) cleanupErrors.push("Vendor subtype")
+
+  const vendorResult = await adminClient
+    .from("vendor_companies")
+    .delete()
+    .eq("id", vendorId)
+
+  if (vendorResult.error) cleanupErrors.push("canonical Vendor")
+
+  if (authUserId) {
+    const authResult = await adminClient.auth.admin.deleteUser(authUserId)
+
+    if (authResult.error) cleanupErrors.push("Auth user")
+  }
+
+  return cleanupErrors
 }
 
 async function requireOperator() {
@@ -388,6 +489,433 @@ export async function createVendorAccountAction(
       await adminClient.auth.admin.deleteUser(authResult.data.user.id)
       return { ok: false, error: profileResult.error.message }
     }
+
+    refreshManagement(parsed.data.locale)
+    return { ok: true }
+  } catch (error) {
+    return actionError(error)
+  }
+}
+
+export async function approveVendorApplicationAction(
+  input: unknown
+): Promise<ManagementActionResult> {
+  const parsed = vendorApplicationActionSchema.safeParse(input)
+
+  if (!parsed.success) {
+    return { ok: false, error: "Invalid Vendor application approval." }
+  }
+
+  try {
+    const authorization = await requireOperator()
+    const { identity, supabase } = authorization
+
+    if (identity.role !== "admin" || !identity.adminId) {
+      return {
+        ok: false,
+        error: "Only the owning Admin can approve this application.",
+      }
+    }
+
+    if (!hasSupabaseAdminSecret()) {
+      return {
+        ok: false,
+        error: "Trusted Auth administration is not configured.",
+      }
+    }
+
+    const [permissionResult, tenantResult, applicationResult] =
+      await Promise.all([
+        supabase
+          .from("platform_settings")
+          .select("value")
+          .eq("setting_key", "vendor_account_provisioning")
+          .maybeSingle(),
+        supabase
+          .from("admin_tenants")
+          .select("id, slug")
+          .eq("id", identity.adminId)
+          .eq("status", "active")
+          .maybeSingle(),
+        supabase
+          .from("vendor_applications")
+          .select("*")
+          .eq("id", parsed.data.applicationId)
+          .maybeSingle(),
+      ])
+
+    if (permissionResult.error || permissionResult.data?.value !== true) {
+      return {
+        ok: false,
+        error: "Vendor account provisioning is disabled by Plexus.",
+      }
+    }
+
+    if (tenantResult.error || !tenantResult.data) {
+      return { ok: false, error: "The Admin tenant is not active." }
+    }
+
+    const application = applicationResult.data
+
+    if (
+      applicationResult.error ||
+      !application ||
+      application.admin_id !== identity.adminId
+    ) {
+      return {
+        ok: false,
+        error: "The Vendor application is outside your tenant.",
+      }
+    }
+
+    if (application.status !== "pending") {
+      return {
+        ok: false,
+        error: "This Vendor application is no longer pending.",
+      }
+    }
+
+    const profileResult = vendorApplicationProfileSchema.safeParse(
+      application.profile_data
+    )
+
+    if (!profileResult.success) {
+      return {
+        ok: false,
+        error:
+          "The submitted company profile no longer passes the required validation.",
+      }
+    }
+
+    const reviewedAt = new Date().toISOString()
+    const adminClient = createSupabaseAdminClient()
+    const claimResult = await adminClient
+      .from("vendor_applications")
+      .update({
+        status: "provisioning",
+        reviewed_by: identity.userId,
+        reviewed_at: reviewedAt,
+      })
+      .eq("id", application.id)
+      .eq("status", "pending")
+      .select("id")
+      .maybeSingle()
+
+    if (claimResult.error || !claimResult.data) {
+      return {
+        ok: false,
+        error:
+          "Another review has already claimed this application. Refresh and try again.",
+      }
+    }
+
+    const vendorId = crypto.randomUUID()
+    let authUserId: string | undefined
+
+    try {
+      const authResult = await adminClient.auth.admin.createUser({
+        email: application.normalized_email,
+        email_confirm: true,
+        app_metadata: {
+          role: "vendor",
+          admin_id: identity.adminId,
+          vendor_company_id: vendorId,
+          vendor_type: application.vendor_type,
+        },
+        user_metadata: {
+          display_name: application.contact_name,
+        },
+      })
+
+      if (authResult.error || !authResult.data.user) {
+        throw new Error(
+          authResult.error?.message ?? "Auth user creation failed."
+        )
+      }
+
+      authUserId = authResult.data.user.id
+      const companyInsert = buildApprovedCompanyInsert({
+        adminId: identity.adminId,
+        vendorId,
+        vendorType: application.vendor_type,
+        profile: profileResult.data as CompanyRegistrationProfile,
+      })
+      const companyResult =
+        companyInsert.table === "delegation_companies"
+          ? await supabase
+              .from("delegation_companies")
+              .insert(companyInsert.values as never)
+          : await supabase
+              .from("partner_companies")
+              .insert(companyInsert.values as never)
+
+      if (companyResult.error) {
+        throw new Error(companyResult.error.message)
+      }
+
+      const accountResult = await supabase.from("user_profiles").insert({
+        id: authUserId,
+        role: "vendor",
+        display_name: application.contact_name,
+        email: application.normalized_email,
+        admin_id: identity.adminId,
+        vendor_company_id: vendorId,
+        vendor_type: application.vendor_type,
+        active: true,
+      })
+
+      if (accountResult.error) {
+        throw new Error(accountResult.error.message)
+      }
+
+      const approvalResult = await adminClient.rpc(
+        "finalize_vendor_application_approval",
+        {
+          p_application_id: application.id,
+          p_admin_id: identity.adminId,
+          p_actor_user_id: identity.userId,
+          p_vendor_company_id: vendorId,
+          p_auth_user_id: authUserId,
+        }
+      )
+
+      if (approvalResult.error || approvalResult.data !== true) {
+        throw new Error(
+          approvalResult.error?.message ??
+            "The application approval could not be finalized."
+        )
+      }
+    } catch (error) {
+      const cleanupErrors = await removeProvisionedVendor({
+        adminClient,
+        vendorId,
+        vendorType: application.vendor_type,
+        authUserId,
+      })
+
+      if (cleanupErrors.length) {
+        return {
+          ok: false,
+          error:
+            "Provisioning failed and automatic cleanup needs operator review. The application remains locked to prevent duplicate accounts.",
+        }
+      }
+
+      const claimReset = await resetClaimedVendorApplication(
+        application.id,
+        adminClient
+      )
+
+      if (!claimReset) {
+        return {
+          ok: false,
+          error:
+            "Provisioning failed. Created records were removed, but the application claim needs operator review.",
+        }
+      }
+
+      return actionError(error)
+    }
+
+    const setupResult = await sendVendorSetupEmail({
+      locale: parsed.data.locale,
+      tenantSlug: tenantResult.data.slug,
+      email: application.normalized_email,
+    })
+
+    if (setupResult.error) {
+      console.warn("Vendor setup email delivery failed.", {
+        code: setupResult.error.code,
+        status: setupResult.error.status,
+      })
+      refreshManagement(parsed.data.locale)
+      return {
+        ok: true,
+        warning:
+          "The Vendor account was approved, but the setup email could not be sent. Use Resend setup email.",
+      }
+    }
+
+    const emailTimestampResult = await adminClient
+      .from("vendor_applications")
+      .update({ setup_email_sent_at: new Date().toISOString() })
+      .eq("id", application.id)
+      .eq("status", "approved")
+
+    refreshManagement(parsed.data.locale)
+
+    if (emailTimestampResult.error) {
+      return {
+        ok: true,
+        warning:
+          "The setup email was sent, but its delivery timestamp could not be recorded.",
+      }
+    }
+
+    return { ok: true }
+  } catch (error) {
+    return actionError(error)
+  }
+}
+
+export async function rejectVendorApplicationAction(
+  input: unknown
+): Promise<ManagementActionResult> {
+  const parsed = vendorApplicationActionSchema.safeParse(input)
+
+  if (!parsed.success) {
+    return { ok: false, error: "Invalid Vendor application rejection." }
+  }
+
+  try {
+    const authorization = await requireOperator()
+    const { identity, supabase } = authorization
+
+    if (identity.role !== "admin" || !identity.adminId) {
+      return {
+        ok: false,
+        error: "Only the owning Admin can reject this application.",
+      }
+    }
+
+    const applicationResult = await supabase
+      .from("vendor_applications")
+      .select("id, admin_id, status, vendor_type")
+      .eq("id", parsed.data.applicationId)
+      .maybeSingle()
+    const application = applicationResult.data
+
+    if (
+      applicationResult.error ||
+      !application ||
+      application.admin_id !== identity.adminId
+    ) {
+      return {
+        ok: false,
+        error: "The Vendor application is outside your tenant.",
+      }
+    }
+
+    if (!hasSupabaseAdminSecret()) {
+      return {
+        ok: false,
+        error: "Trusted application review is not configured.",
+      }
+    }
+
+    const adminClient = createSupabaseAdminClient()
+    const result = await adminClient.rpc("reject_vendor_application", {
+      p_application_id: application.id,
+      p_admin_id: identity.adminId,
+      p_actor_user_id: identity.userId,
+    })
+
+    if (result.error || result.data !== true) {
+      return {
+        ok: false,
+        error: "This Vendor application is no longer pending.",
+      }
+    }
+
+    refreshManagement(parsed.data.locale)
+    return { ok: true }
+  } catch (error) {
+    return actionError(error)
+  }
+}
+
+export async function resendVendorSetupEmailAction(
+  input: unknown
+): Promise<ManagementActionResult> {
+  const parsed = vendorApplicationActionSchema.safeParse(input)
+
+  if (!parsed.success) {
+    return { ok: false, error: "Invalid setup-email request." }
+  }
+
+  try {
+    const authorization = await requireOperator()
+    const { identity, supabase } = authorization
+
+    if (identity.role !== "admin" || !identity.adminId) {
+      return {
+        ok: false,
+        error: "Only the owning Admin can resend this setup email.",
+      }
+    }
+
+    const [tenantResult, applicationResult] = await Promise.all([
+      supabase
+        .from("admin_tenants")
+        .select("slug")
+        .eq("id", identity.adminId)
+        .eq("status", "active")
+        .maybeSingle(),
+      supabase
+        .from("vendor_applications")
+        .select("id, admin_id, status, normalized_email")
+        .eq("id", parsed.data.applicationId)
+        .maybeSingle(),
+    ])
+    const application = applicationResult.data
+
+    if (
+      tenantResult.error ||
+      !tenantResult.data ||
+      applicationResult.error ||
+      !application ||
+      application.admin_id !== identity.adminId ||
+      application.status !== "approved"
+    ) {
+      return {
+        ok: false,
+        error: "Select an approved application in your active tenant.",
+      }
+    }
+
+    const setupResult = await sendVendorSetupEmail({
+      locale: parsed.data.locale,
+      tenantSlug: tenantResult.data.slug,
+      email: application.normalized_email,
+    })
+
+    if (setupResult.error) {
+      console.warn("Vendor setup email resend failed.", {
+        code: setupResult.error.code,
+        status: setupResult.error.status,
+      })
+      return {
+        ok: false,
+        error:
+          "The setup email could not be sent. Check the Auth email service and try again.",
+      }
+    }
+
+    const sentAt = new Date().toISOString()
+    const adminClient = createSupabaseAdminClient()
+    const updateResult = await adminClient
+      .from("vendor_applications")
+      .update({ setup_email_sent_at: sentAt })
+      .eq("id", application.id)
+      .eq("status", "approved")
+
+    if (updateResult.error) {
+      return {
+        ok: true,
+        warning:
+          "The setup email was sent, but its delivery timestamp could not be recorded.",
+      }
+    }
+
+    await adminClient.from("audit_events").insert({
+      actor_user_id: identity.userId,
+      actor_role: identity.role,
+      action: "resend_vendor_setup_email",
+      target_table: "vendor_applications",
+      target_id: application.id,
+      admin_id: identity.adminId,
+      after_values: { setup_email_sent_at: sentAt },
+    })
 
     refreshManagement(parsed.data.locale)
     return { ok: true }

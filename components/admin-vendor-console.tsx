@@ -26,8 +26,13 @@ import type {
   ManagedVendor,
   VendorStatus,
 } from "@/lib/management-data"
+import type { VendorApplication } from "@/lib/vendor-applications"
 import { AdminVendorProvision } from "@/components/admin-vendor-provision"
 import { AdminWorkspaceRouteNavigation } from "@/components/malayconnect-mvp"
+import {
+  VendorApplicationsPanel,
+  VendorSignupLinks,
+} from "@/components/vendor-application-management"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -58,11 +63,12 @@ type Props = {
   tenant: AdminTenant
   vendors: ManagedVendor[]
   accounts: ManagedAccount[]
+  applications: VendorApplication[]
   auditEvents: AuditEvent[]
 }
 
 const selectClass =
-  "h-8 min-w-32 rounded-md border border-input bg-transparent px-2 text-xs outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
+  "h-8 w-full min-w-0 rounded-md border border-input bg-transparent px-2 text-xs outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
 
 function statusBadge(status: string) {
   return (
@@ -100,7 +106,7 @@ function VendorStatusControl({
   const [status, setStatus] = useState<VendorStatus>(vendor.status)
 
   return (
-    <div className="flex gap-2">
+    <div className="grid gap-2">
       <select
         className={selectClass}
         value={status}
@@ -130,6 +136,7 @@ export function AdminVendorConsole({
   tenant,
   vendors,
   accounts,
+  applications,
   auditEvents,
 }: Props) {
   const router = useRouter()
@@ -142,6 +149,9 @@ export function AdminVendorConsole({
       .includes(normalizedSearch)
   )
   const activeAccounts = accounts.filter((account) => account.active).length
+  const pendingApplications = applications.filter(
+    (application) => application.status === "pending"
+  ).length
 
   function runAction(
     action: () => Promise<ManagementActionResult>,
@@ -151,7 +161,11 @@ export function AdminVendorConsole({
       const result = await action()
 
       if (result.ok) {
-        toast.success(message)
+        if (result.warning) {
+          toast.warning(result.warning)
+        } else {
+          toast.success(message)
+        }
         router.refresh()
       } else {
         toast.error(result.error ?? "Action failed.")
@@ -198,6 +212,8 @@ export function AdminVendorConsole({
               </div>
             </header>
 
+            <VendorSignupLinks locale={locale} tenantSlug={tenant.slug} />
+
             {!provisioningConfigured || !vendorProvisioningEnabled ? (
               <Alert>
                 <HugeiconsIcon icon={ShieldUserIcon} />
@@ -213,7 +229,7 @@ export function AdminVendorConsole({
               </Alert>
             ) : null}
 
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <Card>
                 <CardHeader className="flex-row items-start justify-between">
                   <div>
@@ -257,12 +273,31 @@ export function AdminVendorConsole({
                   <HugeiconsIcon icon={ShieldUserIcon} />
                 </CardHeader>
               </Card>
+              <Card>
+                <CardHeader className="flex-row items-start justify-between">
+                  <div>
+                    <CardDescription>Pending applications</CardDescription>
+                    <CardTitle className="mt-1 text-2xl">
+                      {pendingApplications} / {applications.length}
+                    </CardTitle>
+                  </div>
+                  <HugeiconsIcon icon={UserGroupIcon} />
+                </CardHeader>
+              </Card>
             </div>
 
             <Tabs defaultValue="vendors">
               <div className="overflow-x-auto pb-1">
                 <TabsList className="min-w-max">
                   <TabsTrigger value="vendors">Vendors</TabsTrigger>
+                  <TabsTrigger value="applications">
+                    Applications
+                    {pendingApplications ? (
+                      <Badge variant="secondary" className="ml-1">
+                        {pendingApplications}
+                      </Badge>
+                    ) : null}
+                  </TabsTrigger>
                   <TabsTrigger value="accounts">Accounts</TabsTrigger>
                   <TabsTrigger value="audit">Tenant audit</TabsTrigger>
                 </TabsList>
@@ -284,25 +319,27 @@ export function AdminVendorConsole({
                       onChange={(event) => setSearch(event.target.value)}
                     />
                     <div className="hidden md:block">
-                      <Table>
+                      <Table className="table-fixed">
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Vendor</TableHead>
-                            <TableHead>Subtype</TableHead>
-                            <TableHead>Sector</TableHead>
-                            <TableHead>Accounts</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Controls</TableHead>
+                            <TableHead className="w-[24%]">Vendor</TableHead>
+                            <TableHead className="w-24">Subtype</TableHead>
+                            <TableHead className="w-[32%]">Sector</TableHead>
+                            <TableHead className="w-16 text-center">
+                              Accounts
+                            </TableHead>
+                            <TableHead className="w-20">Status</TableHead>
+                            <TableHead className="w-36">Controls</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {filteredVendors.map((vendor) => (
                             <TableRow key={vendor.id}>
-                              <TableCell>
-                                <div className="font-medium">
+                              <TableCell className="whitespace-normal">
+                                <div className="truncate font-medium">
                                   {vendor.name_en}
                                 </div>
-                                <div className="text-muted-foreground">
+                                <div className="truncate text-muted-foreground">
                                   {vendor.name_cn || vendor.id}
                                 </div>
                               </TableCell>
@@ -311,8 +348,12 @@ export function AdminVendorConsole({
                                   {vendor.vendor_type}
                                 </Badge>
                               </TableCell>
-                              <TableCell>{vendor.sector}</TableCell>
-                              <TableCell>
+                              <TableCell className="whitespace-normal">
+                                <span className="line-clamp-2 leading-4">
+                                  {vendor.sector}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-center">
                                 {
                                   accounts.filter(
                                     (account) =>
@@ -323,7 +364,7 @@ export function AdminVendorConsole({
                               <TableCell>
                                 {statusBadge(vendor.status)}
                               </TableCell>
-                              <TableCell>
+                              <TableCell className="whitespace-normal">
                                 <div className="flex flex-col gap-2">
                                   <VendorDirectoryDialog
                                     locale={locale}
@@ -367,7 +408,7 @@ export function AdminVendorConsole({
                                 <CardTitle className="text-sm">
                                   {vendor.name_en}
                                 </CardTitle>
-                                <CardDescription>
+                                <CardDescription className="line-clamp-2">
                                   {vendor.vendor_type} · {vendor.sector}
                                 </CardDescription>
                               </div>
@@ -405,6 +446,16 @@ export function AdminVendorConsole({
                     </div>
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              <TabsContent value="applications">
+                <VendorApplicationsPanel
+                  locale={locale}
+                  applications={applications}
+                  approvalEnabled={
+                    provisioningConfigured && vendorProvisioningEnabled
+                  }
+                />
               </TabsContent>
 
               <TabsContent value="accounts">

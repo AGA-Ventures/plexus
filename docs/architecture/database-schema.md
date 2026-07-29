@@ -2,7 +2,7 @@
 
 **Owner:** Engineering and data/security
 **Review trigger:** Every database migration
-**Last verified against live Supabase:** 2026-07-28
+**Last verified against live Supabase:** 2026-07-28; next migration reviewed 2026-07-29
 **Project:** `Plexus` (`pnjblggcdigekluualin`)
 
 ## Source of truth
@@ -11,13 +11,14 @@ Committed migrations in `supabase/migrations/` are the schema source of truth.
 This document is a reviewed human-readable snapshot of the live project plus
 the next committed migration where explicitly marked.
 
-Current live inventory after the Admin MOU document migrations:
+Current committed inventory after the Vendor application migration (apply and
+advisor verification remain release steps):
 
 - PostgreSQL 17
-- 30 recorded migrations
-- 24 public tables
-- 24 of 24 public tables have RLS enabled
-- 78 public-table RLS policies
+- 31 migrations
+- 25 public tables
+- 25 of 25 public tables have RLS enabled
+- 80 public-table RLS policies
 - 0 public views and 0 public enum types
 - 4 Storage buckets: private `event-resources`, public `tenant-branding`,
   private `vendor-profile-documents`, and private `mou-documents`
@@ -35,6 +36,8 @@ erDiagram
     AUTH_USERS ||--|| USER_PROFILES : "identity"
     ADMIN_TENANTS ||--o{ USER_PROFILES : "owns admins/vendors"
     ADMIN_TENANTS ||--o{ VENDOR_COMPANIES : "owns"
+    ADMIN_TENANTS ||--o{ VENDOR_APPLICATIONS : "receives"
+    VENDOR_APPLICATIONS o|--o| VENDOR_COMPANIES : "approved as"
     VENDOR_COMPANIES ||--|| DELEGATION_COMPANIES : "delegation subtype"
     VENDOR_COMPANIES ||--|| PARTNER_COMPANIES : "partner subtype"
     VENDOR_COMPANIES ||--o{ USER_PROFILES : "binds vendor users"
@@ -123,6 +126,25 @@ audit_events (
   after_values jsonb NULL,
   created_at timestamptz NOT NULL default now()
 )
+
+vendor_applications (
+  id uuid PK default gen_random_uuid(),
+  admin_id uuid NOT NULL FK -> admin_tenants.id,
+  vendor_type text NOT NULL,
+  normalized_email text NOT NULL,
+  contact_name text NOT NULL,
+  company_name text NOT NULL,
+  profile_data jsonb NOT NULL,
+  profile_complete integer NOT NULL default 100,
+  status text NOT NULL default 'pending',
+  reviewed_by uuid NULL FK -> auth.users.id,
+  reviewed_at timestamptz NULL,
+  vendor_company_id uuid NULL FK -> vendor_companies.id,
+  auth_user_id uuid NULL FK -> auth.users.id,
+  setup_email_sent_at timestamptz NULL,
+  created_at timestamptz NOT NULL default now(),
+  updated_at timestamptz NOT NULL default now()
+)
 ```
 
 Binding constraints:
@@ -133,6 +155,21 @@ Binding constraints:
 - Role is limited to `superadmin`, `admin`, or `vendor`.
 - Vendor type is limited to `delegation` or `partner`.
 - Tenant and Vendor status is limited to `active`, `suspended`, or `archived`.
+- Vendor application status is limited to `pending`, `provisioning`,
+  `approved`, or `rejected`. A partial unique index permits only one
+  non-rejected application per normalized email. Approved rows require both
+  resulting IDs; rejected rows require reviewer evidence.
+
+`vendor_applications` contains the complete submitted company profile but no
+password or file upload. Anonymous roles have no table grants. The stable
+public route writes through the server-only client after validating an active
+tenant. Active owning Admins can read/review only their tenant; Superadmins
+have governance read/update access; Vendors have no access. A trigger protects
+the immutable tenant, subtype, email, contact, company, profile, and creation
+fields and permits only the reviewed status transitions. Approval and rejection
+finalization are service-role-only database functions called after the server
+revalidates the active owning Admin; reviewer and resulting Auth foreign keys
+have covering indexes.
 
 ## Vendor company subtypes and discovery
 

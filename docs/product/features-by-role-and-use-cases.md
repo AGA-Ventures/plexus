@@ -2,7 +2,7 @@
 
 **Owner:** Product and engineering
 **Review trigger:** Role, route, permission, workflow, or capability-status change
-**Last reviewed:** 2026-07-28
+**Last reviewed:** 2026-07-29
 
 ## Purpose and scope
 
@@ -62,7 +62,9 @@ All roles use the same email/password login. Trusted Supabase Auth
 `app_metadata` determines the role and bindings, after which the user is sent
 to the correct workspace. All roles can request a self-service recovery email,
 set a new password through a verified Supabase session, and return to the
-correct tenant-branded login. Public self-signup is disabled.
+correct tenant-branded login. Public Auth self-signup is disabled; tenant
+application links are
+approval-gated intake and create no identity before review.
 
 ## Use-case overview
 
@@ -201,11 +203,11 @@ where a shared Server Action supports more than one role.
 - View the number of Vendors assigned to each tenant.
 - Roll back partial provisioning when a later creation step fails.
 
-Temporary password delivery remains a controlled manual process.
-Self-service password recovery is live; invitation and first-time password
-setup flows are planned. A Superadmin can also send an audited, tenant-aware
-password recovery link to an active Admin account without viewing or replacing
-the password.
+Temporary password delivery remains a controlled manual process for the direct
+Admin-provisioning path. Self-service password recovery and approved Vendor
+first-time password setup are implemented. A Superadmin can also send an
+audited, tenant-aware password recovery link to an active Admin account without
+viewing or replacing the password.
 
 ### Global Vendor governance
 
@@ -311,9 +313,10 @@ case-management or compliance-decision product.
 - Reuse the saved white-label logo in the Admin account control and account
   settings identity panel, with the operator's initials as the fallback.
 - Open Vendor accounts and Compliance from the Admin sidebar; retain the same
-  responsive sidebar and active destination on the Vendor accounts route, with
-  a near-full-width phone drawer and 48-pixel primary navigation touch targets;
-  start provisioning there and manage tenant branding from account settings.
+  responsive sidebar and active destination on both routes, with a
+  near-full-width phone drawer and 48-pixel primary navigation touch targets.
+  The Compliance destination currently exposes no provider, configuration,
+  payload, market, or screening information and displays only `Pending`.
 - Export a pre-visit report directly from the dashboard.
 
 ### Vendor and Vendor-account management
@@ -500,11 +503,11 @@ are not connected.
 
 **Status: Adapter**
 
-- View the same protected integration-readiness console available to
-  Superadmins.
-- Query provider configuration status.
-- Submit validated screening requests through the protected backend API.
-- Keep provider credentials and raw calls on the server.
+- Keep a protected Compliance destination in the Admin sidebar without
+  exposing provider, configuration, route, payload, market, or screening
+  information in the interface; the content area displays only `Pending`.
+- Protected backend adapters remain server-only and are not surfaced through
+  this hidden workspace.
 
 ## Vendor features
 
@@ -659,9 +662,9 @@ flowchart LR
 | `/[locale]/admin/vendors`                | Admin             | Tenant Vendor and Vendor-account management             |
 | `/[locale]/vendor`                       | Vendor            | Delegation or Partner company workspace                 |
 | `/[locale]/vendor/discover`              | Vendor            | Opposite-subtype company discovery                      |
-| `/[locale]/compliance`                   | Superadmin, Admin | Compliance integration readiness                        |
-| `/[locale]/compliance/world-check`       | Superadmin, Admin | World-Check adapter status                              |
-| `/[locale]/compliance/malaysia-ssm-ctos` | Superadmin, Admin | Malaysia SSM/CTOS adapter status                        |
+| `/[locale]/compliance`                   | Superadmin, Admin | Hidden Compliance workspace shell                       |
+| `/[locale]/compliance/world-check`       | Superadmin, Admin | Hidden legacy Compliance route                          |
+| `/[locale]/compliance/malaysia-ssm-ctos` | Superadmin, Admin | Hidden legacy Compliance route                          |
 
 Root aliases such as `/login`, `/admin`, `/vendor`, and `/superadmin` redirect
 to English. Legacy `/delegation` and `/partner` paths redirect Vendor users to
@@ -680,6 +683,8 @@ The role-protected workspaces sit behind a public layer that includes:
 - Public marketing content in English, Bahasa Malaysia, and Traditional
   Chinese.
 - Tenant-aware public branding based on a supported Plexus subdomain.
+- Tenant-specific Delegation and Partner application links. These collect a
+  complete company profile for Admin review but do not create an account.
 - A `/app` future-product showcase.
 
 The `/app` showcase describes planned AI and trade-superapp concepts such as
@@ -721,9 +726,10 @@ flowchart TD
 
 The following are not complete production features:
 
-- Public signup.
-- Invitation email, first-time password setup, automated credential delivery,
-  and production SMTP/email branding.
+- Open Auth self-signup remains intentionally unavailable. Vendor application
+  intake is approval-gated.
+- Production SMTP/email branding and delivery monitoring for first-time
+  password setup.
 - Production rollout and smoke verification of Zoom/Lark creation; provider
   update, cancellation, retry, and reconciliation.
 - Production email and push-notification delivery.
@@ -735,6 +741,15 @@ The following are not complete production features:
 
 See the [capability map](capability-map.md) and
 [roadmap](../project-management/roadmap.md) for the maintained delivery status.
+
+## Tenant Vendor application use case
+
+| Actor      | Available behavior                                                                                                                                                                                                      |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Applicant  | Open the tenant-branded subtype link, complete all 28 core profile items plus any optional information and document checklist, submit without creating credentials, and receive a generic awaiting-review confirmation. |
+| Admin      | Copy either subtype link, view own-tenant pending/history applications and complete profiles, approve or reject pending applications, and resend setup email for an approved account.                                   |
+| Superadmin | Read/update application records across tenants for governance under active-role RLS, without tenant impersonation in the Admin UI.                                                                                      |
+| Vendor     | No application-table access. After approval and password setup, enter the existing Vendor workspace with the submitted profile prepopulated and upload private PDFs there.                                              |
 
 ## Source references
 

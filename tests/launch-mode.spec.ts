@@ -367,6 +367,42 @@ test.describe("Admin tenant flow", () => {
     await expectNoHorizontalOverflow(page)
   })
 
+  test("Admin signup links open locked public forms without file uploads", async ({
+    page,
+  }) => {
+    await login(page, adminEmail!, adminPassword!, /\/en\/admin/)
+    await page.goto("/en/admin/vendors")
+
+    await expect(
+      page.getByRole("heading", { name: "Signup links" })
+    ).toBeVisible()
+    const delegationPath = await page
+      .getByText(/\/en\/vendor-signup\/.+\/delegation$/)
+      .textContent()
+    const partnerPath = await page
+      .getByText(/\/en\/vendor-signup\/.+\/partner$/)
+      .textContent()
+
+    expect(delegationPath).toBeTruthy()
+    expect(partnerPath).toBeTruthy()
+
+    await page.goto(delegationPath!)
+    await expect(
+      page.getByRole("heading", { name: "Vendor company application" })
+    ).toBeVisible()
+    await expect(page.getByText("Vendor type: delegation")).toBeVisible()
+    await expect(page.locator('input[type="file"]')).toHaveCount(0)
+    await expect(
+      page.getByTestId("public-document-upload-deferred")
+    ).toBeVisible()
+    await expect(page.getByText("0 of 28 required items")).toBeVisible()
+    await expectNoHorizontalOverflow(page)
+
+    await page.goto(partnerPath!)
+    await expect(page.getByText("Vendor type: partner")).toBeVisible()
+    await expect(page.locator('input[type="file"]')).toHaveCount(0)
+  })
+
   test("Admin can review meeting operations and provider readiness", async ({
     page,
   }) => {

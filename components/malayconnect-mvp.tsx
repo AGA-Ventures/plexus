@@ -79,6 +79,9 @@ import {
   type Locale,
 } from "@/lib/i18n"
 import {
+  companyIntroductionWordLimits,
+  companyProfileOptionGroups,
+  createBlankCompanyRegistrationProfile,
   getCompanyProfileCompletion,
   getCompanyProfileSectionCompletion,
   getMalaysiaToday,
@@ -94,7 +97,6 @@ import {
   getCountryCodeForRegion,
   splitInternationalPhoneNumber,
 } from "@/lib/international-phone"
-import { supportedMarketNames } from "@/lib/markets"
 import {
   type Announcement,
   type AnnouncementChannel,
@@ -938,141 +940,8 @@ function textFor(locale: Locale, en: string, zh: string, th?: string) {
   return en
 }
 
-const profileOptionGroups = {
-  countryRegion: [...supportedMarketNames, "Macau", "Other"],
-  employeeRange: ["1-10", "11-50", "51-200", "201-500", "500+"],
-  annualRevenueRange: [
-    "Below USD 1M",
-    "USD 1M-10M",
-    "USD 10M-50M",
-    "Above USD 50M",
-  ],
-  preferredLanguages: [
-    "English",
-    "Mandarin",
-    "Cantonese",
-    "Japanese",
-    "Korean",
-    "Bahasa Malaysia",
-    "Thai",
-    "Bahasa Indonesia",
-    "Filipino",
-    "Vietnamese",
-    "Spanish",
-    "French",
-    "Russian",
-  ],
-  certifications: ["Halal", "ISO", "HACCP", "GMP", "CE", "FDA"],
-  offers: [
-    "Manufacturer",
-    "Brand Owner",
-    "Distributor",
-    "Wholesaler",
-    "Retailer",
-    "Service Provider",
-    "Technology Provider",
-    "Franchise Owner",
-    "Investor",
-    "Consultant",
-    "Government / Agency",
-  ],
-  lookingFor: [
-    "Buyers",
-    "Importers",
-    "Exporters",
-    "Distributors",
-    "Retail Partners",
-    "Franchisees",
-    "Suppliers",
-    "OEM Partners",
-    "ODM Partners",
-    "Technology Partners",
-    "Joint Venture Partners",
-    "Strategic Alliances",
-    "Investors",
-    "Business Acquisition Opportunities",
-    "Market Entry Partners",
-    "Government Connections",
-  ],
-  preferredPartnerTypes: [
-    "SME",
-    "Large Corporation",
-    "Government Agency",
-    "Chamber of Commerce",
-    "Investor",
-    "Startup",
-    "Technology Company",
-    "Manufacturer",
-    "Distributor",
-  ],
-  expectedOutcomes: [
-    "Sales Opportunities",
-    "Distribution Agreement",
-    "Joint Venture",
-    "Investment",
-    "Technology Collaboration",
-    "Licensing",
-    "Franchise Expansion",
-    "Market Expansion",
-    "Strategic Partnership",
-  ],
-  exportsInternationally: ["Yes", "No"],
-  meetingFormat: ["Physical", "Virtual", "Either"],
-  maxMeetings: ["3", "5", "10", "No Limit"],
-  supportingDocuments: [
-    "Company Profile",
-    "Product Catalogue",
-    "Corporate Presentation",
-    "Business License",
-    "Certifications",
-    "Promotional Video",
-  ],
-} satisfies Record<string, string[]>
-
-function blankRegistrationProfile(): CompanyRegistrationProfile {
-  return {
-    companyNameEn: "",
-    companyNameCn: "",
-    countryRegion: "",
-    countryOther: "",
-    yearEstablished: "",
-    registrationNumber: "",
-    website: "",
-    address: "",
-    employeeRange: "",
-    annualRevenueRange: "",
-    contactName: "",
-    contactPosition: "",
-    contactEmail: "",
-    mobileNumber: "",
-    chatId: "",
-    preferredLanguages: [],
-    industries: [],
-    industryOther: "",
-    introduction: "",
-    productsServices: "",
-    certifications: [],
-    certificationOther: "",
-    offers: [],
-    offerOther: "",
-    lookingFor: [],
-    lookingForOther: "",
-    preferredPartnerTypes: [],
-    preferredPartnerOther: "",
-    expectedOutcomes: [],
-    idealPartner: "",
-    opportunity: "",
-    exportsInternationally: "",
-    exportMarkets: "",
-    meetingFormat: "",
-    availableMeetingDates: "",
-    maxMeetings: "",
-    supportingDocuments: [],
-    consent: false,
-    consentName: "",
-    consentDate: "",
-  }
-}
+const profileOptionGroups = companyProfileOptionGroups
+const blankRegistrationProfile = createBlankCompanyRegistrationProfile
 
 function getRegistrationProfile(
   company: DelegationCompany | PartnerCompany
@@ -4724,9 +4593,9 @@ function ProfileForm({
           >
             <ProfileTextareaField
               id="company-introduction"
-              label="Brief company introduction (100-200 words)"
+              label={`Brief company introduction (${companyIntroductionWordLimits.min}–${companyIntroductionWordLimits.max} words)`}
               maxLength={3000}
-              description={`${introductionWords} words · target 100-200`}
+              description={`${introductionWords} words · required range ${companyIntroductionWordLimits.min}–${companyIntroductionWordLimits.max}`}
               value={profile.introduction}
               onChange={(value) => setValue("introduction", value)}
               {...fieldState("introduction")}

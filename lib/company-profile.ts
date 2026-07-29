@@ -1,6 +1,148 @@
 import { z } from "zod"
 
 import type { CompanyRegistrationProfile } from "@/lib/local-db"
+import { supportedMarketNames } from "@/lib/markets"
+
+export const companyIntroductionWordLimits = {
+  min: 10,
+  max: 200,
+} as const
+
+export const companyProfileOptionGroups = {
+  countryRegion: [...supportedMarketNames, "Macau", "Other"],
+  employeeRange: ["1-10", "11-50", "51-200", "201-500", "500+"],
+  annualRevenueRange: [
+    "Below USD 1M",
+    "USD 1M-10M",
+    "USD 10M-50M",
+    "Above USD 50M",
+  ],
+  preferredLanguages: [
+    "English",
+    "Mandarin",
+    "Cantonese",
+    "Japanese",
+    "Korean",
+    "Bahasa Malaysia",
+    "Thai",
+    "Bahasa Indonesia",
+    "Filipino",
+    "Vietnamese",
+    "Spanish",
+    "French",
+    "Russian",
+  ],
+  certifications: ["Halal", "ISO", "HACCP", "GMP", "CE", "FDA"],
+  offers: [
+    "Manufacturer",
+    "Brand Owner",
+    "Distributor",
+    "Wholesaler",
+    "Retailer",
+    "Service Provider",
+    "Technology Provider",
+    "Franchise Owner",
+    "Investor",
+    "Consultant",
+    "Government / Agency",
+  ],
+  lookingFor: [
+    "Buyers",
+    "Importers",
+    "Exporters",
+    "Distributors",
+    "Retail Partners",
+    "Franchisees",
+    "Suppliers",
+    "OEM Partners",
+    "ODM Partners",
+    "Technology Partners",
+    "Joint Venture Partners",
+    "Strategic Alliances",
+    "Investors",
+    "Business Acquisition Opportunities",
+    "Market Entry Partners",
+    "Government Connections",
+  ],
+  preferredPartnerTypes: [
+    "SME",
+    "Large Corporation",
+    "Government Agency",
+    "Chamber of Commerce",
+    "Investor",
+    "Startup",
+    "Technology Company",
+    "Manufacturer",
+    "Distributor",
+  ],
+  expectedOutcomes: [
+    "Sales Opportunities",
+    "Distribution Agreement",
+    "Joint Venture",
+    "Investment",
+    "Technology Collaboration",
+    "Licensing",
+    "Franchise Expansion",
+    "Market Expansion",
+    "Strategic Partnership",
+  ],
+  exportsInternationally: ["Yes", "No"],
+  meetingFormat: ["Physical", "Virtual", "Either"],
+  maxMeetings: ["3", "5", "10", "No Limit"],
+  supportingDocuments: [
+    "Company Profile",
+    "Product Catalogue",
+    "Corporate Presentation",
+    "Business License",
+    "Certifications",
+    "Promotional Video",
+  ],
+} satisfies Record<string, string[]>
+
+export function createBlankCompanyRegistrationProfile(): CompanyRegistrationProfile {
+  return {
+    companyNameEn: "",
+    companyNameCn: "",
+    countryRegion: "",
+    countryOther: "",
+    yearEstablished: "",
+    registrationNumber: "",
+    website: "",
+    address: "",
+    employeeRange: "",
+    annualRevenueRange: "",
+    contactName: "",
+    contactPosition: "",
+    contactEmail: "",
+    mobileNumber: "",
+    chatId: "",
+    preferredLanguages: [],
+    industries: [],
+    industryOther: "",
+    introduction: "",
+    productsServices: "",
+    certifications: [],
+    certificationOther: "",
+    offers: [],
+    offerOther: "",
+    lookingFor: [],
+    lookingForOther: "",
+    preferredPartnerTypes: [],
+    preferredPartnerOther: "",
+    expectedOutcomes: [],
+    idealPartner: "",
+    opportunity: "",
+    exportsInternationally: "",
+    exportMarkets: "",
+    meetingFormat: "",
+    availableMeetingDates: "",
+    maxMeetings: "",
+    supportingDocuments: [],
+    consent: false,
+    consentName: "",
+    consentDate: "",
+  }
+}
 
 export function getMalaysiaToday() {
   const parts = new Intl.DateTimeFormat("en", {
@@ -116,8 +258,10 @@ export const registrationProfileSchema = z
       .max(3000)
       .refine(
         (value) =>
-          !value || (countWords(value) >= 100 && countWords(value) <= 200),
-        "Use 100 to 200 words."
+          !value ||
+          (countWords(value) >= companyIntroductionWordLimits.min &&
+            countWords(value) <= companyIntroductionWordLimits.max),
+        `Use ${companyIntroductionWordLimits.min} to ${companyIntroductionWordLimits.max} words.`
       )
       .default(""),
     productsServices: z.string().trim().max(3000).default(""),
@@ -188,6 +332,63 @@ export const registrationProfileSchema = z
 export type CompanyProfileValidationErrors = Partial<
   Record<keyof CompanyRegistrationProfile, string>
 >
+
+const companyProfileCoreFields: readonly (keyof CompanyRegistrationProfile)[] =
+  [
+    "countryRegion",
+    "companyNameEn",
+    "yearEstablished",
+    "registrationNumber",
+    "website",
+    "address",
+    "employeeRange",
+    "contactName",
+    "contactPosition",
+    "contactEmail",
+    "mobileNumber",
+    "preferredLanguages",
+    "industries",
+    "introduction",
+    "productsServices",
+    "offers",
+    "lookingFor",
+    "preferredPartnerTypes",
+    "expectedOutcomes",
+    "idealPartner",
+    "opportunity",
+    "exportsInternationally",
+    "meetingFormat",
+    "availableMeetingDates",
+    "maxMeetings",
+    "consent",
+    "consentName",
+    "consentDate",
+  ]
+
+export function getCompanyProfileCoreErrors(
+  profile: CompanyRegistrationProfile
+) {
+  const errors = validateCompanyRegistrationProfile(profile)
+  const coreErrors: CompanyProfileValidationErrors = { ...errors }
+
+  for (const field of companyProfileCoreFields) {
+    const value = profile[field]
+    const isComplete = Array.isArray(value)
+      ? value.length > 0
+      : typeof value === "boolean"
+        ? value
+        : typeof value === "string" && Boolean(value.trim())
+
+    if (!isComplete && !coreErrors[field]) {
+      coreErrors[field] =
+        field === "consent"
+          ? "Consent is required before submitting."
+          : "This field is required for an application."
+    }
+  }
+
+  return coreErrors
+}
 
 export type CompanyProfileSectionId =
   | "company"

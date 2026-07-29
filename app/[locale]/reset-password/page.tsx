@@ -12,10 +12,13 @@ export default async function ResetPasswordPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>
-  searchParams: Promise<{ tenant?: string | string[] }>
+  searchParams: Promise<{
+    tenant?: string | string[]
+    mode?: string | string[]
+  }>
 }) {
   const { locale } = await params
-  const { tenant } = await searchParams
+  const { tenant, mode } = await searchParams
 
   if (!isLocaleParam(locale)) {
     notFound()
@@ -23,6 +26,7 @@ export default async function ResetPasswordPage({
 
   const normalizedLocale = normalizeLocale(locale)
   const requestedTenant = Array.isArray(tenant) ? tenant[0] : tenant
+  const requestedMode = Array.isArray(mode) ? mode[0] : mode
   const [branding, userResult] = await Promise.all([
     getLoginBranding(requestedTenant),
     createSupabaseServerClient().then((supabase) => supabase.auth.getUser()),
@@ -33,6 +37,7 @@ export default async function ResetPasswordPage({
       locale={normalizedLocale}
       branding={branding}
       recoveryReady={!userResult.error && Boolean(userResult.data.user)}
+      mode={requestedMode === "setup" ? "setup" : "recovery"}
     />
   )
 }

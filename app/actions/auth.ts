@@ -87,6 +87,7 @@ const updatePasswordSchema = z
       .string()
       .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
       .optional(),
+    mode: z.enum(["recovery", "setup"]).default("recovery"),
   })
   .refine((values) => values.password === values.confirmPassword, {
     message: "Passwords do not match.",
@@ -230,6 +231,7 @@ export async function updatePasswordAction(
     confirmPassword: formData.get("confirmPassword"),
     locale: formData.get("locale"),
     tenantSlug: formData.get("tenantSlug") || undefined,
+    mode: formData.get("mode") || undefined,
   })
 
   if (!parsed.success) {

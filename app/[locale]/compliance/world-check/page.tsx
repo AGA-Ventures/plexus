@@ -6,8 +6,8 @@ import { isLocaleParam, normalizeLocale } from "@/lib/i18n"
 import { getProtectedPortalData } from "@/lib/plexus-data"
 
 export const metadata: Metadata = {
-  title: "World-Check AML Screening · Plexus Connect",
-  description: "Admin route for World-Check AML screening readiness.",
+  title: "Compliance · Plexus",
+  description: "Protected Compliance workspace.",
 }
 
 export default async function WorldCheckPage({
@@ -22,7 +22,10 @@ export default async function WorldCheckPage({
   }
 
   const normalizedLocale = normalizeLocale(locale)
-  await getProtectedPortalData(normalizedLocale, ["superadmin", "admin"])
+  const { session } = await getProtectedPortalData(normalizedLocale, [
+    "superadmin",
+    "admin",
+  ])
 
-  return <ComplianceConsole locale={normalizedLocale} view="world-check" />
+  return <ComplianceConsole locale={normalizedLocale} session={session} />
 }

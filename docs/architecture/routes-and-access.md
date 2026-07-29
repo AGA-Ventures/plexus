@@ -2,7 +2,7 @@
 
 **Owner:** Engineering and security
 **Review trigger:** Route, role, login, or provisioning change
-**Last reviewed:** 2026-07-28
+**Last reviewed:** 2026-07-29
 
 ## Login routing
 
@@ -40,8 +40,10 @@ flowchart TD
     R -- "vendor" --> VE["/[locale]/vendor"]
 ```
 
-Public signup is disabled. Superadmins create Admins; Superadmins or the owning
-Admin create Vendors.
+Public Supabase Auth signup remains disabled. An active Admin tenant may share
+two application-only links. Applicants submit the canonical company profile;
+they do not choose a tenant or subtype and receive no Auth identity until the
+owning Admin approves.
 
 The Admin and Vendor sidebars open an in-place account-settings dialog rather
 than exposing an additional route. The dialog shows human-readable profile and
@@ -72,18 +74,25 @@ All roles can use the tenant-aware **Forgot password?** link:
 5. The recovery session is signed out after the update, and the user returns
    to the matching tenant login to authenticate with the new password.
 
+Approved Vendor onboarding uses the same verified callback with
+`mode=setup`. This mode changes the onboarding copy but does not relax callback
+validation or password rules.
+
 Production email delivery requires the approved application origin in
 Supabase Auth Site URL/redirect settings and a production SMTP provider for
 external Admin and Vendor recipients.
 
 ## Canonical public auth routes
 
-| Route                       | Session requirement | Purpose                               |
-| --------------------------- | ------------------- | ------------------------------------- |
-| `/[locale]/login`           | None                | Shared role-directed login            |
-| `/[locale]/forgot-password` | None                | Generic recovery-email request        |
-| `/auth/callback`            | One-time Auth code  | PKCE recovery-session exchange        |
-| `/[locale]/reset-password`  | Recovered user      | Update the recovered account password |
+| Route                                             | Session requirement | Purpose                                  |
+| ------------------------------------------------- | ------------------- | ---------------------------------------- |
+| `/[locale]/login`                                 | None                | Shared role-directed login               |
+| `/[locale]/forgot-password`                       | None                | Generic recovery-email request           |
+| `/auth/callback`                                  | One-time Auth code  | PKCE recovery-session exchange           |
+| `/[locale]/reset-password`                        | Recovered user      | Update the recovered account password    |
+| `/[locale]/vendor-signup/[tenantSlug]/delegation` | None                | Tenant-branded Delegation application    |
+| `/[locale]/vendor-signup/[tenantSlug]/partner`    | None                | Tenant-branded Partner application       |
+| `POST /api/vendor-applications`                   | None                | Validated server-only application insert |
 
 ## Canonical protected routes
 
@@ -95,7 +104,7 @@ external Admin and Vendor recipients.
 | `/[locale]/login-preview`   | Superadmin, Admin | Any tenant or own tenant                                              |
 | `/[locale]/vendor`          | Vendor            | Own company                                                           |
 | `/[locale]/vendor/discover` | Vendor            | Eligible opposite-subtype directory inside the Vendor workspace shell |
-| `/[locale]/compliance`      | Superadmin, Admin | Platform or own tenant                                                |
+| `/[locale]/compliance`      | Superadmin, Admin | Hidden shell; Admin retains own-tenant sidebar                        |
 
 Root aliases such as `/login`, `/admin`, `/vendor`, and `/superadmin` redirect
 to English. Legacy `/delegation` and `/partner` routes are compatibility
@@ -183,8 +192,27 @@ active Vendor company.
 7. Roll back partial records on failure and audit the change.
 
 The Admin currently supplies the Vendor's initial login email and temporary
-password. Self-service recovery is available after provisioning; invitation
-and first-time password-setup flows remain planned work.
+password for the legacy direct-provisioning path.
+
+### Admin approves a Vendor application
+
+1. The public API accepts only tenant slug, fixed Vendor subtype, and the
+   canonical profile. It validates all 28 completion items, request size, and
+   honeypot, resolves the active tenant on the server, and returns the same
+   success for new and duplicate valid submissions.
+2. The owning active Admin atomically moves `pending` to `provisioning`.
+3. A reserved Vendor UUID is bound into a confirmed passwordless Auth identity
+   using trusted `app_metadata`.
+4. The canonical/subtype Vendor and exact active `user_profiles` binding are
+   created from the submitted profile using the same persistence mapper as
+   normal profile saves.
+5. The application is marked `approved`, resulting IDs and audit evidence are
+   stored, and a tenant-aware one-time password-setup email is sent.
+6. Any provisioning failure removes the Auth/profile/subtype/canonical rows
+   and returns the application to `pending`. Email failure after approval keeps
+   the account and exposes a resend action.
+
+Rejection changes only the pending application and writes audit evidence.
 
 ### Superadmin sends an Admin recovery link
 
@@ -236,11 +264,11 @@ data with one `file`; delete accepts only a validated document UUID.
 
 ## Admin MOU documents
 
-| Route                                    | Method | Access        | Purpose                                      |
-| ---------------------------------------- | ------ | ------------- | -------------------------------------------- |
-| `/api/admin/deals/[id]/document`         | POST   | Owning Admin  | Validate and upload or replace one MOU PDF   |
-| `/api/admin/deals/[id]/document`         | DELETE | Owning Admin  | Remove the private PDF but retain the deal   |
-| `/api/mou-documents/[id]/file`           | GET    | Admin, Vendor | Open an authorized 60-second signed review URL |
+| Route                            | Method | Access        | Purpose                                        |
+| -------------------------------- | ------ | ------------- | ---------------------------------------------- |
+| `/api/admin/deals/[id]/document` | POST   | Owning Admin  | Validate and upload or replace one MOU PDF     |
+| `/api/admin/deals/[id]/document` | DELETE | Owning Admin  | Remove the private PDF but retain the deal     |
+| `/api/mou-documents/[id]/file`   | GET    | Admin, Vendor | Open an authorized 60-second signed review URL |
 
 `createDealAction` creates the tenant-scoped MOU record from an existing
 Vendor match; `updateDealAction` changes only its signing status. The upload

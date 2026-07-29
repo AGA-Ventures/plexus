@@ -6,6 +6,7 @@ import type { AppRole, VendorType } from "@/lib/auth"
 import { getAuthenticatedIdentity } from "@/lib/authorization"
 import type { Locale } from "@/lib/i18n"
 import { hasSupabaseAdminSecret } from "@/lib/supabase/admin"
+import type { VendorApplication } from "@/lib/vendor-applications"
 
 export type TenantStatus = "active" | "suspended" | "archived"
 export type VendorStatus = "active" | "suspended" | "archived"
@@ -186,6 +187,7 @@ export async function getSuperadminManagementData(locale: Locale) {
     delegationDetailsResult,
     partnerDetailsResult,
     accountsResult,
+    applicationsResult,
     auditResult,
     matchesResult,
     meetingsResult,
@@ -216,6 +218,10 @@ export async function getSuperadminManagementData(locale: Locale) {
       .select(
         "id, display_name, email, role, admin_id, vendor_company_id, vendor_type, active, created_at, updated_at"
       )
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("vendor_applications")
+      .select("*")
       .order("created_at", { ascending: false }),
     supabase
       .from("audit_events")
@@ -269,6 +275,11 @@ export async function getSuperadminManagementData(locale: Locale) {
       accountsResult.data,
       accountsResult.error,
       "Load accounts"
+    ),
+    applications: rowsOrThrow<VendorApplication>(
+      applicationsResult.data,
+      applicationsResult.error,
+      "Load Vendor applications"
     ),
     auditEvents: rowsOrThrow<AuditEvent>(
       auditResult.data,
@@ -326,6 +337,7 @@ export async function getAdminManagementData(locale: Locale) {
     delegationDetailsResult,
     partnerDetailsResult,
     accountsResult,
+    applicationsResult,
     auditResult,
     provisioningPermissionResult,
   ] = await Promise.all([
@@ -354,6 +366,10 @@ export async function getAdminManagementData(locale: Locale) {
         "id, display_name, email, role, admin_id, vendor_company_id, vendor_type, active, created_at, updated_at"
       )
       .eq("role", "vendor")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("vendor_applications")
+      .select("*")
       .order("created_at", { ascending: false }),
     supabase
       .from("audit_events")
@@ -400,6 +416,11 @@ export async function getAdminManagementData(locale: Locale) {
       accountsResult.data,
       accountsResult.error,
       "Load tenant Vendor accounts"
+    ),
+    applications: rowsOrThrow<VendorApplication>(
+      applicationsResult.data,
+      applicationsResult.error,
+      "Load tenant Vendor applications"
     ),
     auditEvents: rowsOrThrow<AuditEvent>(
       auditResult.data,

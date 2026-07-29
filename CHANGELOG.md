@@ -6,6 +6,35 @@ reviewed together.
 
 ## Unreleased
 
+### 2026-07-29
+
+- Added approval-gated tenant Vendor onboarding. Every active Admin now has
+  separate branded Delegation and Partner application links; applicants submit
+  the existing company-profile contract at 100% core completion without
+  creating Auth/Vendor records or uploading files. The owning Admin can review
+  the complete profile, atomically approve or reject it, and resend a
+  tenant-aware one-time password-setup email. Approval creates trusted Auth,
+  canonical/subtype Vendor, and profile bindings with cleanup on partial
+  failure. A new RLS-protected `vendor_applications` migration, shared profile
+  persistence mapper, setup-password mode, API abuse controls, unit/RLS/E2E
+  coverage, runbook updates, and ADR document the new public trust boundary.
+- Hardened the global theme keyboard shortcut against malformed browser
+  keyboard events so a missing `key` value cannot crash the workspace.
+- Restricted Vendor application rejection to the trusted server workflow and
+  added covering indexes for reviewer and resulting Auth relationships.
+- Reduced the shared company-introduction minimum from 100 words to 10 words,
+  retaining the 200-word maximum across public applications and Vendor
+  profiles.
+- Centered the success tick and Vendor subtype badge in the submitted
+  application confirmation card.
+- Hid all Compliance provider, configuration, route, payload, market, and
+  screening information from the protected UI while keeping Compliance as an
+  active destination in the shared responsive Admin sidebar; the hidden
+  workspace now displays only a centered `Pending` status.
+- Constrained Vendor-directory sectors to two lines, fixed the desktop table
+  column layout, and stacked status controls so long sector names no longer
+  push the Controls column out of view.
+
 ### 2026-07-28
 
 - Fixed the industry sector picker overflowing its dialog and scrolling badly.

@@ -87,7 +87,43 @@ describe("company profile validation", () => {
     expect(errors.contactEmail).toContain("valid email")
     expect(errors.mobileNumber).toContain("valid phone")
     expect(errors.consentDate).toContain("valid date")
-    expect(errors.introduction).toContain("100 to 200 words")
+    expect(errors.introduction).toContain("10 to 200 words")
+  })
+
+  it("accepts 10 to 200 introduction words and rejects values outside the range", () => {
+    const nineWords = Array.from({ length: 9 }, (_, index) => `word${index}`)
+      .join(" ")
+    const tenWords = Array.from({ length: 10 }, (_, index) => `word${index}`)
+      .join(" ")
+    const twoHundredWords = Array.from(
+      { length: 200 },
+      (_, index) => `word${index}`
+    ).join(" ")
+    const twoHundredOneWords = Array.from(
+      { length: 201 },
+      (_, index) => `word${index}`
+    ).join(" ")
+
+    expect(
+      validateCompanyRegistrationProfile(
+        createProfile({ introduction: nineWords })
+      ).introduction
+    ).toContain("10 to 200 words")
+    expect(
+      validateCompanyRegistrationProfile(
+        createProfile({ introduction: tenWords })
+      ).introduction
+    ).toBeUndefined()
+    expect(
+      validateCompanyRegistrationProfile(
+        createProfile({ introduction: twoHundredWords })
+      ).introduction
+    ).toBeUndefined()
+    expect(
+      validateCompanyRegistrationProfile(
+        createProfile({ introduction: twoHundredOneWords })
+      ).introduction
+    ).toContain("10 to 200 words")
   })
 
   it("validates fields that depend on another answer", () => {

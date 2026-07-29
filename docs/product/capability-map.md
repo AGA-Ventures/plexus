@@ -2,7 +2,7 @@
 
 **Owner:** Product and engineering leads
 **Review trigger:** Capability delivery, retirement, or production-readiness change
-**Last reviewed:** 2026-07-28
+**Last reviewed:** 2026-07-29
 
 ## Status definitions
 
@@ -15,32 +15,33 @@
 
 ## Platform capabilities
 
-| Domain           | Capability                                      | Status          | Primary implementation               |
-| ---------------- | ----------------------------------------------- | --------------- | ------------------------------------ |
-| Identity         | Shared email/password login and logout          | Live            | Supabase Auth, `app/actions/auth.ts` |
-| Identity         | Superadmin/Admin/Vendor route isolation         | Live            | `proxy.ts`, `lib/authorization.ts`   |
-| Identity         | Admin and Vendor account provisioning           | Controlled      | Auth Admin API, management actions   |
-| Identity         | Self-service password recovery                  | Controlled      | Supabase Auth email and PKCE flow    |
-| Identity         | Invitation email and first-time password setup  | Planned         | Supabase Auth email flow             |
-| Tenancy          | Admin tenant lifecycle and branding             | Live            | `admin_tenants`, Superadmin console  |
-| Tenancy          | Vendor ownership and cross-tenant transfer      | Live            | `vendor_companies`, audited RPC      |
-| Onboarding       | Delegation and Partner company profiles         | Live            | subtype tables and Vendor workspace  |
-| Discovery        | Opposite-subtype candidate directory            | Live            | `match_candidate_directory`          |
-| Matching         | Match request, decision, score, and status      | Live            | `matches`                            |
-| Meetings         | Scheduling and meeting state                    | Live            | `meetings`                           |
-| Meetings         | External meeting provider automation            | Adapter         | Zoom/Lark server adapters; deploy pending |
-| Deals            | Deal/MOU state and signatory checks             | Live            | `deals`                              |
-| Deals            | E-signature and document lifecycle              | Adapter         | Document reference fields            |
-| Event operations | Itineraries, site visits, liaison, interpreters | Live            | Tenant-scoped operational tables     |
-| Communications   | Announcements and notifications                 | Live data model | Tenant-scoped tables                 |
-| Communications   | Transactional email/push delivery               | Adapter         | API routes/provider pending          |
-| Resources        | Private resource metadata and uploads           | Live            | Storage bucket and API routes        |
-| Compliance       | SSM/CTOS/World-Check interface                  | Adapter         | Protected compliance routes          |
-| Governance       | Platform settings and provisioning controls     | Live            | `platform_settings`                  |
-| Governance       | Append-only privileged audit events             | Live            | `audit_events` and triggers          |
-| Reporting        | Operational dashboard summaries                 | Controlled      | Existing portal views                |
-| Observability    | Error tracking, uptime, product analytics       | Planned         | Provider selection pending           |
-| AI               | Future Plexus assistant experience              | Concept         | `/app` showcase only                 |
+| Domain           | Capability                                      | Status          | Primary implementation                                   |
+| ---------------- | ----------------------------------------------- | --------------- | -------------------------------------------------------- |
+| Identity         | Shared email/password login and logout          | Live            | Supabase Auth, `app/actions/auth.ts`                     |
+| Identity         | Superadmin/Admin/Vendor route isolation         | Live            | `proxy.ts`, `lib/authorization.ts`                       |
+| Identity         | Admin and Vendor account provisioning           | Controlled      | Auth Admin API, management actions                       |
+| Identity         | Self-service password recovery                  | Controlled      | Supabase Auth email and PKCE flow                        |
+| Identity         | Approved Vendor first-time password setup       | Controlled      | Supabase Auth email and PKCE flow                        |
+| Tenancy          | Admin tenant lifecycle and branding             | Live            | `admin_tenants`, Superadmin console                      |
+| Tenancy          | Vendor ownership and cross-tenant transfer      | Live            | `vendor_companies`, audited RPC                          |
+| Onboarding       | Delegation and Partner company profiles         | Live            | subtype tables and Vendor workspace                      |
+| Onboarding       | Tenant Vendor application and Admin approval    | Controlled      | public intake, `vendor_applications`, management actions |
+| Discovery        | Opposite-subtype candidate directory            | Live            | `match_candidate_directory`                              |
+| Matching         | Match request, decision, score, and status      | Live            | `matches`                                                |
+| Meetings         | Scheduling and meeting state                    | Live            | `meetings`                                               |
+| Meetings         | External meeting provider automation            | Adapter         | Zoom/Lark server adapters; deploy pending                |
+| Deals            | Deal/MOU state and signatory checks             | Live            | `deals`                                                  |
+| Deals            | E-signature and document lifecycle              | Adapter         | Document reference fields                                |
+| Event operations | Itineraries, site visits, liaison, interpreters | Live            | Tenant-scoped operational tables                         |
+| Communications   | Announcements and notifications                 | Live data model | Tenant-scoped tables                                     |
+| Communications   | Transactional email/push delivery               | Adapter         | API routes/provider pending                              |
+| Resources        | Private resource metadata and uploads           | Live            | Storage bucket and API routes                            |
+| Compliance       | Hidden protected workspace shell                | Adapter         | Provider details remain server-only                      |
+| Governance       | Platform settings and provisioning controls     | Live            | `platform_settings`                                      |
+| Governance       | Append-only privileged audit events             | Live            | `audit_events` and triggers                              |
+| Reporting        | Operational dashboard summaries                 | Controlled      | Existing portal views                                    |
+| Observability    | Error tracking, uptime, product analytics       | Planned         | Provider selection pending                               |
+| AI               | Future Plexus assistant experience              | Concept         | `/app` showcase only                                     |
 
 ## Superapp module boundaries
 

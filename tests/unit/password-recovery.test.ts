@@ -31,6 +31,37 @@ describe("password recovery routes", () => {
     )
   })
 
+  it("preserves a validated setup mode for approved Vendor onboarding", () => {
+    const redirect = getPasswordRecoveryRedirectUrl({
+      origin: "https://plexus.example",
+      locale: "en",
+      tenantSlug: "shanghai-macau",
+      mode: "setup",
+    })
+
+    expect(redirect).toBe(
+      "https://plexus.example/auth/callback?next=%2Fen%2Freset-password%3Ftenant%3Dshanghai-macau%26mode%3Dsetup"
+    )
+    expect(
+      parsePasswordResetPath(
+        "/en/reset-password?tenant=shanghai-macau&mode=setup"
+      )
+    ).toEqual({
+      locale: "en",
+      tenantSlug: "shanghai-macau",
+      mode: "setup",
+      path: "/en/reset-password?tenant=shanghai-macau&mode=setup",
+    })
+  })
+
+  it("normalizes unknown password modes back to recovery", () => {
+    expect(
+      parsePasswordResetPath(
+        "/en/reset-password?tenant=shanghai-macau&mode=admin"
+      ).mode
+    ).toBe("recovery")
+  })
+
   it("uses the production origin ahead of the optional site URL", () => {
     expect(
       resolvePasswordRecoveryOrigin({

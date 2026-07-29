@@ -69,8 +69,9 @@ supabase <group> --help
 | ------------------------------ | ---------------------------------- |
 | `npm run bootstrap:superadmin` | Guarded first Superadmin bootstrap |
 
-Normal Admin and Vendor provisioning happens through the protected management
-workspaces, not scripts or public signup.
+Normal Admin provisioning and Vendor approval happen through protected
+management workspaces. The public Vendor application route creates only a
+pending review record, never an Auth account.
 
 ## Production verification
 

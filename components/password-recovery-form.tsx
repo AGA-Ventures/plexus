@@ -36,6 +36,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import type { Locale } from "@/lib/i18n"
 import { getForgotPasswordPath, getLoginPath } from "@/lib/password-recovery"
+import type { PasswordRecoveryMode } from "@/lib/password-recovery"
 import type { LoginBranding } from "@/lib/tenant-login"
 
 type RecoveryCopy = {
@@ -211,6 +212,58 @@ const copy: Partial<Record<Locale, RecoveryCopy>> & { en: RecoveryCopy } = {
   },
 }
 
+const setupCopy: Partial<
+  Record<
+    Locale,
+    {
+      title: string
+      prompt: string
+      submit: string
+      submitting: string
+      success: string
+    }
+  >
+> & {
+  en: {
+    title: string
+    prompt: string
+    submit: string
+    submitting: string
+    success: string
+  }
+} = {
+  en: {
+    title: "Set up your Vendor account",
+    prompt:
+      "Your application was approved. Choose a password of at least 12 characters to activate secure access.",
+    submit: "Set password",
+    submitting: "Setting password...",
+    success: "Account ready. Sign in with your new password.",
+  },
+  zh: {
+    title: "设置您的供应商账号",
+    prompt: "您的申请已获批准。请设置至少 12 个字符的密码以启用安全访问。",
+    submit: "设置密码",
+    submitting: "正在设置...",
+    success: "账号已准备就绪，请使用新密码登录。",
+  },
+  "zh-Hant": {
+    title: "設定您的供應商帳號",
+    prompt: "您的申請已獲批准。請設定至少 12 個字元的密碼以啟用安全存取。",
+    submit: "設定密碼",
+    submitting: "正在設定...",
+    success: "帳號已準備就緒，請使用新密碼登入。",
+  },
+  th: {
+    title: "ตั้งค่าบัญชี Vendor",
+    prompt:
+      "ใบสมัครได้รับอนุมัติแล้ว โปรดตั้งรหัสผ่านอย่างน้อย 12 ตัวอักษรเพื่อเปิดใช้งานบัญชี",
+    submit: "ตั้งรหัสผ่าน",
+    submitting: "กำลังตั้งรหัสผ่าน...",
+    success: "บัญชีพร้อมใช้งานแล้ว โปรดเข้าสู่ระบบด้วยรหัสผ่านใหม่",
+  },
+}
+
 export function ForgotPasswordForm({
   locale,
   branding,
@@ -347,10 +400,12 @@ export function UpdatePasswordForm({
   locale,
   branding,
   recoveryReady,
+  mode = "recovery",
 }: {
   locale: Locale
   branding: LoginBranding
   recoveryReady: boolean
+  mode?: PasswordRecoveryMode
 }) {
   const router = useRouter()
   const [passwordVisible, setPasswordVisible] = useState(false)
@@ -359,6 +414,8 @@ export function UpdatePasswordForm({
     FormData
   >(updatePasswordAction, {})
   const t = { ...copy.en, ...(copy[locale] ?? {}) }
+  const setup = { ...setupCopy.en, ...(setupCopy[locale] ?? {}) }
+  const isSetup = mode === "setup"
   const forgotPasswordPath = getForgotPasswordPath(locale, branding.slug)
 
   useEffect(() => {
@@ -367,23 +424,31 @@ export function UpdatePasswordForm({
     }
 
     if (state.redirectTo) {
-      toast.success(t.passwordUpdated)
+      toast.success(isSetup ? setup.success : t.passwordUpdated)
       router.replace(state.redirectTo)
     }
-  }, [router, state.error, state.redirectTo, t.passwordUpdated])
+  }, [
+    isSetup,
+    router,
+    setup.success,
+    state.error,
+    state.redirectTo,
+    t.passwordUpdated,
+  ])
 
   return (
     <RecoveryShell
       locale={locale}
       branding={branding}
-      title={t.resetTitle}
-      prompt={t.resetPrompt}
+      title={isSetup ? setup.title : t.resetTitle}
+      prompt={isSetup ? setup.prompt : t.resetPrompt}
     >
       {recoveryReady ? (
         <form action={formAction}>
           <CardContent className="px-6 sm:px-8">
             <FieldGroup className="gap-4">
               <input type="hidden" name="locale" value={locale} />
+              <input type="hidden" name="mode" value={mode} />
               {branding.slug ? (
                 <input type="hidden" name="tenantSlug" value={branding.slug} />
               ) : null}
@@ -429,7 +494,13 @@ export function UpdatePasswordForm({
                   data-icon="inline-start"
                   strokeWidth={1.8}
                 />
-                {isPending ? t.updatingPassword : t.updatePassword}
+                {isPending
+                  ? isSetup
+                    ? setup.submitting
+                    : t.updatingPassword
+                  : isSetup
+                    ? setup.submit
+                    : t.updatePassword}
                 <HugeiconsIcon
                   icon={ArrowRight01Icon}
                   data-icon="inline-end"

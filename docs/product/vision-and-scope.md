@@ -2,7 +2,7 @@
 
 **Owner:** Product
 **Review trigger:** Product strategy, target market, or launch-scope change
-**Last reviewed:** 2026-07-27
+**Last reviewed:** 2026-07-29
 
 ## Vision
 
@@ -60,6 +60,8 @@ The deployed platform currently supports:
 - Shared email/password authentication and role-directed routing.
 - Superadmin tenant, Vendor, account, settings, reporting, and audit controls.
 - Admin tenant operations and Vendor provisioning.
+- Tenant-branded Vendor applications with Admin approval and one-time password
+  setup.
 - Vendor company registration profiles.
 - Delegation/Partner discovery and matching.
 - Meeting, deal, itinerary, liaison, interpreter, communication, notification,
@@ -73,7 +75,7 @@ live, controlled, adapter, and planned capabilities.
 
 ## Out of scope until explicitly planned
 
-- Public self-signup.
+- Unreviewed public Auth self-signup or client-selected tenant/role binding.
 - Client-side role or tenant selection.
 - Unreviewed cross-tenant data sharing.
 - A public plugin marketplace.

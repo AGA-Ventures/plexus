@@ -2,7 +2,7 @@
 
 **Owner:** Security and engineering
 **Review trigger:** Auth, role, RLS, storage, secret, provider, or privacy change
-**Last reviewed:** 2026-07-28
+**Last reviewed:** 2026-07-29
 
 ## Security objectives
 
@@ -79,7 +79,9 @@ policy summary.
 - Deleting an Auth user alone is not a complete session-revocation strategy.
 - Sensitive account disablement should suspend relational access and revoke or
   expire sessions according to the current Supabase Auth policy.
-- Public signup and anonymous sign-in remain disabled.
+- Public Auth signup and anonymous sign-in remain disabled. Public Vendor
+  application intake creates only an RLS-protected pending record through a
+  server-only route; it cannot create or select Auth identities.
 - Tenant-branded login slugs are untrusted context. After authentication, the
   server compares the requested active tenant with the account's trusted
   `admin_id`; a mismatch signs the user out and returns a generic error.
@@ -96,8 +98,9 @@ policy summary.
 - Admin provisioning validates the temporary password confirmation in both the
   browser and the Server Action before creating any tenant or Auth record.
 - Partial failures roll back created Auth/database records.
-- Temporary password delivery remains a controlled risk until invitation and
-  first-time password setup flows are implemented.
+- Approved public applications create passwordless, server-confirmed Auth
+  identities and use the verified tenant-aware recovery callback as a
+  one-time setup flow. The setup link does not contain role or tenant authority.
 - Public password-recovery requests return a generic response, the callback
   rejects non-reset destinations, and the password mutation requires a
   verified Supabase user session.
@@ -148,6 +151,23 @@ For upload/replacement policies, validate:
 - Rate-limit abuse-prone endpoints, especially login, password recovery,
   uploads, email, compliance, and AI.
 - Log request IDs and safe metadata, not direct personal data.
+
+### Public Vendor application boundary
+
+- The route accepts no `admin_id`; the active tenant is resolved from the
+  validated slug and the subtype is fixed by the share URL.
+- Every 28-item core profile answer, including consent, is required. Optional
+  existing fields and the document checklist are retained; file uploads remain
+  behind Vendor authentication.
+- Request bodies are capped at 64 KiB, honeypot submissions are discarded, and
+  logs omit contact/company profile values.
+- A normalized-email partial unique index and a generic success response
+  prevent duplicate identities and reduce account/email enumeration.
+- `provisioning` is the concurrency claim. Approval revalidates the active
+  Admin, exact tenant, platform permission, profile, and server secret before
+  creating Auth or Vendor records.
+- Vercel Firewall is staged in log mode for the stable API path before Preview
+  enforcement and an explicit production publish decision.
 
 ## Privacy and data handling
 

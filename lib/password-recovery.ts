@@ -3,15 +3,26 @@ import { normalizeTenantSlug } from "@/lib/tenant-login"
 
 const fallbackOrigin = "http://localhost:3000"
 
-function withTenant(path: string, tenantSlug?: string | null) {
-  const slug = normalizeTenantSlug(tenantSlug)
+export type PasswordRecoveryMode = "recovery" | "setup"
 
-  if (!slug) {
-    return path
+function withTenant(
+  path: string,
+  tenantSlug?: string | null,
+  mode: PasswordRecoveryMode = "recovery"
+) {
+  const slug = normalizeTenantSlug(tenantSlug)
+  const search = new URLSearchParams()
+
+  if (slug) {
+    search.set("tenant", slug)
   }
 
-  const search = new URLSearchParams({ tenant: slug })
-  return `${path}?${search.toString()}`
+  if (mode === "setup") {
+    search.set("mode", "setup")
+  }
+
+  const query = search.toString()
+  return `${path}${query ? `?${query}` : ""}`
 }
 
 export function getForgotPasswordPath(
@@ -23,9 +34,10 @@ export function getForgotPasswordPath(
 
 export function getResetPasswordPath(
   locale: Locale,
-  tenantSlug?: string | null
+  tenantSlug?: string | null,
+  mode: PasswordRecoveryMode = "recovery"
 ) {
-  return withTenant(`/${locale}/reset-password`, tenantSlug)
+  return withTenant(`/${locale}/reset-password`, tenantSlug, mode)
 }
 
 export function getLoginPath(
@@ -76,24 +88,31 @@ export function getPasswordRecoveryRedirectUrl({
   origin,
   locale,
   tenantSlug,
+  mode = "recovery",
 }: {
   origin: string
   locale: Locale
   tenantSlug?: string | null
+  mode?: PasswordRecoveryMode
 }) {
   const callbackUrl = new URL("/auth/callback", origin)
-  callbackUrl.searchParams.set("next", getResetPasswordPath(locale, tenantSlug))
+  callbackUrl.searchParams.set(
+    "next",
+    getResetPasswordPath(locale, tenantSlug, mode)
+  )
   return callbackUrl.toString()
 }
 
 export function parsePasswordResetPath(value?: string | null): {
   locale: Locale
   tenantSlug?: string
+  mode: PasswordRecoveryMode
   path: string
 } {
   if (!value?.startsWith("/") || value.startsWith("//")) {
     return {
       locale: "en",
+      mode: "recovery",
       path: getResetPasswordPath("en"),
     }
   }
@@ -102,11 +121,13 @@ export function parsePasswordResetPath(value?: string | null): {
   const match = url.pathname.match(/^\/([^/]+)\/reset-password$/)
   const locale = match?.[1] && isLocale(match[1]) ? match[1] : "en"
   const tenantSlug = normalizeTenantSlug(url.searchParams.get("tenant"))
+  const mode = url.searchParams.get("mode") === "setup" ? "setup" : "recovery"
 
   return {
     locale,
     tenantSlug,
-    path: getResetPasswordPath(locale, tenantSlug),
+    mode,
+    path: getResetPasswordPath(locale, tenantSlug, mode),
   }
 }
 

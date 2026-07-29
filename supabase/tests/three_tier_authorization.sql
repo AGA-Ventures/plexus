@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(28);
+select plan(45);
 
 insert into auth.users (
   id, instance_id, aud, role, email, encrypted_password,
@@ -138,6 +138,54 @@ insert into public.user_profiles (
     '83000000-0000-4000-8000-000000000004', 'partner', true
   );
 
+insert into public.vendor_applications (
+  id, admin_id, vendor_type, normalized_email, contact_name, company_name,
+  profile_data, profile_complete
+) values (
+  '86000000-0000-4000-8000-000000000001',
+  '82000000-0000-4000-8000-000000000001',
+  'delegation',
+  'application-a@example.invalid',
+  'Application A',
+  'Application Vendor A',
+  '{"companyNameEn":"Application Vendor A"}',
+  100
+), (
+  '86000000-0000-4000-8000-000000000002',
+  '82000000-0000-4000-8000-000000000002',
+  'partner',
+  'application-b@example.invalid',
+  'Application B',
+  'Application Vendor B',
+  '{"companyNameEn":"Application Vendor B"}',
+  100
+);
+
+set local role anon;
+select throws_ok(
+  $$select * from public.vendor_applications$$,
+  '42501',
+  'permission denied for table vendor_applications',
+  'Anonymous users cannot read Vendor applications directly'
+);
+select throws_ok(
+  $$insert into public.vendor_applications (
+    admin_id, vendor_type, normalized_email, contact_name, company_name,
+    profile_data, profile_complete
+  ) values (
+    '82000000-0000-4000-8000-000000000001',
+    'delegation',
+    'anonymous@example.invalid',
+    'Anonymous',
+    'Anonymous Vendor',
+    '{}',
+    100
+  )$$,
+  '42501',
+  'permission denied for table vendor_applications',
+  'Anonymous users cannot submit through the Data API'
+);
+
 set local role authenticated;
 set local request.jwt.claims =
   '{"sub":"81000000-0000-4000-8000-000000000002","role":"authenticated","app_metadata":{"role":"admin","admin_id":"82000000-0000-4000-8000-000000000001"}}';
@@ -167,6 +215,87 @@ select results_eq(
       )$$,
   array[1::bigint],
   'Admin sees only Vendor accounts in its tenant'
+);
+select results_eq(
+  $$select count(*) from public.vendor_applications$$,
+  array[1::bigint],
+  'Admin sees only Vendor applications in its tenant'
+);
+select is(
+  (
+    select id
+    from public.vendor_applications
+    where id = '86000000-0000-4000-8000-000000000002'
+  ),
+  null::uuid,
+  'Foreign Admin Vendor applications are not visible'
+);
+select throws_ok(
+  $$insert into public.vendor_applications (
+    admin_id, vendor_type, normalized_email, contact_name, company_name,
+    profile_data, profile_complete
+  ) values (
+    '82000000-0000-4000-8000-000000000001',
+    'delegation',
+    'admin-direct@example.invalid',
+    'Admin Direct',
+    'Admin Direct Vendor',
+    '{}',
+    100
+  )$$,
+  '42501',
+  'permission denied for table vendor_applications',
+  'Admins cannot bypass the server-only application submission path'
+);
+select throws_ok(
+  $$update public.vendor_applications
+    set
+      status = 'provisioning',
+      reviewed_by = '81000000-0000-4000-8000-000000000002',
+      reviewed_at = now()
+    where id = '86000000-0000-4000-8000-000000000001'
+      and status = 'pending'$$,
+  '42501',
+  'Vendor application provisioning requires a trusted server workflow',
+  'Admin cannot bypass the trusted approval workflow through the Data API'
+);
+select results_eq(
+  $$select status from public.vendor_applications
+    where id = '86000000-0000-4000-8000-000000000001'$$,
+  array['pending'::text],
+  'Blocked direct approval leaves the application pending'
+);
+select throws_ok(
+  $$select public.reject_vendor_application(
+    '86000000-0000-4000-8000-000000000001',
+    '82000000-0000-4000-8000-000000000001',
+    '81000000-0000-4000-8000-000000000002'
+  )$$,
+  '42501',
+  'permission denied for function reject_vendor_application',
+  'Owning Admin cannot invoke the privileged rejection function directly'
+);
+set local role service_role;
+set local request.jwt.claims =
+  '{"role":"service_role"}';
+select lives_ok(
+  $$select public.reject_vendor_application(
+    '86000000-0000-4000-8000-000000000001',
+    '82000000-0000-4000-8000-000000000001',
+    '81000000-0000-4000-8000-000000000002'
+  )$$,
+  'Trusted server can reject the owning Admin application'
+);
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000002","role":"authenticated","app_metadata":{"role":"admin","admin_id":"82000000-0000-4000-8000-000000000001"}}';
+select results_eq(
+  $$select count(*) from public.audit_events
+    where action = 'reject_vendor_application'
+      and target_id = '86000000-0000-4000-8000-000000000001'
+      and actor_user_id = '81000000-0000-4000-8000-000000000002'$$,
+  array[1::bigint],
+  'Vendor application rejection records actor-attributed audit evidence'
 );
 select throws_ok(
   $$insert into public.vendor_companies (
@@ -242,6 +371,11 @@ select is(
   ),
   null::uuid,
   'Vendor cannot read another Vendor'
+);
+select results_eq(
+  $$select count(*) from public.vendor_applications$$,
+  array[0::bigint],
+  'Vendors cannot read application records'
 );
 update public.user_profiles
 set
@@ -369,6 +503,14 @@ select results_eq(
   'Superadmin sees every Vendor'
 );
 select results_eq(
+  $$select count(*) from public.vendor_applications where id in (
+    '86000000-0000-4000-8000-000000000001',
+    '86000000-0000-4000-8000-000000000002'
+  )$$,
+  array[2::bigint],
+  'Superadmin has governance visibility across Vendor applications'
+);
+select results_eq(
   $$select count(*) from public.meeting_creation_jobs
     where id = '85000000-0000-4000-8000-000000000001'$$,
   array[1::bigint],
@@ -427,6 +569,126 @@ select results_eq(
     '83000000-0000-4000-8000-000000000002'$$,
   array[0::bigint],
   'Suspended account fails closed even with a stale JWT'
+);
+
+reset role;
+insert into auth.users (
+  id, instance_id, aud, role, email, encrypted_password,
+  email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
+  created_at, updated_at
+) values (
+  '81000000-0000-4000-8000-000000000007',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated',
+  'authenticated',
+  'application-b@example.invalid',
+  '',
+  now(),
+  '{"role":"vendor","admin_id":"82000000-0000-4000-8000-000000000002","vendor_company_id":"83000000-0000-4000-8000-000000000005","vendor_type":"partner"}',
+  '{"display_name":"Application B"}',
+  now(),
+  now()
+);
+
+insert into public.partner_companies (
+  id, admin_id, vendor_company_id, vendor_type,
+  name_en, name_cn, sector, partner_type, company_size, offerings,
+  contact, contact_meta, status, profile_complete, verified, attendance, arrived,
+  profile_data
+) values (
+  '83000000-0000-4000-8000-000000000005',
+  '82000000-0000-4000-8000-000000000002',
+  '83000000-0000-4000-8000-000000000005',
+  'partner',
+  'Application Vendor B',
+  '',
+  'Testing',
+  'Enterprise',
+  'Test',
+  'Testing',
+  'Application B',
+  'application-b@example.invalid',
+  'Confirmed',
+  100,
+  'Verified',
+  'Invited',
+  false,
+  '{"companyNameEn":"Application Vendor B"}'
+);
+
+insert into public.user_profiles (
+  id, role, display_name, email, admin_id, vendor_company_id, vendor_type, active
+) values (
+  '81000000-0000-4000-8000-000000000007',
+  'vendor',
+  'Application B',
+  'application-b@example.invalid',
+  '82000000-0000-4000-8000-000000000002',
+  '83000000-0000-4000-8000-000000000005',
+  'partner',
+  true
+);
+
+update public.vendor_applications
+set
+  status = 'provisioning',
+  reviewed_by = '81000000-0000-4000-8000-000000000003',
+  reviewed_at = now()
+where id = '86000000-0000-4000-8000-000000000002';
+
+select is(
+  public.finalize_vendor_application_approval(
+    '86000000-0000-4000-8000-000000000002',
+    '82000000-0000-4000-8000-000000000002',
+    '81000000-0000-4000-8000-000000000003',
+    '83000000-0000-4000-8000-000000000005',
+    '81000000-0000-4000-8000-000000000007'
+  ),
+  true,
+  'Trusted workflow finalizes one claimed Vendor application'
+);
+select results_eq(
+  $$select status, vendor_company_id, auth_user_id
+    from public.vendor_applications
+    where id = '86000000-0000-4000-8000-000000000002'$$,
+  $$values (
+    'approved'::text,
+    '83000000-0000-4000-8000-000000000005'::uuid,
+    '81000000-0000-4000-8000-000000000007'::uuid
+  )$$,
+  'Finalized application stores the resulting trusted IDs'
+);
+select results_eq(
+  $$select count(*) from public.audit_events
+    where action = 'approve_vendor_application'
+      and target_id = '86000000-0000-4000-8000-000000000002'
+      and actor_user_id = '81000000-0000-4000-8000-000000000003'$$,
+  array[1::bigint],
+  'Approval finalization writes actor-attributed audit evidence atomically'
+);
+select is(
+  public.finalize_vendor_application_approval(
+    '86000000-0000-4000-8000-000000000002',
+    '82000000-0000-4000-8000-000000000002',
+    '81000000-0000-4000-8000-000000000003',
+    '83000000-0000-4000-8000-000000000005',
+    '81000000-0000-4000-8000-000000000007'
+  ),
+  false,
+  'A second finalization cannot approve the same application twice'
+);
+
+update public.user_profiles
+set active = false
+where id = '81000000-0000-4000-8000-000000000003';
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000003","role":"authenticated","app_metadata":{"role":"admin","admin_id":"82000000-0000-4000-8000-000000000002"}}';
+select results_eq(
+  $$select count(*) from public.vendor_applications$$,
+  array[0::bigint],
+  'Inactive Admin cannot read Vendor applications with a stale JWT'
 );
 
 select * from finish();

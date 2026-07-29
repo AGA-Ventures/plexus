@@ -63,6 +63,9 @@ export type CompanyRegistrationProfile = {
   consent: boolean
   consentName: string
   consentDate: string
+  companyLogoUrl?: string
+  publicRegistration?: boolean
+  lookingForSummary?: string
 }
 
 export type DelegationCompany = {

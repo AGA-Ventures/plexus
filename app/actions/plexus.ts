@@ -325,6 +325,55 @@ export async function updateCompanyAction(
   })
 }
 
+export async function reviewPublicPartnerRegistrationAction(
+  companyId: string,
+  decision: "approve" | "reject"
+): Promise<ActionResult> {
+  if (!isUuid(companyId) || !["approve", "reject"].includes(decision)) {
+    return { ok: false, error: "Invalid registration review request." }
+  }
+
+  return runMutation(
+    async ({ supabase, identity }) => {
+      if (!identity.adminId) {
+        return { error: { message: "An Admin tenant is required." } }
+      }
+
+      const registrationResult = await supabase
+        .from("partner_companies")
+        .select("id, verified, profile_data")
+        .eq("id", companyId)
+        .eq("admin_id", identity.adminId)
+        .maybeSingle()
+
+      if (
+        registrationResult.error ||
+        !registrationResult.data ||
+        registrationResult.data.verified !== "Pending" ||
+        registrationResult.data.profile_data?.publicRegistration !== true
+      ) {
+        return {
+          error: {
+            message:
+              "This public registration is no longer pending in your tenant.",
+          },
+        }
+      }
+
+      return supabase
+        .from("partner_companies")
+        .update(
+          decision === "approve"
+            ? { status: "Sourced", verified: "Verified" }
+            : { status: "Declined", verified: "Flagged" }
+        )
+        .eq("id", companyId)
+        .eq("admin_id", identity.adminId)
+    },
+    { role: "admin" }
+  )
+}
+
 export async function deleteCompanyAction(
   kind: "delegation" | "partner",
   id: string

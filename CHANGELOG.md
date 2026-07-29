@@ -8,6 +8,14 @@ reviewed together.
 
 ### 2026-07-29
 
+- Added the agreed public Malaysian-company intake flow. Admins now share a
+  tenant-specific registration link instead of manually creating a Malaysian
+  Partner account; companies submit the 11-field qualification profile without
+  signing in, may upload a validated logo, and remain on a confirmation screen.
+  Submissions enter the existing tenant-scoped partner directory as Pending
+  with no login account. The Admin dashboard and Malaysian Partners page show
+  pending counts, and a dedicated review tab can approve or reject each
+  submission before separate account provisioning.
 - Made password-recovery emails work across browsers and devices. The hosted
   template now sends Supabase's one-time recovery token hash to the protected
   callback, which verifies it as a recovery OTP before opening the new-password

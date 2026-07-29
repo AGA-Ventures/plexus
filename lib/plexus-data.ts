@@ -191,6 +191,7 @@ export type PortalSession = {
   tenantSupportEmail?: string
   tenantPrimaryColor?: string
   tenantLogoUrl?: string
+  tenantSlug?: string
 }
 
 function assertRows<T>(

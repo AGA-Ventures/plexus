@@ -195,6 +195,15 @@ match_candidate_directory (
 )
 ```
 
+Public Malaysian partner intake reuses the tenant-scoped `partner_companies`
+record rather than creating an account-shaped staging identity. A public
+submission is distinguishable by `profile_data.publicRegistration = true`,
+starts with `verified = 'Pending'` and `status = 'Invited'`, and has no
+`user_profiles` row. Qualification changes the operating status; account
+provisioning is deliberately separate. The optional company logo URL is stored
+in `profile_data.companyLogoUrl` after the image is written beneath the
+tenant's `tenant-branding/{slug}/partner-registrations/` Storage prefix.
+
 Subtype records and the candidate directory are synchronized by private
 triggers. Vendor authorization uses the canonical `vendor_companies` identity;
 subtype tables hold subtype-specific operating data.

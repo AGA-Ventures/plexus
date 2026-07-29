@@ -61,6 +61,7 @@ import {
   deleteInterpreterAction,
   publishItineraryAction,
   refreshPortalDbAction,
+  reviewPublicPartnerRegistrationAction,
   scheduleMeetingAction,
   sendAnnouncementAction,
   toggleResourceVisibilityAction,
@@ -1690,6 +1691,18 @@ export function PlexusConnectMvp({
     )
   }
 
+  function reviewPublicPartnerRegistration(
+    company: PartnerCompany,
+    decision: "approve" | "reject"
+  ) {
+    void applyServerResult(
+      reviewPublicPartnerRegistrationAction(company.id, decision),
+      decision === "approve"
+        ? `${company.nameEn} approved for partner onboarding.`
+        : `${company.nameEn} registration rejected.`
+    )
+  }
+
   function deleteManagedCompany(kind: CompanyKind, id: string) {
     const companyName =
       kind === "delegation"
@@ -2003,6 +2016,7 @@ export function PlexusConnectMvp({
             selectedDelegation={selectedDelegation}
             setSelectedDelegation={setSelectedDelegation}
             updateManagedCompany={updateManagedCompany}
+            reviewPublicPartnerRegistration={reviewPublicPartnerRegistration}
             deleteManagedCompany={deleteManagedCompany}
             addMatch={addMatch}
             createManualMeeting={createManualMeeting}
@@ -2337,6 +2351,10 @@ function AdminPortal(props: {
   selectedDelegation: string
   setSelectedDelegation: (value: string) => void
   updateManagedCompany: (kind: CompanyKind, values: ManagedCompany) => void
+  reviewPublicPartnerRegistration: (
+    company: PartnerCompany,
+    decision: "approve" | "reject"
+  ) => void
   deleteManagedCompany: (kind: CompanyKind, id: string) => void
   addMatch: (partnerId: string) => void
   createManualMeeting: (values: ManualMeetingInput) => Promise<boolean>
@@ -2395,6 +2413,7 @@ function AdminPortal(props: {
     selectedDelegation,
     setSelectedDelegation,
     updateManagedCompany,
+    reviewPublicPartnerRegistration,
     deleteManagedCompany,
     addMatch,
     createManualMeeting,
@@ -2426,6 +2445,9 @@ function AdminPortal(props: {
       ? initialSection
       : "dashboard"
   )
+  const [partnerView, setPartnerView] = useState<"directory" | "pending">(
+    "directory"
+  )
   const filteredDelegationCompanies = db.delegationCompanies.filter((company) =>
     matchCompanyQuery(company, query)
   )
@@ -2451,12 +2473,14 @@ function AdminPortal(props: {
   const matchedDelegations = db.delegationCompanies.filter((company) =>
     db.matches.some((match) => match.delegationId === company.id)
   ).length
-  const confirmedPartners = db.partnerCompanies.filter((partner) =>
-    ["Confirmed", "Arrived"].includes(partner.attendance)
-  ).length
   const verifiedPartners = db.partnerCompanies.filter(
     (partner) => partner.verified === "Verified"
   ).length
+  const pendingPartners = db.partnerCompanies.filter(
+    (partner) =>
+      partner.verified === "Pending" &&
+      partner.profileData?.publicRegistration === true
+  )
   const matchingDelegation = db.delegationCompanies.find(
     (company) => company.id === selectedDelegation
   )
@@ -2535,7 +2559,7 @@ function AdminPortal(props: {
                 <Progress
                   value={Math.min(100, (metrics.fullyMatched / 35) * 100)}
                 />
-                <div className="grid gap-3 sm:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                   <InfoTile
                     label={textFor(locale, "Fully matched", "已完成配对")}
                     value={`${metrics.fullyMatched} / 35`}
@@ -2548,6 +2572,23 @@ function AdminPortal(props: {
                     label={textFor(locale, "Signed MOUs", "已签署 MOU")}
                     value={metrics.signed}
                   />
+                  <button
+                    type="button"
+                    className="rounded-lg text-left focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    onClick={() => {
+                      setPartnerView("pending")
+                      setActiveTab("partner-companies")
+                    }}
+                  >
+                    <InfoTile
+                      label={textFor(
+                        locale,
+                        "Pending registrations",
+                        "待审核注册"
+                      )}
+                      value={pendingPartners.length}
+                    />
+                  </button>
                 </div>
                 <SessionList
                   db={db}
@@ -2713,18 +2754,20 @@ function AdminPortal(props: {
                 )}
               </p>
             </div>
-            {session.adminId ? (
-              <AdminVendorProvision
-                locale={locale}
-                adminId={session.adminId}
-                lockedVendorType="partner"
-                trigger={
-                  <Button>
-                    <Icon icon={AddIcon} inline="inline-start" />
-                    {textFor(locale, "Add MY Partner", "新增马方伙伴")}
-                  </Button>
-                }
-              />
+            {session.tenantSlug ? (
+              <Button asChild>
+                <Link
+                  href={`/${locale}/register?tenant=${encodeURIComponent(session.tenantSlug)}`}
+                  target="_blank"
+                >
+                  <Icon icon={AddIcon} inline="inline-start" />
+                  {textFor(
+                    locale,
+                    "Public registration form",
+                    "公开注册表单"
+                  )}
+                </Link>
+              </Button>
             ) : null}
           </div>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -2733,8 +2776,8 @@ function AdminPortal(props: {
               value={db.partnerCompanies.length}
             />
             <InfoTile
-              label={textFor(locale, "Confirmed attendance", "已确认出席")}
-              value={`${confirmedPartners} / ${db.partnerCompanies.length}`}
+              label={textFor(locale, "Pending approvals", "待审核")}
+              value={pendingPartners.length}
             />
             <InfoTile
               label={textFor(locale, "Verified partners", "已核验伙伴")}
@@ -2745,31 +2788,75 @@ function AdminPortal(props: {
               value={`${partnerProfileAverage}%`}
             />
           </div>
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="partner-search">
-                {textFor(locale, "Search Malaysian partners", "搜索马方伙伴")}
-              </FieldLabel>
-              <Input
-                id="partner-search"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder={textFor(
+          <Tabs
+            value={partnerView}
+            onValueChange={(value) =>
+              setPartnerView(value as "directory" | "pending")
+            }
+            className="gap-4"
+          >
+            <TabsList>
+              <TabsTrigger value="directory">
+                {textFor(locale, "Partner directory", "伙伴目录")}
+              </TabsTrigger>
+              <TabsTrigger value="pending">
+                {textFor(
                   locale,
-                  "Sector, company name, type or status",
-                  "行业、企业名称、类型或状态"
+                  `Pending approvals (${pendingPartners.length})`,
+                  `待审核（${pendingPartners.length}）`
                 )}
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="directory" className="flex flex-col gap-4">
+              <FieldGroup>
+                <Field>
+                  <FieldLabel htmlFor="partner-search">
+                    {textFor(
+                      locale,
+                      "Search Malaysian partners",
+                      "搜索马方伙伴"
+                    )}
+                  </FieldLabel>
+                  <Input
+                    id="partner-search"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder={textFor(
+                      locale,
+                      "Sector, company name, type or status",
+                      "行业、企业名称、类型或状态"
+                    )}
+                  />
+                </Field>
+              </FieldGroup>
+              <CompanyTable
+                title={textFor(
+                  locale,
+                  "Malaysian partner records",
+                  "马方伙伴记录"
+                )}
+                kind="partner"
+                companies={filteredPartnerCompanies}
+                locale={locale}
+                onSave={(company) => updateManagedCompany("partner", company)}
+                onDelete={(company) =>
+                  deleteManagedCompany("partner", company.id)
+                }
               />
-            </Field>
-          </FieldGroup>
-          <CompanyTable
-            title={textFor(locale, "Malaysian partner records", "马方伙伴记录")}
-            kind="partner"
-            companies={filteredPartnerCompanies}
-            locale={locale}
-            onSave={(company) => updateManagedCompany("partner", company)}
-            onDelete={(company) => deleteManagedCompany("partner", company.id)}
-          />
+            </TabsContent>
+            <TabsContent value="pending">
+              <PendingPartnerApprovals
+                companies={pendingPartners}
+                locale={locale}
+                onApprove={(company) =>
+                  reviewPublicPartnerRegistration(company, "approve")
+                }
+                onReject={(company) =>
+                  reviewPublicPartnerRegistration(company, "reject")
+                }
+              />
+            </TabsContent>
+          </Tabs>
         </div>
       </TabsContent>
 
@@ -6266,6 +6353,112 @@ function InfoTile({ label, value }: { label: string; value: string | number }) {
     <div className="rounded-md border p-3">
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-1 text-sm font-semibold">{value}</p>
+    </div>
+  )
+}
+
+function PendingPartnerApprovals({
+  companies,
+  locale,
+  onApprove,
+  onReject,
+}: {
+  companies: PartnerCompany[]
+  locale: Locale
+  onApprove: (company: PartnerCompany) => void
+  onReject: (company: PartnerCompany) => void
+}) {
+  if (!companies.length) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            {textFor(locale, "Pending approvals", "待审核注册")}
+          </CardTitle>
+          <CardDescription>
+            {textFor(
+              locale,
+              "New public registrations will appear here.",
+              "新的公开注册会显示在这里。"
+            )}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            {textFor(
+              locale,
+              "There are no registrations waiting for review.",
+              "目前没有等待审核的注册。"
+            )}
+          </p>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  return (
+    <div className="grid gap-3">
+      {companies.map((company) => (
+        <Card key={company.id}>
+          <CardHeader className="gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <CardTitle>{company.nameEn}</CardTitle>
+                <CardDescription>{company.sector}</CardDescription>
+              </div>
+              <Badge variant="outline">
+                {textFor(locale, "Pending review", "等待审核")}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <div className="grid gap-3 text-sm sm:grid-cols-2">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">
+                  {textFor(locale, "Contact", "联系人")}
+                </p>
+                <p>{company.contact || "—"}</p>
+                <p className="break-words text-xs text-muted-foreground">
+                  {company.contactMeta || "—"}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">
+                  {textFor(locale, "Products and services", "产品与服务")}
+                </p>
+                <p className="line-clamp-4 whitespace-pre-wrap">
+                  {company.offerings || "—"}
+                </p>
+              </div>
+              <div className="sm:col-span-2">
+                <p className="text-xs font-medium text-muted-foreground">
+                  {textFor(locale, "Company profile", "公司简介")}
+                </p>
+                <p className="line-clamp-5 whitespace-pre-wrap">
+                  {company.profileData?.introduction || "—"}
+                </p>
+              </div>
+              <div className="sm:col-span-2">
+                <p className="text-xs font-medium text-muted-foreground">
+                  {textFor(locale, "Looking for", "合作需求")}
+                </p>
+                <p className="line-clamp-4 whitespace-pre-wrap">
+                  {company.profileData?.lookingForOther || "—"}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-wrap justify-end gap-2 border-t pt-4">
+            <Button variant="destructive" onClick={() => onReject(company)}>
+              {textFor(locale, "Reject", "拒绝")}
+            </Button>
+            <Button onClick={() => onApprove(company)}>
+              <Icon icon={CheckmarkCircle02Icon} inline="inline-start" />
+              {textFor(locale, "Approve", "批准")}
+            </Button>
+          </CardFooter>
+        </Card>
+      ))}
     </div>
   )
 }

@@ -342,6 +342,10 @@ change platform settings.
 **Status: Live**
 
 - View separate Delegation and Malaysian Partner directories.
+- Share a tenant-specific public registration link with Malaysian associations;
+  applicants submit an 11-field qualification profile without signing in.
+- Monitor pending public registrations from the dashboard and approve or reject
+  them in the Malaysian Partner review queue before provisioning login access.
 - Search records by company name, sector, origin/type, or status.
 - Review profile completion, readiness, attendance, verification, and matching
   coverage metrics.

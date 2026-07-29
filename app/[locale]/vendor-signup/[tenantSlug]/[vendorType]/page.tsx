@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { VendorApplicationForm } from "@/components/vendor-application-form"
-import { isLocaleParam, normalizeLocale } from "@/lib/i18n"
+import { isLocaleParam } from "@/lib/i18n"
 import { getActiveVendorApplicationTenant } from "@/lib/vendor-application-server"
 
 export const dynamic = "force-dynamic"
@@ -41,7 +41,6 @@ export default async function VendorSignupPage({
 
   return (
     <VendorApplicationForm
-      locale={normalizeLocale(locale)}
       vendorType={vendorType as "delegation" | "partner"}
       branding={tenant.branding}
     />

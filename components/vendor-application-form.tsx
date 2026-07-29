@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, type CSSProperties, type FormEvent } from "react"
-import Link from "next/link"
 import {
   CheckmarkCircle02Icon,
   Loading03Icon,
@@ -20,9 +19,7 @@ import {
   getCompanyProfileCompletion,
   getCompanyProfileCoreErrors,
 } from "@/lib/company-profile"
-import type { Locale } from "@/lib/i18n"
 import type { CompanyRegistrationProfile, CompanyRole } from "@/lib/local-db"
-import { getLoginPath } from "@/lib/password-recovery"
 import type { LoginBranding } from "@/lib/tenant-login"
 import type { VendorApplicationFieldErrors } from "@/lib/vendor-applications"
 
@@ -32,11 +29,9 @@ type ApplicationStyle = CSSProperties & {
 }
 
 export function VendorApplicationForm({
-  locale,
   vendorType,
   branding,
 }: {
-  locale: Locale
   vendorType: CompanyRole
   branding: LoginBranding & { mode: "tenant"; slug: string }
 }) {
@@ -156,11 +151,6 @@ export function VendorApplicationForm({
                 link is only sent after an Admin approves the application.
               </AlertDescription>
             </Alert>
-            <Button asChild variant="outline">
-              <Link href={getLoginPath(locale, branding.slug)}>
-                Go to {branding.name} login
-              </Link>
-            </Button>
           </CardContent>
         </Card>
       </main>

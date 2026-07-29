@@ -27,6 +27,9 @@ reviewed together.
   profiles.
 - Centered the success tick and Vendor subtype badge in the submitted
   application confirmation card.
+- Removed the tenant login link from the submitted Vendor application
+  confirmation so applicants remain on the awaiting-review message until an
+  Admin approves the application and sends the password-setup email.
 - Hid all Compliance provider, configuration, route, payload, market, and
   screening information from the protected UI while keeping Compliance as an
   active destination in the shared responsive Admin sidebar; the hidden

@@ -2,7 +2,7 @@
 
 **Owner:** Operations/release owner
 **Review trigger:** Support process, provider, monitoring, or operational change
-**Last reviewed:** 2026-07-29
+**Last reviewed:** 2026-07-30
 
 ## System endpoints
 
@@ -21,6 +21,8 @@ Run `npm run whereami` from the repository before any operational action.
 - Superadmin, Admin, and Vendor login issues are reviewed.
 - Vercel runtime errors and failed deployments are reviewed.
 - Supabase Auth and API errors are reviewed.
+- Superadmin **Email sending** has no unexplained failures, bounces,
+  suppressions, or complaints.
 - New Vendors can save their registration profile.
 - Vendors can upload, review, and delete an approved test PDF without leaving
   a temporary object behind.
@@ -68,8 +70,8 @@ Use the owning Admin's **Vendor management → Applications** tab:
 
 If provisioning fails, confirm the application returned to `pending` and that
 no Auth user, `user_profiles`, subtype, or canonical Vendor record remains
-before retrying. Rejection creates no account and sends no email in this
-release.
+before retrying. Rejection creates no account and sends a tracked decision
+email without exposing internal review details.
 
 Before production enablement:
 
@@ -79,6 +81,31 @@ Before production enablement:
 - Upgrade Vercel CLI, stage the `/api/vendor-applications` Firewall rule in log
   mode, inspect legitimate traffic, enforce in Preview, and publish the
   production rate limit only after release-owner approval.
+
+### Configure email delivery
+
+1. In Resend, use separate verified subdomains or senders for Auth and business
+   email where possible. Confirm SPF, DKIM, and DMARC.
+   The approved current sender is
+   `Plexus <notifications@info.plexus.enterprises>`.
+2. Connect Resend to Supabase Auth from the Resend integration page, select
+   project `pnjblggcdigekluualin`, and use a dedicated Auth From address.
+   Supabase continues to generate every password/setup token and link.
+3. Set `RESEND_API_KEY`, `PLEXUS_EMAIL_FROM`, `RESEND_WEBHOOK_SECRET`, and
+   `CRON_SECRET` as server-only Vercel variables for Preview and Production.
+   Never paste or commit their values.
+4. Register `https://<production-host>/api/webhooks/resend` for the Resend
+   email lifecycle events. Copy its signing secret to
+   `RESEND_WEBHOOK_SECRET`.
+5. Deploy the hourly `/api/cron/email-reminders` schedule from `vercel.ts`.
+   Vercel must send `Authorization: Bearer <CRON_SECRET>`.
+6. Send one business test and one Supabase Auth recovery test. In Superadmin
+   **Email sending**, confirm the business email reaches `delivered`; the Auth
+   email remains `requested` while Resend/Supabase logs confirm SMTP delivery.
+
+`requested` means Supabase Auth accepted the secure-email request. `sent` means
+Resend accepted a business email. Only `delivered` confirms acceptance by the
+recipient mail server. Do not manually upgrade one state to another.
 
 ### Directly create a Vendor
 
@@ -90,8 +117,10 @@ Use Superadmin or the owning Admin. Confirm:
 - Secure email/password delivery.
 - Successful first login and profile save.
 
-The legacy direct path still uses an operator-supplied temporary password. Use
-the application approval path for externally invited Vendors.
+The direct path still requires an operator-supplied temporary password as a
+controlled fallback, but immediately asks Supabase Auth to send a secure setup
+link. Never include the temporary password in email. Use the application
+approval path for externally invited Vendors.
 
 ### Password recovery
 
@@ -113,9 +142,9 @@ Before enabling recovery for a production cohort:
 - Copy the version-controlled `supabase/templates/recovery.html` into the hosted
   Supabase **Reset password** email template and use the subject
   `Reset your Plexus password`.
-- Configure production SMTP with the sender name `Plexus Security` and a
-  verified dedicated Auth sender address; the default `Supabase Auth` sender is
-  restricted and not production-ready.
+- Configure production SMTP with
+  `Plexus <notifications@info.plexus.enterprises>`; the default `Supabase Auth`
+  sender is restricted and not production-ready.
 - Keep email-provider link tracking disabled so the one-time recovery URL is not
   rewritten.
 - Send a recovery email to an approved test account and verify link exchange,
@@ -151,21 +180,29 @@ Before enabling provider creation:
    `/api/lark/login` once.
 4. Use a test match in one tenant. Log in as each Vendor and accept separately;
    confirm the first leaves it proposed and the second accepts it.
-5. Confirm the second Vendor acceptance creates the configured provider
-   meeting automatically without an Admin action. The API/UI must contain only
-   `/m/<slug>`; verify the link is unavailable before its start, redirects
+5. As the owning Admin, open **Meeting settings**, publish at least one
+   weekday/time combination, save, and confirm the selected count persists.
+6. Confirm the accepted match shows **Pending meeting** and **Propose
+   meeting**. As the first Vendor, select a published date first and one
+   published 1-hour time. Verify no `meetings` row exists and the card shows
+   **Awaiting Vendor approval**.
+7. As the counterpart Vendor, open **Review & approve**, verify the exact time
+   and both approval states, then approve. Confirm one shared meeting appears
+   for both Vendors. Repeat while closing the slot in another Admin session
+   before approval and confirm the stale proposal fails safely.
+8. As the owning Admin, confirm the provider meeting. The API/UI must contain
+   only `/m/<slug>`; verify the link is unavailable before its start, redirects
    during its window, and returns 410 after expiry.
-6. In a non-production provider test, force one sanitized creation failure.
-   Confirm Superadmin receives a critical incident with tenant, match,
-   provider, category, time and attempt count, then restore the provider and
-   use **Retry meeting creation**.
+9. In a non-production provider test, force one sanitized creation failure and
+   verify no raw provider response or URL reaches the browser or logs.
 
 Lark access refreshes automatically and persists the rotated refresh token. If
 Lark authorization is revoked or expires, repeat `/api/lark/login`; do not copy
-tokens into chat, logs, or database consoles. One service-only creation job per
-match prevents concurrent second-acceptance requests from creating duplicate
-meetings. An active wrapper is reused; after expiry, a Superadmin retry or
-authorized provider request replaces the wrapper and resets its access count.
+tokens into chat, logs, or database consoles. New second-acceptance requests
+do not start provider creation. Existing service-only creation jobs remain
+available for controlled legacy incident retry. An active wrapper is reused;
+after expiry, a Superadmin retry or authorized provider request replaces the
+wrapper and resets its access count.
 
 ## Triage by symptom
 

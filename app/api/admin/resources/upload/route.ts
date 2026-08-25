@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server"
+import { after, NextResponse } from "next/server"
 import { z } from "zod"
 
 import { getAuthenticatedIdentity } from "@/lib/authorization"
+import { sendTrackedTenantActivityEmail } from "@/lib/email-delivery-service"
 
 const bucketName = "event-resources"
 const maxUploadBytes = 15 * 1024 * 1024
@@ -27,10 +28,7 @@ async function getAdminClient() {
 
   if (!authorization.ok) {
     return {
-      error: NextResponse.json(
-        { error: authorization.error },
-        { status: 401 }
-      ),
+      error: NextResponse.json({ error: authorization.error }, { status: 401 }),
     }
   }
 
@@ -63,6 +61,12 @@ export async function POST(request: Request) {
 
   if ("error" in auth) {
     return auth.error
+  }
+
+  const adminId = auth.identity.adminId
+
+  if (!adminId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
   const formData = await request.formData().catch(() => null)
@@ -114,7 +118,7 @@ export async function POST(request: Request) {
 
   const resourceId = crypto.randomUUID()
   const safeName = sanitizeFileName(file.name)
-  const storagePath = `${auth.identity.adminId}/materials/${resourceId}-${safeName}`
+  const storagePath = `${adminId}/materials/${resourceId}-${safeName}`
   const fileUrl = `/api/resources/${resourceId}/file`
 
   const uploadResult = await auth.supabase.storage
@@ -143,7 +147,7 @@ export async function POST(request: Request) {
       audience: parsed.data.audience,
       visible_to_delegation: parsed.data.visibleToDelegation,
       notes: parsed.data.notes,
-      admin_id: auth.identity.adminId,
+      admin_id: adminId,
     })
     .select("*")
     .single()
@@ -156,6 +160,24 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
+
+  after(() =>
+    sendTrackedTenantActivityEmail({
+      adminId,
+      actor: {
+        type: "admin",
+        userId: auth.identity.userId,
+        name: auth.identity.displayName,
+      },
+      target: parsed.data.audience,
+      subject: `New Plexus resource: ${parsed.data.title}`,
+      text: `The Admin published a new ${parsed.data.category.toLowerCase()} resource. Sign in to Plexus to review it.`,
+      source: {
+        table: "event_resources",
+        id: resourceId,
+      },
+    })
+  )
 
   return NextResponse.json({ ok: true, resource: insertResult.data })
 }

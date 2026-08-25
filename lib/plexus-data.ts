@@ -8,6 +8,7 @@ import { validateAuthenticatedUser } from "@/lib/authorization"
 import type { Locale } from "@/lib/i18n"
 import { resolveCompanyIndustrySector } from "@/lib/industry-sectors"
 import { seedDb } from "@/lib/local-db"
+import type { MeetingAvailability } from "@/lib/meeting-availability"
 import type {
   CompanyRegistrationProfile,
   Deal,
@@ -17,6 +18,7 @@ import type {
   LocalDb,
   Match,
   Meeting,
+  MeetingProposal,
   PartnerCompany,
   SiteVisit,
 } from "@/lib/local-db"
@@ -100,12 +102,30 @@ type MeetingRow = {
   summary: string
 }
 
+type MeetingProposalRow = {
+  id: string
+  match_id: string
+  starts_at: string
+  duration_minutes: number
+  requested_interpreter_id: string | null
+  requested_by_vendor_type: MeetingProposal["requestedByVendorType"]
+  requested_by_vendor_company_id: string | null
+  delegation_approved_at: string | null
+  partner_approved_at: string | null
+  status: MeetingProposal["status"]
+  meeting_id: string | null
+}
+
 type DealRow = {
   id: string
   match_id: string
   status: Deal["status"]
   document: string
   signatory_check: Deal["signatoryCheck"]
+  delegation_signed_at: string | null
+  delegation_signed_by: string | null
+  partner_signed_at: string | null
+  partner_signed_by: string | null
 }
 
 type MouDocumentRow = {
@@ -191,6 +211,8 @@ export type PortalSession = {
   tenantSupportEmail?: string
   tenantPrimaryColor?: string
   tenantLogoUrl?: string
+  tenantVendorDiscoveryEnabled?: boolean
+  tenantMeetingAvailability?: MeetingAvailability
 }
 
 function assertRows<T>(
@@ -226,8 +248,10 @@ export async function loadPlexusDb(supabase: DbClient): Promise<LocalDb> {
     delegationCompaniesResult,
     partnerCompaniesResult,
     matchCandidatesResult,
+    matchParticipantsResult,
     matchesResult,
     interpretersResult,
+    meetingProposalsResult,
     meetingsResult,
     dealsResult,
     mouDocumentsResult,
@@ -248,12 +272,17 @@ export async function loadPlexusDb(supabase: DbClient): Promise<LocalDb> {
       .select("*")
       .order("created_at", { ascending: true }),
     supabase.rpc("match_candidates"),
+    supabase.rpc("match_participants"),
     supabase
       .from("matches")
       .select("*")
       .order("created_at", { ascending: true }),
     supabase
       .from("interpreters")
+      .select("*")
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("meeting_proposals")
       .select("*")
       .order("created_at", { ascending: true }),
     supabase
@@ -309,6 +338,19 @@ export async function loadPlexusDb(supabase: DbClient): Promise<LocalDb> {
     matchCandidatesResult.error,
     []
   )
+  const matchParticipantRows = optionalRows<MatchCandidateRow>(
+    matchParticipantsResult.data,
+    matchParticipantsResult.error,
+    []
+  )
+  const matchCompanyRows = [
+    ...new Map(
+      [...matchCandidateRows, ...matchParticipantRows].map((row) => [
+        row.id,
+        row,
+      ])
+    ).values(),
+  ]
   const matchRows = assertRows<MatchRow>(
     matchesResult.data,
     matchesResult.error,
@@ -318,6 +360,11 @@ export async function loadPlexusDb(supabase: DbClient): Promise<LocalDb> {
     interpretersResult.data,
     interpretersResult.error,
     []
+  )
+  const meetingProposalRows = assertRows<MeetingProposalRow>(
+    meetingProposalsResult.data,
+    meetingProposalsResult.error,
+    "Load meeting proposals"
   )
   const meetingRows = assertRows<MeetingRow>(
     meetingsResult.data,
@@ -414,7 +461,7 @@ export async function loadPlexusDb(supabase: DbClient): Promise<LocalDb> {
         profileData,
       }
     }),
-    matchCompanies: matchCandidateRows.map((row) => ({
+    matchCompanies: matchCompanyRows.map((row) => ({
       id: row.id,
       nameEn: row.name_en,
       nameCn: row.name_cn,
@@ -437,6 +484,19 @@ export async function loadPlexusDb(supabase: DbClient): Promise<LocalDb> {
       email: row.email,
       notes: row.notes,
       available: row.available,
+    })),
+    meetingProposals: meetingProposalRows.map((row) => ({
+      id: row.id,
+      matchId: row.match_id,
+      startsAt: row.starts_at,
+      duration: row.duration_minutes,
+      requestedInterpreterId: row.requested_interpreter_id,
+      requestedByVendorType: row.requested_by_vendor_type,
+      requestedByVendorCompanyId: row.requested_by_vendor_company_id,
+      delegationApprovedAt: row.delegation_approved_at,
+      partnerApprovedAt: row.partner_approved_at,
+      status: row.status,
+      meetingId: row.meeting_id,
     })),
     meetings: meetingRows.map((row) => ({
       id: row.id,
@@ -463,6 +523,10 @@ export async function loadPlexusDb(supabase: DbClient): Promise<LocalDb> {
         documentFileSize: document ? Number(document.file_size) : null,
         documentUploadedAt: document?.updated_at ?? null,
         signatoryCheck: row.signatory_check,
+        delegationSignedAt: row.delegation_signed_at,
+        delegationSignedBy: row.delegation_signed_by,
+        partnerSignedAt: row.partner_signed_at,
+        partnerSignedBy: row.partner_signed_by,
       }
     }),
     itinerary: itineraryRows.map((row) => ({

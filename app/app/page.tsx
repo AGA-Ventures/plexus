@@ -1,9 +1,10 @@
 import type { Metadata } from "next"
 import Image from "next/image"
+import Link from "next/link"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  ArrowUpRight01Icon,
   AiBrain01Icon,
+  ArrowUpRight01Icon,
   Building03Icon,
   CheckmarkCircle02Icon,
   Globe02Icon,
@@ -13,366 +14,504 @@ import {
   SecurityCheckIcon,
 } from "@hugeicons/core-free-icons"
 
+import { PlexusBrand } from "@/components/plexus-future-ui"
+import { SiteHeader } from "@/components/site-header"
 import {
-  FutureButton,
-  PlexusBrand,
-  ShowcaseVideo,
-  UiLabel,
-  UiSignal,
-} from "@/components/plexus-future-ui"
+  getPublicContent,
+  normalizePublicLocale,
+  withLocale,
+} from "@/lib/public-site"
 import styles from "./styles.module.css"
 
 export const metadata: Metadata = {
-  title: "PLEXUS Future App — The Trade Super App",
+  title: "Plexus Product Preview — One Governed Business Superapp",
   description:
-    "See how PLEXUS and PLEXA will connect global business discovery, meetings, intelligence, agreements, and trade execution in one super app.",
+    "Explore how Plexus brings company profiles, matching, meetings, agreements, event operations, governance, and follow-up into one multilingual superapp.",
 }
 
-const features = [
+const journey = [
+  ["01", "Profile", "Build one company record"],
+  ["02", "Match", "Review relevant connections"],
+  ["03", "Meet", "Coordinate the conversation"],
+  ["04", "Agree", "Keep review and signing visible"],
+  ["05", "Act", "Assign the responsible next step"],
+]
+
+const capabilityDomains = [
   {
-    id: "brain",
-    number: "01",
-    session: "Session 01 · Prepare",
-    phase: "Before the meeting",
-    title: "Company Brain",
-    description:
-      "Upload your company once. PLEXA understands your products, pricing, certifications, ambitions, and relationship history—then prepares every conversation around what matters.",
-    signal: "Meeting brief · shared interests · risks · win probability",
-    image: "/app-future/company-brain-phone-transparent.png",
-    alt: "PLEXUS Company Brain mobile app showing business intelligence features",
-    icon: AiBrain01Icon,
+    name: "Platform shell & localization",
+    detail: "Multilingual, white-label foundations",
+    state: "Live",
   },
   {
-    id: "matching",
-    number: "02",
-    session: "Session 02 · Discover",
-    phase: "Discover opportunity",
-    title: "Plexus Match",
-    description:
-      "Move beyond contact lists. PLEXUS ranks the right buyers, suppliers, and strategic partners by intent, capability, market fit, and trust signals.",
-    signal: "Live intent · verified capability · 91% partnership fit",
-    image: "/app-future/plexus-match-phone-transparent.png",
-    alt: "Plexus Match mobile app ranking verified business partners by fit",
-    icon: Globe02Icon,
+    name: "Identity & tenancy",
+    detail: "Role, tenant, and company scope",
+    state: "Live",
   },
   {
-    id: "talk",
-    number: "03",
-    session: "Session 03 · Meet",
-    phase: "Meet without borders",
-    title: "Plexus Talk",
-    description:
-      "Everyone speaks naturally in their own language. Live interpretation, transcription, speaker recognition, and cultural context run quietly beneath the meeting.",
-    signal: "Real-time multilingual interpretation · across supported languages",
-    image: "/app-future/plexus-talk-phone-transparent.png",
-    alt: "Plexus Talk mobile app providing live multilingual interpretation",
-    icon: Mic02Icon,
+    name: "Onboarding & profiles",
+    detail: "Applications, approval, and company records",
+    state: "Live",
   },
   {
-    id: "radar",
-    number: "04",
-    session: "Session 04 · Understand",
-    phase: "Intelligence in the room",
-    title: "Deal Radar",
-    description:
-      "During the meeting, PLEXA listens for what is missing—not only what is said. It surfaces unresolved objections, delivery questions, compliance gaps, and the next best question in real time—before the meeting recap is created.",
-    signal: "Live meeting intelligence · delivery · MOQ · compliance",
-    image: "/app-future/deal-radar-phone-transparent.png",
-    alt: "Deal Radar mobile app surfacing live negotiation risks and questions",
-    icon: Radar02Icon,
+    name: "Directory & matching",
+    detail: "Discovery, requests, and mutual acceptance",
+    state: "Live",
   },
   {
-    id: "summary",
-    number: "05",
-    session: "Session 05 · Act",
-    phase: "Turn talk into action",
-    title: "Plexus Action Brief",
-    description:
-      "The moment the meeting ends, decisions become a clear task list with people responsible, follow-ups, CRM records, and a shared source of truth that moves the relationship forward.",
-    signal: "Decisions · task list · people responsible · follow-ups · CRM updates",
-    image: "/app-future/session-summary-devices-transparent.png",
-    alt: "Plexus Action Brief synchronized across a web dashboard and mobile app",
-    icon: CheckmarkCircle02Icon,
+    name: "Meetings & interpreters",
+    detail: "Scheduling with provider handoffs",
+    state: "Mixed",
   },
   {
-    id: "mou",
-    number: "06",
-    session: "Session 06 · Agree",
-    phase: "From intent to agreement",
-    title: "Plexus Agreement Studio",
-    description:
-      "PLEXA drafts the MOU, NDA, cooperation agreement, or partnership proposal from the real conversation—ready for both sides to review, negotiate, and e-sign.",
-    signal: "Draft → review → collaborate → e-sign",
-    image: "/app-future/mou-engine-web-transparent.png",
-    alt: "Plexus Agreement Studio supporting collaborative document review and e-signing",
-    icon: LicenseDraftIcon,
+    name: "Deals & documents",
+    detail: "MOU state with document lifecycle adapters",
+    state: "Mixed",
+  },
+  {
+    name: "Event operations",
+    detail: "Itineraries, site visits, liaison, interpreters",
+    state: "Live",
+  },
+  {
+    name: "Communications & resources",
+    detail: "Announcements, notifications, and private files",
+    state: "Mixed",
+  },
+  {
+    name: "Compliance",
+    detail: "Protected workspace; provider scope incomplete",
+    state: "Adapter",
+  },
+  {
+    name: "Governance & audit",
+    detail: "Settings, provisioning, and privileged events",
+    state: "Live",
+  },
+  {
+    name: "Reporting & observability",
+    detail: "Operational summaries; monitoring still planned",
+    state: "Mixed",
+  },
+  {
+    name: "AI assistance",
+    detail: "Illustrative, human-reviewed product direction",
+    state: "Concept",
   },
 ]
 
-const modules = [
-  ["Plexus ID", "One trusted business identity across the network."],
-  ["Plexus Verify", "Company, license, certification, and reputation checks."],
-  ["Plexus Connect", "Every relationship, conversation, and open opportunity."],
-  ["Plexus Build", "Structure projects and partnerships together."],
-  ["Plexus Move", "Logistics, customs, freight, and fulfilment."],
-  ["Plexus Guide", "Market rules, grants, certifications, and practical answers."],
-  ["Plexus Insight", "Pipeline, conversion, and network intelligence."],
-  ["PLEXA", "One AI agent working across every module."],
+const statusNotes = [
+  ["Live", "Persisted and verified in the controlled product"],
+  ["Mixed", "Live workflow with a controlled or adapter step"],
+  ["Adapter", "Interface exists; production provider is incomplete"],
+  ["Concept", "Illustrative direction, not a live capability"],
 ]
 
-const roadmapStages = [
-  {
-    label: "Now",
-    title: "AI Trade Assistant",
-    copy: "Meetings, translation, summaries, deal radar, and AI agreements.",
-    image: "/app-future/plexa-digital-bot.png",
-    alt: "PLEXA AI assistant orchestrating connected trade workflows",
-  },
-  {
-    label: "Next",
-    title: "Trusted Trade Network",
-    copy: "Verified business identities, discovery, matching, and referrals.",
-    image: "/app-future/relationship-journey-hero.png",
-    alt: "Verified companies progressing through the connected PLEXUS trade network",
-  },
-  {
-    label: "Then",
-    title: "Trade Operating System",
-    copy: "Projects, compliance, logistics, documentation, and collaboration.",
-    image: "/app-future/session-summary-devices-transparent.png",
-    alt: "PLEXUS trade operating system synchronized across web and mobile",
-  },
-  {
-    label: "Future",
-    title: "Trade Super App",
-    copy: "Marketplace, payments, finance, insurance, and digital contracts.",
-    image: "/app-future/mou-engine-web-transparent.png",
-    alt: "PLEXUS super app completing a collaborative digital agreement",
-  },
-]
+export default async function ProductPreviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ lang?: string }>
+}) {
+  const params = await searchParams
+  const requestedLocale = normalizePublicLocale(params.lang)
+  const locale = "en" as const
+  const content = getPublicContent(locale)
 
-const whatsappHref = "https://wa.me/60122677899"
-
-export default function FutureAppPage() {
   return (
     <main className={styles.page}>
-      <header className={styles.header}>
-        <div className={styles.nav}>
-          <div className={styles.brandGroup}>
-            <PlexusBrand />
-            <span className={styles.agentPill}>PLEXA · AI AGENT</span>
-          </div>
-          <div className={styles.headerCta}>
-            <FutureButton href={whatsappHref} size="small">
-              Join the future
-              <HugeiconsIcon icon={ArrowUpRight01Icon} size={15} strokeWidth={1.8} />
-            </FutureButton>
-          </div>
-        </div>
-      </header>
+      <SiteHeader
+        content={content}
+        locale={locale}
+        currentPath="/app"
+        supportedLocales={["en"]}
+      />
 
       <section className={styles.hero}>
-        <div className={styles.heroCopy}>
-          <div className={styles.eyebrow}>The global trade super app</div>
-          <h1>
-            One relationship.
-            <br />
-            <em>Every step forward.</em>
-          </h1>
-          <p>
-            PLEXUS brings discovery, live meetings, commercial intelligence,
-            agreements, compliance, and trade execution into one connected
-            experience—with PLEXA working across it all.
-          </p>
-          <div className={styles.heroActions}>
-            <FutureButton href={whatsappHref}>
-              Explore the future app
-              <HugeiconsIcon icon={ArrowUpRight01Icon} size={17} strokeWidth={1.8} />
-            </FutureButton>
-            <span className={styles.heroNote}>Concept vision · 2026–2028</span>
-          </div>
-        </div>
-
-        <div className={styles.heroVisual}>
-          <Image
-            src="/app-future/plexus-superapp-hand-hero.png"
-            alt="PLEXUS super app held in hand with connected match, meeting, deal, and agreement features"
-            fill
-            priority
-            loading="eager"
-            sizes="(max-width: 900px) 100vw, 52vw"
-            className={`${styles.heroImage} ${styles.heroAppImage}`}
-          />
-          <div className={styles.heroStatus}>
-            <HugeiconsIcon icon={SecurityCheckIcon} size={18} strokeWidth={1.7} />
-            <div>
-              <span>PLEXA is ready</span>
-              <small>6 signals prepared for your meeting</small>
+        <div className={styles.heroInner}>
+          <div className={styles.heroCopy}>
+            <h1>The whole business journey, in one superapp.</h1>
+            <p>
+              Plexus connects the company record, organizer review, mutual
+              acceptance, meetings, agreements, event operations, and
+              accountable follow-up—without hiding the human decisions between
+              them.
+            </p>
+            <div className={styles.heroActions}>
+              <a className={styles.primaryAction} href="#experience">
+                Explore the connected product
+                <HugeiconsIcon
+                  icon={ArrowUpRight01Icon}
+                  size={18}
+                  strokeWidth={1.8}
+                />
+              </a>
+              <span>
+                Illustrative screens are labelled. Availability varies by
+                module.
+              </span>
             </div>
           </div>
+
+          <div className={styles.heroVisual}>
+            <span className={styles.previewStatus}>
+              Pre-launch product preview
+            </span>
+            <Image
+              src="/app-future/plexus-superapp-system-hero-v4.png"
+              alt="Plexus superapp across a unified mobile and desktop product ecosystem"
+              fill
+              priority
+              loading="eager"
+              sizes="(max-width: 900px) 100vw, 58vw"
+              className={styles.heroImage}
+            />
+          </div>
         </div>
 
-        <div className={styles.systemLine}>
-          <span>NETWORK</span>
-          <b>+</b>
-          <span>AI COPILOT</span>
-          <b>+</b>
-          <span>LIVE INTERPRETER</span>
-          <b>+</b>
-          <span>TRADE OS</span>
-        </div>
-      </section>
-
-      <section className={styles.videoShowcase}>
-        <div className={styles.videoIntro}>
-          <UiLabel>See the connected journey</UiLabel>
-          <h2>Watch the future app in motion.</h2>
-          <p>
-            Follow the complete PLEXUS journey—from discovering the right partner
-            to meeting, deciding, and signing the agreement.
-          </p>
-        </div>
-        <ShowcaseVideo
-          src="/videos/plexus-introduction.mp4"
-          poster="/app-future/company-brain.png"
-        />
-      </section>
-
-      <section id="experience" className={styles.features}>
-        {features.map((feature, index) => {
-          const Icon = feature.icon
-
-          return (
-            <article
-              key={feature.id}
-              id={feature.id}
-              className={`${styles.feature} ${index % 2 === 1 ? styles.reverse : ""}`}
-            >
-              <div className={styles.featureImageWrap}>
-                <Image
-                  src={feature.image}
-                  alt={feature.alt}
-                  fill
-                  loading={index === 0 ? "eager" : "lazy"}
-                  sizes="(max-width: 840px) 100vw, 50vw"
-                  className={`${styles.featureImage} ${["brain", "matching", "talk", "radar"].includes(feature.id) ? styles.phoneFeatureImage : ""}`}
-                />
-                <div className={styles.imageIndex}>{feature.number}</div>
-              </div>
-              <div className={styles.featureCopy}>
-                <div className={styles.sessionLabel}>{feature.session}</div>
-                <div className={styles.featureMeta}>
-                  <span className={styles.iconBox}>
-                    <HugeiconsIcon icon={Icon} size={21} strokeWidth={1.6} />
-                  </span>
-                  <span>{feature.phase}</span>
-                </div>
-                <h2>{feature.title}</h2>
-                <p>{feature.description}</p>
-                <UiSignal>{feature.signal}</UiSignal>
-              </div>
-            </article>
-          )
-        })}
-      </section>
-
-      <section id="platform" className={styles.platform}>
-        <div className={styles.platformIntro}>
-          <UiLabel>One system, built in layers</UiLabel>
-          <h2>The operating system underneath global business.</h2>
-          <p>
-            Start with the next best partner. Stay through the meeting, agreement,
-            movement of goods, and growth of the relationship.
-          </p>
-        </div>
-        <div className={styles.moduleGrid}>
-          {modules.map(([name, description], index) => (
-            <div className={styles.module} key={name}>
-              <span>{String(index + 1).padStart(2, "0")}</span>
+        <ol className={styles.journeyRail} aria-label="Plexus product journey">
+          {journey.map(([number, title, detail]) => (
+            <li key={number}>
+              <span>{number}</span>
               <div>
-                <h3>{name}</h3>
-                <p>{description}</p>
+                <strong>{title}</strong>
+                <small>{detail}</small>
               </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <nav className={styles.sectionNav} aria-label="Product preview sections">
+        <span>Explore the superapp</span>
+        <div>
+          <a href="#foundation">Company foundation</a>
+          <a href="#meetings">Meetings</a>
+          <a href="#follow-up">Follow-up</a>
+          <a href="#capabilities">All capabilities</a>
+        </div>
+      </nav>
+
+      <section id="experience" className={styles.intro}>
+        <div>
+          <h2>One company record should carry the work forward.</h2>
+        </div>
+        <p>
+          Plexus is designed so participants do not restart the process at each
+          stage. Approved context moves with the relationship while tenant
+          operators retain review, visibility, and control.
+        </p>
+      </section>
+
+      <section id="foundation" className={styles.foundation}>
+        <div className={styles.foundationCopy}>
+          <span className={styles.moduleIcon}>
+            <HugeiconsIcon icon={AiBrain01Icon} size={24} strokeWidth={1.6} />
+          </span>
+          <h2>Start with a useful company foundation.</h2>
+          <p>
+            A structured profile, tenant approval, and shared business context
+            create the source record for discovery, meetings, event operations,
+            and follow-up.
+          </p>
+          <ul>
+            <li>Delegation and Partner company profiles</li>
+            <li>Tenant application review and account provisioning</li>
+            <li>Private documents and approved shared resources</li>
+            <li>Explicit role, tenant, and company scope</li>
+          </ul>
+          <div className={styles.truthNote}>
+            <HugeiconsIcon
+              icon={SecurityCheckIcon}
+              size={19}
+              strokeWidth={1.7}
+            />
+            Company Brain is an illustrative product treatment. The underlying
+            profile, tenancy, and resource workflows are part of the live
+            product.
+          </div>
+        </div>
+        <div className={styles.phoneStage}>
+          <Image
+            src="/app-future/company-brain-phone-transparent.png"
+            alt="Company Brain concept presented as a module inside the Plexus superapp"
+            fill
+            sizes="(max-width: 840px) 92vw, 46vw"
+            className={styles.phoneImage}
+          />
+          <span className={styles.moduleTag}>Profile foundation</span>
+        </div>
+      </section>
+
+      <section className={styles.matchingBand}>
+        <div className={styles.matchingVisual}>
+          <Image
+            src="/app-future/plexus-match-phone-transparent.png"
+            alt="Plexus Match concept showing a reviewed business connection"
+            fill
+            sizes="(max-width: 840px) 92vw, 44vw"
+            className={styles.phoneImage}
+          />
+        </div>
+        <div className={styles.matchingCopy}>
+          <span className={styles.moduleIconDark}>
+            <HugeiconsIcon icon={Globe02Icon} size={24} strokeWidth={1.6} />
+          </span>
+          <h2>Discovery becomes a governed connection.</h2>
+          <p>
+            Participating companies discover permitted counterparties, request a
+            match, and move forward only through the program&apos;s review and
+            mutual-acceptance workflow.
+          </p>
+          <div className={styles.flowSteps}>
+            <span>Discover</span>
+            <span>Request</span>
+            <span>Review</span>
+            <span>Mutual acceptance</span>
+          </div>
+          <small>
+            Match score and status are live product data. The visual ranking
+            treatment shown here is illustrative.
+          </small>
+        </div>
+      </section>
+
+      <section id="meetings" className={styles.meetingSuite}>
+        <div className={styles.meetingHeader}>
+          <h2>The meeting is part of the operating record—not a dead end.</h2>
+          <p>
+            Scheduling and meeting state are live. Interpretation, automated
+            provider creation, live prompts, and transcript intelligence remain
+            controlled, adapter-backed, or conceptual depending on the module.
+          </p>
+        </div>
+
+        <div className={styles.meetingGrid}>
+          <article className={styles.talkPanel}>
+            <div className={styles.panelCopy}>
+              <HugeiconsIcon icon={Mic02Icon} size={24} strokeWidth={1.6} />
+              <h3>Plexus Talk</h3>
+              <p>
+                A concept for interpretation and shared meeting context, with
+                language and provider readiness kept explicit.
+              </p>
+              <span>Concept capability</span>
+            </div>
+            <div className={styles.tallPhone}>
+              <Image
+                src="/app-future/plexus-talk-phone-front-v2.png"
+                alt="Front-facing Plexus Talk concept with multilingual meeting interpretation and human review"
+                fill
+                sizes="(max-width: 760px) 86vw, 28vw"
+                className={styles.phoneImage}
+              />
+            </div>
+          </article>
+
+          <article className={styles.radarPanel}>
+            <div className={styles.panelCopy}>
+              <HugeiconsIcon icon={Radar02Icon} size={24} strokeWidth={1.6} />
+              <h3>Deal Radar</h3>
+              <p>
+                Illustrative prompts can surface unresolved questions for human
+                review without making the commercial decision.
+              </p>
+              <span>Illustrative prompts</span>
+            </div>
+            <div className={styles.tallPhone}>
+              <Image
+                src="/app-future/deal-radar-phone-front-v2.png"
+                alt="Front-facing Deal Radar concept with meeting prompts held for human review"
+                fill
+                sizes="(max-width: 760px) 86vw, 28vw"
+                className={styles.phoneImage}
+              />
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="follow-up" className={styles.followUp}>
+        <div className={styles.followUpHeader}>
+          <h2>Conversation becomes accountable follow-up.</h2>
+          <p>
+            The product direction brings decisions, owners, meeting records,
+            agreement state, and the next action back into the same operating
+            journey.
+          </p>
+        </div>
+
+        <article className={styles.deviceFeature}>
+          <div className={styles.deviceVisual}>
+            <Image
+              src="/app-future/session-summary-devices-transparent.png"
+              alt="Plexus action brief synchronized across desktop and mobile"
+              fill
+              sizes="(max-width: 900px) 100vw, 62vw"
+              className={styles.deviceImage}
+            />
+          </div>
+          <div className={styles.deviceCopy}>
+            <HugeiconsIcon
+              icon={CheckmarkCircle02Icon}
+              size={25}
+              strokeWidth={1.6}
+            />
+            <h3>Plexus Action Brief</h3>
+            <p>
+              A planned summary layer for decisions, named owners, due dates,
+              follow-ups, and reviewable records across mobile and desktop.
+            </p>
+            <dl>
+              <div>
+                <dt>Meeting state</dt>
+                <dd>Live</dd>
+              </div>
+              <div>
+                <dt>Automated summary</dt>
+                <dd>Concept</dd>
+              </div>
+              <div>
+                <dt>Provider updates</dt>
+                <dd>Adapter</dd>
+              </div>
+            </dl>
+          </div>
+        </article>
+
+        <article
+          className={`${styles.deviceFeature} ${styles.agreementFeature}`}
+        >
+          <div className={styles.deviceCopy}>
+            <HugeiconsIcon
+              icon={LicenseDraftIcon}
+              size={25}
+              strokeWidth={1.6}
+            />
+            <h3>Plexus Agreement Studio</h3>
+            <p>
+              Deal and signatory state are live. PLEXA country-context draft
+              assistance, jurisdiction checklists, collaborative documents,
+              and e-signature remain adapter or concept capabilities, with
+              both parties responsible for review.
+            </p>
+            <div className={styles.agreementFlow}>
+              <span>Draft</span>
+              <span>Review</span>
+              <span>Collaborate</span>
+              <span>E-sign</span>
+            </div>
+          </div>
+          <div className={styles.deviceVisual}>
+            <Image
+              src="/app-future/agreement-studio-plexa-country-v2.png"
+              alt="Plexus Agreement Studio concept with PLEXA country-context draft assistance and required human review"
+              fill
+              sizes="(max-width: 900px) 100vw, 62vw"
+              className={styles.deviceImage}
+            />
+          </div>
+        </article>
+      </section>
+
+      <section id="capabilities" className={styles.capabilityMap}>
+        <div className={styles.capabilityIntro}>
+          <h2>The complete superapp map, with readiness visible.</h2>
+          <p>
+            A polished preview is not evidence that every module is live. The
+            maintained capability map distinguishes verified product behavior
+            from controlled steps, provider adapters, and future direction.
+          </p>
+          <div className={styles.statusLegend}>
+            {statusNotes.map(([name, note]) => (
+              <div key={name}>
+                <span data-state={name}>{name}</span>
+                <small>{note}</small>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className={styles.capabilityList}>
+          {capabilityDomains.map((capability, index) => (
+            <div className={styles.capabilityRow} key={capability.name}>
+              <span className={styles.capabilityIndex}>
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <div>
+                <h3>{capability.name}</h3>
+                <p>{capability.detail}</p>
+              </div>
+              <span className={styles.stateBadge} data-state={capability.state}>
+                {capability.state}
+              </span>
             </div>
           ))}
         </div>
       </section>
 
-      <section className={styles.plexaAgent}>
+      <section className={styles.plexa}>
         <div className={styles.plexaVisual}>
           <Image
-            src="/app-future/plexa-digital-bot.png"
-            alt="PLEXA digital bot managing all six connected global trade features"
+            src="/app-future/plexa-agent-system-v2.png"
+            alt="PLEXA coordination-core concept connecting company context, match briefing, meeting assistance, agreement drafting, and follow-up under human review"
             fill
             sizes="(max-width: 900px) 100vw, 58vw"
             className={styles.plexaImage}
           />
         </div>
         <div className={styles.plexaCopy}>
-          <div className={styles.plexaMeta}>
-            <UiLabel>PLEXA · AI Agent</UiLabel>
-            <span>Persistent intelligence</span>
-          </div>
-          <h2>One intelligence across every relationship.</h2>
+          <span className={styles.moduleIconDark}>
+            <HugeiconsIcon icon={AiBrain01Icon} size={24} strokeWidth={1.6} />
+          </span>
+          <h2>
+            PLEXA may assist across the journey. It does not own the decision.
+          </h2>
           <p>
-            PLEXA carries context from discovery into the meeting, agreement,
-            and execution—so every next action begins with what your business
-            already knows.
+            This exploratory assistant direction could organize approved
+            context, prepare conversations, surface open questions, and
+            structure follow-up. Providers, scope, review controls, and rollout
+            remain uncommitted.
           </p>
-          <div className={styles.agentCapabilities}>
-            <div><b>01</b><span>Understands your company</span><small>Products, capabilities, goals, and history.</small></div>
-            <div><b>02</b><span>Prepares every conversation</span><small>Context, questions, signals, and next moves.</small></div>
-            <div><b>03</b><span>Detects risks and opportunities</span><small>Live intelligence before decisions are made.</small></div>
-            <div><b>04</b><span>Turns decisions into execution</span><small>Actions, agreements, owners, and follow-through.</small></div>
+          <div className={styles.plexaTasks}>
+            <span>Prepare</span>
+            <span>Orient</span>
+            <span>Prompt</span>
+            <span>Structure</span>
           </div>
-        </div>
-      </section>
-
-      <section id="roadmap" className={styles.roadmap}>
-        <div className={styles.roadmapHeader}>
-          <UiLabel>The evolution</UiLabel>
-          <h2>From an intelligent assistant to a global trade super app.</h2>
-        </div>
-        <div className={styles.stages}>
-          {roadmapStages.map((stage, index) => (
-            <div className={styles.stage} key={stage.label}>
-              <div className={styles.stageVisual}>
-                <Image
-                  src={stage.image}
-                  alt={stage.alt}
-                  fill
-                  sizes="(max-width: 760px) 100vw, 25vw"
-                  className={styles.stageImage}
-                />
-              </div>
-              <span className={styles.stageNumber}>{String(index + 1).padStart(2, "0")}</span>
-              <span className={styles.stageLabel}>{stage.label}</span>
-              <h3>{stage.title}</h3>
-              <p>{stage.copy}</p>
-            </div>
-          ))}
         </div>
       </section>
 
       <section className={styles.cta}>
-        <HugeiconsIcon icon={Building03Icon} size={28} strokeWidth={1.4} />
-        <UiLabel>Built for business without borders</UiLabel>
-        <h2>The next trade relationship could begin with one signal.</h2>
+        <HugeiconsIcon icon={Building03Icon} size={30} strokeWidth={1.5} />
+        <h2>See how the governed journey fits your program.</h2>
         <p>
-          PLEXUS is building the intelligent infrastructure that carries it all
-          the way to execution.
+          Request a pre-launch walkthrough focused on your tenant, participants,
+          operating model, and provider requirements.
         </p>
-        <FutureButton href={whatsappHref}>
-          Request a future walkthrough
-          <HugeiconsIcon icon={ArrowUpRight01Icon} size={17} strokeWidth={1.8} />
-        </FutureButton>
+        <Link
+          className={styles.lightAction}
+          href={withLocale("/contact", locale)}
+        >
+          Request a walkthrough
+          <HugeiconsIcon
+            icon={ArrowUpRight01Icon}
+            size={18}
+            strokeWidth={1.8}
+          />
+        </Link>
       </section>
 
       <footer className={styles.footer}>
         <PlexusBrand compact />
-        <span>From first handshake to signed trade.</span>
+        <Link href={withLocale("/", locale)}>Return to the Plexus website</Link>
         <span>© 2026 PLEXUS</span>
       </footer>
+
+      {requestedLocale !== locale ? (
+        <span className="sr-only">
+          This product preview is currently available in English only.
+        </span>
+      ) : null}
     </main>
   )
 }

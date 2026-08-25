@@ -12,8 +12,8 @@ export const platformLoginBranding: LoginBranding = {
   mode: "platform",
   name: "Plexus",
   logoUrl: "/plexus-wordmark-transparent.png",
-  primaryColor: "#6fdaea",
-  accentForeground: "#21184a",
+  primaryColor: "#0a84ff",
+  accentForeground: "#071326",
 }
 
 export function normalizeTenantSlug(value?: string | null) {
@@ -63,10 +63,33 @@ export function normalizeBrandColor(value?: string | null) {
 }
 
 export function readableForeground(hex: string) {
-  const red = Number.parseInt(hex.slice(1, 3), 16)
-  const green = Number.parseInt(hex.slice(3, 5), 16)
-  const blue = Number.parseInt(hex.slice(5, 7), 16)
-  const luminance = (red * 299 + green * 587 + blue * 114) / 1000
+  const relativeLuminance = (value: string) => {
+    const channels = [1, 3, 5].map((index) =>
+      Number.parseInt(value.slice(index, index + 2), 16)
+    )
+    const [red, green, blue] = channels.map((channel) => {
+      const normalized = channel / 255
+      return normalized <= 0.04045
+        ? normalized / 12.92
+        : Math.pow((normalized + 0.055) / 1.055, 2.4)
+    })
 
-  return luminance > 155 ? "#21184a" : "#ffffff"
+    return 0.2126 * red + 0.7152 * green + 0.0722 * blue
+  }
+  const contrast = (foreground: string) => {
+    const light = Math.max(
+      relativeLuminance(hex),
+      relativeLuminance(foreground)
+    )
+    const dark = Math.min(
+      relativeLuminance(hex),
+      relativeLuminance(foreground)
+    )
+
+    return (light + 0.05) / (dark + 0.05)
+  }
+
+  return contrast("#21184a") >= contrast("#ffffff")
+    ? "#21184a"
+    : "#ffffff"
 }

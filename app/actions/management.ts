@@ -6,6 +6,13 @@ import { z } from "zod"
 import { isActiveAdminRecoveryAccount } from "@/lib/admin-password-recovery"
 import { getAuthenticatedIdentity } from "@/lib/authorization"
 import { buildApprovedCompanyInsert } from "@/lib/company-profile-persistence"
+import {
+  getTenantEmailRecipients,
+  renderPlexusEmail,
+  sendTrackedEmail,
+  sendTrackedEmails,
+  sendTrackedSupabaseAuthEmail,
+} from "@/lib/email-delivery-service"
 import type { Locale } from "@/lib/i18n"
 import type { CompanyRegistrationProfile } from "@/lib/local-db"
 import { retryAutomaticMeetingCreation } from "@/lib/meeting-automation"
@@ -17,10 +24,13 @@ import { type TenantStatus, type VendorStatus } from "@/lib/management-data"
 import { hasMatchingPasswordConfirmation } from "@/lib/password-confirmation"
 import { isPlaceholderIndustrySector } from "@/lib/industry-sectors"
 import {
+  meetingTimeOptions,
+  normalizeMeetingAvailability,
+} from "@/lib/meeting-availability"
+import {
   createSupabaseAdminClient,
   hasSupabaseAdminSecret,
 } from "@/lib/supabase/admin"
-import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { vendorApplicationProfileSchema } from "@/lib/vendor-applications"
 import { buildVendorDirectoryUpdate } from "@/lib/vendor-directory"
 
@@ -105,6 +115,24 @@ const updateTenantSchema = z.object({
     ),
 })
 
+const updateTenantVendorDiscoverySchema = z.object({
+  locale: localeSchema,
+  enabled: z.boolean(),
+})
+const meetingTimeSchema = z.enum(meetingTimeOptions)
+const updateTenantMeetingAvailabilitySchema = z.object({
+  locale: localeSchema,
+  availability: z
+    .object({
+      "1": z.array(meetingTimeSchema).max(meetingTimeOptions.length),
+      "2": z.array(meetingTimeSchema).max(meetingTimeOptions.length),
+      "3": z.array(meetingTimeSchema).max(meetingTimeOptions.length),
+      "4": z.array(meetingTimeSchema).max(meetingTimeOptions.length),
+      "5": z.array(meetingTimeSchema).max(meetingTimeOptions.length),
+    })
+    .strict(),
+})
+
 const updateVendorSchema = z
   .object({
     locale: localeSchema,
@@ -177,10 +205,29 @@ async function sendVendorSetupEmail({
   locale,
   tenantSlug,
   email,
+  recipientName,
+  recipientRole,
+  adminId,
+  actor,
+  trigger,
+  source,
 }: {
   locale: Locale
   tenantSlug: string
   email: string
+  recipientName: string
+  recipientRole: "admin" | "vendor"
+  adminId: string
+  actor: {
+    type: "superadmin" | "admin"
+    userId: string
+    name: string
+  }
+  trigger: "vendor_setup" | "vendor_setup_resend" | "account_setup"
+  source: {
+    table: string
+    id: string
+  }
 }) {
   const origin = resolvePasswordRecoveryOrigin({
     productionUrl: process.env.VERCEL_PROJECT_PRODUCTION_URL,
@@ -192,8 +239,22 @@ async function sendVendorSetupEmail({
     tenantSlug,
     mode: "setup",
   })
-  const supabase = await createSupabaseServerClient()
-  return supabase.auth.resetPasswordForEmail(email, { redirectTo })
+  return sendTrackedSupabaseAuthEmail({
+    adminId,
+    actor,
+    recipient: {
+      email,
+      name: recipientName,
+      role: recipientRole,
+    },
+    trigger,
+    subject:
+      recipientRole === "admin"
+        ? "Set up your Plexus Admin password"
+        : "Set up your Plexus Vendor password",
+    redirectTo,
+    source,
+  })
 }
 
 async function resetClaimedVendorApplication(
@@ -353,8 +414,33 @@ export async function createAdminAccountAction(
       return { ok: false, error: profileResult.error.message }
     }
 
+    const setupResult = await sendVendorSetupEmail({
+      locale: parsed.data.locale,
+      tenantSlug: parsed.data.tenantSlug,
+      email: parsed.data.email,
+      recipientName: parsed.data.displayName,
+      recipientRole: "admin",
+      adminId: tenantId,
+      actor: {
+        type: "superadmin",
+        userId: authorization.identity.userId,
+        name: authorization.identity.displayName,
+      },
+      trigger: "account_setup",
+      source: {
+        table: "user_profiles",
+        id: authResult.data.user.id,
+      },
+    })
+
     refreshManagement(parsed.data.locale)
-    return { ok: true }
+    return setupResult.ok
+      ? { ok: true }
+      : {
+          ok: true,
+          warning:
+            "The Admin account was created, but its secure setup email could not be requested.",
+        }
   } catch (error) {
     return actionError(error)
   }
@@ -397,7 +483,7 @@ export async function createVendorAccountAction(
 
     const tenantResult = await supabase
       .from("admin_tenants")
-      .select("id")
+      .select("id, slug")
       .eq("id", parsed.data.adminId)
       .eq("status", "active")
       .maybeSingle()
@@ -490,8 +576,33 @@ export async function createVendorAccountAction(
       return { ok: false, error: profileResult.error.message }
     }
 
+    const setupResult = await sendVendorSetupEmail({
+      locale: parsed.data.locale,
+      tenantSlug: tenantResult.data.slug,
+      email: parsed.data.email,
+      recipientName: parsed.data.displayName,
+      recipientRole: "vendor",
+      adminId: parsed.data.adminId,
+      actor: {
+        type: identity.role === "superadmin" ? "superadmin" : "admin",
+        userId: identity.userId,
+        name: identity.displayName,
+      },
+      trigger: "account_setup",
+      source: {
+        table: "user_profiles",
+        id: authResult.data.user.id,
+      },
+    })
+
     refreshManagement(parsed.data.locale)
-    return { ok: true }
+    return setupResult.ok
+      ? { ok: true }
+      : {
+          ok: true,
+          warning:
+            "The Vendor account was created, but its secure setup email could not be requested.",
+        }
   } catch (error) {
     return actionError(error)
   }
@@ -721,13 +832,23 @@ export async function approveVendorApplicationAction(
       locale: parsed.data.locale,
       tenantSlug: tenantResult.data.slug,
       email: application.normalized_email,
+      recipientName: application.contact_name,
+      recipientRole: "vendor",
+      adminId: identity.adminId,
+      actor: {
+        type: "admin",
+        userId: identity.userId,
+        name: identity.displayName,
+      },
+      trigger: "vendor_setup",
+      source: {
+        table: "vendor_applications",
+        id: application.id,
+      },
     })
 
-    if (setupResult.error) {
-      console.warn("Vendor setup email delivery failed.", {
-        code: setupResult.error.code,
-        status: setupResult.error.status,
-      })
+    if (!setupResult.ok) {
+      console.warn("Vendor setup email delivery failed.")
       refreshManagement(parsed.data.locale)
       return {
         ok: true,
@@ -780,7 +901,9 @@ export async function rejectVendorApplicationAction(
 
     const applicationResult = await supabase
       .from("vendor_applications")
-      .select("id, admin_id, status, vendor_type")
+      .select(
+        "id, admin_id, status, vendor_type, normalized_email, contact_name, company_name"
+      )
       .eq("id", parsed.data.applicationId)
       .maybeSingle()
     const application = applicationResult.data
@@ -817,8 +940,41 @@ export async function rejectVendorApplicationAction(
       }
     }
 
+    const subject = "Update on your Vendor application"
+    const text = `Your application for ${application.company_name} was not approved. If you need clarification or want to submit updated information, please contact the workspace support team.`
+    const emailResult = await sendTrackedEmail({
+      adminId: identity.adminId,
+      actor: {
+        type: "admin",
+        userId: identity.userId,
+        name: identity.displayName,
+      },
+      recipient: {
+        email: application.normalized_email,
+        name: application.contact_name,
+        role: "external",
+      },
+      trigger: "vendor_application_rejected",
+      subject,
+      text,
+      html: renderPlexusEmail({
+        title: subject,
+        message: text,
+      }),
+      source: {
+        table: "vendor_applications",
+        id: application.id,
+      },
+    })
+
     refreshManagement(parsed.data.locale)
-    return { ok: true }
+    return emailResult.ok
+      ? { ok: true }
+      : {
+          ok: true,
+          warning:
+            "The application was rejected, but the decision email could not be sent.",
+        }
   } catch (error) {
     return actionError(error)
   }
@@ -853,7 +1009,7 @@ export async function resendVendorSetupEmailAction(
         .maybeSingle(),
       supabase
         .from("vendor_applications")
-        .select("id, admin_id, status, normalized_email")
+        .select("id, admin_id, status, normalized_email, contact_name")
         .eq("id", parsed.data.applicationId)
         .maybeSingle(),
     ])
@@ -877,13 +1033,23 @@ export async function resendVendorSetupEmailAction(
       locale: parsed.data.locale,
       tenantSlug: tenantResult.data.slug,
       email: application.normalized_email,
+      recipientName: application.contact_name,
+      recipientRole: "vendor",
+      adminId: identity.adminId,
+      actor: {
+        type: "admin",
+        userId: identity.userId,
+        name: identity.displayName,
+      },
+      trigger: "vendor_setup_resend",
+      source: {
+        table: "vendor_applications",
+        id: application.id,
+      },
     })
 
-    if (setupResult.error) {
-      console.warn("Vendor setup email resend failed.", {
-        code: setupResult.error.code,
-        status: setupResult.error.status,
-      })
+    if (!setupResult.ok) {
+      console.warn("Vendor setup email resend failed.")
       return {
         ok: false,
         error:
@@ -959,8 +1125,43 @@ export async function setTenantStatusAction(input: {
       return { ok: false, error: result.error.message }
     }
 
+    const recipients = await getTenantEmailRecipients({
+      adminId: parsed.data.tenantId,
+      target: "admin",
+    })
+    const subject = `Your Plexus workspace is ${parsed.data.status}`
+    const text = `A Plexus Superadmin changed your workspace status to ${parsed.data.status}. Contact Plexus support if you need help with access or next steps.`
+    const emailResults = await sendTrackedEmails(
+      recipients.map((recipient) => ({
+        adminId: parsed.data.tenantId,
+        actor: {
+          type: "superadmin" as const,
+          userId: authorization.identity.userId,
+          name: authorization.identity.displayName,
+        },
+        recipient,
+        trigger: "account_status_changed" as const,
+        subject,
+        text,
+        html: renderPlexusEmail({
+          title: subject,
+          message: text,
+        }),
+        source: {
+          table: "admin_tenants",
+          id: parsed.data.tenantId,
+        },
+      }))
+    )
+
     refreshManagement(parsed.data.locale)
-    return { ok: true }
+    return emailResults.some((email) => !email.ok)
+      ? {
+          ok: true,
+          warning:
+            "The workspace status changed, but one or more Admin emails failed.",
+        }
+      : { ok: true }
   } catch (error) {
     return actionError(error)
   }
@@ -1051,17 +1252,28 @@ export async function sendAdminPasswordResetAction(input: {
       locale: parsed.data.locale,
       tenantSlug: tenantResult.data.slug,
     })
-    const supabase = await createSupabaseServerClient()
-    const resetResult = await supabase.auth.resetPasswordForEmail(
-      profile.email,
-      { redirectTo }
-    )
+    const resetResult = await sendTrackedSupabaseAuthEmail({
+      adminId: profile.admin_id,
+      actor: {
+        type: "superadmin",
+        userId: authorization.identity.userId,
+        name: authorization.identity.displayName,
+      },
+      recipient: {
+        email: profile.email,
+        role: "admin",
+      },
+      trigger: "admin_recovery",
+      subject: "Reset your Plexus Admin password",
+      redirectTo,
+      source: {
+        table: "user_profiles",
+        id: profile.id,
+      },
+    })
 
-    if (resetResult.error) {
-      console.warn("Supabase Admin password recovery request failed.", {
-        code: resetResult.error.code,
-        status: resetResult.error.status,
-      })
+    if (!resetResult.ok) {
+      console.warn("Supabase Admin password recovery request failed.")
       return {
         ok: false,
         error:
@@ -1117,6 +1329,91 @@ export async function updateTenantProfileAction(
   }
 }
 
+export async function updateTenantVendorDiscoveryAction(
+  input: unknown
+): Promise<ManagementActionResult> {
+  const parsed = updateTenantVendorDiscoverySchema.safeParse(input)
+
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message }
+  }
+
+  try {
+    const authorization = await requireOperator()
+
+    if (
+      authorization.identity.role !== "admin" ||
+      !authorization.identity.adminId
+    ) {
+      return {
+        ok: false,
+        error: "Only the owning Admin can change Vendor discovery.",
+      }
+    }
+
+    const result = await authorization.supabase
+      .from("admin_tenants")
+      .update({
+        vendor_discovery_enabled: parsed.data.enabled,
+      })
+      .eq("id", authorization.identity.adminId)
+      .select("id")
+      .single()
+
+    if (result.error) {
+      return { ok: false, error: result.error.message }
+    }
+
+    refreshManagement(parsed.data.locale)
+    return { ok: true }
+  } catch (error) {
+    return actionError(error)
+  }
+}
+
+export async function updateTenantMeetingAvailabilityAction(
+  input: unknown
+): Promise<ManagementActionResult> {
+  const parsed = updateTenantMeetingAvailabilitySchema.safeParse(input)
+
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message }
+  }
+
+  try {
+    const authorization = await requireOperator()
+
+    if (
+      authorization.identity.role !== "admin" ||
+      !authorization.identity.adminId
+    ) {
+      return {
+        ok: false,
+        error: "Only the owning Admin can change meeting availability.",
+      }
+    }
+
+    const availability = normalizeMeetingAvailability(parsed.data.availability)
+    const result = await authorization.supabase
+      .from("admin_tenants")
+      .update({
+        meeting_availability: availability,
+      })
+      .eq("id", authorization.identity.adminId)
+      .select("id")
+      .single()
+
+    if (result.error) {
+      return { ok: false, error: result.error.message }
+    }
+
+    refreshManagement(parsed.data.locale)
+    return { ok: true }
+  } catch (error) {
+    return actionError(error)
+  }
+}
+
 export async function setVendorStatusAction(input: {
   locale: Locale
   vendorId: string
@@ -1140,15 +1437,60 @@ export async function setVendorStatusAction(input: {
       .from("vendor_companies")
       .update({ status: parsed.data.status })
       .eq("id", parsed.data.vendorId)
-      .select("id")
+      .select("id, admin_id, name_en")
       .single()
 
     if (result.error) {
       return { ok: false, error: result.error.message }
     }
 
+    const profilesResult = await createSupabaseAdminClient()
+      .from("user_profiles")
+      .select("email, display_name, role")
+      .eq("vendor_company_id", parsed.data.vendorId)
+      .eq("role", "vendor")
+    const subject = `${result.data.name_en} is ${parsed.data.status}`
+    const text = `Your Vendor company status in Plexus was changed to ${parsed.data.status}. Contact your workspace Admin if you need help with access or next steps.`
+    const emailResults = profilesResult.error
+      ? []
+      : await sendTrackedEmails(
+          (profilesResult.data ?? []).map((profile) => ({
+            adminId: result.data.admin_id,
+            actor: {
+              type:
+                authorization.identity.role === "superadmin"
+                  ? ("superadmin" as const)
+                  : ("admin" as const),
+              userId: authorization.identity.userId,
+              name: authorization.identity.displayName,
+            },
+            recipient: {
+              email: profile.email,
+              name: profile.display_name,
+              role: "vendor" as const,
+            },
+            trigger: "account_status_changed" as const,
+            subject,
+            text,
+            html: renderPlexusEmail({
+              title: subject,
+              message: text,
+            }),
+            source: {
+              table: "vendor_companies",
+              id: parsed.data.vendorId,
+            },
+          }))
+        )
+
     refreshManagement(parsed.data.locale)
-    return { ok: true }
+    return profilesResult.error || emailResults.some((email) => !email.ok)
+      ? {
+          ok: true,
+          warning:
+            "The Vendor status changed, but one or more account emails failed.",
+        }
+      : { ok: true }
   } catch (error) {
     return actionError(error)
   }
@@ -1324,8 +1666,70 @@ export async function updateVendorDirectoryAction(
       }
     }
 
+    let emailWarning: string | undefined
+
+    if (
+      parsed.data.accountId &&
+      existingAccount &&
+      existingAccount.email.toLowerCase() !==
+        parsed.data.accountEmail.toLowerCase()
+    ) {
+      const subject = "Your Plexus login email was changed"
+      const source = {
+        table: "user_profiles",
+        id: existingAccount.id,
+      }
+      const results = await sendTrackedEmails([
+        {
+          adminId: existingVendor.admin_id,
+          actor: {
+            type:
+              authorization.identity.role === "superadmin"
+                ? "superadmin"
+                : "admin",
+            userId: authorization.identity.userId,
+            name: authorization.identity.displayName,
+          },
+          recipient: {
+            email: existingAccount.email,
+            name: existingAccount.display_name,
+            role: "vendor",
+          },
+          trigger: "login_email_changed",
+          subject,
+          text: `The Plexus login email for this account was changed from ${existingAccount.email} to ${parsed.data.accountEmail}. If you did not expect this, contact your workspace support team immediately.`,
+          source,
+        },
+        {
+          adminId: existingVendor.admin_id,
+          actor: {
+            type:
+              authorization.identity.role === "superadmin"
+                ? "superadmin"
+                : "admin",
+            userId: authorization.identity.userId,
+            name: authorization.identity.displayName,
+          },
+          recipient: {
+            email: parsed.data.accountEmail,
+            name: parsed.data.accountDisplayName,
+            role: "vendor",
+          },
+          trigger: "login_email_changed",
+          subject,
+          text: `This address is now the login email for your Plexus Vendor account. If you did not expect this, contact your workspace support team immediately.`,
+          source,
+        },
+      ])
+
+      if (results.some((email) => !email.ok)) {
+        emailWarning =
+          "The Vendor details were updated, but one or both email-change notices failed."
+      }
+    }
+
     refreshManagement(parsed.data.locale)
-    return { ok: true }
+    return emailWarning ? { ok: true, warning: emailWarning } : { ok: true }
   } catch (error) {
     return actionError(error)
   }
@@ -1360,7 +1764,7 @@ export async function setAccountActiveAction(input: {
 
     const profileResult = await authorization.supabase
       .from("user_profiles")
-      .select("id, role")
+      .select("id, role, display_name, email, admin_id")
       .eq("id", parsed.data.userId)
       .maybeSingle()
 
@@ -1400,8 +1804,46 @@ export async function setAccountActiveAction(input: {
       return { ok: false, error: authResult.error.message }
     }
 
+    const profile = profileResult.data
+    const subject = parsed.data.active
+      ? "Your Plexus account was reactivated"
+      : "Your Plexus account was suspended"
+    const text = parsed.data.active
+      ? "Your Plexus account access has been restored. You can sign in again using your current login email."
+      : "Your Plexus account access has been suspended. Contact your workspace support team if you need help or believe this was unexpected."
+    const emailResult = await sendTrackedEmail({
+      adminId: profile.admin_id ?? undefined,
+      actor: {
+        type:
+          authorization.identity.role === "superadmin" ? "superadmin" : "admin",
+        userId: authorization.identity.userId,
+        name: authorization.identity.displayName,
+      },
+      recipient: {
+        email: profile.email,
+        name: profile.display_name,
+        role: profile.role,
+      },
+      trigger: "account_status_changed",
+      subject,
+      text,
+      html: renderPlexusEmail({
+        title: subject,
+        message: text,
+      }),
+      source: {
+        table: "user_profiles",
+        id: profile.id,
+      },
+    })
+
     refreshManagement(parsed.data.locale)
-    return { ok: true }
+    return emailResult.ok
+      ? { ok: true }
+      : {
+          ok: true,
+          warning: "The account status changed, but its email notice failed.",
+        }
   } catch (error) {
     return actionError(error)
   }
@@ -1540,7 +1982,7 @@ export async function transferVendorAction(input: {
       [
         authorization.supabase
           .from("vendor_companies")
-          .select("admin_id, vendor_type")
+          .select("admin_id, vendor_type, name_en")
           .eq("id", parsed.data.vendorId)
           .single(),
         authorization.supabase
@@ -1551,7 +1993,7 @@ export async function transferVendorAction(input: {
           .maybeSingle(),
         authorization.supabase
           .from("user_profiles")
-          .select("id")
+          .select("id, email, display_name, role")
           .eq("vendor_company_id", parsed.data.vendorId)
           .eq("role", "vendor"),
       ]
@@ -1615,8 +2057,74 @@ export async function transferVendorAction(input: {
       return { ok: false, error: transferResult.error.message }
     }
 
+    const [previousAdmins, destinationAdmins] = await Promise.all([
+      getTenantEmailRecipients({
+        adminId: previousAdminId,
+        target: "admin",
+      }),
+      getTenantEmailRecipients({
+        adminId: parsed.data.destinationAdminId,
+        target: "admin",
+      }),
+    ])
+    const recipients = new Map<
+      string,
+      {
+        email: string
+        name: string
+        role: "admin" | "vendor"
+      }
+    >()
+
+    for (const profile of profilesResult.data ?? []) {
+      recipients.set(profile.email.toLowerCase(), {
+        email: profile.email,
+        name: profile.display_name,
+        role: "vendor",
+      })
+    }
+    for (const admin of [...previousAdmins, ...destinationAdmins]) {
+      recipients.set(admin.email.toLowerCase(), {
+        email: admin.email,
+        name: admin.name,
+        role: "admin",
+      })
+    }
+
+    const subject = `${vendorResult.data.name_en} was transferred`
+    const text =
+      "Plexus transferred this Vendor company to a different Admin workspace. Vendor access and Admin responsibility now follow the destination workspace."
+    const emailResults = await sendTrackedEmails(
+      [...recipients.values()].map((recipient) => ({
+        adminId: parsed.data.destinationAdminId,
+        actor: {
+          type: "superadmin" as const,
+          userId: authorization.identity.userId,
+          name: authorization.identity.displayName,
+        },
+        recipient,
+        trigger: "vendor_transferred" as const,
+        subject,
+        text,
+        html: renderPlexusEmail({
+          title: subject,
+          message: text,
+        }),
+        source: {
+          table: "vendor_companies",
+          id: parsed.data.vendorId,
+        },
+      }))
+    )
+
     refreshManagement(parsed.data.locale)
-    return { ok: true }
+    return emailResults.some((email) => !email.ok)
+      ? {
+          ok: true,
+          warning:
+            "The Vendor was transferred, but one or more transfer emails failed.",
+        }
+      : { ok: true }
   } catch (error) {
     return actionError(error)
   }

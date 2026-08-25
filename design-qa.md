@@ -1,3 +1,1117 @@
+**Mutual Vendor Meeting Approval Verification — 2026-07-30**
+
+**Source Visual Truth**
+
+- Browser Comment 1 capture of the authenticated English Partner Vendor match
+  card showing a meeting as scheduled immediately after one Vendor chose it.
+- Source capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-match-meeting-source.jpg`.
+- The requested outcome was to preserve the existing match-card design while
+  introducing a clear two-Vendor approval boundary before a meeting exists.
+
+**Implementation Evidence**
+
+- Route: `http://localhost:3000/en/vendor?section=matches`.
+- Implementation capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-meeting-mutual-approval-implementation.jpg`.
+- Combined source/implementation comparison:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-meeting-mutual-approval-comparison.jpg`.
+- Source and implementation captures are both 1280 x 720 pixels at CSS density
+  1 in the same authenticated in-app browser, tenant, locale, and match flow.
+- State: the migrated one-sided future placeholder is now a neutral proposal;
+  the approval dialog is open and shows the exact time plus both Vendor
+  approval states.
+
+**Findings**
+
+- No actionable P0, P1, or P2 visual, responsive, accessibility, or
+  interaction issue remains. The approval dialog is an intentional new state
+  required to prevent a one-sided proposal from appearing as a meeting.
+
+**Required Fidelity Surfaces**
+
+- Fonts and typography: passed; existing title, description, badge, data-label,
+  and action typography is preserved.
+- Spacing and layout rhythm: passed; the compact approval summary fits the
+  existing dialog width without clipping or overflow.
+- Colors and visual tokens: passed; pending approvals use existing outline
+  badges and the confirm action uses the tenant primary treatment.
+- Image quality and asset fidelity: passed; no raster asset changed and the
+  approval action reuses the existing icon library.
+- Copy and content: passed; the dialog states that both Vendors must approve,
+  shows the exact date/time and interpreter preference, and labels each
+  company's approval separately.
+- Interaction and accessibility: passed; the trigger and confirmation are
+  semantic buttons, the dialog is labelled, Cancel closes without mutation,
+  and approval does not happen during visual verification.
+
+**Primary Interactions Tested**
+
+- A one-sided migrated placeholder no longer appears in My Meetings or as
+  **Meeting scheduled** on the match card.
+- The match card shows **Meeting approval needed** and the proposed time.
+- **Review & approve** opens the labelled confirmation dialog with both
+  approval states.
+- RLS tests verify that the first approval creates no meeting, the proposing
+  Vendor cannot approve for the counterpart, and the counterpart's approval
+  atomically creates exactly one meeting.
+- Browser console and server rendering remained free of new errors during the
+  inspected state. The final approval was not clicked against live data.
+
+**Comparison History**
+
+- Iteration 1 separated the pending proposal from `meetings` and added a
+  confirmation dialog. The initial legacy copy exposed an implementation term
+  ("migrated"); it was replaced with plain two-Vendor approval guidance.
+- The post-fix combined comparison preserves the existing card hierarchy and
+  adds the requested approval evidence with no remaining P0/P1/P2 difference.
+
+**Final Result**
+
+- final result: passed
+
+---
+
+## Plexus Blue Editorial Redesign Verification — 2026-08-25
+
+**Approved Visual Direction**
+
+- Public desktop: `.impeccable/mocks/editorial-level/website-desktop.webp`.
+- Public mobile: `.impeccable/mocks/editorial-level/website-mobile.webp`.
+- Admin desktop: `.impeccable/mocks/editorial-level/admin-desktop.webp`.
+- Admin mobile: `.impeccable/mocks/editorial-level/admin-mobile.webp`.
+
+**Production Evidence**
+
+- Public: `.impeccable/review/public-desktop-final.png` and
+  `.impeccable/review/public-mobile-final.png`.
+- Admin: `.impeccable/review/admin-desktop-final.png` and
+  `.impeccable/review/admin-mobile-final.png`.
+- Participating company: `.impeccable/review/vendor-desktop-final.png` and
+  `.impeccable/review/vendor-mobile-final.png`.
+- Superadmin: `.impeccable/review/superadmin-desktop-final.png` and
+  `.impeccable/review/superadmin-mobile-final.png`.
+- Authentication: `.impeccable/review/login-desktop-final.png` and
+  `.impeccable/review/login-mobile-final.png`.
+- Product preview: `.impeccable/review/app-preview-desktop-final.png` and
+  `.impeccable/review/app-preview-mobile-final.png`.
+- Pre-event campaign: `.impeccable/review/pre-event-desktop-final.png` and
+  `.impeccable/review/pre-event-mobile-final.png`.
+
+**Viewport And Coverage**
+
+- Desktop viewport: 1536 x 1024 CSS pixels.
+- Mobile viewport: 430 x 932 CSS pixels.
+- Routes and states: public homepage, product preview, pre-event campaign,
+  Admin workspace, participating-company workspace, Superadmin console, and
+  tenant login.
+- Exact Plexus logo and multilingual navigation were preserved.
+- Horizontal overflow: none across the verified desktop and mobile states.
+- Public contact fallback, legacy participating-company redirect, mobile
+  navigation, and language behavior were exercised.
+- Filled action blue and its light foregrounds meet the intended contrast
+  threshold.
+
+**Release Verification**
+
+- Impeccable finish review disposition: `ship`.
+- Thesis, own-world, story, first viewport, and form checks: passed.
+- `npm run docs:check`: passed.
+- Lint and TypeScript checks: passed.
+- Unit/integration suite: 36 test files and 204 tests passed.
+- Next.js production build: passed, with 51 routes and no temporary review
+  routes.
+
+**Final Result**
+
+- final result: passed
+
+---
+
+## Pre-event Blue Theme Verification — 2026-08-25
+
+**Direction Change**
+
+- Replaced the route-local emerald and lime palette with the shared Plexus
+  blue editorial system.
+- Midnight owns the hero, contact region, and header; Filled Surface Blue owns
+  small-text actions; Signal Cyan carries campaign orientation; mineral and
+  pale-network surfaces structure the service and country content.
+- The compact 4px campaign geometry, exact wordmark, copy, multilingual
+  navigation, and contact behavior remain unchanged.
+
+**Visual Evidence**
+
+- Prior desktop reference: `.impeccable/review/pre-event-desktop-final.png`.
+- Blue desktop hero: `.impeccable/review/pre-event-blue-desktop-top.jpg`.
+- Blue desktop country explorer:
+  `.impeccable/review/pre-event-blue-desktop-country.jpg`.
+- Blue mobile hero: `.impeccable/review/pre-event-blue-mobile-top.jpg`.
+- Blue mobile country explorer:
+  `.impeccable/review/pre-event-blue-mobile-country.jpg`.
+- Blue mobile selected-country state:
+  `.impeccable/review/pre-event-blue-mobile-selected.jpg`.
+
+**Viewport And Interaction Coverage**
+
+- Desktop viewport: 1536 x 1024 CSS pixels.
+- Mobile viewport: 430 x 932 CSS pixels.
+- Verified the hero, navigation, responsive calls-to-action, journey and
+  service sections, market status list, country explorer, contact region, and
+  footer.
+- Selected Afghanistan in the country explorer; `aria-pressed`, the visible
+  selected treatment, and the departure-country summary all updated.
+
+**Contrast Evidence**
+
+- White on Filled Surface Blue: 6.48:1.
+- Signal Cyan on Midnight: 13.19:1.
+- Filled Surface Blue on Mineral Paper: 6.03:1.
+- Muted Ink on Mineral Paper: 5.49:1.
+- Search placeholder on the cool input surface: 4.79:1.
+
+**Verification**
+
+- Pre-event and public-site unit tests: 7 passed.
+- Full unit suite: 36 test files and 204 tests passed.
+- TypeScript check: passed.
+- Lint and Next.js production build: passed.
+- Documentation check: passed for 48 Markdown files.
+- Git whitespace check: passed.
+
+**Final Result**
+
+- final result: passed
+
+---
+
+## Pre-event Language Selector Verification — 2026-08-26
+
+**Requested Simplification**
+
+- Replaced the always-visible `EN`, `BM`, and `繁體中文` desktop row with one
+  compact language disclosure control.
+- The control shows only the active locale until clicked, then reveals English,
+  Bahasa Malaysia, and Traditional Chinese as full-width menu choices.
+- The same interaction and route order are used on desktop and mobile.
+
+**Visual Evidence**
+
+- Source with exposed locale row:
+  `.impeccable/review/pre-event-blue-desktop-top.jpg`.
+- Desktop selector closed:
+  `.impeccable/review/pre-event-language-desktop-closed.jpg`.
+- Desktop selector open:
+  `.impeccable/review/pre-event-language-desktop-open.jpg`.
+- Mobile selector open:
+  `.impeccable/review/pre-event-language-mobile-open.jpg`.
+
+**Viewport And Interaction Coverage**
+
+- Comment-matched desktop viewport: 1327 x 964 CSS pixels.
+- Mobile viewport: 430 x 932 CSS pixels.
+- Opened the selector from English and confirmed that all three choices were
+  hidden before activation and visible afterward.
+- Selected Bahasa Malaysia and confirmed navigation to
+  `/pre-event?lang=ms`, the localized control label, and active `BM` state.
+- Reopened the English selector on mobile and confirmed the same three choices
+  remain visible and usable without horizontal clipping.
+
+**Verification**
+
+- Pre-event and public-site unit tests: 7 passed.
+- Full unit suite: 36 test files and 204 tests passed.
+- TypeScript check: passed.
+- Lint and Next.js production build: passed.
+- Documentation check: passed for 48 Markdown files.
+- Git whitespace check: passed.
+
+**Final Result**
+
+- final result: passed
+
+---
+
+**Pre-event Promotion Page Verification — 2026-08-22**
+
+**Source Visual Truth**
+
+- Selected promotion-page direction:
+  `/Users/chishiongtan/.codex/generated_images/01a027d3-b951-70f0-abdd-2d62ed1bdc5f/exec-cd56ccf8-47c9-4be9-9b34-1cc3ee842973.png`.
+- Source pixels: 951 x 1654.
+
+**Implementation Evidence**
+
+- Route: `http://localhost:3101/pre-event?lang=en`.
+- Desktop production capture:
+  `/tmp/plexus-pre-event-production-desktop-top.jpg`.
+- Mobile production capture:
+  `/tmp/plexus-pre-event-production-mobile-top.jpg`.
+- Country-directory focused capture:
+  `/tmp/plexus-pre-event-production-country-directory.jpg`.
+- Final hero side-by-side comparison:
+  `/tmp/plexus-pre-event-hero-comparison-final-v3.png`.
+
+**Viewport And Normalization**
+
+- Desktop implementation: 1440 x 1024 pixels at a 1440 x 1024 CSS viewport.
+- Mobile implementation: 412 x 915 pixels at a 412 x 915 CSS viewport.
+- The source's top 951 x 676 region and the 1440 x 1024 implementation capture
+  were normalized to 720 x 512 each and placed together in one 1440 x 512
+  comparison image.
+- State: unauthenticated, English locale, top-of-page campaign state; the
+  country-directory capture uses its default worldwide-list state.
+- Horizontal overflow: none at 1440px or 412px.
+
+**Full-view Comparison Evidence**
+
+- The implementation matches the selected direction's deep forest-green hero,
+  warm-white content canvas, lime conversion controls, navy Login button,
+  centered headline, transparent Plexus wordmark, and wide editorial image
+  treatment.
+- The implementation continues below the source concept with the required
+  worldwide directory, contact configuration, footer navigation, and
+  coordinator disclaimer without changing the approved visual language.
+
+**Focused Region Comparison Evidence**
+
+- The hero comparison keeps the logo, navigation, headline wrapping, CTA
+  hierarchy, image crop, and background tone legible in the same image.
+- The dedicated directory capture verifies the two-column layout, search
+  control, 245-country list, prepared inquiry state, and readable WhatsApp CTA
+  at full desktop size.
+- The mobile capture verifies headline wrapping, logo treatment, stacked CTAs,
+  hero-image crop, touch-target sizing, and absence of horizontal overflow.
+
+**Required Fidelity Surfaces**
+
+- Fonts and typography: passed; the existing public-site sans serif is used
+  with the source's centered, bold display hierarchy and restrained supporting
+  copy.
+- Spacing and layout rhythm: passed; the hero frame was widened to 1440px with
+  32px desktop gutters, while the content sections retain a calm 1280px reading
+  measure and collapse cleanly on mobile.
+- Colors and visual tokens: passed; the hero and closing CTA use sampled deep
+  forest green (`#0b2924`), conversion controls use lime, and Login uses the
+  requested navy (`#0b1f3a`).
+- Image quality and asset fidelity: passed; the 1672 x 941 generated hero asset
+  clearly depicts a Plexus coordinator reviewing a business profile, curated
+  matches, confirmed meetings, and a travel itinerary. The supplied Plexus
+  wordmark was trimmed to its transparent bounds rather than recreated.
+- Copy and content: passed; the three public languages preserve the approved
+  pre-event matching, travel coordination, worldwide-inquiry, and no-direct-
+  booking/no-payment claims.
+
+**Primary Interactions Tested**
+
+- English, Bahasa Malaysia, Traditional Chinese, and unsupported-locale
+  normalization render the expected localized heading, title, and canonical.
+- Country search filters to Macao SAR China, selection updates `aria-pressed`,
+  and the WhatsApp draft contains the selected country and correct
+  `+60 12-267 7899` destination.
+- MDEC co-branding, email, callback, WeChat, and LINE remain hidden while
+  unconfigured.
+- Footer Pre-event Support points to `/pre-event?lang=en`.
+- Production browser console errors and warnings: none.
+
+**Comparison History**
+
+- Iteration 1 identified a P2 fidelity mismatch: the implementation's emerald
+  background was visibly lighter than the source, the campaign frame used
+  narrow max-width gutters, and the untrimmed transparent logo appeared too
+  small.
+- Fix: sampled the source tone into `#0b2924`, widened the campaign header and
+  hero image to 1440px with 32px gutters, and created a route-specific trimmed
+  transparent wordmark asset.
+- Iteration 2 used
+  `/tmp/plexus-pre-event-hero-comparison-final-v3.png`; the palette, logo scale,
+  image width, headline hierarchy, and navy login treatment align with the
+  source, with no actionable P0/P1/P2 difference remaining.
+
+**Findings**
+
+- No actionable P0/P1/P2 visual, responsive, accessibility, or interaction
+  issue remains.
+
+**Follow-up Polish**
+
+- P3: the small campaign eyebrow is retained from the approved multilingual
+  content even though it is not present in the visual source.
+
+**Final Result**
+
+- final result: passed
+
+---
+
+**Tenant Meeting Availability And Date-First Booking Verification — 2026-07-30**
+
+**Source Visual Truth**
+
+- Browser Comment 1 capture of the authenticated English Partner Vendor
+  **Schedule meeting** dialog.
+- Source capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-match-schedule-dialog-implementation.jpg`.
+- The source displayed 20 mixed date/time checkboxes and required three
+  selections. The requested outcome was an explicit date-first flow that shows
+  only the times opened by the owning Admin.
+
+**Implementation Evidence**
+
+- Route: `http://localhost:3000/en/vendor?section=matches`.
+- Implementation capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-meeting-slot-picker-implementation.jpg`.
+- Combined source/implementation comparison:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-meeting-slot-picker-comparison.jpg`.
+- Source and implementation captures are both 1280 x 720 pixels at CSS density
+  1 from the same authenticated in-app browser, tenant, locale, and match.
+- State: dialog open, July 31 selected, and 10:00–11:00 selected in the
+  implementation. The source showed the corresponding unselected dense list.
+
+**Findings**
+
+- No actionable P0, P1, or P2 visual, responsive, accessibility, or
+  interaction issue remains. The reduced dialog height and changed controls
+  are intentional results of the requested two-step flow.
+
+**Required Fidelity Surfaces**
+
+- Fonts and typography: passed; existing dialog title, label, description, and
+  button typography is preserved.
+- Spacing and layout rhythm: passed; the date and time steps use the current
+  field rhythm, compact grids, and existing dialog width without overflow.
+- Colors and visual tokens: passed; selected date/time buttons use the existing
+  tenant primary treatment and all other controls retain current surface and
+  border tokens.
+- Image quality and asset fidelity: passed; no raster asset changed, and the
+  date control reuses the existing calendar icon library.
+- Copy and content: passed; the dialog explains the date-first order, labels
+  both steps, confirms the selected slot, and retains interpreter guidance.
+- Interaction and accessibility: passed; date/time controls are semantic
+  buttons with `aria-pressed`, time controls are absent until a date is chosen,
+  and the final action remains disabled until both selections exist.
+
+**Primary Interactions Tested**
+
+- The dialog initially shows five Admin-open dates and no time buttons.
+- Selecting a date reveals only that weekday's four configured tenant times.
+- Selecting one time enables **Schedule meeting** and displays the complete
+  selected date/time summary.
+- A separate clean browser tab completed the same flow with no console errors
+  or warnings.
+- The visual QA did not submit the final meeting action, so live match/meeting
+  records were not changed.
+
+**Comparison History**
+
+- Iteration 1 replaced the scrolling 20-checkbox list with five date buttons
+  and a conditional time grid. The first type check found a duplicate local
+  formatter name; it was renamed before the clean browser capture.
+- The post-fix combined comparison shows the intended single-screen hierarchy,
+  no hidden footer controls, and no remaining P0/P1/P2 difference from the
+  annotated outcome.
+
+**Final Result**
+
+- final result: passed
+
+---
+
+**Vendor Pending Meeting And Scheduling Verification — 2026-07-30**
+
+**Source Visual Truth**
+
+- Browser Comments 1 and 2 capture of the authenticated English Partner Vendor
+  **My Matches** page.
+- Source capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-match-meeting-source.jpg`.
+- The selected mutually accepted card showed **Meeting ready** and **View
+  meeting** even though its only active row had already started. The requested
+  outcome was **Pending meeting** with **Schedule meeting**, switching to
+  **View meeting** only when a future meeting exists.
+
+**Implementation Evidence**
+
+- Route: `http://localhost:3000/en/vendor?section=matches`.
+- Match-card capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-match-pending-meeting-implementation.jpg`.
+- Scheduling-dialog capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-match-schedule-dialog-implementation.jpg`.
+- Full side-by-side comparison:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-match-meeting-full-comparison.jpg`.
+- Focused side-by-side comparison:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-match-meeting-focused-comparison.jpg`.
+- Source and implementation captures are both 1280 x 720 pixels from the same
+  authenticated in-app browser, tenant, locale, and match data.
+
+**Findings**
+
+- No actionable P0, P1, or P2 visual, responsive, accessibility, or
+  interaction issue remains.
+
+**Required Fidelity Surfaces**
+
+- Fonts and typography: passed; the existing badge, card, explanatory copy,
+  and button typography is preserved.
+- Spacing and layout rhythm: passed; the new status and action occupy the same
+  positions and dimensions as the source controls.
+- Colors and visual tokens: passed; **Pending meeting** and **Schedule
+  meeting** reuse the current primary semantic treatment.
+- Image quality and asset fidelity: passed; no image asset changed, and the
+  calendar control uses the existing icon library.
+- Copy and content: passed; the card names the pending state and explains that
+  the schedule is shared by both Vendors.
+- Interaction and accessibility: passed; **Schedule meeting** is a semantic
+  button, opens the existing labelled dialog, and every slot remains a labelled
+  checkbox.
+
+**Primary Interactions Tested**
+
+- A mutually accepted match with no future meeting shows **Pending meeting**
+  and **Schedule meeting**.
+- Started, completed, and cancelled rows do not hide scheduling.
+- The dialog offers 20 one-hour choices across the next five Kuala Lumpur
+  working days; the prior hard-coded past dates are gone.
+- Selecting three slots enables the dialog's **Schedule meeting** action.
+- An existing future meeting changes the state to **Meeting scheduled** and
+  exposes **View meeting** with the locale-preserving My Meetings route.
+- The live tenant was inspected read-only and was not modified during visual
+  QA.
+
+**Comparison History**
+
+- Iteration 1 derived card state from future meeting time instead of the match
+  status, which produced the requested pending state but exposed future
+  Admin-created meetings on unaccepted cards. The state was restricted to
+  mutually accepted matches.
+- Iteration 2 opened the scheduling dialog and found hard-coded July 1–7 slots
+  in the past. The options now derive the next five Kuala Lumpur working days;
+  the post-fix capture starts on July 31.
+
+**Final Result**
+
+- final result: passed
+
+---
+
+**Vendor Sidebar Logout And Profile Actions Verification — 2026-07-30**
+
+**Source Visual Truth**
+
+- Browser Comments 1 and 2 capture of the authenticated English Delegation
+  Vendor profile dialog on its **Access** tab.
+- Source capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-profile-access-actions-source.jpg`.
+- The source placed **Logout** and a redundant **Open Delegation page** link in
+  the dialog footer. The requested outcome was to remove the role-page link and
+  keep Logout permanently available at the bottom of the workspace sidebar.
+
+**Implementation Evidence**
+
+- Route: `http://localhost:3000/en/vendor`.
+- Streamlined dialog capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-profile-access-actions-implementation.jpg`.
+- Sidebar capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-sidebar-logout-implementation.jpg`.
+- Full side-by-side comparison:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-profile-actions-full-comparison.jpg`.
+- Focused side-by-side comparison:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-profile-actions-focused-comparison.jpg`.
+- Source and implementation captures are both 1280 x 720 pixels from the same
+  authenticated in-app browser viewport and tenant.
+
+**Findings**
+
+- No actionable P0, P1, or P2 visual, responsive, accessibility, or
+  interaction issue remains.
+
+**Required Fidelity Surfaces**
+
+- Fonts and typography: passed; the existing account card, navigation, dialog,
+  and ghost-action typography is reused.
+- Spacing and layout rhythm: passed; the account card and Logout action form a
+  compact bottom-anchored group without changing the navigation spacing.
+- Colors and visual tokens: passed; Logout uses the current muted ghost-action
+  treatment and existing logout icon.
+- Image quality and asset fidelity: passed; no image asset was added or
+  replaced.
+- Copy and content: passed; the redundant role-page copy is gone while the
+  account role, workspace, language, and password-recovery guidance remain.
+- Interaction and accessibility: passed; Logout is a clearly labelled button
+  available without opening the profile dialog, and the account card still
+  opens the dialog.
+
+**Primary Interactions Tested**
+
+- The desktop sidebar keeps the account card and dedicated **Logout** action at
+  its bottom edge.
+- The mobile drawer uses the same account-and-logout group.
+- The **Access** dialog retains account role, workspace, language, and password
+  recovery.
+- The dialog contains neither a Logout button nor an **Open Delegation page**
+  link.
+- Logout itself was not activated during visual QA because doing so would end
+  the authenticated verification session; the existing logout flow remains
+  covered by `AUTH-17`.
+
+**Comparison History**
+
+- Iteration 1 moved the existing logout action into the persistent sidebar
+  group and removed both dialog-footer actions. The focused comparison shows
+  the resulting shorter, single-purpose dialog, with no subsequent P0/P1/P2
+  fix required.
+
+**Final Result**
+
+- final result: passed
+
+---
+
+**Delegation Dashboard Resources Verification — 2026-07-30**
+
+**Source Visual Truth**
+
+- Browser Comment 1 capture of the authenticated English Delegation Vendor
+  dashboard.
+- Source capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-dashboard-itinerary-source.jpg`.
+- The annotated right-hand card was an empty **Malaysia itinerary** surface
+  with a disabled download action. The requested outcome was to show the
+  resources available to the Vendor in that space.
+
+**Implementation Evidence**
+
+- Route: `http://localhost:3000/en/vendor?section=dashboard`.
+- Implementation capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-dashboard-resources-implementation.jpg`.
+- Full side-by-side comparison:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-dashboard-resources-full-comparison.jpg`.
+- Focused side-by-side comparison:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-dashboard-resources-focused-comparison.jpg`.
+- Source and implementation captures are both 1280 x 720 pixels from the same
+  authenticated in-app browser viewport and state.
+
+**Findings**
+
+- No actionable P0, P1, or P2 visual, responsive, accessibility, or
+  interaction issue remains.
+
+**Required Fidelity Surfaces**
+
+- Fonts and typography: passed; the existing card title, description, resource
+  metadata, and small-button typography are reused.
+- Spacing and layout rhythm: passed; the resource rows fit the existing
+  right-hand card without changing the dashboard grid or the adjacent summary
+  card geometry.
+- Colors and visual tokens: passed; rows, borders, muted metadata, and outline
+  actions use the current dark-theme semantic tokens.
+- Image quality and asset fidelity: passed; no image or icon asset was added or
+  replaced.
+- Copy and content: passed; the card now identifies itself as **Resources**,
+  explains that the Admin shared the documents, and shows each permitted
+  resource's title, category, and filename.
+- Interaction and accessibility: passed; each resource exposes a semantic
+  **Open** link with a visible label and new-tab safety attributes.
+
+**Primary Interactions Tested**
+
+- Two permitted Delegation resources render from the authorized Vendor data.
+- Each visible resource exposes its existing file URL through **Open**.
+- The resource selector excludes Admin/Partner audiences and rows without
+  Delegation visibility in unit coverage.
+- The complete itinerary and resource list remain available in **On-site**.
+- Browser console errors: none.
+
+**Comparison History**
+
+- Iteration 1 replaced the empty compact itinerary surface with the existing
+  resource-row pattern. The focused comparison shows unchanged card geometry
+  and a clear, usable document list, with no subsequent P0/P1/P2 fix required.
+
+**Final Result**
+
+- final result: passed
+
+---
+
+**Vendor Match Unaccept Verification — 2026-07-30**
+
+**Source Visual Truth**
+
+- Browser Comment 1 capture of the authenticated English Vendor `My Matches`
+  page with a one-sided accepted match.
+- Source capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-match-acceptance-fixed-viewport-1954x1277.jpg`.
+- The source showed `Pending other Vendor` twice and rendered the footer action
+  as disabled. The requested behavior was to let this Vendor withdraw its own
+  acceptance before the counterpart responds.
+
+**Implementation Evidence**
+
+- Route: `http://localhost:3000/en/vendor?section=matches`.
+- Implementation capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-match-unaccept-implementation.jpg`.
+- Focused before/after comparison:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-match-unaccept-focused-comparison.jpg`.
+- State: authenticated Delegation Vendor, English locale, dark tenant theme,
+  and the same real one-sided match. The implementation was captured at
+  1280 x 720; the focused comparison uses the same 500 x 340 card region on
+  both sides to judge the changed state without conflating viewport density.
+
+**Required Fidelity Surfaces**
+
+- Fonts and typography: passed; the existing badge, explanatory copy, and
+  button type styles are reused.
+- Spacing and layout rhythm: passed; **Unaccept** occupies the same compact
+  action position and the two-column match grid remains unchanged.
+- Colors and visual tokens: passed; the new outline action and secondary badge
+  use the existing semantic tokens.
+- Image quality and asset fidelity: passed; no image or icon asset changed.
+- Copy and content: passed; the badge says **Accepted by you**, the supporting
+  sentence explains the withdrawal window, and the disabled duplicate pending
+  label is gone.
+- Interaction and accessibility: passed; **Unaccept** is a semantic enabled
+  button, produces a clear confirmation toast, and restores the **Accept**
+  action.
+
+**Primary Interactions Tested**
+
+- Activating **Unaccept** clears only the authenticated Vendor's timestamp,
+  keeps the match `Proposed`, and immediately restores **Awaiting acceptance**
+  with **Accept**.
+- Accepting again restores the one-sided **Accepted by you** state.
+- Database authorization tests confirm one-sided withdrawal succeeds while
+  withdrawal after counterpart acceptance is denied.
+- The database trigger also denies Vendor rejection, acceptance rewrites,
+  cross-party decisions, and withdrawal after meeting creation.
+- The real shared tenant was returned to its original one-sided accepted state
+  after the browser interaction.
+- Browser console errors: none; only normal local Fast Refresh messages were
+  present.
+
+**Final Result**
+
+- final result: passed
+
+---
+
+**Vendor Two-Party MOU Signing Verification — 2026-07-30**
+
+**Source Visual Truth**
+
+- Browser Comment 1 capture of the authenticated English Vendor `MOU` page.
+- The source showed a read-only four-column MOU table: one `Under Discussion`
+  row and one legacy `Signed` row, both with an empty Action column and
+  `Pending upload`.
+- The requested behavior was to create a pending MOU automatically after
+  meeting completion and let each Vendor explicitly tick and sign its side.
+
+**Implementation Evidence**
+
+- Route: `http://localhost:3000/en/vendor?section=signing`.
+- Capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-mou-signing-implementation.png`.
+- State: authenticated Delegation Vendor, English locale, dark tenant theme,
+  same tenant navigation and real authorized MOU records.
+- The implementation was reviewed beside the supplied source capture. It
+  preserves the existing table, typography, navigation, and dark-theme tokens
+  while using the previously empty Action column for signing progress.
+
+**Required Fidelity Surfaces**
+
+- Fonts and typography: passed; existing card, table, badge, body, and button
+  styles are reused.
+- Spacing and layout rhythm: passed; the status/action copy remains compact,
+  aligned to each deal row, and introduces no horizontal overflow.
+- Colors and visual tokens: passed; pending, signed, muted, border, and primary
+  states use the existing semantic tokens.
+- Image quality and asset fidelity: passed; no image asset was added, and the
+  success mark uses the existing Hugeicons library.
+- Copy and content: passed; the page states that completion creates the
+  pending MOU, identifies that each Vendor signs for itself, and distinguishes
+  unavailable, waiting, and fully signed states.
+- Interaction and accessibility: passed; the unsigned completed-meeting state
+  uses a semantic checkbox with an associated authorization label, disables
+  **Sign MOU** until checked, and exposes progress in text as well as color.
+
+**Primary Interactions Tested**
+
+- Database tests confirm Admin meeting completion and pending-MOU creation
+  commit atomically and remain idempotent.
+- Signing without the explicit agreement is denied.
+- The first participating Vendor records only its own signer/timestamp and
+  receives `Agreement Reached`; the other side remains pending.
+- The second participating Vendor produces `Signed` and `Verified`.
+- Admin impersonation, foreign-tenant signing, and Vendor-triggered meeting
+  completion are denied.
+- Existing legacy signed rows are aligned to `Verified` and render as **Fully
+  signed**; a deal without a completed meeting renders **Available after
+  meeting**.
+- The measured implementation viewport is 1280 × 720 with a 1280 px document
+  width, so the populated action column introduces no horizontal overflow.
+- Browser console errors: none; only normal local Fast Refresh messages were
+  present.
+
+**Final Result**
+
+- final result: passed
+
+---
+
+**Vendor Meetings Empty-State Verification — 2026-07-30**
+
+**Source Visual Truth**
+
+- Browser Comment 1 capture of the authenticated English Vendor `My Meetings`
+  page with the existing populated meeting schedule.
+- Source capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-meetings-populated-source-1954x1277.jpg`.
+- The requested behavior was to replace the generic blank schedule for Vendors
+  with no meetings with clear accepted-match guidance and a direct route to
+  **My Matches**.
+
+**Implementation Evidence**
+
+- Route: `http://localhost:3000/en/vendor?section=meetings`.
+- Empty-state capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-meetings-empty-state-css-1954x1277.jpg`.
+- Full side-by-side comparison:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-meetings-empty-state-comparison.jpg`.
+- Focused side-by-side comparison:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-meetings-empty-state-focused-comparison.jpg`.
+- Source and implementation captures are both 1954 x 1277 pixels from the same
+  1954 x 1277 CSS viewport. The browser reported device pixel ratio 2; the
+  implementation used CSS-scale capture so both images compare at one image
+  pixel per CSS pixel.
+- State: authenticated Delegation Vendor, English locale, dark tenant theme,
+  and the same tenant navigation. The source is intentionally populated while
+  the implementation evidence renders the requested zero-meeting condition.
+
+**Full-view And Focused Comparison Evidence**
+
+- The full comparison shows that the empty condition preserves the workspace
+  proportions, navigation, selected `My Meetings` tab, schedule header, card
+  width, and surrounding whitespace.
+- The focused comparison makes the new hierarchy legible: existing meeting
+  rows are replaced by one dashed empty panel, the icon and title are centered,
+  the prerequisite is stated once, and **Go to My Matches** is the only action.
+- Browser measurement reports 1954 px document width against a 1954 px client
+  width, so the empty panel introduces no horizontal overflow.
+
+**Required Fidelity Surfaces**
+
+- Fonts and typography: passed; the existing heading, description, body, and
+  button type styles are reused without introducing a new hierarchy.
+- Spacing and layout rhythm: passed; the empty panel uses the existing schedule
+  width and a compact centered composition instead of leaving an unstructured
+  blank card.
+- Colors and visual tokens: passed; the border, muted background, icon surface,
+  copy, and primary button use existing project tokens.
+- Image quality and asset fidelity: passed; no image asset was added or
+  replaced, and the empty-state mark uses the project's existing Hugeicons
+  library.
+- Copy and content: passed; the message states that an accepted match is
+  required before a meeting can be requested and names **My Matches** as the
+  next destination.
+- Interaction and accessibility: passed; the destination is a semantic link
+  with a visible action label, preserves the locale, and updates the selected
+  portal tab after same-route navigation.
+
+**Primary Interactions Tested**
+
+- Zero meetings render the `No meetings yet` state rather than the generic
+  session sentence.
+- **Go to My Matches** resolves to `/en/vendor?section=matches`.
+- Activating the action shows the real match cards and selects `My Matches`.
+- Populated Vendor schedules continue to render the existing meeting rows and
+  actions.
+- Browser console errors: none.
+
+**Comparison History**
+
+- Iteration 1 exposed a P1 navigation issue: the URL changed to
+  `section=matches`, but the client-held tab could remain on `My Meetings`.
+- The fix remounts the portal tab workspace whenever the validated route
+  section changes, so the route remains the source of truth after same-page
+  navigation.
+- Iteration 2 selected `My Matches`, displayed the real match cards, preserved
+  the schedule design language, and produced no actionable P0/P1/P2 visual,
+  responsive, accessibility, or interaction issue.
+
+**Final Result**
+
+- final result: passed
+
+---
+
+**Vendor Mutual Match Acceptance Verification — 2026-07-30 (historical waiting control)**
+
+**Source Visual Truth**
+
+- Browser Comments 1–3 capture the authenticated English Vendor `My Matches`
+  page before the acceptance repair.
+- This evidence records the earlier disabled waiting control and is superseded
+  by **Vendor Match Unaccept Verification** above.
+- Source capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-discovery-enabled-source-1954x1277.png`.
+- The source showed both matches as `Rejected`, kept the accepting Vendor in a
+  pending state after pressing Accept, and exposed the unwanted `Request
+change` action.
+
+**Implementation Evidence**
+
+- Route: `http://localhost:3000/en/vendor?section=matches`.
+- Implementation capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-match-acceptance-fixed-viewport-1954x1277.jpg`.
+- Full side-by-side comparison:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-match-acceptance-comparison-1954x1277.jpg`.
+- Focused side-by-side comparison:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-match-acceptance-focused-comparison.jpg`.
+- Source and implementation captures are both 1954 x 1277 pixels from the same
+  1954 x 1277 CSS viewport. Browser capture normalized the device density to 1
+  CSS pixel per image pixel.
+- State: authenticated Delegation Vendor, English locale, dark tenant theme,
+  and the same two match records. The implementation intentionally differs in
+  workflow state: the first match contains the real persisted Delegation
+  acceptance while its Partner acceptance remains empty.
+
+**Full-view And Focused Comparison Evidence**
+
+- The full comparison shows unchanged tenant navigation, discovery header,
+  two-column match grid, card geometry, typography, and dark-theme tokens.
+- The focused comparison makes the workflow correction explicit: the first
+  match changes from `Rejected` to `Pending other Vendor`, its primary action is
+  disabled, and the second match remains available for its own acceptance.
+- `Request change` is absent from both cards.
+- Browser measurement reports 1954 px document width against a 1954 px client
+  width, so the new labels and actions introduce no horizontal overflow.
+
+**Required Fidelity Surfaces**
+
+- Fonts and typography: passed; existing card hierarchy, match metadata, and
+  button typography are unchanged.
+- Spacing and layout rhythm: passed; removing one action does not leave an
+  awkward gap or change the two-column grid.
+- Colors and visual tokens: passed; the workflow badges and buttons reuse the
+  project's existing muted and primary tokens.
+- Image quality and asset fidelity: passed; no image asset was added or
+  replaced, and the tenant logo remains unchanged.
+- Copy and content: passed; each card now describes whether this Vendor must
+  accept, has accepted, is waiting for the other Vendor, can arrange a meeting,
+  or can open the protected meeting link.
+- Interaction and accessibility: passed; the waiting state is both disabled and
+  text-labeled, the active Accept control remains keyboard-addressable, and no
+  destructive Vendor rejection action remains.
+
+**Primary Interactions Tested**
+
+- Accepting a legacy `Rejected` row records only the current Vendor's
+  acceptance, reopens the row to `Proposed`, and persists after reload.
+- The accepted card shows `Pending other Vendor` and no longer exposes Accept.
+- The unaccepted card shows `Awaiting acceptance` and retains Accept.
+- Database authorization tests confirm a Vendor cannot reject, withdraw its
+  acceptance, or write the other Vendor's acceptance.
+- Database tests confirm the second party's acceptance advances the match to
+  `Accepted`; unit tests then expose the meeting-arrangement state and the
+  protected-link-ready state.
+- The real shared tenant was not given a synthetic second-party acceptance.
+- Browser console errors: none; only normal local Fast Refresh messages were
+  present.
+
+**Comparison History**
+
+- Iteration 1 found the P0 root cause: the client wrote only an acceptance
+  timestamp while the legacy row remained `Rejected`, so the database trigger
+  cleared the timestamp and the action returned an apparent success.
+- The repair makes acceptance one-way, reopens legacy rejected rows during the
+  accepting update, protects each party's timestamp, and centralizes the
+  user-facing progress calculation.
+- Iteration 2 persisted the real acceptance, removed `Request change`, and
+  produced no actionable P0/P1/P2 visual, responsive, accessibility, security,
+  or interaction issue.
+
+**Final Result**
+
+- final result: passed
+
+---
+
+**Tenant Vendor Discovery Control Verification — 2026-07-30**
+
+**Source Visual Truth**
+
+- Browser Comment 1 capture of the authenticated English Vendor `My Matches`
+  page with the existing `Find companies` entry point enabled.
+- Source capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-discovery-enabled-source-1954x1277.png`.
+- The requested behavior was to let the owning Admin disable Vendor
+  self-service discovery, hide this entry point, and prevent direct access to
+  its route.
+
+**Implementation Evidence**
+
+- Route: `http://localhost:3000/en/vendor?section=matches`.
+- Disabled-state capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-discovery-disabled-1954x1277.png`.
+- Side-by-side comparison:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/vendor-discovery-comparison.jpg`.
+- Source and implementation captures are both 1954 x 1277 pixels from the same
+  1954 x 1277 CSS viewport.
+- State: authenticated Delegation Vendor, English locale, dark tenant theme,
+  matching tenant and match records. The source is the enabled state; the
+  implementation evidence is the Admin-disabled state.
+
+**Full-view And Focused Comparison Evidence**
+
+- The full-width comparison shows the complete self-service discovery card
+  removed while the tenant navigation, `My Matches` selection, and two existing
+  match cards remain in their original positions and visual treatment.
+- The target and resulting card region are legible at full size, so a separate
+  focused crop was unnecessary.
+- Browser measurement reports 1954 px document width against a 1954 px client
+  width, so the conditional state introduces no horizontal overflow.
+
+**Required Fidelity Surfaces**
+
+- Fonts and typography: passed; existing headings, labels, match metadata, and
+  button typography are unchanged.
+- Spacing and layout rhythm: passed; disabling discovery removes the whole CTA
+  card cleanly and lets the match grid occupy the top of the content column.
+- Colors and visual tokens: passed; the setting and Vendor state reuse the
+  project's existing card, border, muted, switch, and primary tokens.
+- Image quality and asset fidelity: passed; no image asset was added or
+  replaced, and the tenant logo remains unchanged.
+- Copy and content: passed; the Admin setting explains that Vendors may browse
+  eligible companies and request matches themselves, with clear enabled and
+  disabled supporting copy.
+- Interaction and accessibility: passed; the Admin control uses a labeled
+  switch, the Vendor CTA is absent when disabled, and the protected route
+  redirects to `My Matches`.
+
+**Primary Interactions Tested**
+
+- Enabled state shows `Find companies` and preserves the two existing match
+  counterpart names.
+- Disabled state hides both the button and its containing discovery card.
+- Opening `/en/vendor/discover` while disabled redirects to
+  `/en/vendor?section=matches`.
+- Existing match cards stay available with their real counterpart names while
+  discovery is disabled.
+- The enabled state was restored for the shared local tenant after the
+  comparison.
+- Browser console errors: none.
+
+**Comparison History**
+
+- Iteration 1 exposed a P1 data regression: reusing discovery candidates for
+  existing match summaries caused counterpart names to fall back to `Company
+record pending` when discovery was disabled.
+- The fix added a restricted match-participant lookup that returns only
+  companies already linked to the current Vendor's visible matches.
+- Iteration 2 preserved existing match names, hid the CTA, redirected the
+  direct route, and produced no actionable P0/P1/P2 issue.
+
+**Findings**
+
+- No actionable P0/P1/P2 visual, responsive, accessibility, security, or
+  interaction issue remains in the verified Vendor state.
+- The Admin switch is additionally covered by type checking, unit tests, and an
+  authenticated-browser specification; the live visual comparison used the
+  available Vendor session.
+
+**Final Result**
+
+- final result: passed
+
+---
+
+**Admin Meeting Actions Redesign Verification — 2026-07-30**
+
+**Source Visual Truth**
+
+- Browser Comment 1 capture of the authenticated English Admin dashboard before
+  the meeting-action redesign.
+- Source capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/admin-meeting-actions-source-1954x1277.png`.
+- The source showed meeting actions wrapping into a cramped cluster, a
+  repeatable Complete action on already completed meetings, and the static Phase
+  timeline selected for removal.
+
+**Implementation Evidence**
+
+- Route: `http://localhost:3000/en/admin`.
+- Implementation capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/admin-meeting-actions-after-1954x1277.png`.
+- Confirmation-dialog capture:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/admin-meeting-complete-confirmation-1954x1277.png`.
+- Side-by-side comparison:
+  `/Users/chishiongtan/Documents/plexus-production/.design-qa/admin-meeting-actions-comparison.png`.
+- Source and implementation captures are both 1939 x 1344 pixels from the same
+  1939 x 1354 CSS viewport. The browser reported device pixel ratio 2; the
+  Browser capture normalized both images to the same 1x CSS-pixel density.
+- State: authenticated Admin, English dashboard, dark theme, matching meeting
+  data and scroll position.
+
+**Full-view Comparison Evidence**
+
+- The static Phase timeline is absent and the live operating picture now uses
+  the full content width without altering the header, metric cards, navigation,
+  or tenant branding.
+- Every meeting uses the same right-side action panel with a clear label and a
+  predictable Join, View/Edit, Copy Link order.
+- Completed meetings no longer expose Complete. Active meetings separate
+  Complete from routine actions with a divider.
+- Browser measurement reports 1939 px document width against a 1939 px client
+  width, so the wider dashboard and action panels introduce no horizontal
+  overflow.
+
+**Focused Region Comparison Evidence**
+
+- The full-width comparison keeps the action labels and meeting states readable,
+  so a separate action crop was unnecessary.
+- The dedicated confirmation-dialog capture verifies the important focused
+  interaction state: meeting identity, editing-lock warning, safe Keep active
+  exit, and explicit Confirm complete action.
+
+**Required Fidelity Surfaces**
+
+- Fonts and typography: passed; existing dashboard type, sizes, weights, line
+  heights, and hierarchy are preserved.
+- Spacing and layout rhythm: passed; action spacing is consistent, meeting
+  content retains a flexible column, and the former timeline space is absorbed
+  without dead space.
+- Colors and visual tokens: passed; existing card, border, muted, primary, and
+  overlay tokens are reused with no new palette.
+- Image quality and asset fidelity: passed; no image assets were added or
+  replaced, and the existing tenant logo remains unchanged.
+- Copy and content: passed; controls use direct action labels, the confirmation
+  warns that completion locks editing, and completed/cancelled states do not
+  offer the action again.
+
+**Primary Interactions Tested**
+
+- Complete opens the confirmation dialog without changing meeting state.
+- Keep active closes the dialog without submitting the completion action.
+- Confirm complete is present as the only state-changing dialog action.
+- Completed meetings show no Complete action.
+- Browser console errors: none.
+
+**Comparison History**
+
+- The first post-change side-by-side comparison found no actionable P0/P1/P2
+  issue. No visual-fix iteration was required.
+
+**Findings**
+
+- No actionable P0/P1/P2 visual, responsive, accessibility, or interaction
+  issue remains in the verified state.
+
+**Final Result**
+
+- final result: passed
+
+---
+
 **Vendor White-Label Dashboard Verification — 28 July 2026**
 
 **Source Visual Truth**

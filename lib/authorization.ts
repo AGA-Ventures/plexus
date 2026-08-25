@@ -9,6 +9,10 @@ import {
   type AppRole,
   type VendorType,
 } from "@/lib/auth"
+import {
+  normalizeMeetingAvailability,
+  type MeetingAvailability,
+} from "@/lib/meeting-availability"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
 export type AuthenticatedIdentity = {
@@ -23,6 +27,8 @@ export type AuthenticatedIdentity = {
   tenantSupportEmail?: string
   tenantPrimaryColor?: string
   tenantLogoUrl?: string
+  tenantVendorDiscoveryEnabled?: boolean
+  tenantMeetingAvailability?: MeetingAvailability
 }
 
 type ProfileRow = {
@@ -93,6 +99,8 @@ export async function validateAuthenticatedUser(
         support_email: string
         primary_color: string
         logo_url: string
+        vendor_discovery_enabled: boolean
+        meeting_availability: unknown
       }
     | undefined
 
@@ -114,7 +122,9 @@ export async function validateAuthenticatedUser(
   if (metadata.role === "admin" || metadata.role === "vendor") {
     const tenantResult = await supabase
       .from("admin_tenants")
-      .select("id, status, name, support_email, primary_color, logo_url")
+      .select(
+        "id, status, name, support_email, primary_color, logo_url, vendor_discovery_enabled, meeting_availability"
+      )
       .eq("id", metadata.admin_id!)
       .eq("status", "active")
       .maybeSingle()
@@ -146,6 +156,11 @@ export async function validateAuthenticatedUser(
       tenantSupportEmail: tenantDetails?.support_email,
       tenantPrimaryColor: tenantDetails?.primary_color,
       tenantLogoUrl: tenantDetails?.logo_url,
+      tenantVendorDiscoveryEnabled:
+        tenantDetails?.vendor_discovery_enabled ?? true,
+      tenantMeetingAvailability: normalizeMeetingAvailability(
+        tenantDetails?.meeting_availability
+      ),
     },
   }
 }

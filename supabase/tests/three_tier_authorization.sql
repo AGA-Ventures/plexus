@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(45);
+select plan(83);
 
 insert into auth.users (
   id, instance_id, aud, role, email, encrypted_password,
@@ -230,6 +230,67 @@ select is(
   null::uuid,
   'Foreign Admin Vendor applications are not visible'
 );
+
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000004","role":"authenticated","app_metadata":{"role":"vendor","admin_id":"82000000-0000-4000-8000-000000000001","vendor_company_id":"83000000-0000-4000-8000-000000000001","vendor_type":"delegation"}}';
+select results_eq(
+  $$select count(*) from public.match_candidates()$$,
+  array[1::bigint],
+  'Vendor can browse eligible own-tenant companies while discovery is enabled'
+);
+
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000002","role":"authenticated","app_metadata":{"role":"admin","admin_id":"82000000-0000-4000-8000-000000000001"}}';
+select lives_ok(
+  $$update public.admin_tenants
+    set vendor_discovery_enabled = false
+    where id = '82000000-0000-4000-8000-000000000001'$$,
+  'Owning Admin can disable Vendor discovery'
+);
+select lives_ok(
+  $$update public.admin_tenants
+    set meeting_availability =
+      '{"1":["09:00","10:00"],"2":[],"3":["14:00"],"4":[],"5":["16:00"]}'::jsonb
+    where id = '82000000-0000-4000-8000-000000000001'$$,
+  'Owning Admin can publish tenant meeting availability'
+);
+
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000004","role":"authenticated","app_metadata":{"role":"vendor","admin_id":"82000000-0000-4000-8000-000000000001","vendor_company_id":"83000000-0000-4000-8000-000000000001","vendor_type":"delegation"}}';
+select results_eq(
+  $$with changed as (
+      update public.admin_tenants
+      set meeting_availability = '{"1":[],"2":[],"3":[],"4":[],"5":[]}'::jsonb
+      where id = '82000000-0000-4000-8000-000000000001'
+      returning id
+    )
+    select count(*) from changed$$,
+  array[0::bigint],
+  'Vendor cannot alter its Admin meeting availability'
+);
+select results_eq(
+  $$select count(*) from public.match_candidates()$$,
+  array[0::bigint],
+  'Disabled discovery returns no company candidates to the Vendor'
+);
+select throws_ok(
+  $$insert into public.matches (
+    id, admin_id, delegation_company_id, partner_company_id,
+    status, score, note
+  ) values (
+    '84000000-0000-4000-8000-000000000099',
+    '82000000-0000-4000-8000-000000000001',
+    '83000000-0000-4000-8000-000000000001',
+    '83000000-0000-4000-8000-000000000004',
+    'Proposed', 50, 'Blocked disabled discovery request'
+  )$$,
+  '42501',
+  'new row violates row-level security policy for table "matches"',
+  'Disabled discovery blocks direct Vendor match requests'
+);
+
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000002","role":"authenticated","app_metadata":{"role":"admin","admin_id":"82000000-0000-4000-8000-000000000001"}}';
 select throws_ok(
   $$insert into public.vendor_applications (
     admin_id, vendor_type, normalized_email, contact_name, company_name,
@@ -351,10 +412,27 @@ select throws_ok(
   'Use the Vendor decision or trusted meeting workflow to advance a match',
   'Admin cannot bypass the Vendor decision workflow'
 );
+update public.matches
+set status = 'Rejected'
+where id = '84000000-0000-4000-8000-000000000001';
+select is(
+  (
+    select status
+    from public.matches
+    where id = '84000000-0000-4000-8000-000000000001'
+  ),
+  'Rejected'::text,
+  'Admin can leave a match awaiting fresh Vendor acceptance'
+);
 
 set local request.jwt.claims =
   '{"sub":"81000000-0000-4000-8000-000000000004","role":"authenticated","app_metadata":{"role":"vendor","admin_id":"82000000-0000-4000-8000-000000000001","vendor_company_id":"83000000-0000-4000-8000-000000000001","vendor_type":"delegation"}}';
 
+select results_eq(
+  $$select count(*) from public.match_participants()$$,
+  array[1::bigint],
+  'Disabled discovery preserves counterpart summaries for existing matches'
+);
 select results_eq(
   $$select count(*) from public.vendor_companies where id in (
     '83000000-0000-4000-8000-000000000001',
@@ -395,13 +473,44 @@ select is(
 );
 
 update public.matches
-set delegation_accepted_at = now()
+set
+  status = 'Proposed',
+  delegation_accepted_at = now()
 where id = '84000000-0000-4000-8000-000000000001';
 select results_eq(
   $$select status from public.matches
     where id = '84000000-0000-4000-8000-000000000001'$$,
   array['Proposed'::text],
-  'One Vendor acceptance does not accept the match'
+  'One Vendor acceptance reopens a legacy Rejected match without accepting it'
+);
+select ok(
+  (
+    select delegation_accepted_at is not null
+    from public.matches
+    where id = '84000000-0000-4000-8000-000000000001'
+  ),
+  'The accepting Vendor decision persists while the other Vendor is pending'
+);
+select throws_ok(
+  $$update public.matches
+    set status = 'Rejected'
+    where id = '84000000-0000-4000-8000-000000000001'$$,
+  '42501',
+  'Vendors cannot reject or request changes to a match',
+  'Vendor cannot use the removed Request change workflow directly'
+);
+select lives_ok(
+  $$update public.matches
+    set delegation_accepted_at = null
+    where id = '84000000-0000-4000-8000-000000000001'$$,
+  'Vendor can unaccept before the other Vendor responds'
+);
+select results_eq(
+  $$select status, delegation_accepted_at is null
+    from public.matches
+    where id = '84000000-0000-4000-8000-000000000001'$$,
+  $$values ('Proposed'::text, true)$$,
+  'Unaccept returns the one-sided match to its waiting state'
 );
 select throws_ok(
   $$update public.matches
@@ -416,9 +525,13 @@ select throws_ok(
     set status = 'Accepted'
     where id = '84000000-0000-4000-8000-000000000001'$$,
   '42501',
-  'Record a Delegation decision instead of changing match status directly',
+  'Record a Delegation acceptance instead of changing match status directly',
   'Vendor cannot bypass mutual acceptance through status'
 );
+
+update public.matches
+set delegation_accepted_at = now()
+where id = '84000000-0000-4000-8000-000000000001';
 
 set local request.jwt.claims =
   '{"sub":"81000000-0000-4000-8000-000000000006","role":"authenticated","app_metadata":{"role":"vendor","admin_id":"82000000-0000-4000-8000-000000000001","vendor_company_id":"83000000-0000-4000-8000-000000000004","vendor_type":"partner"}}';
@@ -432,6 +545,317 @@ select results_eq(
   array['Accepted'::text],
   'The second Vendor acceptance accepts the match'
 );
+
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000004","role":"authenticated","app_metadata":{"role":"vendor","admin_id":"82000000-0000-4000-8000-000000000001","vendor_company_id":"83000000-0000-4000-8000-000000000001","vendor_type":"delegation"}}';
+
+select throws_ok(
+  $$update public.matches
+    set delegation_accepted_at = null
+    where id = '84000000-0000-4000-8000-000000000001'$$,
+  '42501',
+  'Acceptance cannot be withdrawn after the other Vendor accepts',
+  'Vendor cannot unaccept after the counterpart accepts'
+);
+
+select lives_ok(
+  $$insert into public.meeting_proposals (
+      id, match_id, starts_at, duration_minutes
+    ) values (
+      '87000000-0000-4000-8000-000000000001',
+      '84000000-0000-4000-8000-000000000001',
+      (
+        date_trunc(
+          'week',
+          now() at time zone 'Asia/Kuala_Lumpur'
+        ) + interval '7 days 9 hours'
+      ) at time zone 'Asia/Kuala_Lumpur',
+      60
+    )$$,
+  'The first Vendor can propose an Admin-open meeting time'
+);
+select results_eq(
+  $$select
+      status,
+      requested_by_vendor_type,
+      delegation_approved_by,
+      delegation_approved_at is not null,
+      partner_approved_at is null,
+      meeting_id is null
+    from public.meeting_proposals
+    where id = '87000000-0000-4000-8000-000000000001'$$,
+  $$values (
+    'pending'::text,
+    'delegation'::text,
+    '81000000-0000-4000-8000-000000000004'::uuid,
+    true,
+    true,
+    true
+  )$$,
+  'A proposal records only the proposing Vendor approval'
+);
+select results_eq(
+  $$select count(*) from public.meetings
+    where match_id = '84000000-0000-4000-8000-000000000001'$$,
+  array[0::bigint],
+  'One Vendor approval does not create a meeting'
+);
+select throws_ok(
+  $$update public.meeting_proposals
+    set
+      partner_approved_at = now(),
+      partner_approved_by = '81000000-0000-4000-8000-000000000004'
+    where id = '87000000-0000-4000-8000-000000000001'$$,
+  '42501',
+  'A Delegation Vendor cannot approve for the Partner',
+  'The proposing Vendor cannot provide the second approval'
+);
+
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000005","role":"authenticated","app_metadata":{"role":"vendor","admin_id":"82000000-0000-4000-8000-000000000002","vendor_company_id":"83000000-0000-4000-8000-000000000002","vendor_type":"partner"}}';
+select results_eq(
+  $$select count(*) from public.meeting_proposals
+    where id = '87000000-0000-4000-8000-000000000001'$$,
+  array[0::bigint],
+  'A foreign-tenant Vendor cannot read the meeting proposal'
+);
+
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000006","role":"authenticated","app_metadata":{"role":"vendor","admin_id":"82000000-0000-4000-8000-000000000001","vendor_company_id":"83000000-0000-4000-8000-000000000004","vendor_type":"partner"}}';
+select results_eq(
+  $$select count(*) from public.meeting_proposals
+    where id = '87000000-0000-4000-8000-000000000001'$$,
+  array[1::bigint],
+  'The matched counterpart can read the pending proposal'
+);
+select lives_ok(
+  $$update public.meeting_proposals
+    set
+      partner_approved_at = now(),
+      partner_approved_by = '81000000-0000-4000-8000-000000000006'
+    where id = '87000000-0000-4000-8000-000000000001'$$,
+  'The matched counterpart can provide the second approval'
+);
+select results_eq(
+  $$select
+      proposal.status,
+      proposal.partner_approved_by,
+      proposal.partner_approved_at is not null,
+      proposal.meeting_id is not null,
+      meeting.platform,
+      meeting.status
+    from public.meeting_proposals proposal
+    join public.meetings meeting on meeting.id = proposal.meeting_id
+    where proposal.id = '87000000-0000-4000-8000-000000000001'$$,
+  $$values (
+    'approved'::text,
+    '81000000-0000-4000-8000-000000000006'::uuid,
+    true,
+    true,
+    'Pending'::text,
+    'Scheduled'::text
+  )$$,
+  'The second approval atomically creates the scheduled meeting'
+);
+select results_eq(
+  $$select count(*) from public.meetings
+    where match_id = '84000000-0000-4000-8000-000000000001'
+      and status = 'Scheduled'$$,
+  array[1::bigint],
+  'Mutual approval creates exactly one scheduled meeting'
+);
+
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000003","role":"authenticated","app_metadata":{"role":"admin","admin_id":"82000000-0000-4000-8000-000000000002"}}';
+select results_eq(
+  $$select count(*) from public.meeting_proposals
+    where id = '87000000-0000-4000-8000-000000000001'$$,
+  array[0::bigint],
+  'A foreign Admin cannot read another tenant meeting proposal'
+);
+
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000002","role":"authenticated","app_metadata":{"role":"admin","admin_id":"82000000-0000-4000-8000-000000000001"}}';
+select results_eq(
+  $$select count(*) from public.meeting_proposals
+    where id = '87000000-0000-4000-8000-000000000001'$$,
+  array[1::bigint],
+  'The owning Admin can audit the Vendor meeting approval'
+);
+
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000004","role":"authenticated","app_metadata":{"role":"vendor","admin_id":"82000000-0000-4000-8000-000000000001","vendor_company_id":"83000000-0000-4000-8000-000000000001","vendor_type":"delegation"}}';
+select throws_ok(
+  $$select public.complete_meeting_with_mou(
+    '85000000-0000-4000-8000-000000000002'
+  )$$,
+  '42501',
+  'Only an active Admin can complete a meeting',
+  'A Vendor cannot complete a meeting to unlock MOU signing'
+);
+
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000002","role":"authenticated","app_metadata":{"role":"admin","admin_id":"82000000-0000-4000-8000-000000000001"}}';
+
+insert into public.meetings (
+  id, admin_id, match_id, starts_at, duration_minutes, platform, link,
+  interpreter, host, status, summary
+) values (
+  '85000000-0000-4000-8000-000000000002',
+  '82000000-0000-4000-8000-000000000001',
+  '84000000-0000-4000-8000-000000000001',
+  '2026-07-30T10:00:00+08:00',
+  60,
+  'Zoom',
+  '/m/rls-mou-signing-session',
+  'To be confirmed',
+  'RLS Admin A',
+  'Scheduled',
+  'MOU signing test meeting'
+);
+
+select is(
+  public.complete_meeting_with_mou(
+    '85000000-0000-4000-8000-000000000002'
+  ),
+  true,
+  'Completing a meeting creates its pending MOU atomically'
+);
+select results_eq(
+  $$select status, signatory_check
+    from public.deals
+    where match_id = '84000000-0000-4000-8000-000000000001'$$,
+  $$values ('Under Discussion'::text, 'Pending'::text)$$,
+  'The automatic MOU starts pending with no inferred signatures'
+);
+select is(
+  public.complete_meeting_with_mou(
+    '85000000-0000-4000-8000-000000000002'
+  ),
+  true,
+  'Completing the same meeting again is idempotent'
+);
+select results_eq(
+  $$select count(*) from public.deals
+    where match_id = '84000000-0000-4000-8000-000000000001'$$,
+  array[1::bigint],
+  'Repeated completion cannot create a duplicate MOU'
+);
+
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000004","role":"authenticated","app_metadata":{"role":"vendor","admin_id":"82000000-0000-4000-8000-000000000001","vendor_company_id":"83000000-0000-4000-8000-000000000001","vendor_type":"delegation"}}';
+
+select throws_ok(
+  $$select public.sign_vendor_mou(
+    (
+      select id from public.deals
+      where match_id = '84000000-0000-4000-8000-000000000001'
+    ),
+    false
+  )$$,
+  '22023',
+  'Confirm the MOU agreement before signing',
+  'A Vendor must explicitly agree before signing'
+);
+select is(
+  public.sign_vendor_mou(
+    (
+      select id from public.deals
+      where match_id = '84000000-0000-4000-8000-000000000001'
+    ),
+    true
+  ),
+  'Agreement Reached'::text,
+  'The first Vendor signature records agreement without claiming both parties'
+);
+select results_eq(
+  $$select
+      delegation_signed_by,
+      delegation_signed_at is not null,
+      partner_signed_at is null,
+      status
+    from public.deals
+    where match_id = '84000000-0000-4000-8000-000000000001'$$,
+  $$values (
+    '81000000-0000-4000-8000-000000000004'::uuid,
+    true,
+    true,
+    'Agreement Reached'::text
+  )$$,
+  'The first signature is attributed only to the signing Vendor account'
+);
+
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000006","role":"authenticated","app_metadata":{"role":"vendor","admin_id":"82000000-0000-4000-8000-000000000001","vendor_company_id":"83000000-0000-4000-8000-000000000004","vendor_type":"partner"}}';
+
+select is(
+  public.sign_vendor_mou(
+    (
+      select id from public.deals
+      where match_id = '84000000-0000-4000-8000-000000000001'
+    ),
+    true
+  ),
+  'Signed'::text,
+  'The second Vendor signature completes the MOU'
+);
+select results_eq(
+  $$select
+      partner_signed_by,
+      partner_signed_at is not null,
+      status,
+      signatory_check
+    from public.deals
+    where match_id = '84000000-0000-4000-8000-000000000001'$$,
+  $$values (
+    '81000000-0000-4000-8000-000000000006'::uuid,
+    true,
+    'Signed'::text,
+    'Verified'::text
+  )$$,
+  'Both Vendor signatures produce a verified Signed MOU'
+);
+
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000005","role":"authenticated","app_metadata":{"role":"vendor","admin_id":"82000000-0000-4000-8000-000000000002","vendor_company_id":"83000000-0000-4000-8000-000000000002","vendor_type":"partner"}}';
+select throws_ok(
+  $$select public.sign_vendor_mou(
+    (
+      select id from public.deals
+      where match_id = '84000000-0000-4000-8000-000000000001'
+    ),
+    true
+  )$$,
+  '42501',
+  'MOU not found in the active Vendor tenant',
+  'A foreign-tenant Vendor cannot sign the MOU'
+);
+
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000002","role":"authenticated","app_metadata":{"role":"admin","admin_id":"82000000-0000-4000-8000-000000000001"}}';
+select throws_ok(
+  $$select public.sign_vendor_mou(
+    (
+      select id from public.deals
+      where match_id = '84000000-0000-4000-8000-000000000001'
+    ),
+    true
+  )$$,
+  '42501',
+  'Only an active Vendor can sign an MOU',
+  'An Admin cannot sign on behalf of either Vendor'
+);
+select throws_ok(
+  $$update public.deals
+    set
+      delegation_signed_at = null,
+      delegation_signed_by = null,
+      status = 'Agreement Reached'
+    where match_id = '84000000-0000-4000-8000-000000000001'$$,
+  '42501',
+  'Vendor MOU signature evidence is append-only',
+  'An Admin cannot clear or rewrite recorded Vendor signature evidence'
+);
 select throws_ok(
   $$select * from public.oauth_tokens$$,
   '42501',
@@ -443,6 +867,29 @@ select throws_ok(
   '42501',
   'permission denied for table meeting_provider_links',
   'Authenticated users cannot read raw provider URLs'
+);
+
+update public.matches
+set
+  status = 'Proposed',
+  delegation_accepted_at = null,
+  partner_accepted_at = null
+where id = '84000000-0000-4000-8000-000000000001';
+
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000004","role":"authenticated","app_metadata":{"role":"vendor","admin_id":"82000000-0000-4000-8000-000000000001","vendor_company_id":"83000000-0000-4000-8000-000000000001","vendor_type":"delegation"}}';
+
+update public.matches
+set delegation_accepted_at = now()
+where id = '84000000-0000-4000-8000-000000000001';
+
+select throws_ok(
+  $$update public.matches
+    set delegation_accepted_at = null
+    where id = '84000000-0000-4000-8000-000000000001'$$,
+  '42501',
+  'Acceptance cannot be withdrawn after a meeting is arranged',
+  'Vendor cannot unaccept after a meeting exists'
 );
 
 reset role;

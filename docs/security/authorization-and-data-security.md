@@ -127,6 +127,15 @@ signature, and object name; the browser receives only a protected review
 route, which returns a 60-second signed URL. Metadata and deal mutations are
 audited.
 
+Vendor MOU acceptance is a separate trusted database mutation. The client
+sends only a deal UUID and a required `true` agreement. The database
+revalidates the active profile, tenant, Vendor subtype, match participation,
+and existence of a completed meeting, then derives which party may be signed
+from trusted claims. Each party's signer UUID and timestamp are append-only in
+the product workflow; an Admin cannot sign on behalf of a Vendor, an unrelated
+Vendor cannot discover or sign the row, and the deal cannot become `Signed`
+until both Vendor timestamps exist.
+
 For upload/replacement policies, validate:
 
 - Tenant ownership.
@@ -151,6 +160,74 @@ For upload/replacement policies, validate:
 - Rate-limit abuse-prone endpoints, especially login, password recovery,
   uploads, email, compliance, and AI.
 - Log request IDs and safe metadata, not direct personal data.
+
+### Email delivery boundary
+
+- Supabase Auth alone generates recovery and setup tokens. Plexus never reads,
+  stores, or recreates those links and records only the request outcome.
+- Resend API credentials, From configuration, webhook signing secret, and cron
+  secret are server-only environment variables.
+- Every business email creates one service-written delivery row per recipient.
+  Authenticated application roles have no insert/update/delete grant.
+- Only an active Superadmin can select delivery rows or sanitized lifecycle
+  events. Admin and Vendor sessions receive zero rows even for their own
+  tenant.
+- The signed Resend webhook verifies the raw body and Svix headers before
+  matching a provider message ID. Unique provider event IDs make retries
+  idempotent.
+- The ledger stores address, subject, actor, trigger, and status for
+  operations, but never message bodies, provider credentials, raw responses,
+  or password/setup links.
+- Reminder execution requires the exact `CRON_SECRET` bearer value and checks
+  same-day source records before sending.
+
+### Tenant Vendor discovery boundary
+
+- The owning Admin updates only its server-derived tenant row; the browser
+  supplies the desired boolean but never a tenant ID.
+- Hiding **Find companies** is presentation only. The Server Component
+  redirects disabled discovery routes before loading candidates.
+- `match_candidates()` checks the active tenant capability and returns no rows
+  when disabled.
+- `match_participants()` is capability-independent but returns only limited
+  summaries for companies already connected to the caller through visible
+  own-tenant matches, preserving match context without reopening browsing.
+- The `matches` insert policy applies the same capability to Vendor-created
+  requests. Superadmin and owning-Admin matching permissions are unchanged.
+
+### Vendor match acceptance boundary
+
+- The Server Action derives Vendor subtype and company ownership from the
+  authenticated trusted identity and accepts only a match UUID plus the
+  `Accepted` or `Proposed` intent.
+- A Vendor can set or clear only its own acceptance timestamp. The database
+  trigger permits a clear only while the other Vendor has not accepted and no
+  meeting exists. It rejects attempts to write the other Vendor's timestamp,
+  set `Rejected`, rewrite an existing acceptance, withdraw after the boundary,
+  or force `Accepted` / `Session Scheduled`.
+- Acceptance of a legacy `Rejected` row sends `Proposed` with the new own-party
+  timestamp; the trigger derives `Accepted` only when both timestamps exist.
+- Admins may reset an own-tenant match to `Proposed` or `Rejected` but cannot
+  record an acceptance on behalf of either Vendor.
+- PostgreSQL serializes competing updates to the match row, so a withdrawal
+  racing the second acceptance cannot have both operations succeed against the
+  same one-sided state.
+- The second match acceptance stops at the accepted boundary and starts no
+  provider call. `proposeMeetingAction` revalidates the participating Vendor,
+  both match acceptances, the accepted/scheduled match state, and the absence
+  of an existing future meeting before storing one tenant-scoped proposal.
+- `meeting_proposals` RLS exposes a proposal only to the owning Admin,
+  Superadmin, and its two participating Vendors. The mutation trigger derives
+  the proposing identity from trusted Auth bindings, makes proposal fields
+  immutable, prevents cross-party approval, and requires two distinct
+  subtype-owned approval records before inserting `meetings`.
+- Proposal creation and second approval both reload or re-check the owning
+  `admin_tenants.meeting_availability` value and accept exactly one future
+  Asia/Kuala_Lumpur slot that the tenant currently exposes. Closing a slot
+  before approval makes the stale proposal fail safely. Only the active owning
+  Admin can update this tenant configuration. Vendors may read it through
+  their validated tenant identity but cannot alter it. Existing automatic
+  meeting jobs remain service-only legacy incident records.
 
 ### Public Vendor application boundary
 

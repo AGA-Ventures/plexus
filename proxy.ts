@@ -19,15 +19,39 @@ const protectedRoutePattern = new RegExp(
 
 export async function proxy(request: NextRequest) {
   const match = request.nextUrl.pathname.match(protectedRoutePattern)
+  const requestedLanguage = request.nextUrl.searchParams.get("lang")
+  const documentLanguage =
+    request.nextUrl.pathname === "/app"
+      ? "en"
+      : match?.[1]
+        ? normalizeLocale(match[1])
+        : requestedLanguage === "ms" || requestedLanguage === "my"
+          ? "ms"
+          : requestedLanguage &&
+              [
+                "zh-Hant",
+                "zh-hant",
+                "zht",
+                "zh-tw",
+                "zh_TW",
+                "tw",
+                "zh",
+                "cn",
+              ].includes(requestedLanguage)
+            ? "zh-Hant"
+            : "en"
+  const requestHeaders = new Headers(request.headers)
+  requestHeaders.set("x-plexus-language", documentLanguage)
+  const forwardedRequest = { headers: requestHeaders }
 
   // Public pages do not need an authenticated Supabase session. Keeping this
   // before the environment lookup prevents a missing auth configuration from
   // taking down the entire public website.
   if (!match) {
-    return NextResponse.next({ request })
+    return NextResponse.next({ request: forwardedRequest })
   }
 
-  let response = NextResponse.next({ request })
+  let response = NextResponse.next({ request: forwardedRequest })
   const { url, publishableKey } = getSupabaseConfig()
   const supabase = createServerClient(url, publishableKey, {
     cookies: {
@@ -38,7 +62,7 @@ export async function proxy(request: NextRequest) {
         cookiesToSet.forEach(({ name, value }) =>
           request.cookies.set(name, value)
         )
-        response = NextResponse.next({ request })
+        response = NextResponse.next({ request: forwardedRequest })
         cookiesToSet.forEach(({ name, value, options }) => {
           response.cookies.set(name, value, options)
         })

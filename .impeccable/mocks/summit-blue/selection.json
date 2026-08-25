@@ -1,0 +1,53 @@
+{
+  "title": "Choose the blue Summit Table",
+  "question": "All four keep the real Plexus logo, multilingual navigation, and the same human-governed journey. Choose the composition that should become both the public site and the simpler Admin system.",
+  "options": [
+    {
+      "id": "harbor-agenda",
+      "label": "Harbor Agenda",
+      "kicker": "CLOSEST TO YOUR PICK",
+      "lineage": "the original Summit Table rebuilt with Plexus midnight, connection blue, and mineral paper",
+      "thesis": "A strong agenda rail and shared bilateral table make the complete journey visible at once.",
+      "palette": ["#071326", "#0b2545", "#0a84ff", "#25d0ff", "#f5f7f5"],
+      "materials": ["navy enamel tabs", "mineral paper", "blind embossing"],
+      "viewport": "The left agenda leads directly into the two-party match table, with actions and outcomes integrated into one compact first view.",
+      "risk": "The formal summit language needs careful spacing on smaller screens so it stays welcoming.",
+      "comp": ".impeccable/mocks/summit-blue/01-harbor-agenda.webp"
+    },
+    {
+      "id": "blue-carbon-ledger",
+      "label": "Blue Carbon Ledger",
+      "kicker": "IMPECCABLE’S PICK",
+      "lineage": "agenda indexes, carbon-copy registries, and precise confirmed-meeting dockets",
+      "thesis": "The public story already behaves like a clean operating workspace, making the transition into Admin especially coherent.",
+      "palette": ["#071326", "#123a63", "#0a84ff", "#dcecf7", "#f7f6f1"],
+      "materials": ["carbon-copy ledger", "blueprint rules", "registration marks"],
+      "viewport": "A slim agenda rail, wide process ledger, and intersecting meeting docket create the clearest operator-first explanation.",
+      "risk": "It is the most operational option, so later public sections need enough rhythm to avoid feeling like documentation.",
+      "comp": ".impeccable/mocks/summit-blue/02-blue-carbon-ledger.webp"
+    },
+    {
+      "id": "night-exchange",
+      "label": "Night Exchange",
+      "lineage": "dark briefing cloth, overlapping delegate papers, and a live blue workflow tab",
+      "thesis": "Plexus blue takes the stage while physical papers keep the exchange human and accountable.",
+      "palette": ["#071326", "#0b1f3a", "#0a84ff", "#25d0ff", "#f4f6f3"],
+      "materials": ["woven briefing cloth", "engraved steel", "crisp delegate paper"],
+      "viewport": "The agenda and headline sit on midnight while overlapping profile papers carry the workflow toward a signed meeting record.",
+      "risk": "The dark public surface is memorable but would need a deliberately lighter Admin translation.",
+      "comp": ".impeccable/mocks/summit-blue/03-night-exchange.webp"
+    },
+    {
+      "id": "porcelain-route",
+      "label": "Porcelain Route",
+      "lineage": "maritime wayfinding, registry seals, and clean cobalt route diagrams",
+      "thesis": "A bright route system turns the exchange journey into one calm, highly legible path.",
+      "palette": ["#071326", "#1554a4", "#0a84ff", "#e7f2fb", "#fbfaf5"],
+      "materials": ["porcelain paper", "cobalt rules", "registry seal"],
+      "viewport": "A bending five-stage route wraps a central match ledger and a large confirmed-meeting seal on a bright canvas.",
+      "risk": "Its restraint is highly usable, but it has less physical depth than the other Summit Table variations.",
+      "comp": ".impeccable/mocks/summit-blue/04-porcelain-route.webp"
+    }
+  ],
+  "steer": true
+}

@@ -6,7 +6,7 @@
   "nav": {
     "home": "Laman Utama",
     "howItWorks": "Cara Ia Berfungsi",
-    "forVendors": "Untuk Vendor",
+    "forVendors": "Untuk Pengendali Program",
     "forBusinesses": "Untuk Pemilik Perniagaan",
     "pricing": "Harga",
     "about": "Tentang Kami",
@@ -14,18 +14,18 @@
     "login": "Log Masuk"
   },
   "hero": {
-    "eyebrow": "Padanan B2B dikuasakan AI",
+    "eyebrow": "Padanan B2B dipimpin penganjur",
     "title": "Hubungan lebih tajam untuk perniagaan rentas sempadan.",
     "body": "Plexus membantu dewan perniagaan, badan perdagangan dan penganjur acara melancarkan portal padanan perniagaan berjenama yang menukar profil ahli kepada pengenalan, mesyuarat dan peluang yang relevan.",
-    "vendorCta": "Untuk Vendor",
+    "vendorCta": "Untuk Pengendali Program",
     "businessCta": "Untuk Pemilik Perniagaan"
   },
   "problem": {
     "title": "Padanan B2B rentas sempadan menjadi sukar apabila prosesnya berada dalam spreadsheet.",
-    "body": "Profil datang dalam format berbeza. Senarai pendek dibuat secara manual. Susulan mesyuarat hilang selepas acara. Plexus mewujudkan satu lapisan operasi untuk profil berstruktur, padanan dibantu AI dan hasil yang boleh diukur.",
+    "body": "Profil datang dalam format berbeza. Senarai pendek dibuat secara manual. Susulan mesyuarat hilang selepas acara. Plexus direka sebagai satu lapisan operasi untuk profil berstruktur, padanan yang disemak penganjur dan tindakan susulan yang bertanggungjawab.",
     "points": [
       "Profil perniagaan yang bersih merentas pasaran dan bahasa.",
-      "Senarai pendek dibantu AI dengan kawalan penganjur.",
+      "Senarai pendek cadangan yang kekal tertakluk kepada semakan penganjur.",
       "Aliran mesyuarat, tandatangan dan susulan dalam satu tempat."
     ]
   },
@@ -56,7 +56,7 @@
         "body": "Keterlihatan Plexus merentas tenant, kualiti pelancaran dan konfigurasi platform."
       },
       {
-        "title": "Admin vendor",
+        "title": "Pengendali program",
         "body": "Ruang kerja berjenama untuk dewan, persatuan dan penganjur acara."
       },
       {
@@ -66,9 +66,13 @@
     ]
   },
   "countries": {
-    "title": "Negara aktif",
-    "body": "Bermula dengan Malaysia dan Macau, berkembang ke seluruh Asia melalui model white-label bersama rakan tempatan.",
-    "badges": ["Malaysia", "Macau", "Berkembang di Asia"]
+    "title": "Fokus program semasa",
+    "body": "Malaysia dan Makau ialah fokus program semasa. Koridor tambahan disahkan sebelum dipersembahkan sebagai tersedia.",
+    "badges": [
+      "Malaysia · fokus semasa",
+      "Makau · fokus semasa",
+      "Koridor lain · tertakluk kepada pengesahan"
+    ]
   },
   "proof": {
     "title": "Bukti sosial",
@@ -77,14 +81,142 @@
   },
   "cta": {
     "title": "Bawa Plexus kepada ahli anda.",
-    "body": "Lancarkan portal padanan berjenama untuk komuniti perniagaan anda, atau sertai melalui portal vendor yang mengambil bahagian.",
+    "body": "Bincangkan ruang kerja program berjenama untuk komuniti anda, atau sertai melalui program yang telah diluluskan.",
     "vendor": "White-label dengan Plexus",
     "business": "Sertai sebagai perniagaan"
   },
+  "preEvent": {
+    "meta": {
+      "title": "Padanan perniagaan rentas sempadan dan sokongan pra-acara",
+      "description": "Tukar objektif perniagaan kepada padanan relevan, mesyuarat yang disahkan dan pelan ketibaan yang diselaraskan sebelum lawatan perniagaan rentas sempadan anda.",
+      "imageAlt": "Penyelaras Plexus membantu delegasi antarabangsa menyediakan padanan perniagaan, mesyuarat dan pelan ketibaan"
+    },
+    "hero": {
+      "eyebrow": "Padanan perniagaan rentas sempadan",
+      "title": "Bina hubungan perniagaan yang tepat sebelum anda tiba.",
+      "body": "Beritahu Plexus perkara yang ingin dicapai dan pihak yang ingin ditemui. Kami membantu menyediakan padanan relevan, mesyuarat yang disahkan dan pelan ketibaan yang sedia dilaksanakan sebelum anda berlepas.",
+      "primaryCta": "Mulakan melalui WhatsApp",
+      "secondaryCta": "Terokai sokongan negara",
+      "cardEyebrow": "Sebelum acara",
+      "cardTitle": "Daripada objektif perniagaan kepada mesyuarat yang disahkan",
+      "highlights": [
+        "Objektif difahami",
+        "Hubungan relevan disemak",
+        "Mesyuarat dan lawatan disahkan",
+        "Pelan ketibaan diselaraskan"
+      ]
+    },
+    "markets": {
+      "eyebrow": "Tempat sokongan bermula",
+      "title": "Buat pertanyaan dari mana-mana. Pelaksanaan disahkan mengikut pasaran.",
+      "body": "Syarikat dari setiap negara atau wilayah yang disenaraikan boleh memulakan perbincangan dengan Plexus. Malaysia dan Makau ialah fokus pasaran aktif semasa; setiap program, perkenalan dan perkhidmatan tempatan disahkan dari segi kerelevanan dan ketersediaan bersama penganjur dan rakan yang diluluskan.",
+      "badges": [
+        "Malaysia · Aktif",
+        "Makau · Aktif",
+        "Pertanyaan seluruh dunia"
+      ]
+    },
+    "journey": {
+      "eyebrow": "Daripada objektif kepada peluang",
+      "title": "Lebih daripada sekadar perkenalan.",
+      "body": "Plexus menyusun konteks dan persediaan bagi setiap hubungan supaya delegasi memahami pihak yang akan ditemui, sebab padanan itu relevan dan tindakan seterusnya.",
+      "steps": [
+        {
+          "title": "Beritahu perkara yang ingin dicapai",
+          "body": "Kongsi objektif perniagaan, sektor sasaran, jenis rakan pilihan dan garis masa anda."
+        },
+        {
+          "title": "Semak hubungan yang relevan",
+          "body": "Perniagaan dan hubungan ekosistem berpotensi dinilai berdasarkan kesesuaian, kerelevanan dan ketersediaan dalam aliran kerja yang dipimpin penganjur."
+        },
+        {
+          "title": "Sahkan butiran mesyuarat dan lawatan",
+          "body": "Selaraskan perkenalan, masa mesyuarat, keperluan jurubahasa, lokasi dan lawatan tapak yang relevan bersama penganjur atau rakan yang diluluskan."
+        },
+        {
+          "title": "Tiba dengan pelan kerja",
+          "body": "Satukan jadual, hubungan mesyuarat, butiran pengangkutan dan tindakan seterusnya untuk lawatan perniagaan."
+        }
+      ]
+    },
+    "services": {
+      "eyebrow": "Persediaan lawatan perniagaan",
+      "title": "Sediakan keseluruhan lawatan—bukan hanya mesyuarat.",
+      "body": "Plexus menyatukan persediaan perniagaan dan keperluan ketibaan dalam satu aliran kerja yang diselaraskan. Perkenalan, urusan tempatan dan perkhidmatan pembekal disahkan bersama penganjur atau rakan yang diluluskan.",
+      "items": [
+        {
+          "title": "Penyelarasan penerbangan",
+          "body": "Rekod keperluan ketibaan dan pelepasan supaya pelan acara selaras dengan perjalanan."
+        },
+        {
+          "title": "Penyelarasan penginapan",
+          "body": "Selaraskan permintaan penginapan dengan lokasi acara, tarikh dan jadual delegasi."
+        },
+        {
+          "title": "Panduan visa dan dokumen",
+          "body": "Susun senarai semak keperluan dan salurkan pertanyaan rasmi kepada pihak berkuasa yang bertanggungjawab."
+        },
+        {
+          "title": "Pengangkutan tempatan",
+          "body": "Selaraskan pemindahan lapangan terbang dan keperluan pengangkutan tempatan dengan pengendali yang dilantik."
+        },
+        {
+          "title": "Jurubahasa",
+          "body": "Kenal pasti keperluan bahasa sebelum mesyuarat dan mohon jurubahasa yang tersedia."
+        },
+        {
+          "title": "Sokongan pegawai perhubungan",
+          "body": "Sediakan titik hubungan tempatan yang jelas untuk penyelarasan delegasi dan acara."
+        },
+        {
+          "title": "Lawatan tapak",
+          "body": "Sediakan lawatan syarikat atau industri yang relevan mengikut program yang disahkan."
+        },
+        {
+          "title": "Pelan mesyuarat dan tindakan susulan",
+          "body": "Satukan padanan, lokasi, masa mesyuarat dan tindakan seterusnya yang dipersetujui dalam satu jadual."
+        }
+      ],
+      "disclaimer": "Plexus menyelaraskan permintaan dan penyerahan kepada rakan yang diluluskan. Halaman ini tidak menjual tiket penerbangan atau bilik hotel, mengeluarkan visa, menjamin kelulusan atau menerima bayaran perjalanan."
+    },
+    "countries": {
+      "eyebrow": "Direktori pertanyaan seluruh dunia",
+      "title": "Mulakan dengan lokasi perjalanan anda bermula.",
+      "body": "Pilih lokasi pelepasan delegasi anda untuk menyediakan pertanyaan WhatsApp yang lebih berguna. Pilihan negara hanya menambah konteks; ia tidak mendakwa operasi atau pembekal aktif di setiap pasaran.",
+      "points": [
+        "Semak lebih daripada 240 negara dan wilayah.",
+        "Tambahkan objektif, hubungan sasaran dan garis masa pilihan anda dalam WhatsApp.",
+        "Perkenalan dan perkhidmatan tempatan bergantung pada kesesuaian, ketersediaan dan kelulusan penganjur; hasil perniagaan tidak dijamin."
+      ],
+      "searchLabel": "Cari negara dan wilayah",
+      "searchPlaceholder": "Taip negara, wilayah atau kod",
+      "resultCount": "{count} negara dan wilayah dipaparkan",
+      "empty": "Tiada negara atau wilayah yang sepadan dengan carian itu.",
+      "selectCountry": "Pilih {country}",
+      "selectedLabel": "Negara atau wilayah pelepasan anda",
+      "whatsappCta": "Mulakan melalui WhatsApp",
+      "whatsappAria": "Buka WhatsApp untuk bertanya kepada Plexus tentang sokongan pra-acara dari {country}",
+      "messageTemplate": "Helo Plexus, saya akan berlepas dari {country} dan ingin membincangkan objektif perniagaan, organisasi yang ingin ditemui serta sokongan pra-acara untuk padanan, mesyuarat dan perancangan ketibaan.",
+      "countryFallback": "negara atau wilayah saya",
+      "privacy": "WhatsApp membuka draf kepada {number}. Tiada mesej dihantar secara automatik atau disimpan pada halaman ini."
+    },
+    "contact": {
+      "eyebrow": "Mulakan perbincangan",
+      "title": "Beritahu perkara yang ingin dicapai—dan pihak yang ingin ditemui.",
+      "body": "Kongsi negara pelepasan, tarikh program, objektif perniagaan, hubungan sasaran dan garis masa pilihan anda. Plexus akan menyemak kerelevanan dan ketersediaan, kemudian mengesahkan penganjur atau rakan yang diluluskan untuk langkah seterusnya.",
+      "whatsappCta": "Mulakan perjalanan padanan anda",
+      "emailCta": "E-mel Plexus",
+      "callbackCta": "Minta panggilan balik",
+      "emailSubject": "Pertanyaan sokongan pra-acara",
+      "emailBody": "Helo Plexus, saya ingin mendapatkan sokongan pra-acara untuk acara padanan perniagaan yang akan datang.",
+      "callbackSubject": "Permintaan panggilan balik pra-acara",
+      "callbackBody": "Helo Plexus, sila hubungi saya tentang sokongan padanan perniagaan dan penyelarasan perjalanan pra-acara."
+    }
+  },
   "pages": {
     "for-vendors": {
-      "title": "Padanan B2B white-label untuk vendor.",
-      "body": "Berikan komuniti anda portal berjenama untuk profil ahli, padanan dibantu AI, mesyuarat dan hasil komersial.",
+      "title": "Ruang kerja white-label untuk pengendali program.",
+      "body": "Terokai ruang kerja berjenama untuk dewan, persatuan dan penganjur acara mengurus profil, menyemak cadangan padanan, menyelaras mesyuarat dan merekod susulan.",
       "points": [
         "Lancarkan dengan jenama dan bahasa anda.",
         "Semak dan luluskan padanan sebelum peserta melihatnya.",
@@ -110,7 +242,7 @@
       ]
     },
     "pricing": {
-      "title": "Harga untuk vendor.",
+      "title": "Harga untuk pengendali program.",
       "body": "Harga MVP kini melalui rundingan sementara rakan pelancaran membentuk pakej.",
       "points": [
         "Pakej pilot untuk pelancaran awal.",
@@ -120,7 +252,7 @@
     },
     "about": {
       "title": "Dibina untuk Malaysia, Macau dan koridor perniagaan Asia seterusnya.",
-      "body": "Plexus direka untuk organisasi yang mahu padanan perniagaan rentas sempadan menjadi lebih tersusun dan berorientasikan hasil.",
+      "body": "Plexus direka untuk organisasi yang mahu program perniagaan rentas sempadan menjadi lebih tersusun, telus dan bertanggungjawab.",
       "points": [
         "Berpangkalan operasi di Malaysia.",
         "Fokus koridor Macau dan Greater China.",
@@ -131,9 +263,53 @@
       "title": "Bercakap dengan Plexus.",
       "body": "Halaman ini menjadi titik hubungan awam sementara borang lead penuh disiapkan.",
       "points": [
-        "Kerjasama vendor",
+        "Kerjasama pengendali program",
         "Program pilot",
         "Onboarding pemilik perniagaan"
+      ],
+      "faqTitle": "Soalan sebelum anda bermula.",
+      "faqBody": "Perkara penting untuk pengendali program dan syarikat peserta. Ketersediaan serta skop disahkan bagi setiap program yang diluluskan.",
+      "faq": [
+        {
+          "question": "Untuk siapa Plexus direka?",
+          "answer": "Plexus direka untuk dewan perniagaan, badan perdagangan, persatuan dan penganjur acara yang mengendalikan program perniagaan rentas sempadan, serta syarikat peserta yang dijemput atau diluluskan."
+        },
+        {
+          "question": "Adakah Plexus sudah tersedia untuk digunakan?",
+          "answer": "Plexus masih dalam fasa pra-pelancaran. Aliran kerja terpilih sedang disediakan dan disahkan melalui program perintis yang diluluskan. Hubungi pasukan untuk mengesahkan apa yang tersedia untuk program anda."
+        },
+        {
+          "question": "Apakah yang boleh diuruskan oleh pengendali program?",
+          "answer": "Bergantung pada skop yang diluluskan, pengendali boleh mengurus pengambilan syarikat, profil berstruktur, pengenalan yang disemak, penerimaan bersama, mesyuarat, perjanjian, maklumat acara, sumber dan susulan yang bertanggungjawab."
+        },
+        {
+          "question": "Bagaimanakah padanan perniagaan berfungsi?",
+          "answer": "Maklumat profil berstruktur boleh membantu mengenal pasti hubungan yang relevan. Pengendali program menyemak konteks sebelum berkongsi peluang, dan kedua-dua perniagaan memilih sama ada ia patut diteruskan."
+        },
+        {
+          "question": "Bolehkah perniagaan menyertai tanpa pengendali program?",
+          "answer": "Penyertaan biasanya berkaitan dengan organisasi atau program yang diluluskan. Perniagaan boleh menghubungi Plexus untuk membincangkan program yang sesuai atau bertanya tentang perkhidmatan pra-acara."
+        },
+        {
+          "question": "Bahasa apakah yang disokong?",
+          "answer": "Laman awam ini menyokong Bahasa Inggeris, Bahasa Malaysia dan Bahasa Cina Tradisional. Ruang kerja terlindung boleh menyokong bahasa produk tambahan yang dikonfigurasi; skop bahasa setiap organisasi disahkan semasa onboarding."
+        },
+        {
+          "question": "Bagaimanakah harga ditentukan?",
+          "answer": "Harga pra-pelancaran adalah melalui rundingan. Skop bergantung pada program, jumlah peserta, modul yang diaktifkan, keperluan bahasa serta tahap sokongan onboarding atau operasi."
+        },
+        {
+          "question": "Bagaimanakah keputusan dan data dikendalikan?",
+          "answer": "Keputusan berkaitan padanan, pematuhan, undang-undang, kredit dan penyedia kekal di bawah tadbir urus manusia. Akses dihadkan mengikut peranan, organisasi dan syarikat, dan syarikat peserta hanya melihat rekod aliran kerja yang dikongsi secara jelas."
+        },
+        {
+          "question": "Apakah yang berlaku selepas mesyuarat?",
+          "answer": "Jika diaktifkan, aliran kerja boleh merekod hasil, kemajuan perjanjian, pemilik tindakan dan langkah bertanggungjawab seterusnya supaya susulan tidak hilang selepas acara."
+        },
+        {
+          "question": "Bagaimanakah saya boleh bermula?",
+          "answer": "Pilih Bincangkan program anda untuk pertanyaan pengendali program. Bagi lawatan tertentu yang akan datang, gunakan perkhidmatan pra-acara untuk menerangkan objektif, sasaran hubungan dan keperluan sokongan praktikal anda."
+        }
       ]
     },
     "blog": {
@@ -180,7 +356,7 @@
     "company": "Syarikat",
     "legalSupport": "Undang-undang & Sokongan",
     "language": "Bahasa",
-    "entityLine": "Plexus Sdn Bhd (SSM: TBD)",
+    "entityLine": "Plexus · Aplikasi pra-pelancaran",
     "location": "Kuala Lumpur, Malaysia",
     "copyright": "© {year} Plexus. Hak cipta terpelihara.",
     "poweredBy": "Dikuasakan oleh Plexus",
@@ -190,10 +366,11 @@
     },
     "platformLinks": [
       { "label": "Cara Ia Berfungsi", "href": "/how-it-works" },
-      { "label": "Untuk Vendor", "href": "/for-vendors" },
+      { "label": "Sokongan Pra-acara", "href": "/pre-event" },
+      { "label": "Untuk Pengendali Program", "href": "/for-program-operators" },
       { "label": "Untuk Pemilik Perniagaan", "href": "/for-businesses" },
       { "label": "Harga", "href": "/pricing" },
-      { "label": "Negara Disokong", "href": "/#countries" }
+      { "label": "Negara Disokong", "href": "/pre-event#country-support" }
     ],
     "companyLinks": [
       { "label": "Tentang Kami", "href": "/about" },

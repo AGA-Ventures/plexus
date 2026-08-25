@@ -5,6 +5,7 @@ import process from "node:process"
 const root = process.cwd()
 const failures = []
 const ignoredDirectories = new Set([
+  ".agents",
   ".design-qa",
   ".git",
   ".next",
@@ -69,6 +70,19 @@ function relative(absolute) {
   return path.relative(root, absolute).split(path.sep).join("/")
 }
 
+function withoutLeadingFrontmatter(content) {
+  const lines = content.split(/\r?\n/)
+  if (lines[0]?.trim() !== "---") return content
+
+  const closingIndex = lines.findIndex(
+    (line, index) => index > 0 && ["---", "..."].includes(line.trim())
+  )
+
+  return closingIndex === -1
+    ? content
+    : lines.slice(closingIndex + 1).join("\n")
+}
+
 for (const document of requiredDocuments) {
   if (!fs.existsSync(path.join(root, document))) {
     failures.push(`Required document is missing: ${document}`)
@@ -82,7 +96,7 @@ for (const absolute of markdownFiles) {
   const content = fs.readFileSync(absolute, "utf8")
 
   if (!headingExemptions.has(file)) {
-    const firstContentLine = content
+    const firstContentLine = withoutLeadingFrontmatter(content)
       .split(/\r?\n/)
       .find((line) => line.trim().length > 0)
 

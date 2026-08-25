@@ -51,6 +51,118 @@ async function openMobilePortalMenu(page: Page) {
   await expectNoHorizontalOverflow(page)
 }
 
+test.describe("public pre-event campaign", () => {
+  test("prepares a worldwide WhatsApp inquiry without collecting personal data", async ({
+    page,
+  }) => {
+    const supabaseRequests: string[] = []
+    page.on("request", (request) => {
+      if (request.url().includes("supabase.co")) {
+        supabaseRequests.push(request.url())
+      }
+    })
+
+    await page.goto("/pre-event?lang=en")
+
+    await expect(
+      page.getByRole("heading", {
+        level: 1,
+        name: "Build the right business relationships before you arrive.",
+      })
+    ).toBeVisible()
+    await expect(page).toHaveTitle(
+      "Cross-border business matching and pre-event support | Plexus"
+    )
+    await expect(
+      page.getByRole("img", {
+        name: "A Plexus coordinator helps an international delegate prepare business matches, meetings and an arrival plan",
+      })
+    ).toHaveAttribute("src", /plexus-pre-event-planning/)
+    await expect(
+      page.getByRole("link", { name: "Login", exact: true }).first()
+    ).toHaveCSS("background-color", "rgb(11, 31, 58)")
+    await expect(
+      page.getByRole("img", { name: "Plexus" }).first()
+    ).toHaveAttribute("src", /plexus-wordmark-transparent-trimmed/)
+    await expect(
+      page.getByRole("img", { name: "Plexus" }).last()
+    ).toHaveAttribute("src", /plexus-wordmark-transparent-trimmed/)
+    await expect(
+      page.getByText("Worldwide inquiries", { exact: true })
+    ).toBeVisible()
+    await expect(
+      page.getByText("Malaysia · Live", { exact: true })
+    ).toBeVisible()
+    await expect(page.getByText("Macao · Live", { exact: true })).toBeVisible()
+    await expect(
+      page.getByRole("heading", { name: "More than an introduction." })
+    ).toBeVisible()
+    await expect(
+      page.getByText(/business outcomes are not guaranteed\./)
+    ).toBeVisible()
+    await expect(
+      page.getByText(
+        /This page does not sell flight tickets or hotel rooms, issue visas, guarantee approvals, or accept travel payments\./
+      )
+    ).toBeVisible()
+
+    const search = page.getByRole("searchbox", {
+      name: "Search countries and regions",
+    })
+    await search.fill("Macao")
+    const macaoOption = page.getByRole("button", {
+      name: "Select Macao SAR China",
+    })
+    await macaoOption.focus()
+    await page.keyboard.press("Enter")
+    await expect(macaoOption).toHaveAttribute("aria-pressed", "true")
+
+    const whatsapp = page.getByTestId("pre-event-whatsapp")
+    const whatsappHref = await whatsapp.getAttribute("href")
+    expect(whatsappHref).toBeTruthy()
+    const whatsappUrl = new URL(whatsappHref!)
+    expect(whatsappUrl.origin).toBe("https://wa.me")
+    expect(whatsappUrl.pathname).toBe("/60122677899")
+    expect(whatsappUrl.searchParams.get("text")).toContain(
+      "travelling from Macao SAR China"
+    )
+    expect(whatsappUrl.searchParams.get("text")).toContain(
+      "business objectives"
+    )
+
+    await expect(page.getByTestId("pre-event-cobrand")).toHaveCount(0)
+    await expect(page.getByTestId("pre-event-email")).toHaveCount(0)
+    await expect(page.getByTestId("pre-event-callback")).toHaveCount(0)
+    await expect(page.getByText("MDEC", { exact: true })).toHaveCount(0)
+    await expect(page.getByText("WeChat", { exact: true })).toHaveCount(0)
+    await expect(page.getByText("LINE", { exact: true })).toHaveCount(0)
+    await expect(
+      page.getByRole("link", { name: "Pre-event Support", exact: true })
+    ).toHaveAttribute("href", "/pre-event?lang=en")
+    expect(supabaseRequests).toEqual([])
+    await expectNoHorizontalOverflow(page)
+  })
+
+  test("localizes the public campaign and normalizes an unsupported locale", async ({
+    page,
+  }) => {
+    for (const [lang, heading] of [
+      ["ms", "Bina hubungan perniagaan yang tepat sebelum anda tiba."],
+      ["zh-Hant", "抵埗前，先建立合適的商務關係。"],
+      [
+        "unsupported",
+        "Build the right business relationships before you arrive.",
+      ],
+    ] as const) {
+      await page.goto(`/pre-event?lang=${lang}`)
+      await expect(
+        page.getByRole("heading", { level: 1, name: heading })
+      ).toBeVisible()
+      await expectNoHorizontalOverflow(page)
+    }
+  })
+})
+
 test.describe("three-tier route protection", () => {
   test("uses one responsive login page for all three roles", async ({
     page,
@@ -241,6 +353,12 @@ test.describe("Admin tenant flow", () => {
     await expect(
       page.getByRole("heading", { name: "Admin operations dashboard" })
     ).toBeVisible()
+    await expect(page.getByText("Phase timeline", { exact: true })).toHaveCount(
+      0
+    )
+    expect(
+      await page.getByRole("group", { name: "Meeting actions" }).count()
+    ).toBeGreaterThan(0)
     await expect(page.getByText("Tenant-scoped Admin view")).toHaveCount(0)
     await expect(page.getByText("Operational alerts")).toHaveCount(0)
     await expect(
@@ -257,7 +375,29 @@ test.describe("Admin tenant flow", () => {
     await openMobilePortalMenu(page)
   })
 
-  test("Admin account settings hide IDs and expose profile, branding, and access controls", async ({
+  test("Admin can view the tenant Vendor discovery control in Matching", async ({
+    page,
+  }) => {
+    await login(page, adminEmail!, adminPassword!, /\/en\/admin/)
+    await page.getByRole("tab", { name: "Matching" }).click()
+
+    await expect(
+      page.getByRole("heading", { name: "Vendor discovery" })
+    ).toBeVisible()
+    await expect(
+      page.getByRole("switch", {
+        name: "Allow Vendors to browse companies",
+      })
+    ).toBeVisible()
+    await expect(
+      page.getByText(
+        "Allow Vendors to browse eligible companies and request matches themselves."
+      )
+    ).toBeVisible()
+    await expectNoHorizontalOverflow(page)
+  })
+
+  test("Admin account settings hide IDs and keep logout in the sidebar", async ({
     page,
   }) => {
     await login(page, adminEmail!, adminPassword!, /\/en\/admin/)
@@ -308,7 +448,12 @@ test.describe("Admin tenant flow", () => {
       dialog.getByRole("link", { name: "Send password recovery" })
     ).toBeVisible()
     await expect(dialog.getByText(/Supabase Auth/i)).toHaveCount(0)
-    await expect(dialog.getByRole("button", { name: "Logout" })).toBeVisible()
+    await expect(dialog.getByRole("button", { name: "Logout" })).toHaveCount(0)
+    await expect(
+      dialog.getByRole("link", { name: /Open .* page/ })
+    ).toHaveCount(0)
+    await dialog.getByRole("button", { name: "Close" }).click()
+    await expect(page.getByRole("button", { name: "Logout" })).toBeVisible()
     await expectNoHorizontalOverflow(page)
   })
 
@@ -505,6 +650,21 @@ test.describe("Admin tenant flow", () => {
       await page.keyboard.press("Escape")
     }
 
+    const completeActions = page.getByRole("button", { name: "Complete" })
+    const completeActionCount = await completeActions.count()
+
+    if (completeActionCount > 0) {
+      await completeActions.first().click()
+      const completeDialog = page.getByRole("alertdialog")
+      await expect(
+        completeDialog.getByText("Complete this meeting?", { exact: true })
+      ).toBeVisible()
+      await expect(
+        completeDialog.getByRole("button", { name: "Confirm complete" })
+      ).toBeVisible()
+      await completeDialog.getByRole("button", { name: "Keep active" }).click()
+    }
+
     await page.getByRole("button", { name: "Meeting settings" }).click()
     await expect(
       page.getByText("Meeting settings", { exact: true }).last()
@@ -512,6 +672,10 @@ test.describe("Admin tenant flow", () => {
     await expect(page.getByText("Protected meeting links")).toBeVisible()
     await expect(page.getByText("Configuration access")).toBeVisible()
     await expect(page.getByText("Platform managed")).toBeVisible()
+    await expect(page.getByText("Vendor booking availability")).toBeVisible()
+    await expect(
+      page.getByRole("button", { name: "Save availability" })
+    ).toBeDisabled()
     await expect(
       page.getByText(/ZOOM_CLIENT_SECRET|LARK_APP_SECRET/)
     ).toHaveCount(0)
@@ -666,6 +830,50 @@ test.describe("Vendor flow", () => {
     await expect(
       page.getByRole("link", { name: "Find companies" })
     ).toBeVisible()
+    await expect(
+      page.getByRole("button", { name: "Request change" })
+    ).toHaveCount(0)
+    await expect(
+      page
+        .getByText(
+          /Awaiting acceptance|Pending other Vendor|Your acceptance needed|Pending meeting|Meeting approval needed|Awaiting Vendor approval|Meeting scheduled/
+        )
+        .first()
+    ).toBeVisible()
+    const pendingMeetingCard = page
+      .locator('[data-slot="card"]')
+      .filter({ hasText: "Pending meeting" })
+      .first()
+    await expect(
+      pendingMeetingCard.getByRole("button", { name: "Propose meeting" })
+    ).toBeVisible()
+    await pendingMeetingCard
+      .getByRole("button", { name: "Propose meeting" })
+      .click()
+    const scheduleDialog = page.getByRole("dialog", {
+      name: "Propose a meeting time",
+    })
+    await expect(scheduleDialog.getByText("1. Choose a date")).toBeVisible()
+    await expect(scheduleDialog.getByText("2. Choose a time")).toBeVisible()
+    await expect(
+      scheduleDialog.getByText(
+        "Select a date first to see its available times."
+      )
+    ).toBeVisible()
+    const availableDates = scheduleDialog.getByRole("group", {
+      name: "Available dates",
+    })
+    await expect(availableDates.getByRole("button")).toHaveCount(5)
+    await availableDates.getByRole("button").first().click()
+    const availableTimes = scheduleDialog.getByRole("group", {
+      name: "Available times",
+    })
+    await expect(availableTimes).toBeVisible()
+    await availableTimes.getByRole("button").first().click()
+    await expect(
+      scheduleDialog.getByRole("button", { name: "Send proposal" })
+    ).toBeEnabled()
+    await scheduleDialog.getByRole("button", { name: "Cancel" }).click()
     const matchCard = page
       .locator('[data-slot="card"]')
       .filter({ hasText: "Matched with" })

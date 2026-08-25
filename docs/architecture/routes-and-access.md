@@ -2,7 +2,7 @@
 
 **Owner:** Engineering and security
 **Review trigger:** Route, role, login, or provisioning change
-**Last reviewed:** 2026-07-29
+**Last reviewed:** 2026-08-25
 
 ## Login routing
 
@@ -82,6 +82,34 @@ Production email delivery requires the approved application origin in
 Supabase Auth Site URL/redirect settings and a production SMTP provider for
 external Admin and Vendor recipients.
 
+## Public marketing routes
+
+| Route                                      | Session requirement | Purpose                                                                   |
+| ------------------------------------------ | ------------------- | ------------------------------------------------------------------------- |
+| `/` and marketing pages                    | None                | Present the pre-launch platform, governed journey, audiences, and support |
+| `/for-program-operators?lang=<locale>`      | None                | Canonical public page for chambers, trade bodies, and event organizers    |
+| `/for-vendors?lang=<locale>`                | None                | Compatibility redirect to the program-operator route                      |
+| `/pre-event?lang=<locale>`                  | None                | Special worldwide inquiry, matching preparation, and concierge handoff    |
+| `/app`                                     | None                | English-only, clearly labelled illustrative pre-launch product preview    |
+
+The public header and homepage route visitors between these three layers and
+the localized login without implying that concept capabilities are live. The
+main public site and product preview use the Plexus blue editorial system. The
+pre-event route remains an intentional emerald/lime campaign exception and
+links back to the shared public experience.
+
+The public site and pre-event campaign accept English, Bahasa Malaysia, and Traditional
+Chinese through the existing public `lang` query. It lists worldwide departure
+countries for inquiry context while identifying Malaysia and Macao separately
+as the current live-market focus. Selecting a country prepares a WhatsApp draft
+to the configured Plexus number; the page does not submit or persist personal
+data, sell travel inventory, issue visas, take payments, or imply operational
+coverage in every listed market. Email, callback, regional-messenger, and
+co-brand controls remain absent until verified contact or approved brand
+configuration exists. Public inquiry channels are read only from
+`PLEXUS_PUBLIC_CONTACT_EMAIL`, `PLEXUS_PUBLIC_WHATSAPP_NUMBER`, and
+`PLEXUS_PUBLIC_WHATSAPP_DISPLAY`; an unconfigured channel is not rendered.
+
 ## Canonical public auth routes
 
 | Route                                             | Session requirement | Purpose                                  |
@@ -96,22 +124,47 @@ external Admin and Vendor recipients.
 
 ## Canonical protected routes
 
-| Route                       | Allowed role      | Scope                                                                 |
-| --------------------------- | ----------------- | --------------------------------------------------------------------- |
-| `/[locale]/superadmin`      | Superadmin        | All tenants                                                           |
-| `/[locale]/admin`           | Admin             | Own tenant                                                            |
-| `/[locale]/admin/vendors`   | Admin             | Own tenant Vendors and users                                          |
-| `/[locale]/login-preview`   | Superadmin, Admin | Any tenant or own tenant                                              |
-| `/[locale]/vendor`          | Vendor            | Own company                                                           |
-| `/[locale]/vendor/discover` | Vendor            | Eligible opposite-subtype directory inside the Vendor workspace shell |
-| `/[locale]/compliance`      | Superadmin, Admin | Hidden shell; Admin retains own-tenant sidebar                        |
+| Route                       | Allowed role      | Scope                                                                              |
+| --------------------------- | ----------------- | ---------------------------------------------------------------------------------- |
+| `/[locale]/superadmin`      | Superadmin        | All tenants                                                                        |
+| `/[locale]/admin`           | Admin             | Own tenant                                                                         |
+| `/[locale]/admin/vendors`   | Admin             | Own tenant Vendors and users                                                       |
+| `/[locale]/login-preview`   | Superadmin, Admin | Any tenant or own tenant                                                           |
+| `/[locale]/vendor`          | Vendor            | Own company                                                                        |
+| `/[locale]/vendor/discover` | Vendor            | Eligible opposite-subtype directory when the owning Admin enables Vendor discovery |
+| `/[locale]/compliance`      | Superadmin, Admin | Hidden shell; Admin retains own-tenant sidebar                                     |
 
 Root aliases such as `/login`, `/admin`, `/vendor`, and `/superadmin` redirect
 to English. Legacy `/delegation` and `/partner` routes are compatibility
 aliases for the Vendor workspace.
 
+An authenticated Vendor whose tenant has disabled Vendor discovery is
+redirected from `/[locale]/vendor/discover` to its localized **My matches**
+section. The candidate RPC and Vendor match-insert policy enforce the same
+tenant capability.
+
 Public login and missing-route interfaces do not enumerate protected portal
 paths. The route table above is internal engineering documentation.
+
+The Superadmin route includes **Email sending**, a cross-tenant, read-only
+delivery view. It exposes recipient addresses, sanitized provider status, the
+initiating actor, and trigger only to an active Superadmin. Admin and Vendor
+sessions receive no rows from the underlying ledger.
+
+## Email routes
+
+| Route                            | Access                                | Purpose                                       |
+| -------------------------------- | ------------------------------------- | --------------------------------------------- |
+| `POST /api/webhooks/resend`      | Valid Resend/Svix signature           | Store idempotent delivery lifecycle events    |
+| `GET /api/cron/email-reminders`  | `Authorization: Bearer <CRON_SECRET>` | Send application, meeting, and MOU reminders  |
+| `POST /api/admin/communications` | Owning Admin                          | Send tenant email blasts and/or notifications |
+
+The Resend webhook verifies the raw request body before parsing it. It updates
+only the row whose provider message ID matches and stores no message content.
+The hourly production cron sends pending-application reminders after 24 hours,
+meeting reminders approximately 24 hours before start, and daily incomplete
+MOU reminders. Existing reminder rows suppress duplicates for the same source
+on the same UTC day.
 
 ## Meeting routes
 
@@ -133,10 +186,16 @@ The Admin meeting dashboard also calls the tenant-scoped
 `createManualMeetingAction`. It selects one delegation Vendor and one partner,
 creates or reuses their proposed match, and inserts a calendar meeting with the
 Admin's validated Zoom or Lark preference. This action never records acceptance
-for either Vendor and never creates or exposes a provider URL. When the second
-Vendor accepts, automatic provider creation honors the stored preference; the
-existing mutually accepted provider workflow remains the only path to the
-protected link.
+for either Vendor and never creates or exposes a provider URL. For
+Vendor-driven matching, the second acceptance unlocks **Propose meeting**;
+either Vendor first selects one date and then one time derived from the owning
+tenant's published Meeting settings. `proposeMeetingAction` revalidates the
+accepted match, tenant ownership, current Admin-open slot, interpreter, and
+absence of another future meeting before storing a pending proposal with only
+the proposing Vendor's approval. `approveMeetingProposalAction` accepts only
+the other participating Vendor's own approval. The database atomically creates
+the shared meeting only after both approval actors and timestamps exist. The
+owning Admin then confirms the provider session and protected link.
 
 Calendar entries and list rows open the same meeting-details dialog. Its
 `updateMeetingAction` revalidates the current Admin tenant, meeting state,
@@ -272,8 +331,18 @@ data with one `file`; delete accepts only a validated document UUID.
 | `/api/admin/deals/[id]/document` | DELETE | Owning Admin  | Remove the private PDF but retain the deal     |
 | `/api/mou-documents/[id]/file`   | GET    | Admin, Vendor | Open an authorized 60-second signed review URL |
 
-`createDealAction` creates the tenant-scoped MOU record from an existing
-Vendor match; `updateDealAction` changes only its signing status. The upload
-handler derives the tenant, deal, uploader, object path, and replacement
-target from the verified session and database. Participating Vendors have
-read-only access through deal/match RLS and never receive a Storage path.
+`createDealAction` remains available for an Admin to create the tenant-scoped
+MOU record from an existing Vendor match. Normal workflow completion uses the
+atomic `complete_meeting_with_mou()` function so completing a meeting creates
+the match's one pending MOU without a second Admin step.
+
+`signVendorMouAction` accepts only a deal UUID and explicit agreement. The
+database revalidates the active Vendor, tenant, subtype, match participation,
+and completed meeting before recording that Vendor account and timestamp.
+The first party waits for the counterpart; only both signatures produce
+`Signed` and `Verified`. Admins cannot sign for a Vendor.
+
+The upload handler derives the tenant, deal, uploader, object path, and
+replacement target from the verified session and database. Participating
+Vendors can review an available document through deal/match RLS but never
+receive a Storage path.

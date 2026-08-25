@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server"
+import { after } from "next/server"
 
 import { getCompanyProfileCompletion } from "@/lib/company-profile"
+import {
+  getTenantEmailRecipients,
+  renderPlexusEmail,
+  sendTrackedEmail,
+  sendTrackedEmails,
+} from "@/lib/email-delivery-service"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { getActiveVendorApplicationTenant } from "@/lib/vendor-application-server"
 import {
@@ -87,6 +94,8 @@ export async function POST(request: Request) {
         profile_data: parsed.data.profile,
         profile_complete: profileComplete,
       })
+      .select("id")
+      .maybeSingle()
 
     if (result.error && result.error.code !== "23505") {
       console.error("Vendor application insert failed.", {
@@ -99,6 +108,76 @@ export async function POST(request: Request) {
         },
         500
       )
+    }
+
+    if (!result.error && result.data) {
+      const applicationId = result.data.id
+      const applicantEmail = normalizeVendorApplicationEmail(
+        parsed.data.profile.contactEmail
+      )
+      const applicantName = parsed.data.profile.contactName
+      const companyName = parsed.data.profile.companyNameEn
+
+      after(async () => {
+        const confirmationSubject = "Your Vendor application was received"
+        const confirmationText = `${tenant.branding.name} received the Vendor application for ${companyName}. An Admin will review the submitted company information. You will receive another email when a decision is recorded.`
+        const adminRecipients = await getTenantEmailRecipients({
+          adminId: tenant.id,
+          target: "admin",
+        })
+
+        await Promise.all([
+          sendTrackedEmail({
+            adminId: tenant.id,
+            actor: {
+              type: "plexus_system",
+              name: "Plexus applications",
+            },
+            recipient: {
+              email: applicantEmail,
+              name: applicantName,
+              role: "external",
+            },
+            trigger: "vendor_application_received",
+            subject: confirmationSubject,
+            text: confirmationText,
+            html: renderPlexusEmail({
+              title: confirmationSubject,
+              message: confirmationText,
+            }),
+            source: {
+              table: "vendor_applications",
+              id: applicationId,
+            },
+          }),
+          sendTrackedEmails(
+            adminRecipients.map((recipient) => {
+              const subject = `New Vendor application: ${companyName}`
+              const text = `${applicantName} submitted a ${parsed.data.vendorType} Vendor application for ${companyName}. Sign in to the Admin workspace to review it.`
+
+              return {
+                adminId: tenant.id,
+                actor: {
+                  type: "plexus_system" as const,
+                  name: "Plexus applications",
+                },
+                recipient,
+                trigger: "vendor_application_received" as const,
+                subject,
+                text,
+                html: renderPlexusEmail({
+                  title: subject,
+                  message: text,
+                }),
+                source: {
+                  table: "vendor_applications",
+                  id: applicationId,
+                },
+              }
+            })
+          ),
+        ])
+      })
     }
 
     // Duplicate valid submissions deliberately receive the same response.

@@ -1,9 +1,14 @@
-import { PublicMarketingPage } from "@/components/public-page"
+import { redirect } from "next/navigation"
+
+import { normalizePublicLocale, withLocale } from "@/lib/public-site"
 
 export default async function Page({
   searchParams,
 }: {
   searchParams: Promise<{ lang?: string }>
 }) {
-  return <PublicMarketingPage slug="for-vendors" searchParams={searchParams} />
+  const params = await searchParams
+  redirect(
+    withLocale("/for-program-operators", normalizePublicLocale(params.lang))
+  )
 }

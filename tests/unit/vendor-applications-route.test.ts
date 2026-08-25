@@ -6,16 +6,39 @@ import type { CompanyRegistrationProfile } from "@/lib/local-db"
 const mocks = vi.hoisted(() => ({
   getTenant: vi.fn(),
   insert: vi.fn(),
+  maybeSingle: vi.fn(),
 }))
+
+vi.mock("next/server", async (importOriginal) => {
+  const original = await importOriginal<typeof import("next/server")>()
+  return {
+    ...original,
+    after: vi.fn(),
+  }
+})
 
 vi.mock("@/lib/vendor-application-server", () => ({
   getActiveVendorApplicationTenant: mocks.getTenant,
 }))
 
+vi.mock("@/lib/email-delivery-service", () => ({
+  getTenantEmailRecipients: vi.fn(),
+  renderPlexusEmail: vi.fn(),
+  sendTrackedEmail: vi.fn(),
+  sendTrackedEmails: vi.fn(),
+}))
+
 vi.mock("@/lib/supabase/admin", () => ({
   createSupabaseAdminClient: () => ({
     from: () => ({
-      insert: mocks.insert,
+      insert: (...args: unknown[]) => {
+        mocks.insert(...args)
+        return {
+          select: () => ({
+            maybeSingle: mocks.maybeSingle,
+          }),
+        }
+      },
     }),
   }),
 }))
@@ -72,10 +95,17 @@ describe("POST /api/vendor-applications", () => {
   beforeEach(() => {
     mocks.getTenant.mockReset()
     mocks.insert.mockReset()
+    mocks.maybeSingle.mockReset()
     mocks.getTenant.mockResolvedValue({
       id: "82000000-0000-4000-8000-000000000001",
+      branding: {
+        name: "Tenant One",
+      },
     })
-    mocks.insert.mockResolvedValue({ error: null })
+    mocks.maybeSingle.mockResolvedValue({
+      data: { id: "86000000-0000-4000-8000-000000000001" },
+      error: null,
+    })
   })
 
   it("rejects malformed and oversized requests before database access", async () => {
@@ -166,7 +196,8 @@ describe("POST /api/vendor-applications", () => {
       profile: completeProfile(),
     }
     const created = await POST(applicationRequest(body))
-    mocks.insert.mockResolvedValueOnce({
+    mocks.maybeSingle.mockResolvedValueOnce({
+      data: null,
       error: { code: "23505" },
     })
     const duplicate = await POST(applicationRequest(body))

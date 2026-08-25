@@ -1,10 +1,17 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  getDelegationVisibleResources,
   getVendorDashboardMetrics,
   getVendorRealtimeTargets,
 } from "@/lib/vendor-dashboard"
-import type { Deal, DelegationCompany, Match, Meeting } from "@/lib/local-db"
+import type {
+  Deal,
+  DelegationCompany,
+  EventResource,
+  Match,
+  Meeting,
+} from "@/lib/local-db"
 
 const company = {
   id: "11111111-1111-4111-8111-111111111111",
@@ -85,6 +92,10 @@ const deals = [
     documentFileSize: null,
     documentUploadedAt: null,
     signatoryCheck: "Pending",
+    delegationSignedAt: null,
+    delegationSignedBy: null,
+    partnerSignedAt: null,
+    partnerSignedBy: null,
   },
   {
     id: "99999999-9999-4999-8999-999999999999",
@@ -95,6 +106,10 @@ const deals = [
     documentFileSize: null,
     documentUploadedAt: null,
     signatoryCheck: "Verified",
+    delegationSignedAt: "2026-07-20T10:00:00+08:00",
+    delegationSignedBy: null,
+    partnerSignedAt: "2026-07-20T10:05:00+08:00",
+    partnerSignedBy: null,
   },
   {
     id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
@@ -105,10 +120,67 @@ const deals = [
     documentFileSize: null,
     documentUploadedAt: null,
     signatoryCheck: "Pending",
+    delegationSignedAt: null,
+    delegationSignedBy: null,
+    partnerSignedAt: null,
+    partnerSignedBy: null,
   },
 ] satisfies Deal[]
 
+const resources = [
+  {
+    id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    title: "Delegation briefing",
+    category: "Briefing",
+    fileName: "briefing.pdf",
+    fileUrl: "/api/resources/briefing/file",
+    audience: "delegation",
+    visibleToDelegation: true,
+    notes: "",
+    updatedAt: "2026-07-30T00:00:00.000Z",
+  },
+  {
+    id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    title: "Venue map",
+    category: "Map",
+    fileName: "venue-map.pdf",
+    fileUrl: "/api/resources/map/file",
+    audience: "all",
+    visibleToDelegation: true,
+    notes: "",
+    updatedAt: "2026-07-30T00:00:00.000Z",
+  },
+  {
+    id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+    title: "Admin runbook",
+    category: "Other",
+    fileName: "admin-runbook.pdf",
+    fileUrl: "/api/resources/admin/file",
+    audience: "admin",
+    visibleToDelegation: true,
+    notes: "",
+    updatedAt: "2026-07-30T00:00:00.000Z",
+  },
+  {
+    id: "ffffffff-ffff-4fff-8fff-ffffffffffff",
+    title: "Hidden guide",
+    category: "Logistics",
+    fileName: "hidden.pdf",
+    fileUrl: "/api/resources/hidden/file",
+    audience: "delegation",
+    visibleToDelegation: false,
+    notes: "",
+    updatedAt: "2026-07-30T00:00:00.000Z",
+  },
+] satisfies EventResource[]
+
 describe("Vendor dashboard", () => {
+  it("shows only resources explicitly shared with Delegation Vendors", () => {
+    expect(getDelegationVisibleResources(resources)).toEqual(
+      resources.slice(0, 2)
+    )
+  })
+
   it("derives every dashboard metric from the current scoped records", () => {
     expect(
       getVendorDashboardMetrics({ company, matches, meetings, deals })
@@ -139,6 +211,10 @@ describe("Vendor dashboard", () => {
       {
         table: "matches",
         filter: `delegation_company_id=eq.${company.id}`,
+      },
+      {
+        table: "meeting_proposals",
+        filter: `match_id=in.(${matches[0].id},${matches[1].id})`,
       },
       {
         table: "meetings",

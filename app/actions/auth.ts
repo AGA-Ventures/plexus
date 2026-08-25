@@ -1,6 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { after } from "next/server"
 import { z } from "zod"
 
 import {
@@ -12,6 +13,12 @@ import {
   getAuthenticatedIdentity,
   validateAuthenticatedUser,
 } from "@/lib/authorization"
+import {
+  recordTrackedSupabaseAuthEmail,
+  renderPlexusEmail,
+  resolveTrackedRecipient,
+  sendTrackedEmail,
+} from "@/lib/email-delivery-service"
 import { normalizeLocale, type Locale } from "@/lib/i18n"
 import {
   getLoginPath,
@@ -206,12 +213,34 @@ export async function requestPasswordResetAction(
       parsed.data.email,
       { redirectTo }
     )
+    const trackedRecipient = await resolveTrackedRecipient(parsed.data.email)
 
     if (error) {
       console.warn("Supabase password recovery request failed.", {
         code: error.code,
         status: error.status,
       })
+    }
+
+    if (trackedRecipient) {
+      await recordTrackedSupabaseAuthEmail(
+        {
+          adminId: trackedRecipient.adminId,
+          actor: {
+            type: "supabase_auth",
+            name: "Supabase Auth",
+          },
+          recipient: trackedRecipient.recipient,
+          trigger: "password_reset",
+          subject: "Reset your Plexus password",
+          redirectTo,
+          source: {
+            table: "user_profiles",
+            id: trackedRecipient.id,
+          },
+        },
+        { errorCode: error?.code }
+      )
     }
   } catch {
     console.warn("Supabase password recovery request failed.")
@@ -260,6 +289,44 @@ export async function updatePasswordAction(
       error:
         "We could not update your password. Request a new recovery link and try again.",
     }
+  }
+
+  const user = userResult.data.user
+  const metadata = getAppMetadata(user)
+
+  if (user.email && metadata.role) {
+    after(async () => {
+      const subject = "Your Plexus password was changed"
+      const text =
+        "Your Plexus password was changed successfully. If you did not make this change, contact your workspace support team immediately and request account suspension."
+
+      await sendTrackedEmail({
+        adminId: metadata.admin_id,
+        actor: {
+          type: "plexus_system",
+          name: "Plexus security",
+        },
+        recipient: {
+          email: user.email!,
+          name:
+            typeof user.user_metadata?.display_name === "string"
+              ? user.user_metadata.display_name
+              : "",
+          role: metadata.role!,
+        },
+        trigger: "password_changed",
+        subject,
+        text,
+        html: renderPlexusEmail({
+          title: subject,
+          message: text,
+        }),
+        source: {
+          table: "user_profiles",
+          id: user.id,
+        },
+      })
+    })
   }
 
   await supabase.auth.signOut()

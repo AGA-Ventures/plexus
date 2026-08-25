@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server"
+import { after, NextResponse } from "next/server"
 import { z } from "zod"
 
 import { getAuthenticatedIdentity } from "@/lib/authorization"
+import { sendTrackedDealActivityEmail } from "@/lib/email-delivery-service"
 import {
   getMouDocumentStoragePath,
   isMouPdfSignature,
@@ -208,6 +209,24 @@ export async function POST(
       })
     }
   }
+
+  after(() =>
+    sendTrackedDealActivityEmail({
+      dealId,
+      actor: {
+        type: "admin",
+        userId: identity.userId,
+        name: identity.displayName,
+      },
+      subject: existingResult.data
+        ? "The Plexus MOU document was replaced"
+        : "A Plexus MOU document is ready",
+      text: existingResult.data
+        ? "The Admin replaced the private MOU PDF. Sign in to review the current document and signing status."
+        : "The Admin uploaded the private MOU PDF. Sign in to review the document and current signing status.",
+      includeAdmins: true,
+    })
+  )
 
   return NextResponse.json(
     {

@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server"
+import { after, NextResponse } from "next/server"
 import { z } from "zod"
 
 import { getAuthenticatedIdentity } from "@/lib/authorization"
+import { sendTrackedTenantActivityEmail } from "@/lib/email-delivery-service"
 
 const resourceSchema = z.object({
   title: z.string().trim().min(3).max(120),
@@ -23,10 +24,7 @@ async function getAdminClient() {
 
   if (!authorization.ok) {
     return {
-      error: NextResponse.json(
-        { error: authorization.error },
-        { status: 401 }
-      ),
+      error: NextResponse.json({ error: authorization.error }, { status: 401 }),
     }
   }
 
@@ -50,6 +48,12 @@ export async function POST(request: Request) {
     return auth.error
   }
 
+  const adminId = auth.identity.adminId
+
+  if (!adminId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
   const parsed = resourceSchema.safeParse(
     await request.json().catch(() => null)
   )
@@ -71,7 +75,7 @@ export async function POST(request: Request) {
       audience: parsed.data.audience,
       visible_to_delegation: parsed.data.visibleToDelegation,
       notes: parsed.data.notes,
-      admin_id: auth.identity.adminId,
+      admin_id: adminId,
     })
     .select("*")
     .single()
@@ -79,6 +83,24 @@ export async function POST(request: Request) {
   if (result.error) {
     return NextResponse.json({ error: result.error.message }, { status: 500 })
   }
+
+  after(() =>
+    sendTrackedTenantActivityEmail({
+      adminId,
+      actor: {
+        type: "admin",
+        userId: auth.identity.userId,
+        name: auth.identity.displayName,
+      },
+      target: parsed.data.audience,
+      subject: `New Plexus resource: ${parsed.data.title}`,
+      text: `The Admin published a new ${parsed.data.category.toLowerCase()} resource. Sign in to Plexus to review it.`,
+      source: {
+        table: "event_resources",
+        id: result.data.id,
+      },
+    })
+  )
 
   return NextResponse.json({ ok: true, resource: result.data })
 }

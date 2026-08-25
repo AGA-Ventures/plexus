@@ -26,7 +26,10 @@
   font-weight: 500;
   letter-spacing: 0.01em;
   text-decoration: none;
-  transition: transform 180ms ease, background 180ms ease, border-color 180ms ease;
+  transition:
+    transform 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease;
 }
 
 .button:hover {
@@ -44,14 +47,14 @@
 }
 
 .primary {
-  border: 1px solid #2998ff;
-  background: #0a84ff;
+  border: 1px solid #1974de;
+  background: #0758c8;
   color: white;
   box-shadow: 0 10px 34px rgba(10, 132, 255, 0.2);
 }
 
 .primary:hover {
-  background: #0875e2;
+  background: #064caf;
 }
 
 .secondary {

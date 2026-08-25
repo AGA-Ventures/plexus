@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 vi.mock("server-only", () => ({}))
 
 import { validateAuthenticatedUser } from "@/lib/authorization"
+import { defaultMeetingAvailability } from "@/lib/meeting-availability"
 
 const adminId = "00000000-0000-4000-8000-000000000001"
 const vendorCompanyId = "00000000-0000-4000-8000-000000000002"
@@ -25,7 +26,7 @@ function createVendorUser(): User {
   } as User
 }
 
-function createSupabaseMock() {
+function createSupabaseMock(vendorDiscoveryEnabled = true) {
   const rows = {
     user_profiles: {
       data: {
@@ -57,6 +58,8 @@ function createSupabaseMock() {
         support_email: "support@aga.example",
         primary_color: "#0082a3",
         logo_url: "https://cdn.example.com/aga-logo.png",
+        vendor_discovery_enabled: vendorDiscoveryEnabled,
+        meeting_availability: defaultMeetingAvailability,
       },
       error: null,
     },
@@ -102,6 +105,8 @@ describe("validateAuthenticatedUser", () => {
         tenantSupportEmail: "support@aga.example",
         tenantPrimaryColor: "#0082a3",
         tenantLogoUrl: "https://cdn.example.com/aga-logo.png",
+        tenantVendorDiscoveryEnabled: true,
+        tenantMeetingAvailability: defaultMeetingAvailability,
       },
     })
     expect(queriedTables).toEqual([
@@ -109,5 +114,18 @@ describe("validateAuthenticatedUser", () => {
       "vendor_companies",
       "admin_tenants",
     ])
+  })
+
+  it("loads a disabled Vendor discovery capability from the owning tenant", async () => {
+    const { supabase } = createSupabaseMock(false)
+
+    const result = await validateAuthenticatedUser(supabase, createVendorUser())
+
+    expect(result).toMatchObject({
+      ok: true,
+      identity: {
+        tenantVendorDiscoveryEnabled: false,
+      },
+    })
   })
 })

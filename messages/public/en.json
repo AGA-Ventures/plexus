@@ -6,7 +6,7 @@
   "nav": {
     "home": "Home",
     "howItWorks": "How It Works",
-    "forVendors": "For Vendors",
+    "forVendors": "For Program Operators",
     "forBusinesses": "For Business Owners",
     "pricing": "Pricing",
     "about": "About",
@@ -14,18 +14,18 @@
     "login": "Login"
   },
   "hero": {
-    "eyebrow": "AI-powered B2B matching",
+    "eyebrow": "Organizer-led B2B matching",
     "title": "Sharper connections for cross-border business.",
-    "body": "Plexus helps chambers, trade bodies and event organizers launch branded business-matching portals that turn member profiles into relevant introductions, meetings and deals.",
-    "vendorCta": "For Vendors",
+    "body": "Plexus is preparing branded business-program workspaces for chambers, trade bodies and event organizers, with structured profiles, reviewed introductions, meetings and accountable follow-up.",
+    "vendorCta": "For Program Operators",
     "businessCta": "For Business Owners"
   },
   "problem": {
     "title": "Cross-border B2B matching breaks when the process lives in spreadsheets.",
-    "body": "Profiles arrive in different formats. Shortlists are manual. Meeting follow-up disappears after the event. Plexus creates one shared operating layer for structured profiles, AI-assisted matching and measurable outcomes.",
+    "body": "Profiles arrive in different formats. Shortlists are manual. Meeting follow-up disappears after the event. Plexus is designed as one shared operating layer for structured profiles, organizer-reviewed matching and accountable next actions.",
     "points": [
       "Clean business profiles across markets and languages.",
-      "AI-assisted shortlists that still keep organizers in control.",
+      "Suggested shortlists that remain subject to organizer review.",
       "Meeting, signing and follow-up workflows in one place."
     ]
   },
@@ -42,7 +42,7 @@
         "body": "Plexus ranks likely-fit opportunities and gives organizers a clear shortlist to review."
       },
       {
-        "title": "Connect & deal",
+        "title": "Meet & follow up",
         "body": "Participants meet, track next steps and move qualified opportunities toward agreements."
       }
     ]
@@ -56,19 +56,23 @@
         "body": "Plexus team visibility across tenants, rollout quality and platform configuration."
       },
       {
-        "title": "Vendor admin",
+        "title": "Program operator",
         "body": "A branded workspace for chambers, associations and event organizers."
       },
       {
         "title": "Business owner",
-        "body": "A simple portal for profiles, matches, meetings and deal follow-up."
+        "body": "A simple portal for profiles, reviewed opportunities, meetings and agreement follow-up."
       }
     ]
   },
   "countries": {
-    "title": "Countries live",
-    "body": "Starting with Malaysia and Macau, expanding across Asia with a white-label model built for local partners.",
-    "badges": ["Malaysia", "Macau", "Expanding across Asia"]
+    "title": "Current program focus",
+    "body": "Malaysia and Macao are the current program focus. Any additional corridor is confirmed before it is presented as available.",
+    "badges": [
+      "Malaysia · current focus",
+      "Macao · current focus",
+      "Other corridors · subject to confirmation"
+    ]
   },
   "proof": {
     "title": "Social proof",
@@ -77,14 +81,138 @@
   },
   "cta": {
     "title": "Bring Plexus to your members.",
-    "body": "Launch a branded matching portal for your business community, or join through a participating vendor portal.",
+    "body": "Discuss a branded program workspace for your business community, or join through an approved participating program.",
     "vendor": "White-label with Plexus",
     "business": "Join as a business"
   },
+  "preEvent": {
+    "meta": {
+      "title": "Cross-border business matching and pre-event support",
+      "description": "Turn business objectives into relevant matches, confirmed meetings and a coordinated arrival plan before your cross-border business visit.",
+      "imageAlt": "A Plexus coordinator helps an international delegate prepare business matches, meetings and an arrival plan"
+    },
+    "hero": {
+      "eyebrow": "Cross-border business matching",
+      "title": "Build the right business relationships before you arrive.",
+      "body": "Tell Plexus what you want to achieve and who you want to meet. We help prepare relevant matches, confirmed meetings and an arrival-ready plan before you travel.",
+      "primaryCta": "Start on WhatsApp",
+      "secondaryCta": "Explore country support",
+      "cardEyebrow": "Before the event",
+      "cardTitle": "From business objective to confirmed meeting",
+      "highlights": [
+        "Objectives understood",
+        "Relevant connections reviewed",
+        "Meetings and visits confirmed",
+        "Arrival plan coordinated"
+      ]
+    },
+    "markets": {
+      "eyebrow": "Where support starts",
+      "title": "Enquire from anywhere. Delivery is confirmed market by market.",
+      "body": "Companies from every listed country or region may start a conversation with Plexus. Malaysia and Macao are the current live-market focus; each programme, introduction and local service is confirmed for relevance and availability with the organizer and approved partners.",
+      "badges": ["Malaysia · Live", "Macao · Live", "Worldwide inquiries"]
+    },
+    "journey": {
+      "eyebrow": "From objective to opportunity",
+      "title": "More than an introduction.",
+      "body": "Plexus organizes the context and preparation around each connection, so delegates understand who they are meeting, why the match is relevant and what should happen next.",
+      "steps": [
+        {
+          "title": "Tell us what you want to achieve",
+          "body": "Share your business objectives, target sector, preferred partner type and timeline."
+        },
+        {
+          "title": "Review relevant connections",
+          "body": "Potential businesses and ecosystem contacts are assessed for fit, relevance and availability within the organizer-led workflow."
+        },
+        {
+          "title": "Confirm meetings and visit details",
+          "body": "Coordinate introductions, meeting times, interpreter needs, venues and relevant site visits with the organizer or approved partner."
+        },
+        {
+          "title": "Arrive with a working plan",
+          "body": "Keep your itinerary, meeting contacts, transport details and next actions together for the business visit."
+        }
+      ]
+    },
+    "services": {
+      "eyebrow": "Business visit preparation",
+      "title": "Prepare the whole visit—not only the meeting.",
+      "body": "Plexus keeps business preparation and arrival needs in one coordinated workflow. Introductions, local arrangements and supplier services are confirmed with the organizer or an approved partner.",
+      "items": [
+        {
+          "title": "Flight coordination",
+          "body": "Capture arrival and departure needs so the event plan works around the journey."
+        },
+        {
+          "title": "Accommodation coordination",
+          "body": "Align accommodation requests with the event location, dates and delegate schedule."
+        },
+        {
+          "title": "Visa and document guidance",
+          "body": "Organize requirement checklists and route official questions to the responsible authority."
+        },
+        {
+          "title": "Local transport",
+          "body": "Coordinate airport transfers and local transport requirements with the appointed operator."
+        },
+        {
+          "title": "Interpreters",
+          "body": "Identify language needs before meetings and request an available interpreter."
+        },
+        {
+          "title": "Liaison support",
+          "body": "Keep a clear local point of contact for delegate and event coordination."
+        },
+        {
+          "title": "Site visits",
+          "body": "Prepare relevant company or industry visits around the confirmed programme."
+        },
+        {
+          "title": "Meeting and follow-up plan",
+          "body": "Bring confirmed matches, venues, meeting times and agreed next actions into one itinerary."
+        }
+      ],
+      "disclaimer": "Plexus coordinates requests and approved-partner handoffs. This page does not sell flight tickets or hotel rooms, issue visas, guarantee approvals, or accept travel payments."
+    },
+    "countries": {
+      "eyebrow": "Worldwide inquiry directory",
+      "title": "Start with where your journey begins.",
+      "body": "Choose where your delegation will travel from to prepare a more useful WhatsApp inquiry. Country selection adds context only; it does not claim active operations or suppliers in every market.",
+      "points": [
+        "Browse more than 240 countries and territories.",
+        "Add your objectives, target connections and preferred timeline in WhatsApp.",
+        "Introductions and local services depend on fit, availability and organizer approval; business outcomes are not guaranteed."
+      ],
+      "searchLabel": "Search countries and regions",
+      "searchPlaceholder": "Type a country, region or code",
+      "resultCount": "{count} countries and regions shown",
+      "empty": "No country or region matches that search.",
+      "selectCountry": "Select {country}",
+      "selectedLabel": "Your departure country or region",
+      "whatsappCta": "Start on WhatsApp",
+      "whatsappAria": "Open WhatsApp to ask Plexus about pre-event support from {country}",
+      "messageTemplate": "Hello Plexus, I will be travelling from {country} and would like to discuss my business objectives, the organizations I want to meet, and pre-event support for matching, meetings and arrival planning.",
+      "countryFallback": "my country or region",
+      "privacy": "WhatsApp opens a draft to {number}. Nothing is sent automatically or stored on this page."
+    },
+    "contact": {
+      "eyebrow": "Start the conversation",
+      "title": "Tell us what you want to achieve—and who you want to meet.",
+      "body": "Share your departure country, programme dates, business objectives, target connection and preferred timeline. Plexus will review relevance and availability, then confirm the appropriate organizer or approved partner for the next step.",
+      "whatsappCta": "Start your matching journey",
+      "emailCta": "Email Plexus",
+      "callbackCta": "Request a callback",
+      "emailSubject": "Pre-event support inquiry",
+      "emailBody": "Hello Plexus, I would like pre-event support for an upcoming business-matching event.",
+      "callbackSubject": "Pre-event callback request",
+      "callbackBody": "Hello Plexus, please contact me about pre-event business-matching and travel coordination support."
+    }
+  },
   "pages": {
     "for-vendors": {
-      "title": "White-label B2B matching for vendors.",
-      "body": "Give your chamber, association or event community a branded portal for member profiles, AI-assisted matching, meetings and measurable commercial outcomes.",
+      "title": "A white-label workspace for program operators.",
+      "body": "Explore a branded workspace for chambers, associations and event organizers to structure member profiles, review suggested matches, coordinate meetings and record follow-up.",
       "points": [
         "Launch with your brand and member language.",
         "Review and approve matches before participants see them.",
@@ -93,7 +221,7 @@
     },
     "for-businesses": {
       "title": "Find better-fit partners without the networking noise.",
-      "body": "Plexus gives business owners a guided way to create a profile, receive relevant matches and move introductions into meetings and deals.",
+      "body": "Plexus is designed to give participating companies a guided way to create a profile, review organizer-shared opportunities and move mutual introductions into meetings and follow-up.",
       "points": [
         "Create a structured business profile.",
         "Review curated partner matches.",
@@ -102,25 +230,25 @@
     },
     "how-it-works": {
       "title": "From profile to partner shortlist.",
-      "body": "Plexus turns business data into a clear matching workflow: profile creation, AI-assisted ranking, organizer review and participant follow-through.",
+      "body": "Plexus is designed around a clear workflow: profile creation, suggested fit, organizer review, mutual acceptance and participant follow-through.",
       "points": [
         "Collect comparable profile data.",
-        "Score fit across sectors, goals and readiness.",
+        "Review suggested fit across sectors, goals and readiness.",
         "Coordinate meetings and next steps."
       ]
     },
     "pricing": {
-      "title": "Pricing for vendors.",
+      "title": "Pricing for program operators.",
       "body": "MVP pricing is currently by consultation while launch partners shape package tiers.",
       "points": [
-        "Pilot package for initial vendor launches.",
+        "Pilot scope for approved initial programs.",
         "White-label package for recurring communities.",
         "Enterprise support for multi-market programs."
       ]
     },
     "about": {
       "title": "Built for Malaysia, Macau and the next wave of Asian business corridors.",
-      "body": "Plexus is designed for organizations that need cross-border business matching to be more structured, transparent and outcome-driven.",
+      "body": "Plexus is designed for organizations that need cross-border business programs to be more structured, transparent and accountable.",
       "points": [
         "Malaysia-first operating base.",
         "Macau and Greater China trade corridor focus.",
@@ -129,11 +257,55 @@
     },
     "contact": {
       "title": "Talk to Plexus.",
-      "body": "Use this page as the public contact point while the full lead form is being wired up.",
+      "body": "Use the approved inquiry channel below to discuss a program, participant onboarding or a pre-launch walkthrough.",
       "points": [
-        "Vendor partnerships",
+        "Program-operator partnerships",
         "Pilot programs",
         "Business-owner onboarding"
+      ],
+      "faqTitle": "Questions before you get started.",
+      "faqBody": "The essentials for program operators and participating businesses. Availability and scope are confirmed for each approved program.",
+      "faq": [
+        {
+          "question": "Who is Plexus designed for?",
+          "answer": "Plexus is designed for chambers, trade bodies, associations and event organizers that run cross-border business programs, and for the participating companies they invite or approve."
+        },
+        {
+          "question": "Is Plexus available to use today?",
+          "answer": "Plexus is in pre-launch. Selected workflows are being prepared and validated with approved pilot programs. Contact the team to confirm what is available for your program."
+        },
+        {
+          "question": "What can a program operator manage?",
+          "answer": "Depending on the approved scope, an operator can organize company intake, structured profiles, reviewed introductions, mutual acceptance, meetings, agreements, event information, resources and accountable follow-up."
+        },
+        {
+          "question": "How does business matching work?",
+          "answer": "Structured profile information may help identify relevant connections. The program operator reviews context before sharing an opportunity, and both businesses choose whether it should move forward."
+        },
+        {
+          "question": "Can a business join without a program operator?",
+          "answer": "Participation is normally connected to an approved organization or program. A business can contact Plexus to discuss the relevant program or ask about a pre-event service."
+        },
+        {
+          "question": "Which languages are supported?",
+          "answer": "This public website supports English, Bahasa Malaysia and Traditional Chinese. Protected workspaces can support additional configured product languages; each organization's language scope is confirmed during onboarding."
+        },
+        {
+          "question": "How is pricing determined?",
+          "answer": "Pre-launch pricing is by consultation. Scope depends on the program, participant volume, enabled modules, language requirements and the level of onboarding or operational support."
+        },
+        {
+          "question": "How are decisions and data handled?",
+          "answer": "Matching, compliance, legal, credit and provider decisions remain human-governed. Access is scoped by role, organization and company, with only explicitly shared workflow records available to participating companies."
+        },
+        {
+          "question": "What happens after a meeting?",
+          "answer": "Where enabled, the workflow can record outcomes, agreement progress, ownership and the next responsible action so follow-up does not disappear after the event."
+        },
+        {
+          "question": "How do I start?",
+          "answer": "Choose Discuss your program for a program-operator inquiry. For a specific upcoming visit, use the pre-event service to describe your objectives, target connections and practical support needs."
+        }
       ]
     },
     "blog": {
@@ -180,7 +352,7 @@
     "company": "Company",
     "legalSupport": "Legal & Support",
     "language": "Language",
-    "entityLine": "Plexus Sdn Bhd (SSM: TBD)",
+    "entityLine": "Plexus · Pre-launch application",
     "location": "Kuala Lumpur, Malaysia",
     "copyright": "© {year} Plexus. All rights reserved.",
     "poweredBy": "Powered by Plexus",
@@ -190,10 +362,11 @@
     },
     "platformLinks": [
       { "label": "How It Works", "href": "/how-it-works" },
-      { "label": "For Vendors", "href": "/for-vendors" },
+      { "label": "Pre-event Support", "href": "/pre-event" },
+      { "label": "For Program Operators", "href": "/for-program-operators" },
       { "label": "For Business Owners", "href": "/for-businesses" },
       { "label": "Pricing", "href": "/pricing" },
-      { "label": "Countries We Serve", "href": "/#countries" }
+      { "label": "Countries We Serve", "href": "/pre-event#country-support" }
     ],
     "companyLinks": [
       { "label": "About Us", "href": "/about" },

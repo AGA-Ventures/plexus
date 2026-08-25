@@ -90,8 +90,8 @@ worktree rather than stashing, overwriting, or committing that work.
   the recovery email. Hosted Supabase does not read this local file: copy its
   HTML and the subject `Reset your Plexus password` into **Authentication >
   Email Templates > Reset password** for the approved project.
-- Configure custom SMTP with the sender name `Plexus Security` and a verified,
-  dedicated authentication sender address. The built-in sender displays
+- Configure custom SMTP with
+  `Plexus <notifications@info.plexus.enterprises>`. The built-in sender displays
   `Supabase Auth`, is restricted, and is not suitable for external
   Admin/Vendor recipients.
 - Disable provider link tracking for Auth email, configure SPF, DKIM, and DMARC,

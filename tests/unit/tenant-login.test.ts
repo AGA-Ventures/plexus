@@ -34,8 +34,8 @@ describe("tenant login branding", () => {
 
   it("normalizes colors and chooses a readable foreground", () => {
     expect(normalizeBrandColor("#16839A")).toBe("#16839a")
-    expect(normalizeBrandColor("teal")).toBe("#6fdaea")
-    expect(readableForeground("#6fdaea")).toBe("#21184a")
+    expect(normalizeBrandColor("teal")).toBe("#0a84ff")
+    expect(readableForeground("#0a84ff")).toBe("#21184a")
     expect(readableForeground("#24164d")).toBe("#ffffff")
   })
 })

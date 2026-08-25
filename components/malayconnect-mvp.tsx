@@ -47,7 +47,12 @@ import { toast } from "sonner"
 
 import { logoutAction, updateOwnProfileAction } from "@/app/actions/auth"
 import {
+  updateTenantMeetingAvailabilityAction,
+  updateTenantVendorDiscoveryAction,
+} from "@/app/actions/management"
+import {
   addMatchAction,
+  approveMeetingProposalAction,
   assignMeetingInterpreterAction,
   checkInPartnerAction,
   completeMeetingAction,
@@ -60,9 +65,10 @@ import {
   deleteCompanyAction,
   deleteInterpreterAction,
   publishItineraryAction,
+  proposeMeetingAction,
   refreshPortalDbAction,
-  scheduleMeetingAction,
   sendAnnouncementAction,
+  signVendorMouAction,
   toggleResourceVisibilityAction,
   updateCompanyAction,
   updateCompanyProfileAction,
@@ -71,6 +77,7 @@ import {
   updateMeetingAction,
   updateMatchStatusAction,
 } from "@/app/actions/plexus"
+import type { VendorType } from "@/lib/auth"
 import { downloadCsv, downloadIcs } from "@/lib/export"
 import {
   isChineseLocale,
@@ -112,10 +119,15 @@ import {
   type Match,
   type MatchStatus,
   type Meeting,
+  type MeetingProposal,
   type PartnerCompany,
   type ResourceAudience,
   type ResourceCategory,
 } from "@/lib/local-db"
+import {
+  getPendingMeetingProposal,
+  getVendorMeetingProposalState,
+} from "@/lib/meeting-proposals"
 import { AdminVendorProvision } from "@/components/admin-vendor-provision"
 import { formatCountdown, getMeetingCountdown } from "@/lib/meeting-countdown"
 import {
@@ -123,6 +135,17 @@ import {
   toMeetingHref,
   toShareableMeetingLink,
 } from "@/lib/meeting-links"
+import {
+  defaultMeetingAvailability,
+  getMeetingDateOptions,
+  getMeetingTimeSlotsForDate,
+  meetingTimeOptions,
+  meetingWeekdays,
+  normalizeMeetingAvailability,
+  type MeetingAvailability,
+  type MeetingTimeOption,
+  type MeetingWeekday,
+} from "@/lib/meeting-availability"
 import {
   type MeetingProviderReadiness,
   type MeetingProviderState,
@@ -133,11 +156,17 @@ import {
   type ManualMeetingInput,
   type MeetingAmendmentInput,
 } from "@/lib/manual-meeting"
+import {
+  canVendorWithdrawAcceptance,
+  getVendorMatchProgress,
+  isFutureMeeting,
+} from "@/lib/match-acceptance"
 import { scoreMatch } from "@/lib/matching"
 import type { PortalSession } from "@/lib/plexus-data"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import { cn } from "@/lib/utils"
 import {
+  getDelegationVisibleResources,
   getVendorDashboardMetrics,
   getVendorRealtimeTargets,
 } from "@/lib/vendor-dashboard"
@@ -175,6 +204,14 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty"
 import {
   Dialog,
   DialogContent,
@@ -440,7 +477,6 @@ const uiCopy: Partial<Record<Locale, UiCopy>> & { en: UiCopy } = {
     language: "Language",
     portalAccess: "Portal access",
     logout: "Logout",
-    openRolePage: "Open {role} page",
   },
   zh: {
     workspaceSubtitle: "门户工作台",
@@ -485,7 +521,6 @@ const uiCopy: Partial<Record<Locale, UiCopy>> & { en: UiCopy } = {
     language: "语言",
     portalAccess: "门户访问",
     logout: "退出",
-    openRolePage: "打开{role}页面",
   },
   "zh-Hant": {
     workspaceSubtitle: "門戶工作台",
@@ -530,7 +565,6 @@ const uiCopy: Partial<Record<Locale, UiCopy>> & { en: UiCopy } = {
     language: "語言",
     portalAccess: "門戶存取",
     logout: "登出",
-    openRolePage: "開啟{role}頁面",
   },
   th: {
     workspaceSubtitle: "พื้นที่ทำงานพอร์ทัล",
@@ -576,7 +610,6 @@ const uiCopy: Partial<Record<Locale, UiCopy>> & { en: UiCopy } = {
     language: "ภาษา",
     portalAccess: "การเข้าถึงพอร์ทัล",
     logout: "ออกจากระบบ",
-    openRolePage: "เปิดหน้า{role}",
   },
 }
 
@@ -757,14 +790,22 @@ const thaiText: Record<string, string> = {
   Cancel: "ยกเลิก",
   "Confirm delete": "ยืนยันลบ",
   "No sessions scheduled yet.": "ยังไม่มีการประชุมที่จัดไว้",
+  "No meetings yet": "ยังไม่มีการประชุม",
+  "You need an accepted match before you can request a meeting. Open My Matches to accept a match or arrange the next step.":
+    "คุณต้องมีการจับคู่ที่ยอมรับแล้วก่อนจึงจะขอประชุมได้ เปิดการจับคู่ของฉันเพื่อยอมรับการจับคู่หรือดำเนินการขั้นถัดไป",
+  "Go to My Matches": "ไปที่การจับคู่ของฉัน",
   Join: "เข้าร่วม",
   Complete: "เสร็จสิ้น",
   Calendar: "ปฏิทิน",
   min: "นาที",
   "Match confidence": "ความมั่นใจในการจับคู่",
-  "Request meeting": "ขอประชุม",
-  "Meeting requested": "ขอประชุมแล้ว",
-  "Request change": "ขอปรับแก้",
+  "Schedule meeting": "จัดการประชุม",
+  "Pending meeting": "รอจัดการประชุม",
+  "Meeting scheduled": "จัดการประชุมแล้ว",
+  "Both Vendors accepted · Schedule a meeting for both":
+    "ผู้ขายทั้งสองฝ่ายยอมรับแล้ว · จัดการประชุมสำหรับทั้งสองฝ่าย",
+  "A future meeting is scheduled · Open My Meetings":
+    "มีการประชุมในอนาคต · เปิดการประชุมของฉัน",
   "Choose preferred times": "เลือกเวลาที่ต้องการ",
   "Pick at least 3 future working-day slots. Each slot is 1 hour.":
     "เลือกเวลาในวันทำงานในอนาคตอย่างน้อย 3 ช่วง แต่ละช่วงใช้เวลา 1 ชั่วโมง",
@@ -962,25 +1003,6 @@ function getRegistrationProfile(
   }
 }
 
-const meetingSlotDates = [
-  "2026-07-01",
-  "2026-07-02",
-  "2026-07-03",
-  "2026-07-06",
-  "2026-07-07",
-]
-const meetingSlotHours = [10, 11, 14, 15]
-
-function getMeetingSlotOptions() {
-  return meetingSlotDates.flatMap((date) =>
-    meetingSlotHours.map((hour) => {
-      const paddedHour = String(hour).padStart(2, "0")
-
-      return `${date}T${paddedHour}:00:00+08:00`
-    })
-  )
-}
-
 function localeTag(locale: Locale) {
   const tags: Record<Locale, string> = {
     en: "en-MY",
@@ -1018,6 +1040,44 @@ function formatMeetingSlot(slot: string, locale: Locale) {
   })
 
   return `${dateLabel} · ${timeFormatter.format(start)}-${timeFormatter.format(end)}`
+}
+
+function formatMeetingDate(date: string, locale: Locale) {
+  return new Intl.DateTimeFormat(localeTag(locale), {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    timeZone: "Asia/Kuala_Lumpur",
+  }).format(new Date(`${date}T12:00:00+08:00`))
+}
+
+function formatMeetingTimeRange(slot: string, locale: Locale) {
+  const start = new Date(slot)
+  const end = new Date(start.getTime() + 60 * 60 * 1000)
+  const formatter = new Intl.DateTimeFormat(localeTag(locale), {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Kuala_Lumpur",
+  })
+
+  return `${formatter.format(start)}–${formatter.format(end)}`
+}
+
+function meetingWeekdayLabel(weekday: MeetingWeekday, locale: Locale) {
+  const referenceMonday = new Date("2026-08-03T12:00:00+08:00")
+  referenceMonday.setUTCDate(referenceMonday.getUTCDate() + Number(weekday) - 1)
+
+  return new Intl.DateTimeFormat(localeTag(locale), {
+    weekday: "long",
+    timeZone: "Asia/Kuala_Lumpur",
+  }).format(referenceMonday)
+}
+
+function meetingTimeOptionLabel(time: MeetingTimeOption) {
+  const hour = Number(time.slice(0, 2))
+
+  return `${time}–${String(hour + 1).padStart(2, "0")}:00`
 }
 
 function statusLabel(status: string, locale: Locale) {
@@ -1591,18 +1651,29 @@ export function PlexusConnectMvp({
   function updateMatchStatus(matchId: string, status: MatchStatus) {
     void applyServerResult(
       updateMatchStatusAction(matchId, status),
-      `Match marked ${status}.`
+      status === "Accepted"
+        ? "Your acceptance was recorded."
+        : status === "Proposed" && role !== "admin"
+          ? "Your acceptance was withdrawn."
+          : `Match marked ${status}.`
     )
   }
 
-  function scheduleMeeting(
+  function proposeMeeting(
     match: Match,
-    requestedSlots?: string[],
+    requestedSlot: string,
     requestedInterpreterId?: string | null
   ) {
     void applyServerResult(
-      scheduleMeetingAction(match.id, requestedSlots, requestedInterpreterId),
-      "Meeting preferences saved for Admin confirmation."
+      proposeMeetingAction(match.id, requestedSlot, requestedInterpreterId),
+      "Meeting time proposed. The other Vendor must approve it before the meeting is created."
+    )
+  }
+
+  function approveMeetingProposal(proposalId: string) {
+    void applyServerResult(
+      approveMeetingProposalAction(proposalId),
+      "Meeting approved by both Vendors and added to My Meetings."
     )
   }
 
@@ -1707,6 +1778,13 @@ export function PlexusConnectMvp({
     )
   }
 
+  function signVendorMou(dealId: string, agreed: boolean) {
+    return applyServerResult(
+      signVendorMouAction(dealId, agreed),
+      "Your MOU signature was recorded."
+    )
+  }
+
   function refreshDeals(successMessage: string) {
     return applyServerResult(refreshPortalDbAction(), successMessage)
   }
@@ -1749,9 +1827,9 @@ export function PlexusConnectMvp({
   }) {
     void applyServerResult(
       sendAnnouncementAction(values),
-      values.status === "Sent"
-        ? "Announcement sent and logged."
-        : "Announcement queued."
+      values.status === "Draft"
+        ? "Announcement saved as a draft."
+        : "Announcement delivery started."
     )
   }
 
@@ -1854,8 +1932,8 @@ export function PlexusConnectMvp({
   )
 
   return (
-    <main className="min-h-svh bg-background">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 pb-8 sm:px-6 lg:px-8">
+    <main className="min-h-svh bg-[#eef4f8]">
+      <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5 px-4 py-4 pb-8 sm:px-6 lg:px-8">
         {role === "admin" ? (
           <AdminPortal
             db={db}
@@ -1915,8 +1993,10 @@ export function PlexusConnectMvp({
             meetings={visibleMeetings}
             db={db}
             updateMatchStatus={updateMatchStatus}
-            scheduleMeeting={scheduleMeeting}
+            proposeMeeting={proposeMeeting}
+            approveMeetingProposal={approveMeetingProposal}
             updateCompanyProfile={updateCompanyProfile}
+            signVendorMou={signVendorMou}
           />
         ) : (
           <PartnerPortal
@@ -1941,9 +2021,11 @@ export function PlexusConnectMvp({
             meetings={visibleMeetings}
             db={db}
             updateMatchStatus={updateMatchStatus}
-            scheduleMeeting={scheduleMeeting}
+            proposeMeeting={proposeMeeting}
+            approveMeetingProposal={approveMeetingProposal}
             updateCompanyProfile={updateCompanyProfile}
             confirmAttendance={confirmAttendance}
+            signVendorMou={signVendorMou}
           />
         )}
       </div>
@@ -1995,25 +2077,53 @@ function MetricCard({
   value,
   detail,
   icon,
+  tone = "pale",
 }: {
   label: string
   value: string | number
   detail: string
   icon: Parameters<typeof HugeiconsIcon>[0]["icon"]
+  tone?: "pale" | "blue" | "navy" | "white"
 }) {
+  const dark = tone === "blue" || tone === "navy"
+  const toneClass =
+    tone === "blue"
+      ? "bg-[#0758c8] text-white"
+      : tone === "navy"
+        ? "bg-[#071326] text-white"
+        : tone === "white"
+          ? "bg-white text-[#111826]"
+          : "bg-[#dcecf7] text-[#111826]"
+
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-3">
+    <Card className={`overflow-hidden border-0 shadow-none ${toneClass}`}>
+      <CardHeader className="flex min-h-32 flex-row items-start justify-between gap-3 p-5">
         <div className="flex flex-col gap-1">
-          <CardDescription>{label}</CardDescription>
-          <CardTitle className="text-2xl">{value}</CardTitle>
+          <CardDescription
+            className={dark ? "text-white/85" : "text-[#53667c]"}
+          >
+            {label}
+          </CardDescription>
+          <CardTitle className="mt-5 text-3xl tracking-[-0.03em]">
+            {value}
+          </CardTitle>
         </div>
-        <div className="flex size-9 items-center justify-center rounded-md bg-muted text-muted-foreground">
+        <div
+          className={
+            dark
+              ? "flex size-10 items-center justify-center rounded-lg bg-white/12 text-[#80e8ff]"
+              : "flex size-10 items-center justify-center rounded-lg bg-white/70 text-[#0758c8]"
+          }
+        >
           <Icon icon={icon} />
         </div>
       </CardHeader>
-      <CardContent>
-        <p className="text-xs text-muted-foreground">{detail}</p>
+      <CardContent className="px-5 pb-5">
+        <p
+          className={dark ? "text-xs text-white/80" : "text-xs text-[#53667c]"}
+        >
+          {detail}
+        </p>
       </CardContent>
     </Card>
   )
@@ -2031,44 +2141,93 @@ function DashboardHeader({
   const t = getUiCopy(locale)
 
   return (
-    <section className="flex flex-col gap-5 rounded-lg border bg-card p-4 sm:p-5">
+    <section className="flex flex-col gap-5">
       <div className="flex min-w-0 flex-col gap-3">
         <div className="flex flex-col gap-2">
-          <p className="text-xs font-medium text-muted-foreground">
-            {copy.eyebrow}
-          </p>
-          <h1 className="text-2xl font-semibold tracking-normal sm:text-3xl">
+          <h1 className="text-3xl leading-tight font-semibold tracking-[-0.03em] text-[#111826] sm:text-5xl">
             {copy.title}
           </h1>
-          <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+          <p className="max-w-3xl text-sm leading-6 text-[#53667c] sm:text-base">
             {copy.subtitle}
           </p>
         </div>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="overflow-hidden rounded-2xl bg-[#071326] p-5 text-white sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">
+              {textFor(locale, "Program pulse", "项目进度")}
+            </h2>
+            <p className="mt-1 text-xs leading-5 text-[#aebed0]">
+              {textFor(
+                locale,
+                "Human-reviewed progress from profile readiness to follow-up.",
+                "从档案准备到后续跟进的人工审核进度。"
+              )}
+            </p>
+          </div>
+          <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[#80e8ff]/30 bg-[#80e8ff]/10 px-3 py-1.5 text-xs font-semibold text-[#80e8ff]">
+            <span className="size-1.5 rounded-full bg-[#80e8ff]" />
+            {textFor(locale, "Organizer controlled", "主办方管理")}
+          </span>
+        </div>
+        <ol className="mt-6 grid gap-1 sm:grid-cols-5">
+          {[
+            textFor(locale, "Profile readiness", "档案准备"),
+            textFor(locale, "Organizer review", "主办方审核"),
+            textFor(locale, "Mutual acceptance", "双方接受"),
+            textFor(locale, "Confirmed meetings", "确认会议"),
+            textFor(locale, "Follow-up", "后续跟进"),
+          ].map((label, index) => (
+            <li
+              key={label}
+              className="relative bg-white/6 px-3 py-3 first:rounded-l-lg last:rounded-r-lg"
+            >
+              <span className="text-[0.6875rem] font-medium text-[#9cb1c7]">
+                {index + 1}
+              </span>
+              <p className="mt-2 text-xs leading-5 font-semibold text-white">
+                {label}
+              </p>
+              <span
+                className={
+                  index < 3
+                    ? "absolute inset-x-0 bottom-0 h-0.5 bg-[#0a84ff]"
+                    : "absolute inset-x-0 bottom-0 h-px bg-white/12"
+                }
+              />
+            </li>
+          ))}
+        </ol>
+      </div>
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
         <MetricCard
           label={t.delegationCompanies}
           value={metrics.delegationTotal}
           detail={t.delegationTarget}
           icon={Building01Icon}
+          tone="blue"
         />
         <MetricCard
           label={t.partnersSourced}
           value={metrics.partnerTotal}
           detail={t.partnerTarget}
           icon={UserGroupIcon}
+          tone="pale"
         />
         <MetricCard
           label={t.sessionsScheduled}
           value={metrics.sessionsScheduled}
           detail={`${metrics.sessionsCompleted} ${t.completed}`}
           icon={CameraVideoIcon}
+          tone="white"
         />
         <MetricCard
           label={t.signingConversion}
           value={`${metrics.conversion}%`}
           detail={t.conversionTarget}
           icon={AnalyticsUpIcon}
+          tone="navy"
         />
       </div>
     </section>
@@ -2100,23 +2259,21 @@ function VendorDashboardHeader({
   })
 
   return (
-    <section className="flex flex-col gap-5 rounded-lg border bg-card p-4 sm:p-5">
+    <section className="flex flex-col gap-5 rounded-2xl bg-[#071326] p-5 text-white sm:p-6">
       <div className="flex min-w-0 flex-col gap-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="flex min-w-0 flex-col gap-2">
-            <p className="text-xs font-medium text-muted-foreground">
-              {copy.eyebrow}
-            </p>
-            <h1 className="text-2xl font-semibold tracking-normal sm:text-3xl">
+            <p className="text-xs font-medium text-[#9cb1c7]">{copy.eyebrow}</p>
+            <h1 className="text-3xl leading-tight font-semibold tracking-[-0.03em] text-white sm:text-4xl">
               {copy.title}
             </h1>
-            <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
+            <p className="max-w-3xl text-sm leading-6 text-[#b8cadc]">
               {copy.subtitle}
             </p>
           </div>
           <Badge
             variant="outline"
-            className="h-7 gap-2 rounded-full px-3 text-xs"
+            className="h-7 gap-2 rounded-full border-white/16 bg-white/6 px-3 text-xs text-white"
             data-testid="vendor-realtime-status"
           >
             <span
@@ -2139,7 +2296,7 @@ function VendorDashboardHeader({
         </div>
       </div>
       <div
-        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+        className="grid grid-cols-2 gap-3 xl:grid-cols-4"
         data-testid="vendor-dashboard-metrics"
       >
         <MetricCard
@@ -2155,6 +2312,7 @@ function VendorDashboardHeader({
               : textFor(locale, "Profile ready", "资料已完成")
           }
           icon={UserAccountIcon}
+          tone="blue"
         />
         <MetricCard
           label={textFor(locale, "Pending matches", "待回应配对")}
@@ -2165,6 +2323,7 @@ function VendorDashboardHeader({
             `共 ${dashboardMetrics.totalMatches} 个配对机会`
           )}
           icon={UserGroupIcon}
+          tone="pale"
         />
         <MetricCard
           label={textFor(locale, "Upcoming meetings", "即将举行会议")}
@@ -2175,6 +2334,7 @@ function VendorDashboardHeader({
             `${dashboardMetrics.completedMeetings} 场已完成`
           )}
           icon={CameraVideoIcon}
+          tone="white"
         />
         <MetricCard
           label={textFor(locale, "Active MOUs", "进行中 MOU")}
@@ -2185,6 +2345,7 @@ function VendorDashboardHeader({
             `${dashboardMetrics.signedMous} 份已签署`
           )}
           icon={File01Icon}
+          tone="navy"
         />
       </div>
     </section>
@@ -2284,6 +2445,7 @@ function AdminPortal(props: {
     toggleResourceVisibility,
     meetingProviderReadiness,
   } = props
+  const router = useRouter()
   const navigationCopy = getUiCopy(locale)
   const navigationItems = adminTabItems(locale)
   const validSections = navigationItems.flatMap((item) =>
@@ -2294,6 +2456,11 @@ function AdminPortal(props: {
       ? initialSection
       : "dashboard"
   )
+  const [vendorDiscoveryEnabled, setVendorDiscoveryEnabled] = useState(
+    session.tenantVendorDiscoveryEnabled ?? true
+  )
+  const [savingVendorDiscovery, startVendorDiscoveryTransition] =
+    useTransition()
   const filteredDelegationCompanies = db.delegationCompanies.filter((company) =>
     matchCompanyQuery(company, query)
   )
@@ -2322,41 +2489,37 @@ function AdminPortal(props: {
   const confirmedPartners = db.partnerCompanies.filter((partner) =>
     ["Confirmed", "Arrived"].includes(partner.attendance)
   ).length
+  const pendingOrganizerReviews = db.matches.filter(
+    (match) => match.status === "Proposed"
+  ).length
   const verifiedPartners = db.partnerCompanies.filter(
     (partner) => partner.verified === "Verified"
   ).length
   const matchingDelegation = db.delegationCompanies.find(
     (company) => company.id === selectedDelegation
   )
-  const timelineItems = [
-    [
-      textFor(locale, "Pre-visit", "访前准备"),
-      textFor(
+
+  function updateVendorDiscovery(enabled: boolean) {
+    startVendorDiscoveryTransition(async () => {
+      const result = await updateTenantVendorDiscoveryAction({
         locale,
-        "Needs analysis, matching, video sessions",
-        "需求分析、配对与视频会议"
-      ),
-      72,
-    ],
-    [
-      textFor(locale, "On-site", "现场执行"),
-      textFor(
-        locale,
-        "Check-in, itinerary, liaison, site visits",
-        "签到、行程、联络与参访"
-      ),
-      38,
-    ],
-    [
-      textFor(locale, "Reporting", "报告输出"),
-      textFor(
-        locale,
-        "Pre-visit and post-event exports",
-        "访前与活动后报告导出"
-      ),
-      44,
-    ],
-  ] as const
+        enabled,
+      })
+
+      if (!result.ok) {
+        toast.error(result.error ?? "Unable to update Vendor discovery.")
+        return
+      }
+
+      setVendorDiscoveryEnabled(enabled)
+      toast.success(
+        enabled
+          ? "Vendor company browsing enabled."
+          : "Vendor company browsing disabled."
+      )
+      router.refresh()
+    })
+  }
 
   return (
     <Tabs
@@ -2390,47 +2553,70 @@ function AdminPortal(props: {
       <TabsContent value="dashboard" className="min-w-0">
         <div className="flex flex-col gap-4">
           <DashboardHeader copy={copy} metrics={metrics} locale={locale} />
-          <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  {textFor(locale, "Live operating picture", "实时运营概览")}
-                </CardTitle>
-                <CardDescription>
-                  {textFor(
-                    locale,
-                    "Pre-visit progress, alerts and today's session queue.",
-                    "访前进度、运营提醒与今日会议队列。"
-                  )}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                <Progress
-                  value={Math.min(100, (metrics.fullyMatched / 35) * 100)}
+          <Card className="overflow-hidden border-0 bg-white shadow-none">
+            <CardHeader className="border-b border-[#dbe6ee] p-6">
+              <CardTitle>
+                {textFor(locale, "Live operating picture", "实时运营概览")}
+              </CardTitle>
+              <CardDescription>
+                {textFor(
+                  locale,
+                  "Pre-visit progress, alerts and today's session queue.",
+                  "访前进度、运营提醒与今日会议队列。"
+                )}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-5 p-6">
+              <Progress
+                value={Math.min(100, (metrics.fullyMatched / 35) * 100)}
+              />
+              <div className="grid gap-3 sm:grid-cols-3">
+                <InfoTile
+                  label={textFor(locale, "Fully matched", "已完成配对")}
+                  value={`${metrics.fullyMatched} / 35`}
                 />
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <InfoTile
-                    label={textFor(locale, "Fully matched", "已完成配对")}
-                    value={`${metrics.fullyMatched} / 35`}
-                  />
-                  <InfoTile
-                    label={textFor(locale, "Arrived guests", "已抵达嘉宾")}
-                    value={`${metrics.arrived} / ${metrics.invited}`}
-                  />
-                  <InfoTile
-                    label={textFor(locale, "Signed MOUs", "已签署 MOU")}
-                    value={metrics.signed}
-                  />
+                <InfoTile
+                  label={textFor(locale, "Arrived guests", "已抵达嘉宾")}
+                  value={`${metrics.arrived} / ${metrics.invited}`}
+                />
+                <InfoTile
+                  label={textFor(locale, "Signed MOUs", "已签署 MOU")}
+                  value={metrics.signed}
+                />
+              </div>
+              <div className="grid gap-4 rounded-xl bg-[#dcecf7] p-5 sm:grid-cols-[1fr_auto] sm:items-center">
+                <div>
+                  <p className="text-xs font-semibold tracking-[0.14em] text-[#0758c8] uppercase">
+                    {textFor(
+                      locale,
+                      "Organizer review queue",
+                      "主办方审核队列"
+                    )}
+                  </p>
+                  <p className="mt-2 text-lg font-semibold text-[#111826]">
+                    {textFor(
+                      locale,
+                      `${pendingOrganizerReviews} suggested matches need a decision`,
+                      `${pendingOrganizerReviews} 个建议配对待审核`
+                    )}
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-[#53667c]">
+                    {textFor(
+                      locale,
+                      "Review context and fit before an opportunity is shared with either participant.",
+                      "在向参与双方分享机会前，请审核背景与匹配度。"
+                    )}
+                  </p>
                 </div>
-                <SessionList
-                  db={db}
-                  meetings={db.meetings}
-                  onComplete={completeMeeting}
-                  onUpdateMeeting={updateMeeting}
-                  locale={locale}
-                />
-              </CardContent>
-              <CardFooter className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  className="border-[#0758c8]/25 bg-white text-[#0758c8] hover:bg-[#edf6fb]"
+                  onClick={() => setActiveTab("matching")}
+                >
+                  {textFor(locale, "Review matches", "审核配对")}
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-2">
                 {session.adminId ? (
                   <AdminVendorProvision
                     locale={locale}
@@ -2450,35 +2636,16 @@ function AdminPortal(props: {
                   <Icon icon={Download01Icon} inline="inline-start" />
                   {textFor(locale, "Export Report", "导出报告")}
                 </Button>
-              </CardFooter>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>
-                  {textFor(locale, "Phase timeline", "阶段时间线")}
-                </CardTitle>
-                <CardDescription>
-                  {textFor(
-                    locale,
-                    "June to September delivery checkpoints.",
-                    "六月至九月的交付检查点。"
-                  )}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col gap-4">
-                {timelineItems.map(([label, detail, value]) => (
-                  <div key={label} className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between gap-3 text-sm">
-                      <span className="font-medium">{label}</span>
-                      <span className="text-muted-foreground">{value}%</span>
-                    </div>
-                    <Progress value={Number(value)} />
-                    <p className="text-xs text-muted-foreground">{detail}</p>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+              <SessionList
+                db={db}
+                meetings={db.meetings}
+                onComplete={completeMeeting}
+                onUpdateMeeting={updateMeeting}
+                locale={locale}
+              />
+            </CardContent>
+          </Card>
         </div>
       </TabsContent>
 
@@ -2647,116 +2814,173 @@ function AdminPortal(props: {
       </TabsContent>
 
       <TabsContent value="matching" className="min-w-0">
-        <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="flex flex-col gap-4">
           <Card>
-            <CardHeader>
-              <CardTitle>
-                {textFor(locale, "Matching board", "配对看板")}
-              </CardTitle>
-              <CardDescription>
-                {textFor(
-                  locale,
-                  "Assign at least two Malaysian partners per delegation company.",
-                  "为每家代表团企业至少分配两家马来西亚伙伴。"
-                )}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <FieldGroup>
-                <Field>
-                  <FieldLabel>
-                    {textFor(locale, "Delegation company", "代表团企业")}
-                  </FieldLabel>
-                  <Select
-                    value={selectedDelegation}
-                    onValueChange={setSelectedDelegation}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {db.delegationCompanies.map((company) => (
-                          <SelectItem key={company.id} value={company.id}>
-                            {company.nameEn}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </Field>
-              </FieldGroup>
-              <div className="flex flex-col gap-3">
-                {[...db.partnerCompanies]
-                  .map((partner) => ({
-                    partner,
-                    predicted: matchingDelegation
-                      ? scoreMatch({ delegation: matchingDelegation, partner })
-                          .score
-                      : null,
-                  }))
-                  .sort((a, b) => (b.predicted ?? 0) - (a.predicted ?? 0))
-                  .map(({ partner, predicted }) => (
-                    <div
-                      key={partner.id}
-                      className="flex items-center justify-between gap-3 rounded-md border p-3"
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">
-                          {partner.nameEn}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {partner.sector} · {partner.type}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {predicted !== null ? (
-                          <Badge
-                            variant={
-                              predicted >= 70
-                                ? "default"
-                                : predicted >= 45
-                                  ? "secondary"
-                                  : "outline"
-                            }
-                          >
-                            {predicted}% {textFor(locale, "fit", "匹配")}
-                          </Badge>
-                        ) : null}
-                        <Button
-                          variant="outline"
-                          onClick={() => addMatch(partner.id)}
-                        >
-                          {textFor(locale, "Assign", "分配")}
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+            <CardHeader className="gap-4 sm:flex sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-start gap-3">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                  <Icon icon={UserGroupIcon} />
+                </div>
+                <div className="grid gap-1">
+                  <CardTitle>
+                    {textFor(locale, "Vendor discovery", "供应商企业浏览")}
+                  </CardTitle>
+                  <CardDescription className="max-w-2xl">
+                    {textFor(
+                      locale,
+                      "Allow Vendors to browse eligible companies and request matches themselves.",
+                      "允许供应商浏览符合条件的企业并自行申请配对。"
+                    )}
+                  </CardDescription>
+                </div>
               </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                {textFor(locale, "Match status", "配对状态")}
-              </CardTitle>
-              <CardDescription>
-                {textFor(
-                  locale,
-                  "Both parties accept before a session is scheduled.",
-                  "双方接受后才会安排会议。"
-                )}
-              </CardDescription>
+              <div className="flex items-center justify-between gap-3 rounded-md border bg-background px-3 py-2 sm:justify-end">
+                <div className="text-right">
+                  <p className="text-sm font-medium">
+                    {vendorDiscoveryEnabled
+                      ? textFor(locale, "Browsing enabled", "浏览已启用")
+                      : textFor(locale, "Browsing disabled", "浏览已停用")}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {vendorDiscoveryEnabled
+                      ? textFor(
+                          locale,
+                          "Vendors can open Find companies.",
+                          "供应商可以打开“查找企业”。"
+                        )
+                      : textFor(
+                          locale,
+                          "The browse page and requests are blocked.",
+                          "企业浏览页面和配对申请已被阻止。"
+                        )}
+                  </p>
+                </div>
+                <Switch
+                  checked={vendorDiscoveryEnabled}
+                  disabled={savingVendorDiscovery}
+                  onCheckedChange={updateVendorDiscovery}
+                  aria-label={textFor(
+                    locale,
+                    "Allow Vendors to browse companies",
+                    "允许供应商浏览企业"
+                  )}
+                />
+              </div>
             </CardHeader>
-            <CardContent>
-              <MatchTable
-                db={db}
-                matches={db.matches}
-                onCreateProvider={createProviderMeeting}
-                locale={locale}
-              />
-            </CardContent>
           </Card>
+          <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  {textFor(locale, "Matching board", "配对看板")}
+                </CardTitle>
+                <CardDescription>
+                  {textFor(
+                    locale,
+                    "Assign at least two Malaysian partners per delegation company.",
+                    "为每家代表团企业至少分配两家马来西亚伙伴。"
+                  )}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-4">
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel>
+                      {textFor(locale, "Delegation company", "代表团企业")}
+                    </FieldLabel>
+                    <Select
+                      value={selectedDelegation}
+                      onValueChange={setSelectedDelegation}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {db.delegationCompanies.map((company) => (
+                            <SelectItem key={company.id} value={company.id}>
+                              {company.nameEn}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </Field>
+                </FieldGroup>
+                <div className="flex flex-col gap-3">
+                  {[...db.partnerCompanies]
+                    .map((partner) => ({
+                      partner,
+                      predicted: matchingDelegation
+                        ? scoreMatch({
+                            delegation: matchingDelegation,
+                            partner,
+                          }).score
+                        : null,
+                    }))
+                    .sort((a, b) => (b.predicted ?? 0) - (a.predicted ?? 0))
+                    .map(({ partner, predicted }) => (
+                      <div
+                        key={partner.id}
+                        className="flex items-center justify-between gap-3 rounded-md border p-3"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">
+                            {partner.nameEn}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {partner.sector} · {partner.type}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {predicted !== null ? (
+                            <Badge
+                              variant={
+                                predicted >= 70
+                                  ? "default"
+                                  : predicted >= 45
+                                    ? "secondary"
+                                    : "outline"
+                              }
+                            >
+                              {predicted}% {textFor(locale, "fit", "匹配")}
+                            </Badge>
+                          ) : null}
+                          <Button
+                            variant="outline"
+                            onClick={() => addMatch(partner.id)}
+                          >
+                            {textFor(locale, "Assign", "分配")}
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  {textFor(locale, "Match status", "配对状态")}
+                </CardTitle>
+                <CardDescription>
+                  {textFor(
+                    locale,
+                    "Both parties accept before a session is scheduled.",
+                    "双方接受后才会安排会议。"
+                  )}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <MatchTable
+                  db={db}
+                  matches={db.matches}
+                  onCreateProvider={createProviderMeeting}
+                  locale={locale}
+                />
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </TabsContent>
 
@@ -2836,6 +3060,9 @@ function AdminPortal(props: {
         <MeetingSettings
           readiness={meetingProviderReadiness}
           locale={locale}
+          initialAvailability={
+            session.tenantMeetingAvailability ?? defaultMeetingAvailability
+          }
           onBack={() => setActiveTab("meetings")}
         />
       </TabsContent>
@@ -2927,16 +3154,18 @@ function DelegationPortal(props: {
   meetings: Meeting[]
   db: LocalDb
   updateMatchStatus: (matchId: string, status: MatchStatus) => void
-  scheduleMeeting: (
+  proposeMeeting: (
     match: Match,
-    requestedSlots?: string[],
+    requestedSlot: string,
     requestedInterpreterId?: string | null
   ) => void
+  approveMeetingProposal: (proposalId: string) => void
   updateCompanyProfile: (
     kind: "delegation" | "partner",
     id: string,
     profile: CompanyRegistrationProfile
   ) => void
+  signVendorMou: (dealId: string, agreed: boolean) => Promise<boolean>
 }) {
   const {
     company,
@@ -2950,12 +3179,15 @@ function DelegationPortal(props: {
     meetings,
     db,
     updateMatchStatus,
-    scheduleMeeting,
+    proposeMeeting,
+    approveMeetingProposal,
     updateCompanyProfile,
+    signVendorMou,
   } = props
 
   return (
     <PortalTabs
+      key={initialSection ?? "dashboard"}
       profileLabel={getUiCopy(locale).companyProfile}
       role={role}
       locale={locale}
@@ -2989,13 +3221,27 @@ function DelegationPortal(props: {
           db={db}
           matches={matches}
           perspective="delegation"
+          discoveryEnabled={session.tenantVendorDiscoveryEnabled ?? true}
+          meetingAvailability={normalizeMeetingAvailability(
+            session.tenantMeetingAvailability
+          )}
           onStatus={updateMatchStatus}
-          onSchedule={scheduleMeeting}
+          onPropose={proposeMeeting}
+          onApproveProposal={approveMeetingProposal}
           locale={locale}
         />
       }
-      meetings={<UserMeetings db={db} meetings={meetings} />}
-      signing={<UserSigning db={db} matches={matches} />}
+      meetings={<UserMeetings db={db} meetings={meetings} locale={locale} />}
+      signing={
+        <UserSigning
+          db={db}
+          matches={matches}
+          meetings={meetings}
+          perspective="delegation"
+          locale={locale}
+          onSign={signVendorMou}
+        />
+      }
       onsite={<UserItinerary db={db} />}
     />
   )
@@ -3013,17 +3259,19 @@ function PartnerPortal(props: {
   meetings: Meeting[]
   db: LocalDb
   updateMatchStatus: (matchId: string, status: MatchStatus) => void
-  scheduleMeeting: (
+  proposeMeeting: (
     match: Match,
-    requestedSlots?: string[],
+    requestedSlot: string,
     requestedInterpreterId?: string | null
   ) => void
+  approveMeetingProposal: (proposalId: string) => void
   updateCompanyProfile: (
     kind: "delegation" | "partner",
     id: string,
     profile: CompanyRegistrationProfile
   ) => void
   confirmAttendance: (partnerId: string) => void
+  signVendorMou: (dealId: string, agreed: boolean) => Promise<boolean>
 }) {
   const {
     company,
@@ -3037,13 +3285,16 @@ function PartnerPortal(props: {
     meetings,
     db,
     updateMatchStatus,
-    scheduleMeeting,
+    proposeMeeting,
+    approveMeetingProposal,
     updateCompanyProfile,
     confirmAttendance,
+    signVendorMou,
   } = props
 
   return (
     <PortalTabs
+      key={initialSection ?? "dashboard"}
       profileLabel={getUiCopy(locale).partnerProfile}
       role={role}
       locale={locale}
@@ -3083,13 +3334,27 @@ function PartnerPortal(props: {
           db={db}
           matches={matches}
           perspective="partner"
+          discoveryEnabled={session.tenantVendorDiscoveryEnabled ?? true}
+          meetingAvailability={normalizeMeetingAvailability(
+            session.tenantMeetingAvailability
+          )}
           onStatus={updateMatchStatus}
-          onSchedule={scheduleMeeting}
+          onPropose={proposeMeeting}
+          onApproveProposal={approveMeetingProposal}
           locale={locale}
         />
       }
-      meetings={<UserMeetings db={db} meetings={meetings} />}
-      signing={<UserSigning db={db} matches={matches} />}
+      meetings={<UserMeetings db={db} meetings={meetings} locale={locale} />}
+      signing={
+        <UserSigning
+          db={db}
+          matches={matches}
+          meetings={meetings}
+          perspective="partner"
+          locale={locale}
+          onSign={signVendorMou}
+        />
+      }
       onsite={
         <AttendanceCard
           company={company}
@@ -3129,11 +3394,11 @@ function PortalTabs({
 }) {
   const items = portalTabItems(locale, profileLabel)
   const validSections = items.map((item) => item.value)
-  const [activeTab, setActiveTab] = useState(
+  const requestedTab =
     initialSection && validSections.includes(initialSection)
       ? initialSection
       : "dashboard"
-  )
+  const [activeTab, setActiveTab] = useState(requestedTab)
 
   return (
     <Tabs
@@ -3191,7 +3456,7 @@ function TenantWorkspaceBrand({
     <div className="flex min-w-0 items-center gap-3" data-testid={testId}>
       <Avatar
         className={cn(
-          "shrink-0 rounded-md border border-sidebar-border bg-background",
+          "shrink-0 rounded-md border border-white/16 bg-white",
           large ? "size-10" : "size-8"
         )}
       >
@@ -3199,7 +3464,7 @@ function TenantWorkspaceBrand({
           <AvatarImage
             src={session.tenantLogoUrl}
             alt={`${workspaceName} workspace logo`}
-            className="rounded-md bg-background object-contain p-1"
+            className="rounded-md bg-white object-contain p-1"
           />
         ) : null}
         <AvatarFallback className="rounded-md text-[0.625rem] font-semibold">
@@ -3221,7 +3486,7 @@ function TenantWorkspaceBrand({
         </p>
         <p
           className={cn(
-            "mt-0.5 truncate text-muted-foreground",
+            "mt-0.5 truncate text-sidebar-foreground/58",
             large ? "text-sm" : "text-xs"
           )}
         >
@@ -3464,8 +3729,8 @@ function ResponsiveTabsNav({
   return (
     <>
       <aside className="hidden self-stretch lg:block">
-        <div className="sticky top-4 flex min-h-[calc(100svh-12rem)] flex-col rounded-lg border border-sidebar-border bg-sidebar p-3 text-sidebar-foreground shadow-sm">
-          <div className="mb-3 rounded-md border border-sidebar-border bg-background/70 px-3 py-2">
+        <div className="sticky top-4 flex min-h-[calc(100svh-12rem)] flex-col rounded-xl border border-sidebar-border bg-sidebar p-3 text-sidebar-foreground shadow-[0_18px_42px_rgba(7,19,38,0.12)]">
+          <div className="mb-3 rounded-lg border border-white/10 bg-white/6 px-3 py-3">
             <TenantWorkspaceBrand
               session={session}
               subtitle={t.workspaceSubtitle}
@@ -3512,7 +3777,7 @@ function ResponsiveTabsNav({
               type="button"
               variant="outline"
               size="sm"
-              className="h-11 shrink-0 gap-2 border-sidebar-border bg-background/80 px-3.5 text-sm text-sidebar-foreground"
+              className="h-11 shrink-0 gap-2 border-white/14 bg-[#0758c8] px-3.5 text-sm text-white hover:bg-[#064caf] hover:text-white"
               aria-label={`${t.menu}: ${activeLabel}`}
             >
               <HugeiconsIcon
@@ -3725,305 +3990,311 @@ function SidebarUserAccount({
   }
 
   return (
-    <Dialog
-      onOpenChange={(open) => {
-        if (open) {
-          setSection("profile")
-          setDisplayName(session.displayName)
-        }
-      }}
-    >
-      <DialogTrigger asChild>
-        <button
-          type="button"
-          className="mt-3 flex min-h-14 w-full items-center gap-3 rounded-lg border border-sidebar-border bg-background/80 px-3.5 py-3 text-left shadow-xs transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring/45 focus-visible:outline-none lg:mt-auto lg:min-h-0 lg:rounded-md lg:px-3 lg:py-2.5"
-        >
-          <Avatar className="size-9 lg:size-8">
-            {session.tenantLogoUrl ? (
-              <AvatarImage
-                src={session.tenantLogoUrl}
-                alt={`${workspaceName} workspace logo`}
-                className="bg-background object-contain p-1"
-              />
-            ) : null}
-            <AvatarFallback className="text-xs">
-              {getInitials(displayName)}
-            </AvatarFallback>
-          </Avatar>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-semibold text-sidebar-foreground lg:text-xs">
-              {displayName}
+    <div className="mt-3 flex flex-col gap-2 lg:mt-auto">
+      <Dialog
+        onOpenChange={(open) => {
+          if (open) {
+            setSection("profile")
+            setDisplayName(session.displayName)
+          }
+        }}
+      >
+        <DialogTrigger asChild>
+          <button
+            type="button"
+            className="flex min-h-14 w-full items-center gap-3 rounded-lg border border-sidebar-border bg-background/80 px-3.5 py-3 text-left shadow-xs transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring/45 focus-visible:outline-none lg:min-h-0 lg:rounded-md lg:px-3 lg:py-2.5"
+          >
+            <Avatar className="size-9 lg:size-8">
+              {session.tenantLogoUrl ? (
+                <AvatarImage
+                  src={session.tenantLogoUrl}
+                  alt={`${workspaceName} workspace logo`}
+                  className="bg-background object-contain p-1"
+                />
+              ) : null}
+              <AvatarFallback className="text-xs">
+                {getInitials(displayName)}
+              </AvatarFallback>
+            </Avatar>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-semibold text-sidebar-foreground lg:text-xs">
+                {displayName}
+              </span>
+              <span className="block truncate text-sm text-muted-foreground lg:text-xs">
+                {roleLabel} {t.account}
+              </span>
             </span>
-            <span className="block truncate text-sm text-muted-foreground lg:text-xs">
-              {roleLabel} {t.account}
-            </span>
-          </span>
-          <HugeiconsIcon
-            icon={ArrowDown01Icon}
-            strokeWidth={1.7}
-            className="size-3.5 text-muted-foreground"
-          />
-        </button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[calc(100svh-2rem)] gap-0 overflow-hidden p-0 sm:max-w-4xl">
-        <DialogHeader className="border-b px-5 py-4 pr-12 sm:px-6 sm:py-5">
-          <DialogTitle className="text-base">{t.userProfile}</DialogTitle>
-          <DialogDescription>{t.userProfileDescription}</DialogDescription>
-        </DialogHeader>
-        <div className="grid min-h-0 overflow-hidden sm:grid-cols-[13rem_minmax(0,1fr)]">
-          <aside className="border-b bg-muted/20 p-3 sm:border-r sm:border-b-0 sm:p-4">
-            <div className="mb-3 hidden items-center gap-3 rounded-lg border bg-background/80 p-3 sm:flex">
-              <Avatar className="size-9" data-testid="account-brand-avatar">
-                {session.tenantLogoUrl ? (
-                  <AvatarImage
-                    src={session.tenantLogoUrl}
-                    alt={`${workspaceName} workspace logo`}
-                    className="bg-background object-contain p-1"
-                  />
-                ) : null}
-                <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0">
-                <p className="truncate text-xs font-semibold">{displayName}</p>
-                <p className="truncate text-[0.6875rem] text-muted-foreground">
-                  {workspaceName}
-                </p>
-              </div>
-            </div>
-            <nav
-              aria-label="Account settings"
-              className={cn(
-                "grid gap-1",
-                accountSections.length === 3
-                  ? "grid-cols-3 sm:grid-cols-1"
-                  : "grid-cols-2 sm:grid-cols-1"
-              )}
-            >
-              {accountSections.map((item) => {
-                const selected = section === item.value
-
-                return (
-                  <button
-                    key={item.value}
-                    type="button"
-                    aria-current={selected ? "page" : undefined}
-                    onClick={() => setSection(item.value)}
-                    className={cn(
-                      "flex min-w-0 items-center justify-center gap-2 rounded-md px-2.5 py-2 text-left transition-colors sm:justify-start sm:px-3",
-                      selected
-                        ? "bg-primary text-primary-foreground shadow-xs"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                    )}
-                  >
-                    <HugeiconsIcon
-                      icon={item.icon}
-                      strokeWidth={1.8}
-                      className="size-4 shrink-0"
+            <HugeiconsIcon
+              icon={ArrowDown01Icon}
+              strokeWidth={1.7}
+              className="size-3.5 text-muted-foreground"
+            />
+          </button>
+        </DialogTrigger>
+        <DialogContent className="max-h-[calc(100svh-2rem)] gap-0 overflow-hidden p-0 sm:max-w-4xl">
+          <DialogHeader className="border-b px-5 py-4 pr-12 sm:px-6 sm:py-5">
+            <DialogTitle className="text-base">{t.userProfile}</DialogTitle>
+            <DialogDescription>{t.userProfileDescription}</DialogDescription>
+          </DialogHeader>
+          <div className="grid min-h-0 overflow-hidden sm:grid-cols-[13rem_minmax(0,1fr)]">
+            <aside className="border-b bg-muted/20 p-3 sm:border-r sm:border-b-0 sm:p-4">
+              <div className="mb-3 hidden items-center gap-3 rounded-lg border bg-background/80 p-3 sm:flex">
+                <Avatar className="size-9" data-testid="account-brand-avatar">
+                  {session.tenantLogoUrl ? (
+                    <AvatarImage
+                      src={session.tenantLogoUrl}
+                      alt={`${workspaceName} workspace logo`}
+                      className="bg-background object-contain p-1"
                     />
-                    <span className="min-w-0">
-                      <span className="block truncate text-xs font-medium">
-                        {item.label}
-                      </span>
-                      <span
-                        className={cn(
-                          "hidden truncate text-[0.625rem] sm:block",
-                          selected
-                            ? "text-primary-foreground/75"
-                            : "text-muted-foreground"
-                        )}
-                      >
-                        {item.description}
-                      </span>
-                    </span>
-                  </button>
-                )
-              })}
-            </nav>
-          </aside>
-          <div className="min-h-0 overflow-y-auto">
-            {section === "profile" ? (
-              <section className="grid gap-5 p-5 sm:p-6">
-                <div>
-                  <h3 className="font-heading text-sm font-medium">
-                    {t.personalDetails}
-                  </h3>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {t.personalDetailsDescription}
+                  ) : null}
+                  <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-semibold">
+                    {displayName}
+                  </p>
+                  <p className="truncate text-[0.6875rem] text-muted-foreground">
+                    {workspaceName}
                   </p>
                 </div>
-                <form className="grid gap-4" onSubmit={saveProfile}>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="grid gap-1.5">
-                      <label
-                        htmlFor="accountDisplayName"
-                        className="text-xs font-medium"
-                      >
-                        {t.displayName}
-                      </label>
-                      <Input
-                        id="accountDisplayName"
-                        name="displayName"
-                        defaultValue={displayName}
-                        minLength={2}
-                        maxLength={120}
-                        required
+              </div>
+              <nav
+                aria-label="Account settings"
+                className={cn(
+                  "grid gap-1",
+                  accountSections.length === 3
+                    ? "grid-cols-3 sm:grid-cols-1"
+                    : "grid-cols-2 sm:grid-cols-1"
+                )}
+              >
+                {accountSections.map((item) => {
+                  const selected = section === item.value
+
+                  return (
+                    <button
+                      key={item.value}
+                      type="button"
+                      aria-current={selected ? "page" : undefined}
+                      onClick={() => setSection(item.value)}
+                      className={cn(
+                        "flex min-w-0 items-center justify-center gap-2 rounded-md px-2.5 py-2 text-left transition-colors sm:justify-start sm:px-3",
+                        selected
+                          ? "bg-primary text-primary-foreground shadow-xs"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      )}
+                    >
+                      <HugeiconsIcon
+                        icon={item.icon}
+                        strokeWidth={1.8}
+                        className="size-4 shrink-0"
                       />
-                    </div>
-                    <div className="grid gap-1.5">
-                      <label
-                        htmlFor="accountLoginEmail"
-                        className="text-xs font-medium"
-                      >
-                        {t.loginEmail}
-                      </label>
-                      <Input
-                        id="accountLoginEmail"
-                        value={session.email}
-                        readOnly
-                        aria-describedby="accountLoginEmailDescription"
-                      />
-                      <p
-                        id="accountLoginEmailDescription"
-                        className="text-[0.6875rem] text-muted-foreground"
-                      >
-                        Used for sign-in and password recovery.
-                      </p>
-                    </div>
+                      <span className="min-w-0">
+                        <span className="block truncate text-xs font-medium">
+                          {item.label}
+                        </span>
+                        <span
+                          className={cn(
+                            "hidden truncate text-[0.625rem] sm:block",
+                            selected
+                              ? "text-primary-foreground/75"
+                              : "text-muted-foreground"
+                          )}
+                        >
+                          {item.description}
+                        </span>
+                      </span>
+                    </button>
+                  )
+                })}
+              </nav>
+            </aside>
+            <div className="min-h-0 overflow-y-auto">
+              {section === "profile" ? (
+                <section className="grid gap-5 p-5 sm:p-6">
+                  <div>
+                    <h3 className="font-heading text-sm font-medium">
+                      {t.personalDetails}
+                    </h3>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {t.personalDetailsDescription}
+                    </p>
                   </div>
-                  <div className="rounded-lg border bg-muted/25 p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-medium">
-                          {t.workspaceIdentity}
-                        </p>
-                        <p className="mt-1 text-sm font-semibold">
-                          {workspaceName}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {roleLabel} workspace account
+                  <form className="grid gap-4" onSubmit={saveProfile}>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="grid gap-1.5">
+                        <label
+                          htmlFor="accountDisplayName"
+                          className="text-xs font-medium"
+                        >
+                          {t.displayName}
+                        </label>
+                        <Input
+                          id="accountDisplayName"
+                          name="displayName"
+                          defaultValue={displayName}
+                          minLength={2}
+                          maxLength={120}
+                          required
+                        />
+                      </div>
+                      <div className="grid gap-1.5">
+                        <label
+                          htmlFor="accountLoginEmail"
+                          className="text-xs font-medium"
+                        >
+                          {t.loginEmail}
+                        </label>
+                        <Input
+                          id="accountLoginEmail"
+                          value={session.email}
+                          readOnly
+                          aria-describedby="accountLoginEmailDescription"
+                        />
+                        <p
+                          id="accountLoginEmailDescription"
+                          className="text-[0.6875rem] text-muted-foreground"
+                        >
+                          Used for sign-in and password recovery.
                         </p>
                       </div>
-                      <Badge variant="outline" className="gap-1.5">
-                        <span className="size-1.5 rounded-full bg-emerald-500" />
-                        Active
-                      </Badge>
                     </div>
-                  </div>
-                  <div className="flex justify-end">
-                    <Button type="submit" disabled={savingProfile}>
-                      <HugeiconsIcon icon={SaveIcon} data-icon="inline-start" />
-                      {savingProfile ? t.saving : t.saveProfile}
-                    </Button>
-                  </div>
-                </form>
-              </section>
-            ) : null}
-
-            {section === "branding" && canManageBranding && session.adminId ? (
-              <section className="grid gap-5 p-5 sm:p-6">
-                <div>
-                  <h3 className="font-heading text-sm font-medium">
-                    White-label workspace
-                  </h3>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Control the public name, support contact, logo, and primary
-                    color shown on your tenant login.
-                  </p>
-                </div>
-                <TenantProfileForm
-                  locale={locale}
-                  tenantId={session.adminId}
-                  initialName={session.tenantName}
-                  initialSupportEmail={session.tenantSupportEmail}
-                  initialPrimaryColor={session.tenantPrimaryColor}
-                  initialLogoUrl={session.tenantLogoUrl}
-                />
-              </section>
-            ) : null}
-
-            {section === "access" ? (
-              <section className="grid gap-5 p-5 sm:p-6">
-                <div>
-                  <h3 className="font-heading text-sm font-medium">
-                    {t.accessAndSecurity}
-                  </h3>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {t.accessAndSecurityDescription}
-                  </p>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <InfoTile label="Account role" value={roleLabel} />
-                  <InfoTile label="Workspace" value={workspaceName} />
-                </div>
-                <Separator />
-                <div className="grid gap-2">
-                  <p className="text-xs font-medium">{t.language}</p>
-                  <ToggleGroup
-                    type="single"
-                    value={locale}
-                    variant="outline"
-                    size="sm"
-                    aria-label={t.language}
-                    className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4"
-                  >
-                    {protectedPortalLocales.map((item) => (
-                      <ToggleGroupItem
-                        key={item}
-                        value={item}
-                        asChild
-                        className="w-full"
-                      >
-                        <Link href={`/${item}/${workspaceRoute}`}>
-                          {localeLabels[item]}
-                        </Link>
-                      </ToggleGroupItem>
-                    ))}
-                  </ToggleGroup>
-                </div>
-                <div className="rounded-lg border bg-muted/25 p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-background">
-                      <HugeiconsIcon icon={ShieldUserIcon} className="size-4" />
+                    <div className="rounded-lg border bg-muted/25 p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-medium">
+                            {t.workspaceIdentity}
+                          </p>
+                          <p className="mt-1 text-sm font-semibold">
+                            {workspaceName}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {roleLabel} workspace account
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="gap-1.5">
+                          <span className="size-1.5 rounded-full bg-emerald-500" />
+                          Active
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-medium">Password security</p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Your account is protected. Recovery sends a verified,
-                        single-use link to your login email.
-                      </p>
-                      <Button
-                        asChild
-                        variant="outline"
-                        size="sm"
-                        className="mt-3"
-                      >
-                        <Link href={`/${locale}/forgot-password`}>
-                          Send password recovery
-                        </Link>
+                    <div className="flex justify-end">
+                      <Button type="submit" disabled={savingProfile}>
+                        <HugeiconsIcon
+                          icon={SaveIcon}
+                          data-icon="inline-start"
+                        />
+                        {savingProfile ? t.saving : t.saveProfile}
                       </Button>
                     </div>
+                  </form>
+                </section>
+              ) : null}
+
+              {section === "branding" &&
+              canManageBranding &&
+              session.adminId ? (
+                <section className="grid gap-5 p-5 sm:p-6">
+                  <div>
+                    <h3 className="font-heading text-sm font-medium">
+                      White-label workspace
+                    </h3>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Control the public name, support contact, logo, and
+                      primary color shown on your tenant login.
+                    </p>
                   </div>
-                </div>
-                <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-between">
-                  <Button variant="outline" onClick={logout}>
-                    <HugeiconsIcon
-                      icon={Logout01Icon}
-                      data-icon="inline-start"
-                    />
-                    {t.logout}
-                  </Button>
-                  <Button asChild>
-                    <Link href={`/${locale}/${workspaceRoute}`}>
-                      {t.openRolePage.replace("{role}", roleLabel)}
-                    </Link>
-                  </Button>
-                </div>
-              </section>
-            ) : null}
+                  <TenantProfileForm
+                    locale={locale}
+                    tenantId={session.adminId}
+                    initialName={session.tenantName}
+                    initialSupportEmail={session.tenantSupportEmail}
+                    initialPrimaryColor={session.tenantPrimaryColor}
+                    initialLogoUrl={session.tenantLogoUrl}
+                  />
+                </section>
+              ) : null}
+
+              {section === "access" ? (
+                <section className="grid gap-5 p-5 sm:p-6">
+                  <div>
+                    <h3 className="font-heading text-sm font-medium">
+                      {t.accessAndSecurity}
+                    </h3>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {t.accessAndSecurityDescription}
+                    </p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <InfoTile label="Account role" value={roleLabel} />
+                    <InfoTile label="Workspace" value={workspaceName} />
+                  </div>
+                  <Separator />
+                  <div className="grid gap-2">
+                    <p className="text-xs font-medium">{t.language}</p>
+                    <ToggleGroup
+                      type="single"
+                      value={locale}
+                      variant="outline"
+                      size="sm"
+                      aria-label={t.language}
+                      className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4"
+                    >
+                      {protectedPortalLocales.map((item) => (
+                        <ToggleGroupItem
+                          key={item}
+                          value={item}
+                          asChild
+                          className="w-full"
+                        >
+                          <Link href={`/${item}/${workspaceRoute}`}>
+                            {localeLabels[item]}
+                          </Link>
+                        </ToggleGroupItem>
+                      ))}
+                    </ToggleGroup>
+                  </div>
+                  <div className="rounded-lg border bg-muted/25 p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex size-9 shrink-0 items-center justify-center rounded-md border bg-background">
+                        <HugeiconsIcon
+                          icon={ShieldUserIcon}
+                          className="size-4"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium">Password security</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Your account is protected. Recovery sends a verified,
+                          single-use link to your login email.
+                        </p>
+                        <Button
+                          asChild
+                          variant="outline"
+                          size="sm"
+                          className="mt-3"
+                        >
+                          <Link href={`/${locale}/forgot-password`}>
+                            Send password recovery
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              ) : null}
+            </div>
           </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+      <Button
+        variant="ghost"
+        onClick={logout}
+        className="h-11 w-full justify-start gap-2 rounded-lg px-3.5 text-sm text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground lg:h-9 lg:rounded-md lg:px-3 lg:text-xs"
+      >
+        <HugeiconsIcon icon={Logout01Icon} className="size-4" />
+        {t.logout}
+      </Button>
+    </div>
   )
 }
 
@@ -4086,7 +4357,7 @@ function UserDashboard({
           ) : null}
         </CardContent>
       </Card>
-      {attendance ?? <UserItinerary db={db} compact />}
+      {attendance ?? <UserResources db={db} />}
     </div>
   )
 }
@@ -5435,19 +5706,25 @@ function UserMatches({
   db,
   matches,
   perspective,
+  discoveryEnabled,
+  meetingAvailability,
   onStatus,
-  onSchedule,
+  onPropose,
+  onApproveProposal,
   locale,
 }: {
   db: LocalDb
   matches: Match[]
   perspective: "delegation" | "partner"
+  discoveryEnabled: boolean
+  meetingAvailability: MeetingAvailability
   onStatus: (matchId: string, status: MatchStatus) => void
-  onSchedule: (
+  onPropose: (
     match: Match,
-    requestedSlots?: string[],
+    requestedSlot: string,
     requestedInterpreterId?: string | null
   ) => void
+  onApproveProposal: (proposalId: string) => void
   locale: Locale
 }) {
   const availableInterpreters = db.interpreters.filter(
@@ -5455,42 +5732,50 @@ function UserMatches({
   )
   return (
     <div className="flex flex-col gap-4">
-      <Card>
-        <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-1">
-            <CardTitle>
-              {textFor(locale, "Search for your match", "搜索您的配对")}
-            </CardTitle>
-            <CardDescription>
-              {perspective === "delegation"
-                ? textFor(
-                    locale,
-                    "Browse every Malaysian partner and request a match yourself.",
-                    "浏览所有马来西亚伙伴，自行发起配对。"
-                  )
-                : textFor(
-                    locale,
-                    "Browse every delegation company and request a match yourself.",
-                    "浏览所有代表团企业，自行发起配对。"
-                  )}
-            </CardDescription>
-          </div>
-          <Button asChild>
-            <Link href={`/${locale}/vendor/discover`}>
-              <Icon icon={UserGroupIcon} inline="inline-start" />
-              {textFor(locale, "Find companies", "查找企业")}
-            </Link>
-          </Button>
-        </CardHeader>
-      </Card>
+      {discoveryEnabled ? (
+        <Card>
+          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-1">
+              <CardTitle>
+                {textFor(locale, "Search for your match", "搜索您的配对")}
+              </CardTitle>
+              <CardDescription>
+                {perspective === "delegation"
+                  ? textFor(
+                      locale,
+                      "Browse every Malaysian partner and request a match yourself.",
+                      "浏览所有马来西亚伙伴，自行发起配对。"
+                    )
+                  : textFor(
+                      locale,
+                      "Browse every delegation company and request a match yourself.",
+                      "浏览所有代表团企业，自行发起配对。"
+                    )}
+              </CardDescription>
+            </div>
+            <Button asChild>
+              <Link href={`/${locale}/vendor/discover`}>
+                <Icon icon={UserGroupIcon} inline="inline-start" />
+                {textFor(locale, "Find companies", "查找企业")}
+              </Link>
+            </Button>
+          </CardHeader>
+        </Card>
+      ) : null}
 
       {matches.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          {textFor(
-            locale,
-            "No matches yet. Use search above to find and request a match.",
-            "暂无配对。请使用上方搜索查找并发起配对。"
-          )}
+          {discoveryEnabled
+            ? textFor(
+                locale,
+                "No matches yet. Use search above to find and request a match.",
+                "暂无配对。请使用上方搜索查找并发起配对。"
+              )
+            : textFor(
+                locale,
+                "No matches yet. Your Admin will add matching opportunities here.",
+                "暂无配对。管理员将在此添加配对机会。"
+              )}
         </p>
       ) : null}
 
@@ -5515,8 +5800,25 @@ function UserMatches({
                   "马来西亚伙伴供应商"
                 )
               : textFor(locale, "Delegation Vendor", "代表团供应商")
-          const isAccepted = match.status === "Accepted"
-          const isScheduled = match.status === "Session Scheduled"
+          const pendingProposal = getPendingMeetingProposal(
+            db.meetingProposals,
+            match.id
+          )
+          const proposalState = pendingProposal
+            ? getVendorMeetingProposalState(pendingProposal, perspective)
+            : null
+          const meetingExists = db.meetings.some(
+            (meeting) => meeting.matchId === match.id
+          )
+          const futureMeeting = db.meetings.find(
+            (meeting) =>
+              meeting.matchId === match.id &&
+              isFutureMeeting({
+                startsAt: meeting.startsAt,
+                durationMinutes: meeting.duration,
+                status: meeting.status,
+              })
+          )
           const ownAcceptedAt =
             perspective === "delegation"
               ? match.delegationAcceptedAt
@@ -5525,9 +5827,96 @@ function UserMatches({
             perspective === "delegation"
               ? match.partnerAcceptedAt
               : match.delegationAcceptedAt
-          const meetingRequested = db.meetings.some(
-            (meeting) => meeting.matchId === match.id
-          )
+          const canWithdrawAcceptance = canVendorWithdrawAcceptance({
+            ownAccepted: Boolean(ownAcceptedAt),
+            counterpartAccepted: Boolean(counterpartAcceptedAt),
+            meetingExists: meetingExists || Boolean(pendingProposal),
+          })
+          const bothAccepted = Boolean(ownAcceptedAt && counterpartAcceptedAt)
+          const hasFutureMeeting = bothAccepted && Boolean(futureMeeting)
+          const progress = getVendorMatchProgress({
+            ownAccepted: Boolean(ownAcceptedAt),
+            counterpartAccepted: Boolean(counterpartAcceptedAt),
+            meetingScheduled: hasFutureMeeting,
+          })
+          const progressLabel =
+            pendingProposal && proposalState === "approval_needed"
+              ? textFor(locale, "Meeting approval needed", "需要批准会议")
+              : pendingProposal && proposalState === "awaiting_other_vendor"
+                ? textFor(locale, "Awaiting Vendor approval", "等待供应商批准")
+                : progress === "meeting_scheduled"
+                  ? textFor(locale, "Meeting scheduled", "会议已安排")
+                  : progress === "pending_meeting"
+                    ? textFor(locale, "Pending meeting", "等待安排会议")
+                    : progress === "pending_other_vendor"
+                      ? meetingExists
+                        ? textFor(locale, "Acceptance locked", "接受已锁定")
+                        : textFor(locale, "Accepted by you", "您已接受")
+                      : progress === "your_acceptance_needed"
+                        ? textFor(
+                            locale,
+                            "Your acceptance needed",
+                            "等待您接受"
+                          )
+                        : textFor(locale, "Awaiting acceptance", "等待双方接受")
+          const progressCopy =
+            pendingProposal && proposalState === "approval_needed"
+              ? pendingProposal[
+                  perspective === "delegation"
+                    ? "partnerApprovedAt"
+                    : "delegationApprovedAt"
+                ]
+                ? textFor(
+                    locale,
+                    `The other Vendor proposed ${formatMeetingSlot(pendingProposal.startsAt, locale)} · Approve it to create the meeting`,
+                    `另一方供应商提议了 ${formatMeetingSlot(pendingProposal.startsAt, locale)} · 批准后才会创建会议`
+                  )
+                : textFor(
+                    locale,
+                    `Both Vendors must approve ${formatMeetingSlot(pendingProposal.startsAt, locale)} before the meeting is created`,
+                    `双方供应商都必须批准 ${formatMeetingSlot(pendingProposal.startsAt, locale)} 后才会创建会议`
+                  )
+              : pendingProposal && proposalState === "awaiting_other_vendor"
+                ? textFor(
+                    locale,
+                    `You approved ${formatMeetingSlot(pendingProposal.startsAt, locale)} · Waiting for the other Vendor`,
+                    `您已批准 ${formatMeetingSlot(pendingProposal.startsAt, locale)} · 等待另一方供应商`
+                  )
+                : progress === "meeting_scheduled"
+                  ? textFor(
+                      locale,
+                      "A future meeting is scheduled · Open My Meetings",
+                      "未来会议已安排 · 打开我的会议"
+                    )
+                  : progress === "pending_meeting"
+                    ? textFor(
+                        locale,
+                        "Both Vendors accepted · Schedule a meeting for both",
+                        "双方供应商已接受 · 为双方安排会议"
+                      )
+                    : progress === "pending_other_vendor"
+                      ? meetingExists
+                        ? textFor(
+                            locale,
+                            "A meeting is already arranged · Your acceptance is locked",
+                            "会议已安排 · 您的接受已锁定"
+                          )
+                        : textFor(
+                            locale,
+                            "Waiting for the other Vendor · You can unaccept before they respond",
+                            "等待另一方供应商 · 对方回应前您可以撤回接受"
+                          )
+                      : progress === "your_acceptance_needed"
+                        ? textFor(
+                            locale,
+                            "The other Vendor accepted · Your acceptance is required",
+                            "另一方供应商已接受 · 等待您接受"
+                          )
+                        : textFor(
+                            locale,
+                            "Both Vendors need to accept before meeting arrangements open",
+                            "双方供应商接受后才能安排会议"
+                          )
           return (
             <Card key={match.id}>
               <CardHeader>
@@ -5544,8 +5933,16 @@ function UserMatches({
                       {counterpartSector ? ` · ${counterpartSector}` : ""}
                     </CardDescription>
                   </div>
-                  <Badge variant={statusVariant(match.status)}>
-                    {statusLabel(match.status, locale)}
+                  <Badge
+                    variant={
+                      hasFutureMeeting || bothAccepted
+                        ? "default"
+                        : ownAcceptedAt
+                          ? "secondary"
+                          : "outline"
+                    }
+                  >
+                    {progressLabel}
                   </Badge>
                 </div>
               </CardHeader>
@@ -5579,61 +5976,53 @@ function UserMatches({
                   {textFor(locale, "Match confidence", "匹配信心")}:{" "}
                   {match.score}%
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  {ownAcceptedAt
-                    ? textFor(locale, "You accepted", "您已接受")
-                    : textFor(
-                        locale,
-                        "Your acceptance is pending",
-                        "等待您接受"
-                      )}
-                  {" · "}
-                  {counterpartAcceptedAt
-                    ? textFor(locale, "The other party accepted", "对方已接受")
-                    : textFor(
-                        locale,
-                        "Waiting for the other party",
-                        "等待对方接受"
-                      )}
-                </p>
+                <p className="text-sm text-muted-foreground">{progressCopy}</p>
               </CardContent>
               <CardFooter className="flex flex-wrap gap-2">
-                {isScheduled ? (
+                {hasFutureMeeting ? (
                   <Button asChild>
                     <Link href={`/${locale}/vendor?section=meetings`}>
                       <Icon icon={Calendar03Icon} inline="inline-start" />
                       {textFor(locale, "View meeting", "查看会议")}
                     </Link>
                   </Button>
-                ) : isAccepted ? (
+                ) : pendingProposal && proposalState === "approval_needed" ? (
+                  <MeetingProposalApprovalDialog
+                    proposal={pendingProposal}
+                    perspective={perspective}
+                    interpreters={db.interpreters}
+                    locale={locale}
+                    onApprove={onApproveProposal}
+                  />
+                ) : pendingProposal ? (
+                  <Button disabled>
+                    <Icon icon={Calendar03Icon} inline="inline-start" />
+                    {textFor(locale, "Waiting for approval", "等待批准")}
+                  </Button>
+                ) : bothAccepted ? (
                   <MeetingSlotPickerDialog
                     match={match}
                     locale={locale}
-                    isScheduled={meetingRequested}
                     interpreters={availableInterpreters}
-                    onSubmit={onSchedule}
+                    availability={meetingAvailability}
+                    onSubmit={onPropose}
                   />
+                ) : canWithdrawAcceptance ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => onStatus(match.id, "Proposed")}
+                  >
+                    {textFor(locale, "Unaccept", "撤回接受")}
+                  </Button>
                 ) : ownAcceptedAt ? (
                   <Button disabled>
-                    {textFor(
-                      locale,
-                      "Waiting for the other party",
-                      "等待对方接受"
-                    )}
+                    {textFor(locale, "Acceptance locked", "接受已锁定")}
                   </Button>
                 ) : (
                   <Button onClick={() => onStatus(match.id, "Accepted")}>
                     {textFor(locale, "Accept", "接受")}
                   </Button>
                 )}
-                {!isScheduled ? (
-                  <Button
-                    variant="outline"
-                    onClick={() => onStatus(match.id, "Rejected")}
-                  >
-                    {textFor(locale, "Request change", "请求调整")}
-                  </Button>
-                ) : null}
                 <MatchDetailsDialog
                   match={match}
                   locale={locale}
@@ -5776,104 +6165,300 @@ function MatchDetailsDialog({
   )
 }
 
-function MeetingSlotPickerDialog({
-  match,
-  locale,
-  isScheduled,
+function MeetingProposalApprovalDialog({
+  proposal,
+  perspective,
   interpreters,
-  onSubmit,
+  locale,
+  onApprove,
 }: {
-  match: Match
-  locale: Locale
-  isScheduled: boolean
+  proposal: MeetingProposal
+  perspective: VendorType
   interpreters: Interpreter[]
-  onSubmit: (
-    match: Match,
-    requestedSlots: string[],
-    requestedInterpreterId: string | null
-  ) => void
+  locale: Locale
+  onApprove: (proposalId: string) => void
 }) {
   const [open, setOpen] = useState(false)
-  const [selectedSlots, setSelectedSlots] = useState<string[]>([])
-  const [interpreterId, setInterpreterId] = useState<string>("none")
-  const slots = getMeetingSlotOptions()
-  const canSubmit = selectedSlots.length >= 3
+  const counterpartApproved =
+    perspective === "delegation"
+      ? Boolean(proposal.partnerApprovedAt)
+      : Boolean(proposal.delegationApprovedAt)
+  const requestedInterpreter = interpreters.find(
+    (interpreter) => interpreter.id === proposal.requestedInterpreterId
+  )
 
-  function toggleSlot(slot: string) {
-    setSelectedSlots((current) =>
-      current.includes(slot)
-        ? current.filter((item) => item !== slot)
-        : [...current, slot].sort()
-    )
-  }
-
-  function submitSlots() {
-    if (!canSubmit) {
-      toast.error(
-        textFor(locale, "Select 3 slots to continue", "请选择 3 个时段后继续")
-      )
-      return
-    }
-
-    onSubmit(
-      match,
-      selectedSlots,
-      interpreterId === "none" ? null : interpreterId
-    )
+  function approve() {
+    onApprove(proposal.id)
     setOpen(false)
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant={isScheduled ? "outline" : "default"}>
+        <Button>
+          <Icon icon={CheckmarkCircle02Icon} inline="inline-start" />
+          {textFor(locale, "Review & approve", "查看并批准")}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>
+            {textFor(locale, "Approve meeting time", "批准会议时间")}
+          </DialogTitle>
+          <DialogDescription>
+            {counterpartApproved
+              ? textFor(
+                  locale,
+                  "The other Vendor has approved this time. Your approval will create the meeting for both companies.",
+                  "另一方供应商已批准此时间。您的批准将为双方企业创建会议。"
+                )
+              : textFor(
+                  locale,
+                  "Both Vendors must approve this proposed time before a meeting is created.",
+                  "双方供应商都必须批准此提议时间后才会创建会议。"
+                )}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid gap-3">
+          <div className="rounded-md border bg-muted/20 p-4">
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+              {textFor(locale, "Proposed time", "提议时间")}
+            </p>
+            <p className="mt-1 font-semibold">
+              {formatMeetingSlot(proposal.startsAt, locale)}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {textFor(locale, "1-hour meeting", "1 小时会议")}
+            </p>
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-2">
+            <div className="flex items-center justify-between rounded-md border px-3 py-2">
+              <span className="text-sm">
+                {textFor(locale, "Delegation Vendor", "代表团供应商")}
+              </span>
+              <Badge
+                variant={proposal.delegationApprovedAt ? "default" : "outline"}
+              >
+                {proposal.delegationApprovedAt
+                  ? textFor(locale, "Approved", "已批准")
+                  : textFor(locale, "Pending", "待批准")}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between rounded-md border px-3 py-2">
+              <span className="text-sm">
+                {textFor(locale, "Partner Vendor", "伙伴供应商")}
+              </span>
+              <Badge
+                variant={proposal.partnerApprovedAt ? "default" : "outline"}
+              >
+                {proposal.partnerApprovedAt
+                  ? textFor(locale, "Approved", "已批准")
+                  : textFor(locale, "Pending", "待批准")}
+              </Badge>
+            </div>
+          </div>
+
+          <div className="rounded-md border p-3 text-sm">
+            <span className="text-muted-foreground">
+              {textFor(locale, "Preferred interpreter", "首选翻译")}:{" "}
+            </span>
+            <span className="font-medium">
+              {requestedInterpreter
+                ? `${requestedInterpreter.name} · ${requestedInterpreter.languages}`
+                : textFor(
+                    locale,
+                    "No preference — Admin will assign",
+                    "无偏好 — 由管理员安排"
+                  )}
+            </span>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>
+            {textFor(locale, "Cancel", "取消")}
+          </Button>
+          <Button onClick={approve}>
+            <Icon icon={CheckmarkCircle02Icon} inline="inline-start" />
+            {counterpartApproved
+              ? textFor(locale, "Approve and create meeting", "批准并创建会议")
+              : textFor(locale, "Approve time", "批准时间")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function MeetingSlotPickerDialog({
+  match,
+  locale,
+  interpreters,
+  availability,
+  onSubmit,
+}: {
+  match: Match
+  locale: Locale
+  interpreters: Interpreter[]
+  availability: MeetingAvailability
+  onSubmit: (
+    match: Match,
+    requestedSlot: string,
+    requestedInterpreterId: string | null
+  ) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
+  const [interpreterId, setInterpreterId] = useState<string>("none")
+  const dates = getMeetingDateOptions(availability)
+  const timeSlots = selectedDate
+    ? getMeetingTimeSlotsForDate(selectedDate, availability)
+    : []
+  const canSubmit = Boolean(selectedDate && selectedSlot)
+
+  function updateOpen(nextOpen: boolean) {
+    setOpen(nextOpen)
+
+    if (!nextOpen) {
+      setSelectedDate(null)
+      setSelectedSlot(null)
+      setInterpreterId("none")
+    }
+  }
+
+  function chooseDate(date: string) {
+    setSelectedDate(date)
+    setSelectedSlot(null)
+  }
+
+  function submitSlot() {
+    if (!selectedSlot) {
+      toast.error(
+        textFor(
+          locale,
+          "Select a date and time to continue",
+          "请选择日期和时间后继续"
+        )
+      )
+      return
+    }
+
+    onSubmit(
+      match,
+      selectedSlot,
+      interpreterId === "none" ? null : interpreterId
+    )
+    updateOpen(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={updateOpen}>
+      <DialogTrigger asChild>
+        <Button>
           <Icon icon={Calendar03Icon} inline="inline-start" />
-          {isScheduled
-            ? textFor(locale, "Meeting requested", "已请求会议")
-            : textFor(locale, "Request meeting", "请求会议")}
+          {textFor(locale, "Propose meeting", "提议会议")}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-h-[90svh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>
-            {textFor(locale, "Choose preferred times", "选择首选时间")}
+            {textFor(locale, "Propose a meeting time", "提议会议时间")}
           </DialogTitle>
           <DialogDescription>
             {textFor(
               locale,
-              "Pick at least 3 future working-day slots. Each slot is 1 hour.",
-              "请选择至少 3 个未来工作日时段。每个时段为 1 小时。"
+              "Choose one Admin-open date and time. The other Vendor must approve it before a meeting is created.",
+              "选择管理员开放的日期和时间。另一方供应商批准后才会创建会议。"
             )}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4">
-          <div className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
-            {textFor(locale, "Working days only", "仅限工作日")} ·{" "}
-            {selectedSlots.length} {textFor(locale, "selected", "已选择")}
-          </div>
           <Field>
             <FieldLabel>
-              {textFor(locale, "Available 1-hour slots", "可选 1 小时时段")}
+              {textFor(locale, "1. Choose a date", "1. 选择日期")}
             </FieldLabel>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {slots.map((slot) => (
-                <label
-                  key={slot}
-                  className={cn(
-                    "flex min-h-12 cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition-colors hover:bg-accent",
-                    selectedSlots.includes(slot) &&
-                      "border-primary bg-primary/10 text-primary"
-                  )}
-                >
-                  <Checkbox
-                    checked={selectedSlots.includes(slot)}
-                    onCheckedChange={() => toggleSlot(slot)}
-                  />
-                  <span>{formatMeetingSlot(slot, locale)}</span>
-                </label>
-              ))}
-            </div>
+            {dates.length === 0 ? (
+              <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                {textFor(
+                  locale,
+                  "No meeting dates are open right now. Ask your Admin to publish availability.",
+                  "目前没有开放的会议日期。请联系管理员发布可用时段。"
+                )}
+              </div>
+            ) : (
+              <div
+                role="group"
+                aria-label={textFor(locale, "Available dates", "可用日期")}
+                className="grid gap-2 sm:grid-cols-3"
+              >
+                {dates.map((date) => (
+                  <Button
+                    key={date}
+                    type="button"
+                    variant={selectedDate === date ? "default" : "outline"}
+                    className="min-h-12 justify-start"
+                    aria-pressed={selectedDate === date}
+                    onClick={() => chooseDate(date)}
+                  >
+                    <Icon icon={Calendar03Icon} inline="inline-start" />
+                    {formatMeetingDate(date, locale)}
+                  </Button>
+                ))}
+              </div>
+            )}
           </Field>
+
+          <Field>
+            <FieldLabel>
+              {textFor(locale, "2. Choose a time", "2. 选择时间")}
+            </FieldLabel>
+            {!selectedDate ? (
+              <div className="rounded-md border border-dashed bg-muted/20 p-4 text-sm text-muted-foreground">
+                {textFor(
+                  locale,
+                  "Select a date first to see its available times.",
+                  "请先选择日期，再查看可用时间。"
+                )}
+              </div>
+            ) : timeSlots.length === 0 ? (
+              <div className="rounded-md border border-dashed p-4 text-sm text-muted-foreground">
+                {textFor(
+                  locale,
+                  "No future times remain on this date. Choose another date.",
+                  "该日期已没有未来时段。请选择其他日期。"
+                )}
+              </div>
+            ) : (
+              <div
+                role="group"
+                aria-label={textFor(locale, "Available times", "可用时间")}
+                className="grid gap-2 sm:grid-cols-3"
+              >
+                {timeSlots.map((slot) => (
+                  <Button
+                    key={slot}
+                    type="button"
+                    variant={selectedSlot === slot ? "default" : "outline"}
+                    className="min-h-12"
+                    aria-pressed={selectedSlot === slot}
+                    onClick={() => setSelectedSlot(slot)}
+                  >
+                    {formatMeetingTimeRange(slot, locale)}
+                  </Button>
+                ))}
+              </div>
+            )}
+            {selectedSlot ? (
+              <FieldDescription>
+                {textFor(locale, "Selected", "已选择")}:{" "}
+                {formatMeetingSlot(selectedSlot, locale)}
+              </FieldDescription>
+            ) : null}
+          </Field>
+
           <Field>
             <FieldLabel>
               {textFor(
@@ -5919,17 +6504,15 @@ function MeetingSlotPickerDialog({
           </Field>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button variant="outline" onClick={() => updateOpen(false)}>
             {textFor(locale, "Cancel", "取消")}
           </Button>
-          <Button disabled={!canSubmit} onClick={submitSlots}>
+          <Button disabled={!canSubmit} onClick={submitSlot}>
             {canSubmit
-              ? textFor(locale, "Save time preferences", "保存时间偏好")
-              : textFor(
-                  locale,
-                  "Select 3 slots to continue",
-                  "请选择 3 个时段后继续"
-                )}
+              ? textFor(locale, "Send proposal", "发送提议")
+              : selectedDate
+                ? textFor(locale, "Select a time", "选择时间")
+                : textFor(locale, "Select a date", "选择日期")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -5937,7 +6520,15 @@ function MeetingSlotPickerDialog({
   )
 }
 
-function UserMeetings({ db, meetings }: { db: LocalDb; meetings: Meeting[] }) {
+function UserMeetings({
+  db,
+  meetings,
+  locale,
+}: {
+  db: LocalDb
+  meetings: Meeting[]
+  locale: Locale
+}) {
   return (
     <Card>
       <CardHeader>
@@ -5947,15 +6538,65 @@ function UserMeetings({ db, meetings }: { db: LocalDb; meetings: Meeting[] }) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <SessionList db={db} meetings={meetings} />
+        {meetings.length ? (
+          <SessionList db={db} meetings={meetings} locale={locale} />
+        ) : (
+          <Empty
+            className="min-h-64 border bg-muted/10 px-6 py-10"
+            data-testid="vendor-meetings-empty-state"
+          >
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <HugeiconsIcon icon={UserGroupIcon} strokeWidth={1.8} />
+              </EmptyMedia>
+              <EmptyTitle>
+                {textFor(locale, "No meetings yet", "尚无会议")}
+              </EmptyTitle>
+              <EmptyDescription>
+                {textFor(
+                  locale,
+                  "You need an accepted match before you can request a meeting. Open My Matches to accept a match or arrange the next step.",
+                  "您需要先有一个已接受的配对，才能申请会议。请前往“我的配对”接受配对或安排下一步。"
+                )}
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <Button asChild>
+                <Link href={`/${locale}/vendor?section=matches`}>
+                  <Icon icon={UserGroupIcon} inline="inline-start" />
+                  {textFor(locale, "Go to My Matches", "前往我的配对")}
+                </Link>
+              </Button>
+            </EmptyContent>
+          </Empty>
+        )}
       </CardContent>
     </Card>
   )
 }
 
-function UserSigning({ db, matches }: { db: LocalDb; matches: Match[] }) {
+function UserSigning({
+  db,
+  matches,
+  meetings,
+  perspective,
+  locale,
+  onSign,
+}: {
+  db: LocalDb
+  matches: Match[]
+  meetings: Meeting[]
+  perspective: VendorType
+  locale: Locale
+  onSign: (dealId: string, agreed: boolean) => Promise<boolean>
+}) {
   const deals = db.deals.filter((deal) =>
     matches.some((match) => match.id === deal.matchId)
+  )
+  const completedMatchIds = new Set(
+    meetings
+      .filter((meeting) => meeting.status === "Completed")
+      .map((meeting) => meeting.matchId)
   )
 
   return (
@@ -5963,29 +6604,80 @@ function UserSigning({ db, matches }: { db: LocalDb; matches: Match[] }) {
       <CardHeader>
         <CardTitle>MOU status</CardTitle>
         <CardDescription>
-          Download signed copies or upload counter-signed document placeholders.
+          {textFor(
+            locale,
+            "A pending MOU appears automatically after a meeting is completed. Each Vendor signs for their own company.",
+            "会议完成后，待签署的 MOU 会自动显示。每家供应商代表自己的公司签署。"
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <DealTable db={db} deals={deals} />
+        <DealTable
+          db={db}
+          deals={deals}
+          locale={locale}
+          vendorSigning={{
+            perspective,
+            completedMatchIds,
+            onSign,
+          }}
+        />
       </CardContent>
     </Card>
   )
 }
 
-function UserItinerary({
-  db,
-  compact = false,
-}: {
-  db: LocalDb
-  compact?: boolean
-}) {
-  const slots = db.itinerary.filter((slot) => slot.published)
-  const visibleResources = db.resources.filter(
-    (resource) =>
-      resource.visibleToDelegation &&
-      ["all", "delegation"].includes(resource.audience)
+function UserResources({ db }: { db: LocalDb }) {
+  const visibleResources = getDelegationVisibleResources(db.resources)
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Resources</CardTitle>
+        <CardDescription>
+          Documents and guides shared by your Admin.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {visibleResources.length ? (
+          <div className="grid gap-2">
+            {visibleResources.map((resource) => (
+              <div
+                key={resource.id}
+                className="flex flex-col gap-2 rounded-md border p-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">
+                    {resource.title}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {resource.category} · {resource.fileName}
+                  </p>
+                </div>
+                <Button asChild variant="outline" size="sm">
+                  <a href={resource.fileUrl} target="_blank" rel="noreferrer">
+                    Open
+                  </a>
+                </Button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-md border border-dashed p-4">
+            <p className="text-sm font-medium">No resources shared yet</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Documents from your Admin will appear here.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
+}
+
+function UserItinerary({ db }: { db: LocalDb }) {
+  const slots = db.itinerary.filter((slot) => slot.published)
+  const visibleResources = getDelegationVisibleResources(db.resources)
   return (
     <Card>
       <CardHeader>
@@ -5995,7 +6687,7 @@ function UserItinerary({
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
-        {slots.slice(0, compact ? 2 : slots.length).map((slot) => (
+        {slots.map((slot) => (
           <div key={slot.id} className="rounded-md border p-3">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -6009,7 +6701,7 @@ function UserItinerary({
             <p className="mt-2 text-xs text-muted-foreground">{slot.venue}</p>
           </div>
         ))}
-        {!compact && visibleResources.length ? (
+        {visibleResources.length ? (
           <div className="mt-2 border-t pt-3">
             <p className="text-sm font-medium">Delegation resources</p>
             <div className="mt-3 grid gap-2">
@@ -8572,9 +9264,11 @@ function MeetingDetailsDialog({
 function CopyMeetingLinkButton({
   link,
   locale = "en",
+  className,
 }: {
   link?: string
   locale?: Locale
+  className?: string
 }) {
   async function copyLink() {
     if (!link) {
@@ -8608,10 +9302,60 @@ function CopyMeetingLinkButton({
   }
 
   return (
-    <Button type="button" variant="outline" disabled={!link} onClick={copyLink}>
+    <Button
+      type="button"
+      variant="outline"
+      className={className}
+      disabled={!link}
+      onClick={copyLink}
+    >
       <Icon icon={Copy01Icon} inline="inline-start" />
       {textFor(locale, "Copy join link", "复制加入链接")}
     </Button>
+  )
+}
+
+function CompleteMeetingDialog({
+  meetingLabel,
+  locale,
+  onConfirm,
+}: {
+  meetingLabel: string
+  locale: Locale
+  onConfirm: () => void
+}) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button type="button" variant="outline" className="w-full">
+          <Icon icon={CheckmarkCircle02Icon} inline="inline-start" />
+          {textFor(locale, "Complete", "完成")}
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            {textFor(locale, "Complete this meeting?", "确认完成此会议？")}
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            {textFor(
+              locale,
+              `Mark ${meetingLabel} as completed. Meeting details cannot be edited after completion.`,
+              `将 ${meetingLabel} 标记为已完成。完成后将无法再编辑会议详情。`
+            )}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>
+            {textFor(locale, "Keep active", "保持进行中")}
+          </AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm}>
+            <Icon icon={CheckmarkCircle02Icon} inline="inline-start" />
+            {textFor(locale, "Confirm complete", "确认完成")}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }
 
@@ -8653,9 +9397,16 @@ function SessionList({
         const assignedInterpreter = db.interpreters.find(
           (item) => `${item.name} · ${item.languages}` === meeting.interpreter
         )
+        const meetingLabel = match
+          ? `${getCompanyName(db, match.delegationId)} ↔ ${getCompanyName(db, match.partnerId)}`
+          : meeting.id
+        const canComplete =
+          Boolean(onComplete) &&
+          !["Completed", "Cancelled"].includes(meeting.status)
+
         return (
-          <div key={meeting.id} className="rounded-md border p-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div key={meeting.id} className="rounded-lg border p-4">
+            <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_12rem] sm:items-start">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge variant={statusVariant(meeting.status)}>
@@ -8664,11 +9415,7 @@ function SessionList({
                   <MeetingCountdownBadge meeting={meeting} locale={locale} />
                   <Badge variant="outline">{meeting.platform}</Badge>
                 </div>
-                <p className="mt-2 font-medium">
-                  {match
-                    ? `${getCompanyName(db, match.delegationId)} ↔ ${getCompanyName(db, match.partnerId)}`
-                    : meeting.id}
-                </p>
+                <p className="mt-2 font-medium">{meetingLabel}</p>
                 <p className="text-sm text-muted-foreground">
                   {formatDateTime(meeting.startsAt, locale)} ·{" "}
                   {meeting.duration} {textFor(locale, "min", "分钟")} ·{" "}
@@ -8733,83 +9480,99 @@ function SessionList({
                   </div>
                 ) : null}
               </div>
-              <div className="flex flex-wrap gap-2">
-                {onUpdateMeeting ? (
-                  <MeetingDetailsDialog
-                    db={db}
-                    meeting={meeting}
-                    locale={locale}
-                    onUpdate={onUpdateMeeting}
-                    trigger={
-                      <Button variant="outline">
-                        <Icon icon={ViewIcon} inline="inline-start" />
-                        {textFor(locale, "View / edit", "查看 / 编辑")}
-                      </Button>
-                    }
-                  />
-                ) : null}
-                {meeting.link ? (
-                  <Button asChild>
-                    <a
-                      href={toMeetingHref(meeting.link)}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
+              <div
+                role="group"
+                aria-label={textFor(locale, "Meeting actions", "会议操作")}
+                className="rounded-lg border bg-muted/25 p-3"
+              >
+                <p className="text-xs font-medium text-muted-foreground">
+                  {textFor(locale, "Meeting actions", "会议操作")}
+                </p>
+                <div className="mt-2 grid gap-2">
+                  {meeting.link ? (
+                    <Button asChild className="w-full">
+                      <a
+                        href={toMeetingHref(meeting.link)}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <Icon icon={CameraVideoIcon} inline="inline-start" />
+                        {textFor(locale, "Join meeting", "加入会议")}
+                      </a>
+                    </Button>
+                  ) : (
+                    <Button className="w-full" disabled>
                       <Icon icon={CameraVideoIcon} inline="inline-start" />
-                      {textFor(locale, "Join", "加入")}
-                    </a>
-                  </Button>
-                ) : (
-                  <Button disabled>
-                    <Icon icon={CameraVideoIcon} inline="inline-start" />
-                    {textFor(
-                      locale,
-                      "Awaiting secure link",
-                      "等待安全会议链接"
-                    )}
-                  </Button>
-                )}
-                <CopyMeetingLinkButton link={meeting.link} locale={locale} />
-                {onComplete ? (
-                  <Button
-                    variant="outline"
-                    onClick={() => onComplete(meeting.id)}
-                  >
-                    {textFor(locale, "Complete", "完成")}
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      downloadIcs(
-                        `plexus-session-${meeting.id}`,
-                        [
-                          {
-                            uid: meeting.id,
-                            title: match
-                              ? `${getCompanyName(db, match.delegationId)} ↔ ${getCompanyName(db, match.partnerId)}`
-                              : `Plexus session ${meeting.id}`,
-                            start: new Date(meeting.startsAt),
-                            durationMinutes: meeting.duration,
-                            location: `${meeting.platform} · ${shareableMeetingLink(meeting.link)}`,
-                            description: `Interpreter: ${meeting.interpreter}. Host: ${meeting.host}. ${meeting.summary}`,
-                          },
-                        ],
-                        "Plexus Connect session"
-                      )
-                      toast.success(
-                        textFor(
-                          locale,
-                          "Calendar invite (.ics) downloaded.",
-                          "日历邀请（.ics）已下载。"
+                      {textFor(
+                        locale,
+                        "Awaiting secure link",
+                        "等待安全会议链接"
+                      )}
+                    </Button>
+                  )}
+                  {onUpdateMeeting ? (
+                    <MeetingDetailsDialog
+                      db={db}
+                      meeting={meeting}
+                      locale={locale}
+                      onUpdate={onUpdateMeeting}
+                      trigger={
+                        <Button variant="outline" className="w-full">
+                          <Icon icon={ViewIcon} inline="inline-start" />
+                          {textFor(locale, "View / edit", "查看 / 编辑")}
+                        </Button>
+                      }
+                    />
+                  ) : null}
+                  <CopyMeetingLinkButton
+                    link={meeting.link}
+                    locale={locale}
+                    className="w-full"
+                  />
+                  {canComplete && onComplete ? (
+                    <>
+                      <Separator className="my-1" />
+                      <CompleteMeetingDialog
+                        meetingLabel={meetingLabel}
+                        locale={locale}
+                        onConfirm={() => onComplete(meeting.id)}
+                      />
+                    </>
+                  ) : !onComplete ? (
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        downloadIcs(
+                          `plexus-session-${meeting.id}`,
+                          [
+                            {
+                              uid: meeting.id,
+                              title: match
+                                ? meetingLabel
+                                : `Plexus session ${meeting.id}`,
+                              start: new Date(meeting.startsAt),
+                              durationMinutes: meeting.duration,
+                              location: `${meeting.platform} · ${shareableMeetingLink(meeting.link)}`,
+                              description: `Interpreter: ${meeting.interpreter}. Host: ${meeting.host}. ${meeting.summary}`,
+                            },
+                          ],
+                          "Plexus Connect session"
                         )
-                      )
-                    }}
-                  >
-                    <Icon icon={Calendar03Icon} inline="inline-start" />
-                    {textFor(locale, "Calendar", "日历")}
-                  </Button>
-                )}
+                        toast.success(
+                          textFor(
+                            locale,
+                            "Calendar invite (.ics) downloaded.",
+                            "日历邀请（.ics）已下载。"
+                          )
+                        )
+                      }}
+                    >
+                      <Icon icon={Calendar03Icon} inline="inline-start" />
+                      {textFor(locale, "Calendar", "日历")}
+                    </Button>
+                  ) : null}
+                </div>
               </div>
             </div>
           </div>
@@ -8946,12 +9709,64 @@ function MeetingProviderStatusStrip({
 function MeetingSettings({
   readiness,
   locale,
+  initialAvailability,
   onBack,
 }: {
   readiness: MeetingProviderReadiness
   locale: Locale
+  initialAvailability: MeetingAvailability
   onBack: () => void
 }) {
+  const router = useRouter()
+  const normalizedInitialAvailability =
+    normalizeMeetingAvailability(initialAvailability)
+  const [availability, setAvailability] = useState(
+    normalizedInitialAvailability
+  )
+  const [savedAvailability, setSavedAvailability] = useState(
+    JSON.stringify(normalizedInitialAvailability)
+  )
+  const [savingAvailability, startAvailabilityTransition] = useTransition()
+  const openSlotCount = meetingWeekdays.reduce(
+    (total, weekday) => total + availability[weekday].length,
+    0
+  )
+  const availabilityChanged = JSON.stringify(availability) !== savedAvailability
+
+  function toggleMeetingSlot(weekday: MeetingWeekday, time: MeetingTimeOption) {
+    setAvailability((current) => {
+      const currentTimes = current[weekday]
+      const nextTimes = currentTimes.includes(time)
+        ? currentTimes.filter((candidate) => candidate !== time)
+        : [...currentTimes, time].sort((left, right) =>
+            left.localeCompare(right)
+          )
+
+      return {
+        ...current,
+        [weekday]: nextTimes,
+      }
+    })
+  }
+
+  function saveMeetingAvailability() {
+    startAvailabilityTransition(async () => {
+      const result = await updateTenantMeetingAvailabilityAction({
+        locale,
+        availability,
+      })
+
+      if (!result.ok) {
+        toast.error(result.error ?? "Unable to update meeting availability.")
+        return
+      }
+
+      setSavedAvailability(JSON.stringify(availability))
+      toast.success("Vendor booking availability saved.")
+      router.refresh()
+    })
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <Card>
@@ -8974,6 +9789,93 @@ function MeetingSettings({
           </Button>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
+          <div className="rounded-lg border bg-muted/10 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div className="grid gap-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="font-medium">
+                    {textFor(
+                      locale,
+                      "Vendor booking availability",
+                      "供应商预约可用时段"
+                    )}
+                  </h3>
+                  <Badge variant="outline">
+                    {openSlotCount}{" "}
+                    {textFor(locale, "weekly slots open", "个每周时段已开放")}
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {textFor(
+                    locale,
+                    "Choose the recurring 1-hour slots Vendors can book after both sides accept a match.",
+                    "选择双方接受配对后，供应商可预约的每周 1 小时时段。"
+                  )}
+                </p>
+              </div>
+              <Button
+                className="sm:shrink-0"
+                disabled={!availabilityChanged || savingAvailability}
+                onClick={saveMeetingAvailability}
+              >
+                {savingAvailability ? (
+                  <Icon
+                    icon={Loading03Icon}
+                    className="animate-spin"
+                    inline="inline-start"
+                  />
+                ) : (
+                  <Icon icon={SaveIcon} inline="inline-start" />
+                )}
+                {savingAvailability
+                  ? textFor(locale, "Saving", "保存中")
+                  : textFor(locale, "Save availability", "保存可用时段")}
+              </Button>
+            </div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+              {meetingWeekdays.map((weekday) => (
+                <div
+                  key={weekday}
+                  className="rounded-md border bg-background p-3"
+                >
+                  <p className="mb-2 text-sm font-medium">
+                    {meetingWeekdayLabel(weekday, locale)}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {meetingTimeOptions.map((time) => {
+                      const selected = availability[weekday].includes(time)
+
+                      return (
+                        <Button
+                          key={time}
+                          type="button"
+                          size="sm"
+                          variant={selected ? "default" : "outline"}
+                          className="h-auto min-h-9 px-2 text-xs"
+                          aria-pressed={selected}
+                          onClick={() => toggleMeetingSlot(weekday, time)}
+                        >
+                          {meetingTimeOptionLabel(time)}
+                        </Button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {openSlotCount === 0 ? (
+              <p className="mt-3 text-sm text-amber-600 dark:text-amber-400">
+                {textFor(
+                  locale,
+                  "No slots are open. Vendors will see an availability message until you publish at least one.",
+                  "当前没有开放时段。发布至少一个时段前，供应商会看到无可用时间的提示。"
+                )}
+              </p>
+            ) : null}
+          </div>
+
           <MeetingProviderStatusStrip readiness={readiness} locale={locale} />
 
           <div className="grid gap-3 lg:grid-cols-2">
@@ -9200,7 +10102,7 @@ function MeetingCalendarView({
                     const calendarEntry = (
                       <Button
                         variant="ghost"
-                        className="h-auto w-full min-w-0 justify-start rounded-md border-l-2 border-primary/70 px-3 py-2 text-left whitespace-normal hover:bg-muted focus-visible:ring-2"
+                        className="h-auto w-full min-w-0 justify-start rounded-md border border-border px-3 py-2 text-left whitespace-normal hover:bg-muted focus-visible:ring-2"
                         aria-label={textFor(
                           locale,
                           `View or edit meeting with ${companyPair}`,
@@ -9320,6 +10222,7 @@ function DealTable({
   onCreateDeal,
   onDeal,
   onRefresh,
+  vendorSigning,
   locale = "en",
 }: {
   db: LocalDb
@@ -9327,6 +10230,11 @@ function DealTable({
   onCreateDeal?: (matchId: string) => Promise<boolean>
   onDeal?: (dealId: string, status: Deal["status"]) => void
   onRefresh?: (successMessage: string) => Promise<boolean>
+  vendorSigning?: {
+    perspective: VendorType
+    completedMatchIds: Set<string>
+    onSign: (dealId: string, agreed: boolean) => Promise<boolean>
+  }
   locale?: Locale
 }) {
   const availableMatches = db.matches.filter(
@@ -9503,7 +10411,11 @@ function DealTable({
                                 "Failed",
                               ] as Deal["status"][]
                             ).map((status) => (
-                              <SelectItem key={status} value={status}>
+                              <SelectItem
+                                key={status}
+                                value={status}
+                                disabled={status === "Signed"}
+                              >
                                 {statusLabel(status, locale)}
                               </SelectItem>
                             ))}
@@ -9528,7 +10440,7 @@ function DealTable({
                         </p>
                       ) : null}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="min-w-72 whitespace-normal">
                       <div className="flex flex-wrap gap-2">
                         {documentHref ? (
                           <DocumentViewerDialog
@@ -9541,6 +10453,17 @@ function DealTable({
                           <MouDocumentControls
                             deal={deal}
                             onRefresh={onRefresh}
+                            locale={locale}
+                          />
+                        ) : null}
+                        {vendorSigning ? (
+                          <VendorMouSigningControl
+                            deal={deal}
+                            perspective={vendorSigning.perspective}
+                            meetingCompleted={vendorSigning.completedMatchIds.has(
+                              deal.matchId
+                            )}
+                            onSign={vendorSigning.onSign}
                             locale={locale}
                           />
                         ) : null}
@@ -9562,11 +10485,17 @@ function DealTable({
                           "Create an MOU from an existing Vendor match to begin signing.",
                           "从现有供应商配对建立 MOU，即可开始签约流程。"
                         )
-                      : textFor(
-                          locale,
-                          "Your Admin has not published an MOU for this workspace yet.",
-                          "管理員尚未在此工作台发布 MOU。"
-                        )}
+                      : vendorSigning
+                        ? textFor(
+                            locale,
+                            "Complete a matched meeting and its pending MOU will appear here automatically.",
+                            "完成配对会议后，待签署的 MOU 会自动显示在这里。"
+                          )
+                        : textFor(
+                            locale,
+                            "Your Admin has not published an MOU for this workspace yet.",
+                            "管理員尚未在此工作台发布 MOU。"
+                          )}
                   </p>
                 </TableCell>
               </TableRow>
@@ -9574,6 +10503,140 @@ function DealTable({
           </TableBody>
         </Table>
       </div>
+    </div>
+  )
+}
+
+function VendorMouSigningControl({
+  deal,
+  perspective,
+  meetingCompleted,
+  onSign,
+  locale,
+}: {
+  deal: Deal
+  perspective: VendorType
+  meetingCompleted: boolean
+  onSign: (dealId: string, agreed: boolean) => Promise<boolean>
+  locale: Locale
+}) {
+  const agreementId = useId()
+  const [agreed, setAgreed] = useState(false)
+  const [signing, setSigning] = useState(false)
+  const ownSignedAt =
+    perspective === "delegation"
+      ? deal.delegationSignedAt
+      : deal.partnerSignedAt
+  const otherSignedAt =
+    perspective === "delegation"
+      ? deal.partnerSignedAt
+      : deal.delegationSignedAt
+  const bothSigned = Boolean(ownSignedAt && otherSignedAt)
+
+  if (bothSigned) {
+    return (
+      <div className="grid gap-1.5">
+        <Badge className="w-fit">
+          <Icon icon={CheckmarkCircle02Icon} inline="inline-start" />
+          {textFor(locale, "Fully signed", "双方已签署")}
+        </Badge>
+        <p className="text-xs text-muted-foreground">
+          {textFor(
+            locale,
+            "Both Vendors have agreed to this MOU.",
+            "双方供应商均已同意此 MOU。"
+          )}
+        </p>
+      </div>
+    )
+  }
+
+  if (ownSignedAt) {
+    return (
+      <div className="grid gap-1.5">
+        <Badge variant="secondary" className="w-fit">
+          <Icon icon={CheckmarkCircle02Icon} inline="inline-start" />
+          {textFor(locale, "Signed by you", "您已签署")}
+        </Badge>
+        <p className="text-xs text-muted-foreground">
+          {textFor(
+            locale,
+            "Waiting for the other Vendor to sign.",
+            "正在等待另一家供应商签署。"
+          )}
+        </p>
+      </div>
+    )
+  }
+
+  if (!meetingCompleted) {
+    return (
+      <div className="grid gap-1.5">
+        <Badge variant="outline" className="w-fit">
+          {textFor(locale, "Available after meeting", "会议结束后可签署")}
+        </Badge>
+        <p className="text-xs text-muted-foreground">
+          {textFor(
+            locale,
+            "The matched meeting must be completed first.",
+            "必须先完成配对会议。"
+          )}
+        </p>
+      </div>
+    )
+  }
+
+  async function sign() {
+    if (!agreed) {
+      return
+    }
+
+    setSigning(true)
+    const signed = await onSign(deal.id, true)
+    setSigning(false)
+
+    if (signed) {
+      setAgreed(false)
+    }
+  }
+
+  return (
+    <div className="grid max-w-80 gap-2 rounded-md border bg-muted/20 p-3">
+      <div className="flex items-start gap-2">
+        <Checkbox
+          id={agreementId}
+          checked={agreed}
+          onCheckedChange={(checked) => setAgreed(checked === true)}
+          disabled={signing}
+          aria-describedby={`${agreementId}-description`}
+        />
+        <label
+          htmlFor={agreementId}
+          id={`${agreementId}-description`}
+          className="cursor-pointer text-xs leading-relaxed text-muted-foreground"
+        >
+          {textFor(
+            locale,
+            "I agree to this MOU and confirm I am authorized to sign for my company.",
+            "我同意此 MOU，并确认我有权代表公司签署。"
+          )}
+        </label>
+      </div>
+      <Button
+        type="button"
+        size="sm"
+        disabled={!agreed || signing}
+        onClick={() => void sign()}
+      >
+        <Icon
+          icon={signing ? Loading03Icon : SecurityCheckIcon}
+          inline="inline-start"
+          className={cn(signing && "animate-spin")}
+        />
+        {signing
+          ? textFor(locale, "Signing…", "签署中…")
+          : textFor(locale, "Sign MOU", "签署 MOU")}
+      </Button>
     </div>
   )
 }
@@ -9866,8 +10929,8 @@ function CommunicationsPanel({
           <CardDescription>
             {textFor(
               locale,
-              "Send announcements to all participants or a role group. Email blasts are queued for provider integration; in-app notifications are written immediately.",
-              "向全部参与者或指定角色群组发送公告。邮件群发会进入供应商整合队列；站内通知会立即写入。"
+              "Send announcements to all participants or a role group. Email is sent through Resend and tracked per recipient; in-app notifications are written immediately.",
+              "向全部参与者或指定角色群组发送公告。邮件通过 Resend 发送并按收件人追踪；站内通知会立即写入。"
             )}
           </CardDescription>
         </CardHeader>
@@ -9959,12 +11022,12 @@ function CommunicationsPanel({
           </FieldGroup>
         </CardContent>
         <CardFooter className="flex flex-wrap gap-2">
-          <Button onClick={() => submit("Queued")}>
+          <Button onClick={() => submit("Sent")}>
             <Icon icon={Upload01Icon} inline="inline-start" />
-            {textFor(locale, "Queue blast", "加入发送队列")}
+            {textFor(locale, "Send now", "立即发送")}
           </Button>
-          <Button variant="outline" onClick={() => submit("Sent")}>
-            {textFor(locale, "Mark sent", "标记已发送")}
+          <Button variant="outline" onClick={() => submit("Draft")}>
+            {textFor(locale, "Save draft", "保存草稿")}
           </Button>
         </CardFooter>
       </Card>

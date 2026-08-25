@@ -66,6 +66,9 @@ admin_tenants (
   support_email text NOT NULL default '',
   logo_url text NOT NULL default '',
   primary_color text NOT NULL default '#16839a',
+  vendor_discovery_enabled boolean NOT NULL default true,
+  meeting_availability jsonb NOT NULL default
+    '{"1":["10:00","11:00","14:00","15:00"],"2":["10:00","11:00","14:00","15:00"],"3":["10:00","11:00","14:00","15:00"],"4":["10:00","11:00","14:00","15:00"],"5":["10:00","11:00","14:00","15:00"]}',
   created_at timestamptz NOT NULL default now(),
   updated_at timestamptz NOT NULL default now()
 )
@@ -146,6 +149,23 @@ vendor_applications (
   updated_at timestamptz NOT NULL default now()
 )
 ```
+
+`admin_tenants.vendor_discovery_enabled` is the owning Admin's tenant capability
+switch for Vendor self-service browsing. When disabled, the application hides
+the Vendor discovery entry point, the protected discovery route redirects to
+the Vendor's match list, `match_candidates()` returns no rows, and Vendor
+match-request inserts fail. `match_participants()` continues returning only
+counterparts already joined to the Vendor through a visible match so existing
+match cards retain their company summaries. Admin-managed matching remains
+available.
+
+`admin_tenants.meeting_availability` is the owning Admin's recurring Vendor
+booking window. JSON keys `1`–`5` represent Monday–Friday and each value is an
+array of permitted one-hour start times (`09:00`, `10:00`, `11:00`, `14:00`,
+`15:00`, or `16:00`) in Asia/Kuala_Lumpur. A private immutable check function
+rejects malformed day/time values. Vendors receive only the dates/times derived
+from their own tenant row, and the scheduling action re-reads this value before
+accepting a slot.
 
 Binding constraints:
 
@@ -264,6 +284,26 @@ matches (
   UNIQUE (id, admin_id)
 )
 
+meeting_proposals (
+  id uuid PK default gen_random_uuid(),
+  admin_id uuid NOT NULL FK -> admin_tenants.id,
+  match_id uuid NOT NULL,
+  starts_at timestamptz NOT NULL,
+  duration_minutes integer NOT NULL default 60,
+  requested_interpreter_id uuid NULL FK -> interpreters.id,
+  requested_by_vendor_type text NULL,
+  requested_by_vendor_company_id uuid NULL FK -> vendor_companies.id,
+  delegation_approved_at timestamptz NULL,
+  delegation_approved_by uuid NULL FK -> auth.users.id,
+  partner_approved_at timestamptz NULL,
+  partner_approved_by uuid NULL FK -> auth.users.id,
+  status text NOT NULL default 'pending',
+  meeting_id uuid UNIQUE NULL FK -> meetings.id,
+  created_at timestamptz NOT NULL default now(),
+  updated_at timestamptz NOT NULL default now(),
+  FK (match_id, admin_id) -> matches(id, admin_id)
+)
+
 meetings (
   id uuid PK default gen_random_uuid(),
   match_id uuid NOT NULL FK -> matches.id,
@@ -329,6 +369,10 @@ deals (
   status text NOT NULL,
   document text NOT NULL,
   signatory_check text NOT NULL,
+  delegation_signed_at timestamptz NULL,
+  delegation_signed_by uuid NULL FK -> user_profiles.id,
+  partner_signed_at timestamptz NULL,
+  partner_signed_by uuid NULL FK -> user_profiles.id,
   created_at timestamptz NOT NULL default now(),
   updated_at timestamptz NOT NULL default now(),
   UNIQUE (id, admin_id),
@@ -358,10 +402,41 @@ Important checks:
 - Match score is between 0 and 100.
 - Match status: `Proposed`, `Accepted`, `Rejected`, or `Session Scheduled`.
 - `Accepted` and `Session Scheduled` require both acceptance timestamps.
-- A Vendor can change only its own acceptance timestamp; the trigger derives
-  `Accepted` only after both participating Vendors agree.
+- A Vendor can set or clear only its own acceptance timestamp. A one-sided
+  acceptance may be cleared while the other timestamp is empty and no meeting
+  exists. Once the other Vendor accepts or a meeting is arranged, withdrawal
+  is denied. Vendors cannot set `Rejected`; the trigger derives `Accepted`
+  only after both participating Vendors agree.
+- When a Vendor accepts a legacy `Rejected` row, the action returns the row to
+  `Proposed` while recording that Vendor's acceptance. Admins retain the
+  authority to reset a match to `Proposed` or `Rejected`.
 - Meeting platform: `Pending`, `Zoom`, `Lark`, or legacy `VooV`.
 - Meeting status: `Scheduled`, `Live`, `Completed`, or `Cancelled`.
+- Vendor-selected times are stored first in `meeting_proposals`. The proposer
+  approves only its own subtype, the counterpart must approve independently,
+  and the database trigger creates the canonical `meetings` row only when both
+  approval timestamps and authenticated actor IDs exist. One partial approval
+  never creates a meeting.
+- Only one pending proposal may exist per tenant match. Proposal creation and
+  second approval both require a future slot that is open in the accepted
+  match's `admin_tenants.meeting_availability`; a stale, closed, off-hour,
+  weekend, duplicate, or cross-tenant slot is rejected.
+- Future legacy `Pending` placeholder meetings are migrated back to neutral
+  pending proposals and require fresh approval from both Vendors because the
+  original implementation did not record the proposing actor.
+- `complete_meeting_with_mou()` completes an Admin-owned meeting and creates
+  the match's one pending deal in the same transaction. Repeated completion is
+  idempotent because `deals.match_id` is unique.
+- `sign_vendor_mou()` accepts only an active Vendor participating on the exact
+  match after a completed meeting. It records only that Vendor subtype's
+  authenticated user and timestamp. One signature produces `Agreement
+Reached`; both produce `Signed` and `Verified`. Admins and unrelated Vendors
+  cannot call the function successfully.
+- `protect_mou_signature_evidence` makes the recorded signer UUIDs and
+  timestamps append-only. Even an owning Admin cannot clear, replace, or
+  fabricate a Vendor signature through a direct deal update.
+- A `Signed` deal requires both Vendor signature timestamps. Legacy signed
+  rows retain their prior meaning through migration-time timestamps.
 - Provider links require HTTPS, at least 32 slug characters, a positive access
   limit, and an expiry after their activation time.
 - `oauth_tokens` and `meeting_provider_links` have RLS enabled, no
@@ -478,6 +553,46 @@ event_resources (
   updated_at timestamptz NOT NULL default now()
 )
 
+email_deliveries (
+  id uuid PK default gen_random_uuid(),
+  admin_id uuid NULL FK -> admin_tenants.id,
+  sender_type text NOT NULL,
+  sender_user_id uuid NULL FK -> auth.users.id,
+  sender_name text NOT NULL,
+  from_address text NOT NULL,
+  recipient_email text NOT NULL,
+  recipient_name text NOT NULL,
+  recipient_role text NOT NULL,
+  trigger_key text NOT NULL,
+  subject text NOT NULL,
+  provider text NOT NULL,
+  provider_message_id text NULL UNIQUE,
+  status text NOT NULL,
+  status_detail text NOT NULL,
+  source_table text NULL,
+  source_id text NULL,
+  idempotency_key text NOT NULL UNIQUE,
+  requested_at timestamptz NOT NULL,
+  sent_at timestamptz NULL,
+  delivered_at timestamptz NULL,
+  opened_at timestamptz NULL,
+  clicked_at timestamptz NULL,
+  failed_at timestamptz NULL,
+  last_event_at timestamptz NULL,
+  created_at timestamptz NOT NULL default now(),
+  updated_at timestamptz NOT NULL default now()
+)
+
+email_delivery_events (
+  id uuid PK default gen_random_uuid(),
+  delivery_id uuid NOT NULL FK -> email_deliveries.id,
+  provider_event_id text NOT NULL UNIQUE,
+  event_type text NOT NULL,
+  occurred_at timestamptz NOT NULL,
+  event_data jsonb NOT NULL default '{}',
+  created_at timestamptz NOT NULL default now()
+)
+
 vendor_profile_documents (
   id uuid PK default gen_random_uuid(),
   admin_id uuid NOT NULL FK -> admin_tenants.id,
@@ -497,6 +612,16 @@ vendor_profile_documents (
 Announcement and resource audience is `all`, `delegation`, `partner`, or
 `admin`. The `event-resources` Storage bucket is private, has a 15 MiB file
 limit, and accepts PDF, JPEG, PNG, WebP, DOCX, and PPTX files.
+
+`email_deliveries` is a recipient-level operational ledger. It stores no
+message body, reset link, credential, or raw provider response. Resend API
+messages advance from queued/sent through verified webhook lifecycle states.
+Supabase Auth recovery and setup messages remain `requested` because the Auth
+SMTP call does not expose a provider message ID that Plexus can safely
+correlate. `email_delivery_events` stores only an idempotent provider event ID,
+event type, occurrence time, and sanitized metadata. Recipient lifecycle,
+trigger, tenant, sender grouping, provider-message correlation, and both
+delivery foreign keys have covering indexes.
 
 The `tenant-branding` Storage bucket is public because tenant logos must render
 on unauthenticated login pages. It has a 2 MiB file limit and accepts only PNG,
@@ -538,6 +663,7 @@ metadata insert, replacement, or deletion.
 | Itinerary               | All         | Own tenant manage         | Published own-tenant entries   |
 | Site visits             | All         | Own tenant manage         | Assigned Delegation only       |
 | Announcements/resources | All         | Own tenant manage         | Permitted audience             |
+| Email delivery ledger   | Read-only   | None                      | None                           |
 | Profile documents       | All         | Own tenant read/delete    | Own company upload/read/delete |
 | Settings                | All/manage  | Provisioning setting read | None                           |
 | Audit events            | All         | Own tenant read           | None                           |
@@ -549,7 +675,8 @@ scope.
 ## Realtime publication
 
 The `supabase_realtime` publication includes `delegation_companies`,
-`partner_companies`, `matches`, `meetings`, and `deals`. The Vendor workspace
+`partner_companies`, `matches`, `meeting_proposals`, `meetings`, and `deals`.
+The Vendor workspace
 subscribes only to its own subtype/company row, its participating match rows,
 and the meeting/deal rows related to its currently visible match IDs.
 Postgres Changes authorization continues to use the tables' existing RLS
@@ -562,17 +689,18 @@ and deletion events without exposing unfilterable delete payloads.
 
 ## Public functions
 
-| Function                          | Purpose                                                                           |
-| --------------------------------- | --------------------------------------------------------------------------------- |
-| `current_app_role()`              | Read trusted role claim                                                           |
-| `current_admin_id()`              | Read trusted tenant binding                                                       |
-| `current_vendor_company_id()`     | Read trusted Vendor binding                                                       |
-| `current_vendor_type()`           | Read trusted Vendor subtype                                                       |
-| `current_delegation_company_id()` | Legacy subtype compatibility                                                      |
-| `current_partner_company_id()`    | Legacy subtype compatibility                                                      |
-| `match_candidates()`              | Return eligible name/sector summaries for discovery and participating match cards |
-| `transfer_vendor(uuid, uuid)`     | Audited Superadmin Vendor transfer                                                |
-| `touch_updated_at()`              | Timestamp maintenance trigger                                                     |
+| Function                          | Purpose                                                                                          |
+| --------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `current_app_role()`              | Read trusted role claim                                                                          |
+| `current_admin_id()`              | Read trusted tenant binding                                                                      |
+| `current_vendor_company_id()`     | Read trusted Vendor binding                                                                      |
+| `current_vendor_type()`           | Read trusted Vendor subtype                                                                      |
+| `current_delegation_company_id()` | Legacy subtype compatibility                                                                     |
+| `current_partner_company_id()`    | Legacy subtype compatibility                                                                     |
+| `match_candidates()`              | Return eligible name/sector summaries only while owning-tenant Vendor discovery is enabled       |
+| `match_participants()`            | Return limited summaries for counterparties already joined to the Vendor through visible matches |
+| `transfer_vendor(uuid, uuid)`     | Audited Superadmin Vendor transfer                                                               |
+| `touch_updated_at()`              | Timestamp maintenance trigger                                                                    |
 
 The public authorization helpers are invoker functions. Sensitive auditing,
 binding protection, and synchronization logic lives in the unexposed

@@ -1,16 +1,26 @@
 import type {
   Deal,
   DelegationCompany,
+  EventResource,
   Match,
   Meeting,
   PartnerCompany,
 } from "@/lib/local-db"
+
+export function getDelegationVisibleResources(resources: EventResource[]) {
+  return resources.filter(
+    (resource) =>
+      resource.visibleToDelegation &&
+      ["all", "delegation"].includes(resource.audience)
+  )
+}
 
 export type VendorRealtimeTarget = {
   table:
     | "delegation_companies"
     | "partner_companies"
     | "matches"
+    | "meeting_proposals"
     | "meetings"
     | "deals"
   filter: string
@@ -88,7 +98,11 @@ export function getVendorRealtimeTargets({
 
   if (uniqueMatchIds.length > 0) {
     const filter = `match_id=in.(${uniqueMatchIds.join(",")})`
-    targets.push({ table: "meetings", filter }, { table: "deals", filter })
+    targets.push(
+      { table: "meeting_proposals", filter },
+      { table: "meetings", filter },
+      { table: "deals", filter }
+    )
   }
 
   return targets

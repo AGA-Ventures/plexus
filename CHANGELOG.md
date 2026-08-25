@@ -6,6 +6,198 @@ reviewed together.
 
 ## Unreleased
 
+### 2026-08-26
+
+- Replaced the homepage's generic pre-event hero photograph with a purpose-built
+  governed-collaboration scene. The new localized visual keeps the program
+  operator, business owner, shared laptop, human-review status and four-stage
+  Plexus workflow legible inside the responsive hero crop without changing the
+  dedicated pre-event campaign asset.
+- Replaced the homepage's disconnected journey cards with one governed
+  operating itinerary. Each handoff now names its decision owner and recorded
+  outcome, the abstract slogan row is removed, and one integrated governance
+  strip keeps human review explicit across desktop and localized mobile views.
+- Rebuilt the five selected `/app` product visuals for their actual responsive
+  slots: a clearer three-device superapp hero, front-facing Plexus Talk and
+  Deal Radar screens, country-context PLEXA draft assistance in Agreement
+  Studio, and a governed non-humanoid PLEXA coordination core.
+- Added a ten-question multilingual FAQ to `/contact`, covering audience fit,
+  pre-launch availability, operator scope, human-reviewed matching, participant
+  entry, languages, consultation pricing, scoped data access, meeting follow-up,
+  and the appropriate next inquiry route.
+- Aligned the homepage principle cards to one shared top and bottom edge by
+  removing the translated middle-card offset while preserving responsive
+  stacking and equal-height behavior for localized copy.
+- Tightened the shared public header into a 68px, centered navigation rail with
+  a smaller wordmark, compact one-line routes, a click-to-open locale selector,
+  and an explicit pre-event utility action. The full route row now collapses
+  before labels can wrap, with complete tablet and mobile navigation retained.
+- Rebuilt `/app` as a clean blue superapp product preview. A unified mobile and
+  desktop product ecosystem now leads the page, the end-to-end company journey
+  is visible from profile through accountable follow-up, all twelve product
+  domains are findable in one readiness-labelled map, and live, mixed,
+  adapter, and concept capabilities remain explicitly distinguished across
+  desktop and mobile.
+- Consolidated the pre-event header's always-visible EN, BM, and Traditional
+  Chinese controls into one accessible language selector. The active locale
+  remains visible and the three localized routes are progressively disclosed
+  on click across desktop and mobile.
+
+### 2026-08-25
+
+- Brought `/pre-event` into the shared Plexus blue editorial system. Midnight,
+  Filled Surface Blue, Connection Blue, cyan signals, pale network surfaces,
+  and cool hairlines now replace the route's former emerald/lime campaign
+  palette while preserving its compact campaign geometry, multilingual
+  content, country explorer, contact behavior, and responsive layout.
+- Rebuilt the public Plexus experience around the approved blue editorial
+  direction. The homepage now identifies Plexus as a pre-launch application,
+  preserves the exact wordmark and public locales, explains the governed
+  five-stage business journey, and routes visitors clearly to the product
+  preview, special pre-event service, or role-based login.
+- Reframed `/app` as an illustrative pre-launch product preview, removing
+  production-ready language from concept capabilities and connecting the route
+  to the shared public navigation. The `/pre-event` campaign keeps a scoped,
+  compact service-page treatment with a clearer special-service label and
+  upgraded responsive hero treatment.
+- Reworked the Admin, Vendor, and Superadmin visual foundation with a midnight
+  navigation rail, Connection Blue actions, mineral operating canvas,
+  editorial metric blocks, a human-governed Admin program pulse, responsive
+  2×2 mobile metrics, and a light default theme while retaining the optional
+  dark treatment and all existing role, tenant, and workflow behavior.
+- Added route-arrival and hero motion with reduced-motion fallbacks, themed
+  browser focus/selection/scroll surfaces, hash-safe public locale links, route
+  coverage for localized fragment navigation, and refreshed desktop/mobile
+  visual evidence under `.impeccable/review/`.
+- Closed the independent finish review by deepening filled blue surfaces for
+  readable contrast, exposing mobile pre-event language controls, setting the
+  document language from the active public or protected locale, keeping the
+  English-only product preview from advertising unsupported translations, and
+  replacing hard-coded public contact details with approved environment-backed
+  channels. Public operator language now uses **Program Operator** with
+  `/for-program-operators` as the canonical route and `/for-vendors` retained
+  as a compatibility redirect.
+- Restored Admin task hierarchy with an organizer-review attention queue and
+  primary actions before the session list, reframed speculative product-preview
+  capabilities at every point of use, and aligned authentication with the blue
+  governed-workspace direction. Production-mode desktop and mobile evidence
+  now covers public, Admin, participating-company, Superadmin, and login views
+  using clearly labelled neutral demo data.
+
+### 2026-08-24
+
+- Added editable SVG and 4× transparent PNG versions of the Plexus wordmark,
+  preserving the white lettering and layered blue-gradient ribbon treatment
+  of the existing brand asset.
+- Added the project-scoped Impeccable design skill for Codex, including its
+  UI-change and end-of-task design review hooks, and excluded vendored agent
+  skill content from Plexus's application lint and product-documentation
+  checks.
+- Added Impeccable's durable product context, recording Plexus's primary
+  audiences, product purpose, positioning, operating constraints, evidence,
+  production-honesty boundaries, accessibility commitments, and confirmed
+  comp-first workflow default for new surfaces.
+- Documented the incumbent Plexus visual system as **The Trusted Exchange** in
+  the portable `DESIGN.md` format, with machine-readable tokens, layered
+  operational/public/campaign guidance, and an Impeccable sidecar containing
+  tonal ramps, depth, motion, breakpoints, and self-contained component
+  previews; the documentation checker now recognizes standards-compliant YAML
+  frontmatter before a Markdown H1.
+
+### 2026-08-23
+
+- Removed the boxed background from the public footer logo by using the
+  transparent, tightly cropped Plexus wordmark while preserving tenant-specific
+  branding behavior.
+- Refined the `/pre-event` campaign content using the supplied business-matching
+  brief. The multilingual page now leads from business objectives and target
+  connections to relevant introductions, confirmed meetings, visit details,
+  and next actions, while retaining WhatsApp-only contact, market-by-market
+  availability checks, and explicit non-booking and non-guarantee boundaries.
+
+### 2026-08-22
+
+- Added the multilingual `/pre-event` promotion page for international
+  delegates. It explains profile preparation, curated business matching,
+  confirmed meetings, arrival planning, and controlled concierge handoffs for
+  flights, hotels, travel documents, transfers, interpreters, liaison, and site
+  visits. A searchable 240+ country directory prepares a localized WhatsApp
+  draft to the existing Plexus number without submitting or storing visitor
+  data. Worldwide inquiries remain distinct from the Malaysia and Macao live
+  focus; direct booking, payment, visa approval, unapproved MDEC co-branding,
+  and unverified fallback channels are explicitly excluded.
+- Redesigned `/pre-event` around the approved emerald, warm-white, lime, and
+  navy campaign direction. The route now uses the transparent Plexus wordmark,
+  a purpose-built image of a delegate and coordinator preparing profiles,
+  matches, meetings, and arrival logistics, a navy Login action, and a cleaner
+  editorial country-search experience without changing contact or market
+  availability behavior.
+
+### 2026-07-30
+
+- Added a Superadmin-only **Email sending** control center with cross-tenant
+  provider readiness, delivery metrics, sender-grouped activity, searchable
+  recipient status, and a complete action-coverage register. Business,
+  broadcast, application, account-security, match, meeting, MOU, itinerary,
+  attendance, and resource messages now use tracked Resend delivery; secure
+  recovery/setup links remain owned by Supabase Auth and are labelled
+  `requested`. Signed Resend webhooks update lifecycle states, and an
+  authenticated hourly Vercel cron sends duplicate-protected application,
+  meeting, and incomplete-MOU reminders. The recipient ledger and provider
+  events are service-written and readable only by an active Superadmin.
+  Business email fails closed when tracking is unavailable, information-blast
+  drafts do not send, and the approved branded From address is
+  `Plexus <notifications@info.plexus.enterprises>`.
+- Changed mutually accepted Vendor matches to a **Pending meeting** state until
+  both Vendors approve the exact future time. The first Vendor selects one
+  Admin-open date and one 1-hour time, creating only a tenant-scoped proposal
+  with its own approval. The counterpart must review and approve that proposal
+  before the database atomically creates the meeting. Admin Meeting settings
+  publish recurring availability, and the slot is revalidated at proposal and
+  approval time. Legacy future placeholders are returned to neutral proposals
+  requiring both approvals. Only then does **View meeting** open **My
+  Meetings**; a one-sided meeting proposal never appears as scheduled.
+- Moved Logout out of the account-settings dialog and into a persistent action
+  at the bottom of the desktop sidebar and mobile navigation drawer. Removed
+  the redundant **Open [role] page** action from account settings.
+- Replaced the empty Delegation dashboard itinerary card with the Vendor's
+  permitted Admin-shared resources. Only `all` or `delegation` resources with
+  Delegation visibility appear, each with its existing authorized open action;
+  the complete itinerary remains available in **On-site**.
+- Made one-sided Vendor acceptance reversible until the other Vendor accepts
+  or a meeting is arranged. The match card now shows **Accepted by you** with
+  an active **Unaccept** control, while the database trigger still blocks
+  cross-party decisions, direct rejection, acceptance rewrites, and any
+  withdrawal after the mutual-acceptance boundary.
+- Added two-party Vendor MOU acceptance. Completing a meeting now atomically
+  creates its one pending MOU, each participating Vendor must explicitly tick
+  an authorization agreement before signing, the first signature waits for
+  the counterpart, and the second produces a verified `Signed` MOU. Signature
+  actor/time evidence, tenant and match validation, Admin impersonation denial,
+  cross-tenant denial, RLS coverage, and the Vendor signing states are included.
+- Added a guided Vendor meeting empty state. Vendors with no scheduled
+  meetings are told that an accepted match is required before requesting a
+  meeting and can return directly to **My Matches** from the empty schedule;
+  same-route navigation now also selects the route-requested Vendor tab.
+- Fixed Vendor match acceptance for legacy `Rejected` rows and made each
+  decision actor-owned. **Request change** is removed, the match cards show
+  the true two-party progress, and the second acceptance unlocks meeting
+  arrangement or the protected meeting link. The database trigger rejects
+  Vendor-side rejection and cross-party decisions while preserving Admin
+  reset authority.
+- Added an owning-Admin Vendor discovery control to Matching. Disabling the
+  tenant capability hides **Find companies**, changes the empty Vendor match
+  guidance, redirects direct discovery routes, returns no candidate rows, and
+  blocks Vendor-created match requests while preserving Admin-managed
+  matching and limited counterpart summaries for existing matches. The setting
+  is tenant-scoped, audited through the existing tenant update trigger, and
+  covered by authorization, RLS, route, and browser tests.
+- Removed the static Admin phase timeline so the live operating picture uses
+  the full dashboard width. Meeting actions now sit in a consistent labeled
+  panel with the join action first, completed/cancelled meetings no longer
+  offer completion again, and active meetings require an explicit confirmation
+  dialog before they are marked completed and locked for editing.
+
 ### 2026-07-29
 
 - Removed meeting format, available dates, and maximum-meeting questions from

@@ -4,6 +4,8 @@ import { redirect } from "next/navigation"
 
 import type { AppRole, VendorType } from "@/lib/auth"
 import { getAuthenticatedIdentity } from "@/lib/authorization"
+import type { EmailDelivery } from "@/lib/email-delivery"
+import { getEmailProviderReadiness } from "@/lib/email-delivery-service"
 import type { Locale } from "@/lib/i18n"
 import { hasSupabaseAdminSecret } from "@/lib/supabase/admin"
 import type { VendorApplication } from "@/lib/vendor-applications"
@@ -19,6 +21,7 @@ export type AdminTenant = {
   support_email: string
   logo_url: string
   primary_color: string
+  vendor_discovery_enabled: boolean
   created_at: string
   updated_at: string
 }
@@ -194,6 +197,7 @@ export async function getSuperadminManagementData(locale: Locale) {
     dealsResult,
     settingsResult,
     meetingIncidentsResult,
+    emailDeliveriesResult,
   ] = await Promise.all([
     supabase
       .from("admin_tenants")
@@ -244,6 +248,11 @@ export async function getSuperadminManagementData(locale: Locale) {
       .eq("status", "failed")
       .order("updated_at", { ascending: false })
       .limit(100),
+    supabase
+      .from("email_deliveries")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(500),
   ])
 
   return {
@@ -296,6 +305,12 @@ export async function getSuperadminManagementData(locale: Locale) {
       meetingIncidentsResult.error,
       "Load critical meeting incidents"
     ),
+    emailDeliveries: rowsOrThrow<EmailDelivery>(
+      emailDeliveriesResult.data,
+      emailDeliveriesResult.error,
+      "Load email deliveries"
+    ),
+    emailProviderReadiness: getEmailProviderReadiness(),
     operations: {
       matches: rowsOrThrow<TenantOperationalCount>(
         matchesResult.data,

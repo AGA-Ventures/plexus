@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="1933"
+  height="311"
+  viewBox="0 0 1933 311"
+  fill="none"
+  role="img"
+  aria-labelledby="plexus-wordmark-title plexus-wordmark-description"
+>
+  <title id="plexus-wordmark-title">Plexus</title>
+  <desc id="plexus-wordmark-description">
+    Plexus wordmark in white with a blue gradient ribbon forming the letter X.
+  </desc>
+
+  <defs>
+    <linearGradient id="letter-fill" x1="0" y1="65" x2="0" y2="265" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" />
+      <stop offset="0.52" stop-color="#F5F8F7" />
+      <stop offset="1" stop-color="#FFFFFF" />
+    </linearGradient>
+    <linearGradient id="ribbon-back" x1="920" y1="8" x2="1320" y2="302" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#12D5F5" />
+      <stop offset="0.28" stop-color="#079FEF" />
+      <stop offset="0.52" stop-color="#003A78" />
+      <stop offset="0.72" stop-color="#0068D7" />
+      <stop offset="1" stop-color="#1599FF" />
+    </linearGradient>
+    <linearGradient id="ribbon-front" x1="914" y1="298" x2="1338" y2="5" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#078CFF" />
+      <stop offset="0.4" stop-color="#08B4F2" />
+      <stop offset="0.7" stop-color="#06BEF1" />
+      <stop offset="1" stop-color="#148BFA" />
+    </linearGradient>
+    <linearGradient id="ribbon-highlight" x1="1118" y1="119" x2="1358" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFC321" stop-opacity="0" />
+      <stop offset="0.18" stop-color="#FFC321" />
+      <stop offset="0.64" stop-color="#FFF1A3" />
+      <stop offset="1" stop-color="#FFC321" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+
+  <g fill="url(#letter-fill)">
+    <path
+      fill-rule="evenodd"
+      d="M0 65H137C163 65 180 83 180 110V135C180 163 163 180 137 180H30V265H0V65ZM30 94V151H129C143 151 151 143 151 131V114C151 101 143 94 129 94H30Z"
+    />
+    <path d="M329 65H360V236H491V265H329V65Z" />
+    <path d="M626 65H793V94H656V151H774V180H656V236H793V265H626V65Z" />
+    <path d="M1436 65H1466V211C1466 228 1477 236 1497 236H1555C1575 236 1586 228 1586 211V65H1616V216C1616 248 1594 265 1556 265H1496C1458 265 1436 248 1436 216V65Z" />
+    <path d="M1804 65H1933V94H1808C1796 94 1790 102 1790 115V130C1790 144 1798 151 1811 151H1887C1918 151 1933 168 1933 197V213C1933 247 1914 265 1881 265H1762V236H1879C1895 236 1903 228 1903 214V200C1903 186 1895 180 1880 180H1806C1777 180 1762 163 1762 135V117C1762 83 1779 65 1804 65Z" />
+  </g>
+
+  <path
+    d="M884 1C950 2 994 28 1040 75C1098 134 1155 208 1212 261C1257 302 1300 311 1360 310C1307 286 1266 243 1225 199C1166 136 1110 68 1062 32C1015-4 954 0 884 1Z"
+    fill="url(#ribbon-back)"
+  />
+  <path
+    d="M880 310C944 292 994 240 1041 194C1098 139 1154 86 1205 40C1249 1 1300-4 1360 1C1307 22 1268 61 1227 103C1170 162 1119 212 1066 265C1016 316 955 316 880 310Z"
+    fill="url(#ribbon-front)"
+  />
+  <path
+    d="M1118 121C1149 91 1179 63 1205 40C1249 1 1300-4 1360 1"
+    stroke="url(#ribbon-highlight)"
+    stroke-width="4"
+    stroke-linecap="round"
+  />
+</svg>

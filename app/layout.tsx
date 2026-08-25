@@ -1,7 +1,9 @@
 import type { Metadata } from "next"
 import { Geist_Mono, Inter } from "next/font/google"
+import { headers } from "next/headers"
 
 import "./globals.css"
+import { DesignContract } from "@/components/design-contract"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
@@ -20,7 +22,7 @@ const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
 
 const title = "Plexus | Sharper Connections for Global Business"
 const description =
-  "Plexus connects businesses, vendors and international delegations through verified profiles, intelligent matching, meetings and cross-border trade opportunities."
+  "Preview Plexus, the pre-launch operating platform for governed cross-border business matching, meetings and follow-up."
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -34,7 +36,7 @@ export const metadata: Metadata = {
     "Plexus",
     "business matching",
     "global business connections",
-    "verified vendors",
+    "program operators",
     "cross-border trade",
     "Malaysia business network",
     "China Malaysia business",
@@ -74,14 +76,17 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const headerStore = await headers()
+  const language = headerStore.get("x-plexus-language") ?? "en"
+
   return (
     <html
-      lang="en"
+      lang={language}
       suppressHydrationWarning
       className={cn(
         "antialiased",
@@ -91,6 +96,7 @@ export default function RootLayout({
       )}
     >
       <body>
+        <DesignContract />
         <ThemeProvider>
           <TooltipProvider>
             {children}

@@ -61,8 +61,12 @@ export function withLocale(href: string, locale: PublicLocale) {
     return href
   }
 
-  const separator = href.includes("?") ? "&" : "?"
-  return `${href}${separator}lang=${locale}`
+  const hashIndex = href.indexOf("#")
+  const path = hashIndex === -1 ? href : href.slice(0, hashIndex)
+  const hash = hashIndex === -1 ? "" : href.slice(hashIndex)
+  const separator = path.includes("?") ? "&" : "?"
+
+  return `${path}${separator}lang=${locale}${hash}`
 }
 
 export async function getTenantBranding(

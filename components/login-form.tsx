@@ -44,12 +44,12 @@ type LoginStyle = CSSProperties & {
 
 const copy: Partial<Record<Locale, LoginCopy>> & { en: LoginCopy } = {
   en: {
-    platformKicker: "The business superapp",
+    platformKicker: "Protected program workspace",
     tenantKicker: "Private business workspace",
-    platformTitle: "Discover. Connect. Agree. Grow.",
+    platformTitle: "One governed workspace. Every responsible next step.",
     tenantTitle: "Build trusted business relationships in one place.",
     platformDescription:
-      "One secure workspace for every connection, conversation, and opportunity.",
+      "Secure access for program operators, participating companies, and Plexus platform teams.",
     tenantDescription:
       "Your organization’s private gateway to people, partnerships, and progress.",
     welcome: "Welcome back",
@@ -76,11 +76,12 @@ const copy: Partial<Record<Locale, LoginCopy>> & { en: LoginCopy } = {
     previewSubmit: "Preview only",
   },
   zh: {
-    platformKicker: "商业超级应用",
+    platformKicker: "受保护的计划工作台",
     tenantKicker: "专属商业工作台",
-    platformTitle: "发现、连接、合作、成长。",
+    platformTitle: "一个受治理的工作台，承接每个负责任的下一步。",
     tenantTitle: "在一个平台建立可信的商业关系。",
-    platformDescription: "一个安全工作台，连接每次交流、合作与机遇。",
+    platformDescription:
+      "为计划运营方、参与企业和 Plexus 平台团队提供安全访问。",
     tenantDescription: "您的企业专属入口，连接人才、伙伴与增长。",
     welcome: "欢迎回来",
     platformPrompt: "登录以继续进入您的 Plexus 工作台。",
@@ -106,11 +107,12 @@ const copy: Partial<Record<Locale, LoginCopy>> & { en: LoginCopy } = {
     previewSubmit: "仅预览",
   },
   "zh-Hant": {
-    platformKicker: "商業超級應用",
+    platformKicker: "受保護的計劃工作區",
     tenantKicker: "專屬商業工作台",
-    platformTitle: "發現、連結、合作、成長。",
+    platformTitle: "一個受治理的工作區，承接每個負責任的下一步。",
     tenantTitle: "在一個平台建立可信的商業關係。",
-    platformDescription: "一個安全工作台，連結每次交流、合作與機遇。",
+    platformDescription:
+      "為計劃營運方、參與企業和 Plexus 平台團隊提供安全存取。",
     tenantDescription: "您的企業專屬入口，連結人才、夥伴與成長。",
     welcome: "歡迎回來",
     platformPrompt: "登入以繼續進入您的 Plexus 工作台。",
@@ -136,12 +138,12 @@ const copy: Partial<Record<Locale, LoginCopy>> & { en: LoginCopy } = {
     previewSubmit: "僅預覽",
   },
   th: {
-    platformKicker: "ซูเปอร์แอปสำหรับธุรกิจ",
+    platformKicker: "พื้นที่ทำงานโครงการที่ได้รับการปกป้อง",
     tenantKicker: "พื้นที่ทำงานธุรกิจส่วนตัว",
-    platformTitle: "ค้นพบ เชื่อมต่อ ตกลง เติบโต",
+    platformTitle: "พื้นที่ทำงานที่มีการกำกับดูแลสำหรับทุกขั้นตอนถัดไป",
     tenantTitle: "สร้างความสัมพันธ์ทางธุรกิจที่เชื่อถือได้ในที่เดียว",
     platformDescription:
-      "พื้นที่ทำงานที่ปลอดภัยสำหรับทุกการเชื่อมต่อ การสนทนา และโอกาส",
+      "การเข้าถึงที่ปลอดภัยสำหรับผู้ดำเนินโครงการ บริษัทที่เข้าร่วม และทีมแพลตฟอร์ม Plexus",
     tenantDescription: "ประตูส่วนตัวขององค์กรสู่ผู้คน พันธมิตร และความก้าวหน้า",
     welcome: "ยินดีต้อนรับกลับ",
     platformPrompt: "เข้าสู่ระบบเพื่อไปยังพื้นที่ทำงาน Plexus ของคุณ",
@@ -221,7 +223,7 @@ export function LoginForm({
 
   return (
     <main
-      className="relative isolate min-h-svh overflow-hidden bg-[#24164d] text-white"
+      className="relative isolate min-h-svh overflow-hidden bg-[#071326] text-white"
       style={loginStyle}
     >
       {previewMode ? (
@@ -251,7 +253,7 @@ export function LoginForm({
         sizes="100vw"
         className="pointer-events-none -z-10 object-cover object-center"
       />
-      <div className="absolute inset-0 -z-10 bg-[#24164d]/12" />
+      <div className="absolute inset-0 -z-10 bg-[#071326]/18" />
 
       <div className="mx-auto grid min-h-svh w-full max-w-[1180px] items-center gap-8 px-5 py-7 sm:px-8 md:grid-cols-[minmax(0,1fr)_minmax(350px,0.82fr)] md:gap-10 md:px-10 lg:gap-16 lg:px-14">
         <section className="flex flex-col justify-end gap-6 md:min-h-[560px] md:pb-12">

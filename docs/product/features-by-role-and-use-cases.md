@@ -2,7 +2,7 @@
 
 **Owner:** Product and engineering
 **Review trigger:** Role, route, permission, workflow, or capability-status change
-**Last reviewed:** 2026-07-29
+**Last reviewed:** 2026-08-22
 
 ## Purpose and scope
 
@@ -30,6 +30,30 @@ when behavior changes.
 | **Adapter**           | The interface and data contract exist, but a production provider or end-to-end automation is incomplete |
 | **Simulation**        | The screen demonstrates an operational step without completing a real external action                   |
 | **Planned / concept** | Product direction only; not an available production workflow                                            |
+
+## Public pre-event campaign
+
+`/pre-event` is an anonymous, multilingual campaign page for international
+companies and delegates preparing for an organizer-led business-matching
+event. Its content leads from the visitor's business objective and target
+connection to relevant ecosystem introductions, confirmed meetings, visit
+details, and an arrival-ready itinerary. The relationship is framed as more
+than a one-off introduction: context, logistics, and agreed next actions are
+prepared around each meeting. A searchable worldwide
+country directory sits within a campaign-specific emerald and warm-white
+presentation using the transparent Plexus wordmark and a purpose-built image
+of profile, matching, meeting, and arrival-plan preparation. The directory
+prepares a localized WhatsApp inquiry to Plexus without
+creating an account, submitting a form, or persisting visitor data.
+
+Travel items on the page are a **Controlled** concierge handoff. Plexus may
+coordinate a request or refer it to an approved event partner, but the page is
+not a flight or hotel marketplace, visa authority, approval guarantee, or
+payment surface. Introductions and local services remain subject to relevance,
+availability, and organizer approval. Malaysia and Macao are labelled as the
+current live-market focus; listing another country means inquiries are welcome,
+not that provider delivery is already live there. Unapproved co-branding and
+unverified contact channels are not rendered.
 
 ## Role hierarchy and scope
 
@@ -136,34 +160,34 @@ flowchart LR
 
 ## Feature and permission matrix
 
-| Capability                                               | Superadmin                                           | Admin                                                                      | Vendor                                                              |
-| -------------------------------------------------------- | ---------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Shared login, role routing, logout                       | Own account                                          | Own account                                                                | Own account                                                         |
-| Self-service password recovery                           | Own account                                          | Own account                                                                | Own account                                                         |
-| Account profile settings                                 | No dedicated self-service panel                      | Edit own display name; manage branding and access from one settings dialog | Edit own display name and review access                             |
-| Admin tenant creation                                    | All tenants                                          | No                                                                         | No                                                                  |
-| Tenant profile and branding                              | Upload logo, edit, and preview every tenant          | Upload logo, edit, and preview own tenant                                  | View applied workspace context                                      |
-| Tenant activation, suspension, archiving                 | Every tenant                                         | No                                                                         | No                                                                  |
-| Vendor account provisioning                              | Any active tenant                                    | Own active tenant, when platform setting permits                           | No                                                                  |
-| Vendor company status and directory                      | Every tenant                                         | Own tenant                                                                 | Own profile through Vendor workflow                                 |
-| Vendor cross-tenant transfer                             | Yes                                                  | No                                                                         | No                                                                  |
-| Account suspension/restoration and claim synchronization | All permitted accounts; cannot self-suspend          | Vendor accounts in own tenant                                              | No                                                                  |
-| Admin password recovery link                             | Send to an active Admin account from its tenant row  | Self-service only                                                          | No                                                                  |
-| Platform settings                                        | Read/write                                           | Reads the Vendor-provisioning permission used by its workflow              | No                                                                  |
-| Privileged audit history                                 | Platform-wide, latest 200 shown                      | Own tenant, latest 100 shown                                               | No                                                                  |
-| Operational tenant reporting                             | Cross-tenant totals                                  | Full own-tenant dashboard and reports                                      | Own-company summaries                                               |
-| Delegation and Partner records                           | Platform directory/reporting                         | Create, view, update, and delete within own tenant                         | Update own registration profile                                     |
-| Match discovery                                          | No dedicated Superadmin UI                           | Manages own-tenant matching board                                          | Opposite-subtype directory; limited fields only                     |
-| Match status and scoring                                 | No dedicated Superadmin UI                           | Propose, score, and operate own-tenant matches                             | Request and record only its own acceptance/change decision          |
-| Meetings                                                 | Cross-tenant critical incidents and controlled retry | Monitor automatically created sessions                                     | Second acceptance creates the default provider; join through Plexus |
-| Interpreter roster                                       | No dedicated Superadmin UI                           | Create, edit, set availability, delete, and assign                         | Request an available preferred interpreter                          |
-| MOU/deal tracking                                        | Cross-tenant reporting                               | Track status, signatory check, mark signed, preview/download available PDF | View own MOU status and preview/download available PDF              |
-| Communications                                           | No dedicated Superadmin UI                           | Create targeted announcements and in-app notifications                     | View applicable operational notifications                           |
-| Documents and resources                                  | No dedicated Superadmin UI                           | Add URL resources, upload private files, set audience and visibility       | Delegation subtype can view permitted resources                     |
-| Event attendance and check-in                            | Cross-tenant reporting only                          | Manual/QR check-in simulation for tenant Partners                          | Partner subtype confirms attendance and sees QR status              |
-| Itinerary, site visits, liaison                          | Cross-tenant reporting only                          | Publish itinerary; view site visits and liaison records                    | Delegation subtype views published itinerary                        |
-| CSV/ICS exports                                          | Reporting on screen                                  | Pre-visit CSV, post-event CSV, and meeting calendar ICS                    | Meeting ICS; Delegation itinerary CSV                               |
-| Compliance console and APIs                              | Platform access                                      | Own authenticated access                                                   | No                                                                  |
+| Capability                                               | Superadmin                                               | Admin                                                                       | Vendor                                                                         |
+| -------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Shared login, role routing, logout                       | Own account                                              | Own account                                                                 | Own account                                                                    |
+| Self-service password recovery                           | Own account                                              | Own account                                                                 | Own account                                                                    |
+| Account profile settings                                 | No dedicated self-service panel                          | Edit own display name; manage branding and access from one settings dialog  | Edit own display name and review access                                        |
+| Admin tenant creation                                    | All tenants                                              | No                                                                          | No                                                                             |
+| Tenant profile and branding                              | Upload logo, edit, and preview every tenant              | Upload logo, edit, and preview own tenant                                   | View applied workspace context                                                 |
+| Tenant activation, suspension, archiving                 | Every tenant                                             | No                                                                          | No                                                                             |
+| Vendor account provisioning                              | Any active tenant                                        | Own active tenant, when platform setting permits                            | No                                                                             |
+| Vendor company status and directory                      | Every tenant                                             | Own tenant                                                                  | Own profile through Vendor workflow                                            |
+| Vendor cross-tenant transfer                             | Yes                                                      | No                                                                          | No                                                                             |
+| Account suspension/restoration and claim synchronization | All permitted accounts; cannot self-suspend              | Vendor accounts in own tenant                                               | No                                                                             |
+| Admin password recovery link                             | Send to an active Admin account from its tenant row      | Self-service only                                                           | No                                                                             |
+| Platform settings                                        | Read/write                                               | Reads the Vendor-provisioning permission used by its workflow               | No                                                                             |
+| Privileged audit history                                 | Platform-wide, latest 200 shown                          | Own tenant, latest 100 shown                                                | No                                                                             |
+| Operational tenant reporting                             | Cross-tenant totals                                      | Full own-tenant dashboard and reports                                       | Own-company summaries                                                          |
+| Delegation and Partner records                           | Platform directory/reporting                             | Create, view, update, and delete within own tenant                          | Update own registration profile                                                |
+| Match discovery                                          | No dedicated Superadmin UI                               | Manages own-tenant matching board and controls Vendor self-service browsing | Opposite-subtype directory when enabled; limited fields only                   |
+| Match status and scoring                                 | No dedicated Superadmin UI                               | Propose, score, and operate own-tenant matches                              | Request a match; own acceptance is reversible before the other Vendor responds |
+| Meetings                                                 | Legacy critical incidents and controlled retry           | Confirm Vendor-requested sessions and create protected provider links       | Mutual acceptance unlocks scheduling; future sessions open in My Meetings      |
+| Interpreter roster                                       | No dedicated Superadmin UI                               | Create, edit, set availability, delete, and assign                          | Request an available preferred interpreter                                     |
+| MOU/deal tracking                                        | Cross-tenant reporting                                   | Track status, signatory checks, and available PDF                           | Explicitly sign own side after a completed meeting; view progress/PDF          |
+| Communications                                           | Cross-tenant Email sending ledger and provider readiness | Create targeted email announcements and in-app notifications                | Receive applicable operational email and notifications                         |
+| Documents and resources                                  | No dedicated Superadmin UI                               | Add URL resources, upload private files, set audience and visibility        | Delegation subtype can view permitted resources                                |
+| Event attendance and check-in                            | Cross-tenant reporting only                              | Manual/QR check-in simulation for tenant Partners                           | Partner subtype confirms attendance and sees QR status                         |
+| Itinerary, site visits, liaison                          | Cross-tenant reporting only                              | Publish itinerary; view site visits and liaison records                     | Delegation subtype views published itinerary                                   |
+| CSV/ICS exports                                          | Reporting on screen                                      | Pre-visit CSV, post-event CSV, and meeting calendar ICS                     | Meeting ICS; Delegation itinerary CSV                                          |
+| Compliance console and APIs                              | Platform access                                          | Own authenticated access                                                    | No                                                                             |
 
 Database RLS narrows Admin and Vendor actions to their permitted rows even
 where a shared Server Action supports more than one role.
@@ -203,11 +227,11 @@ where a shared Server Action supports more than one role.
 - View the number of Vendors assigned to each tenant.
 - Roll back partial provisioning when a later creation step fails.
 
-Temporary password delivery remains a controlled manual process for the direct
-Admin-provisioning path. Self-service password recovery and approved Vendor
-first-time password setup are implemented. A Superadmin can also send an
-audited, tenant-aware password recovery link to an active Admin account without
-viewing or replacing the password.
+Direct Admin provisioning keeps the temporary password as an operator fallback
+and also requests a secure Supabase Auth setup link. Self-service password
+recovery and approved Vendor first-time password setup are implemented. A
+Superadmin can also send an audited, tenant-aware password recovery link to an
+active Admin account without viewing or replacing the password.
 
 ### Global Vendor governance
 
@@ -271,12 +295,12 @@ viewing or replacing the password.
 
 **Status: Live**
 
-- Receive a prominent critical alert when automatic Zoom or Lark meeting
-  creation fails after both Vendors have accepted a match.
+- Review and resolve previously recorded automatic Zoom or Lark meeting
+  creation incidents.
 - Review the affected tenant, match, provider, attempt count, and a sanitized
   failure category without exposing credentials or provider responses.
-- Retry the failed meeting creation from the Superadmin console while
-  preserving the Vendors' accepted match.
+- Retry a recorded legacy failure from the Superadmin console while preserving
+  the Vendors' accepted match.
 
 ### Compliance readiness
 
@@ -301,10 +325,11 @@ case-management or compliance-decision product.
   label, and Access sections; edit the signed-in display name without exposing
   internal user or tenant UUIDs.
 - Review the human-readable account role and workspace, change portal language,
-  start self-service password recovery, or end the current session.
+  or start self-service password recovery. End the current session from the
+  persistent bottom of the sidebar; account settings expose no redundant
+  role-page launch action.
 - View own-tenant totals, fully matched Delegations, invited/arrived guests,
-  signed MOUs, scheduled/completed meetings, conversion, notifications, and a
-  phase timeline.
+  signed MOUs, scheduled/completed meetings, conversion, and notifications.
 - Keep the Admin dashboard focused on operating metrics and workflow cards
   without internal tenancy or persistence notices.
 - Review the current session queue and mark a meeting complete.
@@ -372,10 +397,16 @@ workflows. Use the Vendor provisioning control when the company needs a login.
   offerings, verification, and profile-completeness signals.
 - View predicted fit percentages.
 - Assign a Partner to create a proposed match.
+- Enable or disable Vendor self-service company browsing for the entire tenant
+  from Matching. Disabling it hides **Find companies**, redirects direct browse
+  routes, returns no candidates, and blocks Vendor-created match requests while
+  leaving Admin matching available.
 - Track `Proposed`, `Accepted`, `Rejected`, and `Session Scheduled` states.
 - Wait for each participating Vendor to record its own acceptance; the second
-  acceptance automatically creates the configured provider meeting. Admins
-  cannot accept on a Vendor's behalf.
+  acceptance unlocks the shared **Pending meeting** proposal action. Admins
+  cannot accept on a Vendor's behalf. A Vendor may unaccept while its decision
+  is still one-sided, but not after the other Vendor accepts or a meeting is
+  arranged.
 - Prevent duplicate Vendor-requested matches.
 
 The score is an operational matching aid, not an autonomous approval or due
@@ -417,11 +448,14 @@ diligence decision.
   Meeting settings. `Online` means the required server configuration,
   protected-link origin, and provider authorization are present; the provider
   API is validated again when a meeting is created.
+- Publish recurring Monday–Friday Vendor booking availability from Meeting
+  settings by opening or closing each supported 1-hour start time. The setting
+  is tenant-scoped and audited with the existing Admin tenant update trail.
 - Keep provider credentials and Lark authorization platform-managed while
   allowing tenant Admins to inspect readiness without viewing secrets.
 - Export the tenant meeting calendar as an `.ics` file.
-- Monitor the Zoom or Lark meeting created automatically after both Vendors
-  accept.
+- Confirm the meeting time requested by an accepted Vendor pair and create the
+  protected Zoom or Lark link.
 - Join through an opaque Plexus link; never display the provider URL.
 - Mark a meeting complete and save the current fixed completion summary.
 - Create, edit, set availability for, and delete interpreters.
@@ -436,19 +470,24 @@ and reconciliation remain future work.
 
 ### MOU and deal tracking
 
-**Status: Live tracking / Adapter document lifecycle**
+**Status: Live two-party acceptance / Adapter document lifecycle**
 
 - Track `Under Discussion`, `Agreement Reached`, `Signed`, and `Failed` states.
-- View signatory-check status.
-- Mark a deal signed.
+- Completing a meeting automatically creates the match's one pending MOU.
+- Require each participating Vendor to tick the agreement and sign only for
+  its own company.
+- Show `Signed by you` while the counterpart is pending; mark the MOU `Signed`
+  and its signatory check `Verified` only after both Vendor signatures.
+- Record the authenticated signer and timestamp for each Vendor subtype.
 - Preview, open, or download a PDF when a matching public document is present.
 
-E-signature, collaborative review, secure deal-document upload, and provider
-status reconciliation are not yet complete.
+Qualified third-party e-signature certificates, collaborative redlining, and
+provider status reconciliation remain future work. Private Admin MOU PDF
+upload and participating-Vendor review are implemented.
 
 ### Communications
 
-**Status: Live data model / Adapter delivery**
+**Status: Live / Resend and Supabase Auth delivery**
 
 - Target all participants, Delegations, Partners, or the Admin team.
 - Select email, in-app notification, or both.
@@ -456,9 +495,17 @@ status reconciliation are not yet complete.
 - Write in-app notifications immediately.
 - Review the tenant announcement log and its audience, channel, and status.
 - Use the protected Admin communications API.
-
-Email records can be queued, but transactional email delivery is not connected
-to a production provider.
+- Send business and broadcast messages through Resend with one tracked row per
+  recipient.
+- Keep password recovery and first-time setup links under Supabase Auth while
+  recording the request truthfully as `requested`.
+- Record Resend sent, delivered, delayed, bounced, complained, suppressed,
+  failed, opened, and clicked events through a signed webhook.
+- Let Superadmin review cross-tenant provider readiness, delivery activity
+  grouped by initiating sender, recipient status, and the complete action
+  coverage register.
+- Run authenticated scheduled reminders for pending applications, meetings
+  about 24 hours away, and incomplete MOUs.
 
 ### Documents and resources
 
@@ -516,6 +563,10 @@ are not connected.
 Both Vendor subtypes receive the following features, restricted to their own
 company and workflow participation.
 
+- Open profile and access settings from the bottom account card, and use the
+  dedicated sidebar-bottom **Logout** action without opening the settings
+  dialog.
+
 #### Dashboard
 
 **Status: Live**
@@ -523,6 +574,8 @@ company and workflow participation.
 - View company/profile identity, profile-completion percentage, match summary,
   next meeting, and company-scoped profile, pending-match, upcoming-meeting,
   and active-MOU metrics.
+- Delegation Vendors see their permitted Admin-shared resources directly on
+  the dashboard; the full published itinerary remains in **On-site**.
 - Receive tenant-scoped live updates when the company profile, participating
   matches, related meetings, or related MOU records change; the workspace also
   refreshes on focus/visibility and periodically recovers if Realtime is
@@ -558,7 +611,8 @@ company and workflow participation.
 
 **Status: Live**
 
-- Browse companies of the opposite Vendor subtype.
+- Browse companies of the opposite Vendor subtype when the owning Admin has
+  enabled Vendor discovery.
 - Keep the white-label Vendor workspace sidebar available while browsing the
   discovery directory, with **My matches** shown as the active section.
 - Return directly to the Vendor's own match list from the discovery header
@@ -572,20 +626,38 @@ company and workflow participation.
   relationship, counterpart name/sector, match confidence, both decisions, and
   a details action that never exposes the counterpart's private profile or
   contact fields.
-- Record only its own acceptance. The match remains `Proposed` until the other
-  participating Vendor also accepts.
-- Use **Request change**, which records the `Rejected` state and clears the
-  requesting Vendor's acceptance.
+- Record only its own acceptance. While the decision remains one-sided, the
+  card shows **Accepted by you** and offers **Unaccept**; that control closes
+  after the counterparty accepts or a meeting is arranged. Vendor rejection
+  remains unavailable.
+- Reopen a legacy `Rejected` match by accepting it; the match returns to
+  `Proposed` while the other Vendor remains pending.
+- When both Vendors accept and no future meeting exists, show **Pending
+  meeting** with **Propose meeting**. Past, in-progress, completed, and
+  cancelled rows do not hide this action.
+- After one Vendor proposes a time, show **Awaiting Vendor approval** to that
+  Vendor and **Meeting approval needed** with the exact time to the counterpart.
+  The counterpart reviews the two-party approval record before approving.
+- Only after both Vendors approve the same time does Plexus create the shared
+  meeting, replace the primary action with **View meeting**, and expose it in
+  **My Meetings**. Provider confirmation then exposes the protected link.
 
 #### Meeting request and participation
 
-**Status: Live preferences / Adapter deployment pending**
+**Status: Live scheduling / Adapter deployment pending**
 
-- Trigger automatic meeting creation when the second participating Vendor
-  accepts.
-- Use the platform-configured Zoom or Lark provider without waiting for an
-  Admin creation action.
+- Unlock shared meeting scheduling only after both participating Vendors
+  accept.
+- Choose one Admin-open date first, then choose one available 1-hour time on
+  that date and optionally request an available interpreter.
+- Save the choice as a pending proposal with the proposing Vendor's approval.
+- Require the matched counterpart to review and approve the exact time. A
+  single approval never creates a meeting; the second approval atomically
+  creates one shared meeting for both Vendors and sends it to the Admin for
+  provider and interpreter confirmation.
 - View own scheduled meetings and stored summaries.
+- When no meeting exists, see that an accepted match is required before a
+  meeting can be requested and return directly to **My Matches**.
 - Open the expiring Plexus link without receiving the raw provider URL.
 - Download an individual `.ics` calendar invitation.
 
@@ -609,7 +681,7 @@ In addition to the shared Vendor features, a Delegation Vendor can:
 
 - View only published itinerary slots for the Malaysia visit.
 - View resources whose audience is `all` or `delegation` and whose Delegation
-  visibility is enabled.
+  visibility is enabled, including directly from the dashboard.
 - Open authorized resource files.
 - Export the published itinerary to CSV.
 - See the assigned coordinator and the number of accepted/scheduled matches
@@ -661,7 +733,7 @@ flowchart LR
 | `/[locale]/admin`                        | Admin             | Tenant operations portal                                |
 | `/[locale]/admin/vendors`                | Admin             | Tenant Vendor and Vendor-account management             |
 | `/[locale]/vendor`                       | Vendor            | Delegation or Partner company workspace                 |
-| `/[locale]/vendor/discover`              | Vendor            | Opposite-subtype company discovery                      |
+| `/[locale]/vendor/discover`              | Vendor            | Admin-enabled opposite-subtype company discovery        |
 | `/[locale]/compliance`                   | Superadmin, Admin | Hidden Compliance workspace shell                       |
 | `/[locale]/compliance/world-check`       | Superadmin, Admin | Hidden legacy Compliance route                          |
 | `/[locale]/compliance/malaysia-ssm-ctos` | Superadmin, Admin | Hidden legacy Compliance route                          |
@@ -679,6 +751,9 @@ The role-protected workspaces sit behind a public layer that includes:
 
 - A public homepage and marketing pages for Vendors, businesses, how Plexus
   works, pricing, about, contact, help, and blog.
+- A multilingual contact FAQ covering program fit, pre-launch availability,
+  operator and participant workflows, human-governed matching, languages,
+  consultation pricing, scoped access, follow-up, and the next inquiry route.
 - Public privacy, terms, cookie, DPA, PDPA, and legal-information routes.
 - Public marketing content in English, Bahasa Malaysia, and Traditional
   Chinese.
@@ -687,11 +762,13 @@ The role-protected workspaces sit behind a public layer that includes:
   complete company profile for Admin review but do not create an account.
 - A `/app` future-product showcase.
 
-The `/app` showcase describes planned AI and trade-superapp concepts such as
-Company Brain, live multilingual interpretation, Deal Radar, automated action
-briefs, agreement drafting/e-signing, logistics, payments, and finance. It is a
-concept experience and must not be read as the current protected application's
-live feature set.
+The `/app` showcase presents the complete superapp journey from company profile
+and organizer review through matching, meetings, agreements, event operations,
+governance, resources, reporting, and accountable follow-up. Company Brain,
+Plexus Talk, Deal Radar, automated action briefs, assisted agreement drafting,
+and PLEXA remain illustrative treatments. The page labels live, mixed,
+adapter, and concept capability groups and must not be read as evidence that
+every illustrated screen is production-ready.
 
 ## Authorization and safety model
 
@@ -728,11 +805,12 @@ The following are not complete production features:
 
 - Open Auth self-signup remains intentionally unavailable. Vendor application
   intake is approval-gated.
-- Production SMTP/email branding and delivery monitoring for first-time
-  password setup.
+- Final production SMTP credentials, branded Auth templates, and controlled
+  mailbox evidence for first-time password setup.
 - Production rollout and smoke verification of Zoom/Lark creation; provider
   update, cancellation, retry, and reconciliation.
-- Production email and push-notification delivery.
+- Production email smoke evidence, automated retry policy, unsubscribe rules
+  where applicable, and push-notification delivery.
 - Secure MOU upload, collaborative review, e-signature, and document lifecycle.
 - Production-secure QR generation and scanning.
 - Complete compliance case management and configured provider coverage.

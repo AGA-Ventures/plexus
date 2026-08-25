@@ -1,0 +1,229 @@
+{
+  "title": "Choose the new Plexus visual world",
+  "question": "Choose the system that should govern both the public site and the simpler Admin workspace.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "The Summit Table",
+      "kicker": "THE ROLL",
+      "lineage": "multilingual trade-summit agendas, delegate placards, and signed communiqués",
+      "thesis": "Cross-border trade becomes a shared table: every profile, counterpart, decision, and next action has a visible place.",
+      "palette": [
+        "#111a17",
+        "#f2f4ef",
+        "#0d6b55",
+        "#f05b3d"
+      ],
+      "materials": [
+        "enameled agenda tabs",
+        "embossed seals",
+        "crisp mineral paper"
+      ],
+      "viewport": "An offset agenda rail introduces the full journey while a large two-party match sequence moves toward a confirmed meeting and the white-label action.",
+      "risk": "Can feel institutional if company profiles and human movement are allowed to become too quiet.",
+      "raised": [
+        {
+          "from": "Layered Papercut",
+          "raise": "Hierarchy is built from decisive overlapping color fields rather than generic card shadows."
+        },
+        {
+          "from": "HyperCard Stack",
+          "raise": "Every workflow keeps its visible trail, so users can understand where they came from and what unlocks next."
+        },
+        {
+          "from": "Nixie Counter",
+          "raise": "One live readiness measure gets physical presence; decorative metric walls do not."
+        }
+      ],
+      "comp": ".impeccable/mocks/decision/summit-table.webp"
+    },
+    {
+      "id": "model-pick",
+      "label": "Trade Mission Briefing Folio",
+      "kicker": "IMPECCABLE’S PICK",
+      "lineage": "trade-delegation briefing books, tabbed dossiers, and fold-out corridor maps",
+      "thesis": "Plexus is the working brief that turns a delegation’s fragmented records into one accountable route to agreement.",
+      "palette": [
+        "#0f1d35",
+        "#f7f7f2",
+        "#175fe8",
+        "#e64b35"
+      ],
+      "materials": [
+        "tabbed folios",
+        "route overlays",
+        "registration stamps"
+      ],
+      "viewport": "A fold-out corridor map shares the first view with a concise operator brief, a prominent white-label action, and a real profile-to-agreement route.",
+      "risk": "It is the most familiar grounded direction and can feel procedural unless the live route remains dominant.",
+      "comp": ".impeccable/mocks/decision/trade-mission-folio.webp"
+    },
+    {
+      "id": "challenger-azulejo",
+      "label": "The Corridor Tile Hall",
+      "verdict": "competitive",
+      "lineage": "azulejo station halls translated into a multilingual exchange journey",
+      "thesis": "The cross-border journey unfolds as cobalt narrative panels whose seams make every stage and handoff honest.",
+      "palette": [
+        "#173f99",
+        "#f5f2e8",
+        "#e0a51a",
+        "#7895cf"
+      ],
+      "materials": [
+        "tin-glazed tile",
+        "cobalt wash",
+        "visible grout seams"
+      ],
+      "viewport": "A whole-tile journey from profile to agreement spans the page while the primary action sits inside a restrained cobalt cartouche.",
+      "case": "It matches the corridor story and sequential clarity, but the ornament needs strict restraint inside the Admin workspace.",
+      "risk": "Pattern density can compete with operational data and tenant branding.",
+      "comp": ".impeccable/mocks/decision/corridor-tile-hall.webp",
+      "hero": "https://impeccable.style/worlds/cards/architecture-places-azulejo-station-hall-hero.webp",
+      "board": "https://impeccable.style/worlds/cards/architecture-places-azulejo-station-hall.webp"
+    },
+    {
+      "id": "challenger-papercut",
+      "label": "Layered Exchange",
+      "verdict": "declined",
+      "lineage": "Lowicz layered papercut",
+      "thesis": "Matches and approvals assemble as vivid flat layers that reveal the path beneath.",
+      "palette": [
+        "#133b64",
+        "#ef4035",
+        "#f4c430",
+        "#f7f2e8"
+      ],
+      "materials": [
+        "flat cut paper",
+        "overlap",
+        "fold symmetry"
+      ],
+      "viewport": "A symmetrical exchange path assembles outward from two company profiles toward one shared agreement.",
+      "case": "The mechanism translates, but the folk-art identity does not clearly belong to Plexus’s cross-market operator audience.",
+      "kept": "Decisive overlap can create depth without a shadow-heavy card system.",
+      "risk": "Can read as decorative culture sampling rather than credible shared infrastructure.",
+      "hero": "https://impeccable.style/worlds/cards/craft-making-lowicz-layered-papercut-hero.webp"
+    },
+    {
+      "id": "challenger-hypercard",
+      "label": "Linked Record Stack",
+      "verdict": "declined",
+      "lineage": "HyperCard shoebox stacks",
+      "thesis": "Every company, match, meeting, and agreement is an addressable card in one visible trail.",
+      "palette": [
+        "#101010",
+        "#ffffff",
+        "#b6b6b6"
+      ],
+      "materials": [
+        "one-bit cards",
+        "painted controls",
+        "stipple fields"
+      ],
+      "viewport": "A fixed record stack opens directly on a live match and its back-linked history.",
+      "case": "Its linked-record model is clear, but the retro interface weakens enterprise trust and multilingual expression.",
+      "kept": "The redesigned workspace keeps a visible, recoverable navigation trail.",
+      "risk": "The reference can overpower the product and become nostalgia software.",
+      "hero": "https://impeccable.style/worlds/cards/medium-native-hypercard-stack-shoebox-hero.webp"
+    },
+    {
+      "id": "challenger-nixie",
+      "label": "Readiness Counter",
+      "verdict": "declined",
+      "lineage": "nixie-tube laboratory counters",
+      "thesis": "Operational readiness becomes a bank of physical counts that change only when real workflow state changes.",
+      "palette": [
+        "#121416",
+        "#f06a22",
+        "#aeb4b8",
+        "#f4f1e9"
+      ],
+      "materials": [
+        "glass envelopes",
+        "blackened steel",
+        "engraved labels"
+      ],
+      "viewport": "One readiness count dominates beside the concrete steps required to move it.",
+      "case": "It gives metrics presence, but quantities are not the product’s primary public story.",
+      "kept": "One meaningful live measure may carry more weight than a wall of generic statistics.",
+      "risk": "A dark instrument panel would repeat the current technology-first problem.",
+      "hero": "https://impeccable.style/worlds/cards/signals-instruments-nixie-laboratory-counter-hero.webp"
+    },
+    {
+      "id": "challenger-blue-note",
+      "label": "Exchange Session",
+      "verdict": "declined",
+      "lineage": "Blue Note session sleeves",
+      "thesis": "Each business encounter is presented with the urgency and specificity of a one-time recorded session.",
+      "palette": [
+        "#f13a08",
+        "#0a0a0a",
+        "#fff1d0"
+      ],
+      "materials": [
+        "duotone imagery",
+        "spot-color fields",
+        "hard editorial crops"
+      ],
+      "viewport": "A sharply cropped business encounter meets an oversized one-line offer and a compact route to action.",
+      "case": "It wins attention, but it depends on human imagery not yet held as proof and does not scale cleanly into Admin operations.",
+      "kept": "The chosen direction must match its compositional courage and decisive cropping.",
+      "risk": "Without verified photography it becomes an advertising costume rather than a trustworthy system.",
+      "hero": "https://impeccable.style/worlds/cards/posters-covers-sleeves-blue-note-session-sleeve-hero.webp"
+    },
+    {
+      "id": "challenger-earthy",
+      "label": "Hand-Stamped Network",
+      "verdict": "declined",
+      "lineage": "nineties earthy corporate identity",
+      "thesis": "Each cross-border milestone receives a warm, tactile stamp of completion.",
+      "palette": [
+        "#9c4e36",
+        "#65734c",
+        "#d4a72c",
+        "#d8c9a9"
+      ],
+      "materials": [
+        "recycled kraft",
+        "woodcut marks",
+        "torn edges"
+      ],
+      "viewport": "A friendly world map links stamped milestones across the full first view.",
+      "case": "The warmth is useful, but the sustainability-coded identity misstates Plexus and reduces operational precision.",
+      "kept": "The new system should retain human material warmth instead of returning to anonymous glass and glow.",
+      "risk": "It signals organic retail and lifestyle branding rather than governed B2B operations.",
+      "hero": "https://impeccable.style/worlds/cards/brand-identity-canon-village-coffeehouse-identity-hero.webp"
+    }
+  ],
+  "reroll": {
+    "registers": [
+      "safer",
+      "bolder"
+    ]
+  },
+  "buildPath": {
+    "value": "comp",
+    "toggle": true
+  },
+  "canon": true,
+  "canonCard": {
+    "label": "Premium B2B SaaS",
+    "thesis": "The expected enterprise landing page and dashboard, executed with excellent hierarchy and product mockups.",
+    "palette": [
+      "#ffffff",
+      "#0f172a",
+      "#2563eb",
+      "#e2e8f0"
+    ],
+    "materials": [
+      "clean grid",
+      "soft cards",
+      "polished product mockups"
+    ],
+    "viewport": "A conventional headline-and-product hero leads into proof, features, roles, and a closing conversion block.",
+    "risk": "Highly legible and familiar, but indistinguishable from the category by design.",
+    "comp": ".impeccable/mocks/decision/canon.webp"
+  },
+  "steer": true
+}

@@ -1,14 +1,34 @@
 "use server"
 
+import { after } from "next/server"
 import { z } from "zod"
 
 import type { AppRole } from "@/lib/auth"
 import { validateAuthenticatedUser } from "@/lib/authorization"
 import { registrationProfileSchema } from "@/lib/company-profile"
 import { buildCompanyProfilePersistence } from "@/lib/company-profile-persistence"
+import {
+  getTenantEmailRecipients,
+  renderPlexusEmail,
+  sendTrackedDealActivityEmail,
+  sendTrackedEmails,
+  sendTrackedMatchActivityEmail,
+  sendTrackedMeetingActivityEmail,
+  sendTrackedTenantActivityEmail,
+  sendTrackedVendorActivityEmail,
+} from "@/lib/email-delivery-service"
 import { isPlaceholderIndustrySector } from "@/lib/industry-sectors"
+import {
+  buildVendorAcceptanceUpdate,
+  buildVendorAcceptanceWithdrawalUpdate,
+  canScheduleAcceptedMatchMeeting,
+  isFutureMeeting,
+} from "@/lib/match-acceptance"
 import { matchNoteFromScore, scoreMatch } from "@/lib/matching"
-import { ensureAutomaticMeetingAfterAcceptance } from "@/lib/meeting-automation"
+import {
+  isMeetingSlotAvailable,
+  normalizeMeetingAvailability,
+} from "@/lib/meeting-availability"
 import {
   createMeeting,
   meetingProviders,
@@ -30,7 +50,6 @@ import type {
   EventResource,
   LocalDb,
   MatchStatus,
-  Meeting,
   PartnerCompany,
 } from "@/lib/local-db"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
@@ -91,11 +110,7 @@ const resourceCategorySchema = z.enum([
   "Logistics",
   "Other",
 ])
-const meetingSlotSchema = z
-  .array(z.iso.datetime({ offset: true }))
-  .min(3)
-  .max(6)
-  .optional()
+const meetingSlotSchema = z.iso.datetime({ offset: true })
 const delegationCompanySchema = z.object({
   id: z.string(),
   role: z.literal("delegation"),
@@ -591,6 +606,33 @@ export async function createManualMeetingAction(
         }
       }
 
+      after(() =>
+        sendTrackedMeetingActivityEmail({
+          meetingId: meetingResult.data.id,
+          actor: {
+            type: "admin",
+            userId: identity.userId,
+            name: identity.displayName,
+          },
+          subject: "An Admin arranged your Plexus meeting",
+          text: `Your meeting is scheduled for ${new Intl.DateTimeFormat(
+            "en-MY",
+            {
+              dateStyle: "medium",
+              timeStyle: "short",
+              timeZone: "Asia/Kuala_Lumpur",
+            }
+          ).format(
+            new Date(parsed.data.startsAt)
+          )}. Sign in to review the latest meeting details.`,
+          source: {
+            table: "meetings",
+            id: meetingResult.data.id,
+          },
+          includeAdmins: true,
+        })
+      )
+
       // An Admin who arranges the meeting is the scheduling authority, so the
       // protected link is issued now instead of waiting for mutual acceptance.
       try {
@@ -738,6 +780,34 @@ export async function updateMeetingAction(
             ? "Protected provider link retained."
             : "The calendar slot is confirmed; a protected Zoom or Lark link remains unavailable until both Vendors accept the match.",
       ].join(" ")
+      const notifyMeetingUpdate = () => {
+        after(() =>
+          sendTrackedMeetingActivityEmail({
+            meetingId: parsed.data.meetingId,
+            actor: {
+              type: "admin",
+              userId: identity.userId,
+              name: identity.displayName,
+            },
+            subject: "Your Plexus meeting was updated",
+            text: `The Admin updated your meeting to ${new Intl.DateTimeFormat(
+              "en-MY",
+              {
+                dateStyle: "medium",
+                timeStyle: "short",
+                timeZone: "Asia/Kuala_Lumpur",
+              }
+            ).format(
+              new Date(parsed.data.startsAt)
+            )}. Sign in to review the latest provider, interpreter, and schedule details.`,
+            source: {
+              table: "meetings",
+              id: parsed.data.meetingId,
+            },
+            includeAdmins: true,
+          })
+        )
+      }
 
       // Rescheduling a provider-backed meeting books a new provider meeting and
       // retires the previous protected link, so the old join URL cannot outlive
@@ -768,7 +838,7 @@ export async function updateMeetingAction(
           }
         }
 
-        return supabase
+        const updateResult = await supabase
           .from("meetings")
           .update({
             interpreter: interpreterLabel,
@@ -776,9 +846,13 @@ export async function updateMeetingAction(
           })
           .eq("id", parsed.data.meetingId)
           .eq("admin_id", identity.adminId)
+
+        if (!updateResult.error) notifyMeetingUpdate()
+
+        return updateResult
       }
 
-      return supabase
+      const updateResult = await supabase
         .from("meetings")
         .update({
           starts_at: parsed.data.startsAt,
@@ -790,6 +864,10 @@ export async function updateMeetingAction(
         })
         .eq("id", parsed.data.meetingId)
         .eq("admin_id", identity.adminId)
+
+      if (!updateResult.error) notifyMeetingUpdate()
+
+      return updateResult
     },
     { role: "admin" }
   )
@@ -916,13 +994,40 @@ export async function requestMatchAction(
 
     const result = scoreMatch(scoreInput)
 
-    return supabase.from("matches").insert({
-      delegation_company_id: delegationId,
-      partner_company_id: partnerId,
-      status: "Proposed",
-      score: result.score,
-      note: `Self-requested by ${identity.vendorType} Vendor. ${matchNoteFromScore(result)}`,
-    })
+    const insertResult = await supabase
+      .from("matches")
+      .insert({
+        delegation_company_id: delegationId,
+        partner_company_id: partnerId,
+        status: "Proposed",
+        score: result.score,
+        note: `Self-requested by ${identity.vendorType} Vendor. ${matchNoteFromScore(result)}`,
+      })
+      .select("id")
+      .single()
+
+    if (!insertResult.error) {
+      after(() =>
+        sendTrackedMatchActivityEmail({
+          matchId: insertResult.data.id,
+          actor: {
+            type: "vendor",
+            userId: identity.userId,
+            name: identity.displayName,
+          },
+          trigger: "match_activity",
+          subject: "A new Plexus match was requested",
+          text: `${identity.displayName} requested a business match. Sign in to review the matched company and record your decision.`,
+          source: {
+            table: "matches",
+            id: insertResult.data.id,
+          },
+          includeAdmins: true,
+        })
+      )
+    }
+
+    return insertResult
   })
 }
 
@@ -938,28 +1043,69 @@ export async function updateMatchStatusAction(
 
   return runMutation(async ({ supabase, identity, userRole }) => {
     if (userRole === "vendor") {
-      if (!["Accepted", "Rejected"].includes(parsed.data)) {
+      if (!["Accepted", "Proposed"].includes(parsed.data)) {
         return {
           error: {
-            message: "Vendors can only accept or request a change.",
+            message: "Vendors can only accept or unaccept a match.",
           },
         }
       }
 
-      const acceptedAtField =
-        identity.vendorType === "delegation"
-          ? "delegation_accepted_at"
-          : "partner_accepted_at"
+      if (parsed.data === "Proposed") {
+        const withdrawalResult = await supabase
+          .from("matches")
+          .update(buildVendorAcceptanceWithdrawalUpdate(identity.vendorType!))
+          .eq("id", matchId)
+          .select(
+            "id, admin_id, status, delegation_accepted_at, partner_accepted_at"
+          )
+          .maybeSingle()
+
+        if (withdrawalResult.error) {
+          return withdrawalResult
+        }
+
+        if (!withdrawalResult.data) {
+          return {
+            error: {
+              message: "The selected match is not available to this Vendor.",
+            },
+          }
+        }
+
+        after(() =>
+          sendTrackedMatchActivityEmail({
+            matchId,
+            actor: {
+              type: "vendor",
+              userId: identity.userId,
+              name: identity.displayName,
+            },
+            trigger: "match_activity",
+            subject: "A Plexus match acceptance was withdrawn",
+            text: `${identity.displayName} withdrew its acceptance before the counterparty completed the match decision.`,
+            source: {
+              table: "matches",
+              id: matchId,
+            },
+            includeAdmins: true,
+          })
+        )
+
+        return withdrawalResult
+      }
 
       const decisionResult = await supabase
         .from("matches")
-        .update({
-          [acceptedAtField]:
-            parsed.data === "Accepted" ? new Date().toISOString() : null,
-          ...(parsed.data === "Rejected"
-            ? { status: "Rejected" as const }
-            : {}),
-        })
+        // Reopen legacy rows left in Rejected by the removed Vendor
+        // "Request change" flow. The database trigger derives Accepted only
+        // after the counterparty has also accepted.
+        .update(
+          buildVendorAcceptanceUpdate(
+            identity.vendorType!,
+            new Date().toISOString()
+          )
+        )
         .eq("id", matchId)
         .select(
           "id, admin_id, status, delegation_accepted_at, partner_accepted_at"
@@ -980,21 +1126,30 @@ export async function updateMatchStatusAction(
         }
       }
 
-      if (
-        parsed.data === "Accepted" &&
-        match.status === "Accepted" &&
-        match.delegation_accepted_at &&
-        match.partner_accepted_at
-      ) {
-        await ensureAutomaticMeetingAfterAcceptance({
-          matchId: match.id,
-          adminId: match.admin_id,
+      after(() =>
+        sendTrackedMatchActivityEmail({
+          matchId,
           actor: {
+            type: "vendor",
             userId: identity.userId,
-            role: identity.role,
+            name: identity.displayName,
           },
+          trigger: "match_activity",
+          subject:
+            match.status === "Accepted"
+              ? "Both Vendors accepted the Plexus match"
+              : "A Vendor accepted the Plexus match",
+          text:
+            match.status === "Accepted"
+              ? "Both matched Vendors have accepted. A Vendor can now propose an available meeting time."
+              : `${identity.displayName} accepted the match. The counterparty decision is still pending.`,
+          source: {
+            table: "matches",
+            id: matchId,
+          },
+          includeAdmins: true,
         })
-      }
+      )
 
       return decisionResult
     }
@@ -1010,7 +1165,7 @@ export async function updateMatchStatusAction(
       }
     }
 
-    return await supabase
+    const updateResult = await supabase
       .from("matches")
       .update({
         status: parsed.data,
@@ -1022,162 +1177,405 @@ export async function updateMatchStatusAction(
           : {}),
       })
       .eq("id", matchId)
+      .select("id")
+      .single()
+
+    if (!updateResult.error) {
+      after(() =>
+        sendTrackedMatchActivityEmail({
+          matchId,
+          actor: {
+            type: userRole === "superadmin" ? "superadmin" : "admin",
+            userId: identity.userId,
+            name: identity.displayName,
+          },
+          trigger: "match_activity",
+          subject: `Plexus match status: ${parsed.data}`,
+          text: `${identity.displayName} changed the match status to ${parsed.data}. Sign in to review the latest match details.`,
+          source: {
+            table: "matches",
+            id: matchId,
+          },
+          includeAdmins: true,
+        })
+      )
+    }
+
+    return updateResult
   })
 }
 
-export async function scheduleMeetingAction(
+export async function proposeMeetingAction(
   matchId: string,
-  requestedSlots?: string[],
+  requestedSlot: string,
   requestedInterpreterId?: string | null
 ): Promise<ActionResult> {
-  const parsedSlots = meetingSlotSchema.safeParse(requestedSlots)
+  const parsedSlot = meetingSlotSchema.safeParse(requestedSlot)
   const parsedInterpreter = z
     .union([uuidSchema, z.null()])
     .optional()
     .safeParse(requestedInterpreterId)
 
-  if (!isUuid(matchId) || !parsedSlots.success || !parsedInterpreter.success) {
-    return { ok: false, error: "Invalid match id." }
+  if (!isUuid(matchId) || !parsedSlot.success || !parsedInterpreter.success) {
+    return {
+      ok: false,
+      error: "Select an available meeting date and time.",
+    }
   }
 
   const interpreterId = parsedInterpreter.data ?? null
-  const meetingSlots = parsedSlots.data ?? []
+  const meetingSlot = parsedSlot.data
 
-  if (meetingSlots.length > 0 && !meetingSlots.every(isValidMeetingSlot)) {
-    return {
-      ok: false,
-      error: "Select at least 3 future one-hour working-day slots.",
-    }
-  }
-
-  const meetingId = crypto.randomUUID()
-
-  return runMutation(async ({ supabase, identity, userRole }) => {
-    const matchResult = await supabase
-      .from("matches")
-      .select(
-        "delegation_company_id, partner_company_id, status, delegation_accepted_at, partner_accepted_at"
-      )
-      .eq("id", matchId)
-      .single()
-
-    if (matchResult.error) {
-      return matchResult
-    }
-
-    const match = matchResult.data
-    const canSchedule =
-      userRole === "superadmin" ||
-      userRole === "admin" ||
-      (userRole === "vendor" &&
-        ((identity.vendorType === "delegation" &&
-          identity.vendorCompanyId === match.delegation_company_id) ||
-          (identity.vendorType === "partner" &&
-            identity.vendorCompanyId === match.partner_company_id)))
-
-    if (!canSchedule) {
-      return {
-        error: {
-          message: "You can only request meetings for your own matches.",
-        },
-      }
-    }
-
-    if (
-      !match.delegation_accepted_at ||
-      !match.partner_accepted_at ||
-      match.status !== "Accepted"
-    ) {
-      return {
-        error: {
-          message:
-            match.status === "Session Scheduled"
-              ? "The protected meeting has already been created."
-              : "Both Vendors must accept before requesting a meeting.",
-        },
-      }
-    }
-
-    let requestedInterpreter: { name: string; languages: string } | null = null
-
-    if (interpreterId) {
-      const interpreterResult = await supabase
-        .from("interpreters")
-        .select("name, languages, available")
-        .eq("id", interpreterId)
-        .single()
-
-      if (interpreterResult.error) {
+  return runMutation(
+    async ({ supabase, identity, userRole }) => {
+      if (
+        userRole !== "vendor" ||
+        !identity.vendorType ||
+        !identity.vendorCompanyId
+      ) {
         return {
           error: {
-            message: "The selected interpreter is no longer available.",
+            message: "Only a matched Vendor can propose a meeting time.",
           },
         }
       }
 
-      if (!interpreterResult.data.available) {
+      const matchResult = await supabase
+        .from("matches")
+        .select(
+          "admin_id, delegation_company_id, partner_company_id, status, delegation_accepted_at, partner_accepted_at"
+        )
+        .eq("id", matchId)
+        .single()
+
+      if (matchResult.error) {
+        return matchResult
+      }
+
+      const match = matchResult.data
+      const participatesInMatch =
+        (identity.vendorType === "delegation" &&
+          identity.vendorCompanyId === match.delegation_company_id) ||
+        (identity.vendorType === "partner" &&
+          identity.vendorCompanyId === match.partner_company_id)
+
+      if (!participatesInMatch) {
         return {
-          error: { message: "The selected interpreter is not available." },
+          error: {
+            message: "You can only propose meetings for your own matches.",
+          },
         }
       }
 
-      requestedInterpreter = {
-        name: interpreterResult.data.name,
-        languages: interpreterResult.data.languages,
+      const availabilityResult = await supabase
+        .from("admin_tenants")
+        .select("meeting_availability")
+        .eq("id", match.admin_id)
+        .single()
+
+      if (availabilityResult.error || !availabilityResult.data) {
+        return {
+          error: {
+            message: "The Admin's meeting availability could not be loaded.",
+          },
+        }
       }
-    }
 
-    const existingMeeting = await supabase
-      .from("meetings")
-      .select("id")
-      .eq("match_id", matchId)
-      .limit(1)
+      const availability = normalizeMeetingAvailability(
+        availabilityResult.data.meeting_availability
+      )
 
-    if (existingMeeting.error) {
-      return existingMeeting
-    }
+      if (!isMeetingSlotAvailable(meetingSlot, availability)) {
+        return {
+          error: {
+            message:
+              "That meeting time is no longer available. Choose another open date and time.",
+          },
+        }
+      }
 
-    const startsAt = meetingSlots[0] ?? "2026-07-15T11:00:00+08:00"
-    const interpreterNote = requestedInterpreter
-      ? ` Preferred interpreter: ${requestedInterpreter.name} (${requestedInterpreter.languages}) — admin to confirm.`
-      : ""
-    const summary =
-      (meetingSlots.length > 0
-        ? `Participant selected preferred 1-hour working-day slots: ${meetingSlots.join(", ")}. Admin should confirm one slot and replace the placeholder with the final Zoom/Lark session.`
-        : userRole === "admin" || userRole === "superadmin"
-          ? "Admin recorded a meeting request. Create the protected Zoom/Lark session after both Vendors accept."
-          : "Participant requested a meeting after both Vendors accepted. Admin must create the protected Zoom/Lark session.") +
-      interpreterNote
+      const bothAccepted = Boolean(
+        match.delegation_accepted_at && match.partner_accepted_at
+      )
 
-    if ((existingMeeting.data ?? []).length > 0) {
-      return supabase
-        .from("meetings")
-        .update({
-          starts_at: startsAt,
-          duration_minutes: 60,
-          platform: "Pending",
-          link: "",
-          requested_interpreter_id: interpreterId,
-          summary,
-          status: "Scheduled",
+      if (!bothAccepted) {
+        return {
+          error: {
+            message: "Both Vendors must accept before proposing a meeting.",
+          },
+        }
+      }
+
+      const [activeMeetingsResult, pendingProposalResult] = await Promise.all([
+        supabase
+          .from("meetings")
+          .select("id, starts_at, duration_minutes, status")
+          .eq("match_id", matchId)
+          .in("status", ["Scheduled", "Live"]),
+        supabase
+          .from("meeting_proposals")
+          .select("id")
+          .eq("match_id", matchId)
+          .eq("status", "pending")
+          .maybeSingle(),
+      ])
+
+      if (activeMeetingsResult.error) {
+        return activeMeetingsResult
+      }
+
+      if (pendingProposalResult.error) {
+        return pendingProposalResult
+      }
+
+      if (pendingProposalResult.data) {
+        return {
+          error: {
+            message:
+              "A meeting time is already awaiting Vendor approval for this match.",
+          },
+        }
+      }
+
+      const futureMeetingExists = (activeMeetingsResult.data ?? []).some(
+        (meeting) =>
+          isFutureMeeting({
+            startsAt: meeting.starts_at,
+            durationMinutes: meeting.duration_minutes,
+            status: meeting.status,
+          })
+      )
+
+      if (
+        !canScheduleAcceptedMatchMeeting({
+          bothAccepted,
+          matchStatus: match.status,
+          futureMeetingExists,
         })
-        .eq("id", existingMeeting.data?.[0]?.id)
-    }
+      ) {
+        return {
+          error: {
+            message: futureMeetingExists
+              ? "A future meeting is already scheduled. Open My Meetings to view it."
+              : "This accepted match is not ready for a meeting proposal.",
+          },
+        }
+      }
 
-    return supabase.from("meetings").insert({
-      id: meetingId,
-      match_id: matchId,
-      starts_at: startsAt,
-      duration_minutes: 60,
-      platform: "Pending",
-      link: "",
-      interpreter: "To be confirmed",
-      requested_interpreter_id: interpreterId,
-      host: "Sarah Lim",
-      status: "Scheduled",
-      summary,
-    })
-  })
+      if (interpreterId) {
+        const interpreterResult = await supabase
+          .from("interpreters")
+          .select("available")
+          .eq("id", interpreterId)
+          .single()
+
+        if (interpreterResult.error || !interpreterResult.data.available) {
+          return {
+            error: {
+              message: "The selected interpreter is no longer available.",
+            },
+          }
+        }
+      }
+
+      const proposalResult = await supabase
+        .from("meeting_proposals")
+        .insert({
+          match_id: matchId,
+          starts_at: meetingSlot,
+          duration_minutes: 60,
+          requested_interpreter_id: interpreterId,
+        })
+        .select("id")
+        .single()
+
+      if (!proposalResult.error) {
+        const proposedTime = new Intl.DateTimeFormat("en-MY", {
+          dateStyle: "medium",
+          timeStyle: "short",
+          timeZone: "Asia/Kuala_Lumpur",
+        }).format(new Date(meetingSlot))
+
+        after(() =>
+          sendTrackedMatchActivityEmail({
+            matchId,
+            actor: {
+              type: "vendor",
+              userId: identity.userId,
+              name: identity.displayName,
+            },
+            trigger: "meeting_activity",
+            subject: "A meeting time is awaiting Vendor approval",
+            text: `${identity.displayName} proposed ${proposedTime}. The matched counterparty must approve this exact time before Plexus creates the meeting.`,
+            source: {
+              table: "meeting_proposals",
+              id: proposalResult.data.id,
+            },
+            includeAdmins: true,
+          })
+        )
+      }
+
+      return proposalResult
+    },
+    { role: "vendor" }
+  )
+}
+
+export async function approveMeetingProposalAction(
+  proposalId: string
+): Promise<ActionResult> {
+  if (!isUuid(proposalId)) {
+    return { ok: false, error: "Invalid meeting proposal." }
+  }
+
+  return runMutation(
+    async ({ supabase, identity, userRole }) => {
+      if (
+        userRole !== "vendor" ||
+        !identity.vendorType ||
+        !identity.vendorCompanyId
+      ) {
+        return {
+          error: {
+            message: "Only a matched Vendor can approve a meeting time.",
+          },
+        }
+      }
+
+      const proposalResult = await supabase
+        .from("meeting_proposals")
+        .select(
+          "id, admin_id, match_id, starts_at, status, delegation_approved_at, partner_approved_at"
+        )
+        .eq("id", proposalId)
+        .maybeSingle()
+
+      if (proposalResult.error || !proposalResult.data) {
+        return {
+          error: { message: "The meeting proposal is no longer available." },
+        }
+      }
+
+      const proposal = proposalResult.data
+
+      if (proposal.status !== "pending") {
+        return {
+          error: { message: "This meeting proposal is no longer pending." },
+        }
+      }
+
+      const matchResult = await supabase
+        .from("matches")
+        .select("delegation_company_id, partner_company_id")
+        .eq("id", proposal.match_id)
+        .eq("admin_id", proposal.admin_id)
+        .maybeSingle()
+
+      if (matchResult.error || !matchResult.data) {
+        return {
+          error: { message: "The matched companies could not be verified." },
+        }
+      }
+
+      const participatesInMatch =
+        (identity.vendorType === "delegation" &&
+          identity.vendorCompanyId ===
+            matchResult.data.delegation_company_id) ||
+        (identity.vendorType === "partner" &&
+          identity.vendorCompanyId === matchResult.data.partner_company_id)
+
+      if (!participatesInMatch) {
+        return {
+          error: {
+            message: "You can only approve meetings for your own matches.",
+          },
+        }
+      }
+
+      const ownApproval =
+        identity.vendorType === "delegation"
+          ? proposal.delegation_approved_at
+          : proposal.partner_approved_at
+
+      if (ownApproval) {
+        return {
+          error: {
+            message:
+              "You already approved this time. Waiting for the other Vendor.",
+          },
+        }
+      }
+
+      const availabilityResult = await supabase
+        .from("admin_tenants")
+        .select("meeting_availability")
+        .eq("id", proposal.admin_id)
+        .single()
+
+      if (
+        availabilityResult.error ||
+        !availabilityResult.data ||
+        !isMeetingSlotAvailable(
+          proposal.starts_at,
+          normalizeMeetingAvailability(
+            availabilityResult.data.meeting_availability
+          )
+        )
+      ) {
+        return {
+          error: {
+            message:
+              "That proposed meeting time is no longer open. Ask either Vendor to choose another time.",
+          },
+        }
+      }
+
+      const approvedAt = new Date().toISOString()
+      const approvalUpdate =
+        identity.vendorType === "delegation"
+          ? {
+              delegation_approved_at: approvedAt,
+              delegation_approved_by: identity.userId,
+            }
+          : {
+              partner_approved_at: approvedAt,
+              partner_approved_by: identity.userId,
+            }
+
+      const updateResult = await supabase
+        .from("meeting_proposals")
+        .update(approvalUpdate)
+        .eq("id", proposalId)
+        .eq("status", "pending")
+        .select("id")
+        .single()
+
+      if (!updateResult.error) {
+        after(() =>
+          sendTrackedMatchActivityEmail({
+            matchId: proposal.match_id,
+            actor: {
+              type: "vendor",
+              userId: identity.userId,
+              name: identity.displayName,
+            },
+            trigger: "meeting_activity",
+            subject: "A Vendor approved the proposed meeting time",
+            text: `${identity.displayName} approved the proposed meeting time. Sign in to see whether the counterparty approval and meeting creation are complete.`,
+            source: {
+              table: "meeting_proposals",
+              id: proposalId,
+            },
+            includeAdmins: true,
+          })
+        )
+      }
+
+      return updateResult
+    },
+    { role: "vendor" }
+  )
 }
 
 export async function createProviderMeetingAction(input: {
@@ -1257,6 +1655,25 @@ export async function createProviderMeetingAction(input: {
             ? new Date(preferenceResult.data.starts_at)
             : undefined,
         })
+
+        after(() =>
+          sendTrackedMatchActivityEmail({
+            matchId: parsed.data.matchId,
+            actor: {
+              type: userRole === "superadmin" ? "superadmin" : "admin",
+              userId: identity.userId,
+              name: identity.displayName,
+            },
+            trigger: "meeting_activity",
+            subject: "Your Plexus meeting was created",
+            text: `Plexus created the protected ${parsed.data.provider.toUpperCase()} meeting. Sign in to open the meeting from your workspace.`,
+            source: {
+              table: "matches",
+              id: parsed.data.matchId,
+            },
+            includeAdmins: true,
+          })
+        )
       } catch (error) {
         return {
           error: {
@@ -1272,17 +1689,6 @@ export async function createProviderMeetingAction(input: {
   )
 }
 
-function isValidMeetingSlot(value: string) {
-  if (!/^\d{4}-\d{2}-\d{2}T(09|10|11|14|15|16):00:00\+08:00$/.test(value)) {
-    return false
-  }
-
-  const date = new Date(value)
-  const day = date.getUTCDay()
-
-  return date.getTime() > Date.now() && day >= 1 && day <= 5
-}
-
 export async function completeMeetingAction(
   meetingId: string
 ): Promise<ActionResult> {
@@ -1291,15 +1697,34 @@ export async function completeMeetingAction(
   }
 
   return runMutation(
-    async ({ supabase }) =>
-      await supabase
-        .from("meetings")
-        .update({
-          status: "Completed" satisfies Meeting["status"],
-          summary:
-            "Admin summary saved: both parties requested September follow-up.",
-        })
-        .eq("id", meetingId),
+    async ({ supabase, identity, userRole }) => {
+      const result = await supabase.rpc("complete_meeting_with_mou", {
+        p_meeting_id: meetingId,
+      })
+
+      if (!result.error) {
+        after(() =>
+          sendTrackedMeetingActivityEmail({
+            meetingId,
+            actor: {
+              type: userRole === "superadmin" ? "superadmin" : "admin",
+              userId: identity.userId,
+              name: identity.displayName,
+            },
+            trigger: "mou_activity",
+            subject: "The meeting is complete and the MOU is ready",
+            text: "The Plexus meeting was marked complete. Both matched Vendors can now review and sign the MOU from their workspace.",
+            source: {
+              table: "meetings",
+              id: meetingId,
+            },
+            includeAdmins: true,
+          })
+        )
+      }
+
+      return result
+    },
     { role: "admin" }
   )
 }
@@ -1429,6 +1854,13 @@ export async function updateDealAction(
     return { ok: false, error: "Invalid deal update." }
   }
 
+  if (parsed.data === "Signed") {
+    return {
+      ok: false,
+      error: "Both Vendors must sign the MOU before it can be marked Signed.",
+    }
+  }
+
   return runMutation(
     async ({ supabase }) =>
       await supabase
@@ -1436,6 +1868,47 @@ export async function updateDealAction(
         .update({ status: parsed.data })
         .eq("id", dealId),
     { role: "admin" }
+  )
+}
+
+export async function signVendorMouAction(
+  dealId: string,
+  agreed: boolean
+): Promise<ActionResult> {
+  const agreement = z.literal(true).safeParse(agreed)
+
+  if (!isUuid(dealId) || !agreement.success) {
+    return {
+      ok: false,
+      error: "Confirm that you agree to the MOU before signing.",
+    }
+  }
+
+  return runMutation(
+    async ({ supabase, identity }) => {
+      const result = await supabase.rpc("sign_vendor_mou", {
+        p_deal_id: dealId,
+        p_agreed: agreement.data,
+      })
+
+      if (!result.error) {
+        after(() =>
+          sendTrackedDealActivityEmail({
+            dealId,
+            actor: {
+              type: "vendor",
+              userId: identity.userId,
+              name: identity.displayName,
+            },
+            subject: "A Vendor signed the Plexus MOU",
+            text: `${identity.displayName} recorded its authorized MOU signature. Sign in to review the current two-party signing status.`,
+          })
+        )
+      }
+
+      return result
+    },
+    { role: "vendor" }
   )
 }
 
@@ -1490,13 +1963,40 @@ export async function createDealAction(matchId: string): Promise<ActionResult> {
         }
       }
 
-      return supabase.from("deals").insert({
-        match_id: matchId,
-        admin_id: identity.adminId,
-        status: "Under Discussion",
-        document: "Pending upload",
-        signatory_check: "Pending",
-      })
+      const insertResult = await supabase
+        .from("deals")
+        .insert({
+          match_id: matchId,
+          admin_id: identity.adminId,
+          status: "Under Discussion",
+          document: "Pending upload",
+          signatory_check: "Pending",
+        })
+        .select("id")
+        .single()
+
+      if (!insertResult.error) {
+        after(() =>
+          sendTrackedMatchActivityEmail({
+            matchId,
+            actor: {
+              type: "admin",
+              userId: identity.userId,
+              name: identity.displayName,
+            },
+            trigger: "mou_activity",
+            subject: "A Plexus MOU was opened",
+            text: "The Admin opened an MOU record for this match. Sign in to follow its document and signing status.",
+            source: {
+              table: "deals",
+              id: insertResult.data.id,
+            },
+            includeAdmins: true,
+          })
+        )
+      }
+
+      return insertResult
     },
     { role: "admin" }
   )
@@ -1509,13 +2009,36 @@ export async function confirmAttendanceAction(
     return { ok: false, error: "Invalid partner id." }
   }
 
-  return runMutation(
-    async ({ supabase }) =>
-      await supabase
-        .from("partner_companies")
-        .update({ attendance: "Confirmed", status: "Confirmed" })
-        .eq("id", partnerId)
-  )
+  return runMutation(async ({ supabase, identity, userRole }) => {
+    const result = await supabase
+      .from("partner_companies")
+      .update({ attendance: "Confirmed", status: "Confirmed" })
+      .eq("id", partnerId)
+      .select("id")
+      .single()
+
+    if (!result.error) {
+      after(() =>
+        sendTrackedVendorActivityEmail({
+          vendorId: partnerId,
+          actor: {
+            type: userRole === "vendor" ? "vendor" : "admin",
+            userId: identity.userId,
+            name: identity.displayName,
+          },
+          subject: "Attendance confirmed in Plexus",
+          text: "Your event attendance is confirmed. Sign in to review the latest itinerary and event resources.",
+          source: {
+            table: "partner_companies",
+            id: partnerId,
+          },
+          includeAdmins: true,
+        })
+      )
+    }
+
+    return result
+  })
 }
 
 export async function checkInPartnerAction(
@@ -1526,11 +2049,36 @@ export async function checkInPartnerAction(
   }
 
   return runMutation(
-    async ({ supabase }) =>
-      await supabase
+    async ({ supabase, identity }) => {
+      const result = await supabase
         .from("partner_companies")
         .update({ attendance: "Arrived", arrived: true })
-        .eq("id", partnerId),
+        .eq("id", partnerId)
+        .select("id")
+        .single()
+
+      if (!result.error) {
+        after(() =>
+          sendTrackedVendorActivityEmail({
+            vendorId: partnerId,
+            actor: {
+              type: "admin",
+              userId: identity.userId,
+              name: identity.displayName,
+            },
+            subject: "Event check-in recorded",
+            text: "Your arrival was checked in by the Admin team. Sign in to review the latest on-site information.",
+            source: {
+              table: "partner_companies",
+              id: partnerId,
+            },
+            includeAdmins: true,
+          })
+        )
+      }
+
+      return result
+    },
     { role: "admin" }
   )
 }
@@ -1543,10 +2091,10 @@ export async function publishItineraryAction(
   }
 
   return runMutation(
-    async ({ supabase }) => {
+    async ({ supabase, identity }) => {
       const { data, error } = await supabase
         .from("itinerary_slots")
-        .select("published")
+        .select("published, admin_id, activity")
         .eq("id", slotId)
         .single()
 
@@ -1554,10 +2102,45 @@ export async function publishItineraryAction(
         return { error }
       }
 
-      return supabase
+      const result = await supabase
         .from("itinerary_slots")
         .update({ published: !data.published })
         .eq("id", slotId)
+        .select("id")
+        .single()
+
+      if (!result.error && !data.published) {
+        after(async () => {
+          const recipients = await getTenantEmailRecipients({
+            adminId: data.admin_id,
+            target: "all",
+          })
+          const subject = `Itinerary published: ${data.activity}`
+          const text =
+            "The Admin published an itinerary update. Sign in to Plexus to review the latest schedule."
+
+          await sendTrackedEmails(
+            recipients.map((recipient) => ({
+              adminId: data.admin_id,
+              actor: {
+                type: "admin" as const,
+                userId: identity.userId,
+                name: identity.displayName,
+              },
+              recipient,
+              trigger: "operations_activity" as const,
+              subject,
+              text,
+              source: {
+                table: "itinerary_slots",
+                id: slotId,
+              },
+            }))
+          )
+        })
+      }
+
+      return result
     },
     { role: "admin" }
   )
@@ -1623,29 +2206,115 @@ export async function sendAnnouncementAction(input: {
   }
 
   return runMutation(
-    async ({ supabase }) => {
+    async ({ supabase, identity }) => {
+      if (!identity.adminId) {
+        return {
+          error: {
+            message: "An Admin tenant is required to send announcements.",
+          },
+        }
+      }
+
       const status = parsed.data.status ?? "Queued"
-      const announcementResult = await supabase.from("announcements").insert({
-        title: parsed.data.title,
-        message: parsed.data.message,
-        target: parsed.data.target,
-        channel: parsed.data.channel,
-        status,
-        sent_at: status === "Sent" ? new Date().toISOString() : null,
-        created_by: "Admin team",
-      })
+      const shouldDeliver = status !== "Draft"
+      const announcementResult = await supabase
+        .from("announcements")
+        .insert({
+          title: parsed.data.title,
+          message: parsed.data.message,
+          target: parsed.data.target,
+          channel: parsed.data.channel,
+          status:
+            status === "Draft"
+              ? "Draft"
+              : parsed.data.channel === "notification"
+                ? "Sent"
+                : "Queued",
+          sent_at:
+            shouldDeliver && parsed.data.channel === "notification"
+              ? new Date().toISOString()
+              : null,
+          created_by: identity.displayName,
+          admin_id: identity.adminId,
+        })
+        .select("id")
+        .single()
 
       if (announcementResult.error) {
         return announcementResult
       }
 
+      if (!shouldDeliver) {
+        return
+      }
+
+      let notificationError: {
+        message: string
+      } | null = null
+
       if (
         parsed.data.channel === "notification" ||
         parsed.data.channel === "both"
       ) {
-        return supabase.from("notifications").insert({
+        const notificationResult = await supabase.from("notifications").insert({
           message: `${parsed.data.title}: ${parsed.data.message}`,
+          admin_id: identity.adminId,
         })
+        notificationError = notificationResult.error
+      }
+
+      if (notificationError) {
+        return { error: notificationError }
+      }
+
+      if (parsed.data.channel === "email" || parsed.data.channel === "both") {
+        const recipients = await getTenantEmailRecipients({
+          adminId: identity.adminId,
+          target: parsed.data.target,
+        })
+        const deliveryResults = await sendTrackedEmails(
+          recipients.map((recipient) => ({
+            adminId: identity.adminId,
+            actor: {
+              type: "admin" as const,
+              userId: identity.userId,
+              name: identity.displayName,
+            },
+            recipient,
+            trigger: "information_blast" as const,
+            subject: parsed.data.title,
+            text: parsed.data.message,
+            html: renderPlexusEmail({
+              title: parsed.data.title,
+              message: parsed.data.message,
+            }),
+            source: {
+              table: "announcements",
+              id: announcementResult.data.id,
+            },
+          }))
+        )
+        const failedCount = deliveryResults.filter(
+          (result) => !result.ok
+        ).length
+
+        if (failedCount === 0 && recipients.length > 0) {
+          const sentAt = new Date().toISOString()
+          await supabase
+            .from("announcements")
+            .update({
+              status: "Sent",
+              sent_at: sentAt,
+            })
+            .eq("id", announcementResult.data.id)
+        } else {
+          return {
+            warning:
+              recipients.length === 0
+                ? "The announcement was saved, but the selected audience has no active email recipients."
+                : `${failedCount} of ${recipients.length} email deliveries failed. Review Email sending in Superadmin.`,
+          }
+        }
       }
     },
     { role: "admin" }
@@ -1678,16 +2347,52 @@ export async function createResourceAction(input: {
   }
 
   return runMutation(
-    async ({ supabase }) =>
-      await supabase.from("event_resources").insert({
-        title: parsed.data.title,
-        category: parsed.data.category,
-        file_name: parsed.data.fileName,
-        file_url: parsed.data.fileUrl,
-        audience: parsed.data.audience,
-        visible_to_delegation: parsed.data.visibleToDelegation,
-        notes: parsed.data.notes,
-      }),
+    async ({ supabase, identity }) => {
+      if (!identity.adminId) {
+        return {
+          error: {
+            message: "An Admin tenant is required to publish resources.",
+          },
+        }
+      }
+
+      const result = await supabase
+        .from("event_resources")
+        .insert({
+          title: parsed.data.title,
+          category: parsed.data.category,
+          file_name: parsed.data.fileName,
+          file_url: parsed.data.fileUrl,
+          audience: parsed.data.audience,
+          visible_to_delegation: parsed.data.visibleToDelegation,
+          notes: parsed.data.notes,
+          admin_id: identity.adminId,
+        })
+        .select("id")
+        .single()
+
+      if (!result.error) {
+        after(() =>
+          sendTrackedTenantActivityEmail({
+            adminId: identity.adminId!,
+            actor: {
+              type: "admin",
+              userId: identity.userId,
+              name: identity.displayName,
+            },
+            target: parsed.data.audience,
+            subject: `New Plexus resource: ${parsed.data.title}`,
+            text: `The Admin published a new ${parsed.data.category.toLowerCase()} resource. Sign in to Plexus to review it.`,
+            source: {
+              table: "event_resources",
+              id: result.data.id,
+            },
+          })
+        )
+      }
+
+      return result
+    },
     { role: "admin" }
   )
 }

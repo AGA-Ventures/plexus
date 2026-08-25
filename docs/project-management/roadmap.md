@@ -2,7 +2,7 @@
 
 **Owner:** Product and engineering leads
 **Review cadence:** Weekly
-**Last reviewed:** 2026-07-29
+**Last reviewed:** 2026-07-30
 
 This roadmap describes outcome order, not fixed calendar promises. GitHub
 issues and pull requests hold execution detail.
@@ -21,15 +21,15 @@ issues and pull requests hold execution detail.
 
 ## Next — replace operational adapters
 
-| Priority | Outcome                      | Acceptance                                                                     |
-| -------- | ---------------------------- | ------------------------------------------------------------------------------ |
-| P1       | Meeting provider integration | Create/update/cancel with idempotency, timeout, retry, and audit               |
-| P1       | Transactional communications | Production SMTP/email templates, delivery status, retry, unsubscribe rules     |
-| P1       | Documents and signing        | Private document lifecycle, authorization, retention, e-sign provider          |
-| P1       | Notifications                | User-targeted notification model, read state, provider delivery                |
-| P1       | Compliance providers         | Approved contracts/credentials, normalized results, audit and failure handling |
-| P2       | Event QR/check-in            | Signed or server-verified codes and attendance audit                           |
-| P2       | Reporting                    | Tenant and platform funnels with reviewed metric definitions                   |
+| Priority | Outcome                       | Acceptance                                                                       |
+| -------- | ----------------------------- | -------------------------------------------------------------------------------- |
+| P1       | Meeting provider integration  | Create/update/cancel with idempotency, timeout, retry, and audit                 |
+| P1       | Transactional email hardening | Production SMTP/Auth templates, live-delivery evidence, retry, unsubscribe rules |
+| P1       | Documents and signing         | Private document lifecycle, authorization, retention, e-sign provider            |
+| P1       | Notifications                 | User-targeted notification model, read state, provider delivery                  |
+| P1       | Compliance providers          | Approved contracts/credentials, normalized results, audit and failure handling   |
+| P2       | Event QR/check-in             | Signed or server-verified codes and attendance audit                             |
+| P2       | Reporting                     | Tenant and platform funnels with reviewed metric definitions                     |
 
 ## Later — superapp platform
 

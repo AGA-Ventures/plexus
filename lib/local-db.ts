@@ -143,6 +143,20 @@ export type Meeting = {
   summary: string
 }
 
+export type MeetingProposal = {
+  id: string
+  matchId: string
+  startsAt: string
+  duration: number
+  requestedInterpreterId: string | null
+  requestedByVendorType: CompanyRole | null
+  requestedByVendorCompanyId: string | null
+  delegationApprovedAt: string | null
+  partnerApprovedAt: string | null
+  status: "pending" | "approved" | "cancelled"
+  meetingId: string | null
+}
+
 export type Deal = {
   id: string
   matchId: string
@@ -152,6 +166,10 @@ export type Deal = {
   documentFileSize: number | null
   documentUploadedAt: string | null
   signatoryCheck: "Verified" | "Pending" | "Flagged"
+  delegationSignedAt: string | null
+  delegationSignedBy: string | null
+  partnerSignedAt: string | null
+  partnerSignedBy: string | null
 }
 
 export type ItinerarySlot = {
@@ -215,6 +233,7 @@ export type LocalDb = {
   matchCompanies: MatchCompanySummary[]
   matches: Match[]
   interpreters: Interpreter[]
+  meetingProposals: MeetingProposal[]
   meetings: Meeting[]
   deals: Deal[]
   itinerary: ItinerarySlot[]
@@ -435,6 +454,7 @@ export const seedDb: LocalDb = {
       available: false,
     },
   ],
+  meetingProposals: [],
   meetings: [
     {
       id: "ses-1",
@@ -474,6 +494,10 @@ export const seedDb: LocalDb = {
       documentFileSize: null,
       documentUploadedAt: null,
       signatoryCheck: "Verified",
+      delegationSignedAt: "2026-07-09T15:45:00+08:00",
+      delegationSignedBy: null,
+      partnerSignedAt: "2026-07-09T15:50:00+08:00",
+      partnerSignedBy: null,
     },
     {
       id: "deal-2",
@@ -484,6 +508,10 @@ export const seedDb: LocalDb = {
       documentFileSize: null,
       documentUploadedAt: null,
       signatoryCheck: "Pending",
+      delegationSignedAt: null,
+      delegationSignedBy: null,
+      partnerSignedAt: null,
+      partnerSignedBy: null,
     },
   ],
   itinerary: [

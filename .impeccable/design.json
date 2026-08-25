@@ -1,0 +1,629 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-26T01:34:10+08:00",
+  "title": "Design System: Plexus",
+  "extensions": {
+    "colorMeta": {
+      "filled-surface-blue": {
+        "role": "primary",
+        "displayName": "Filled Surface Blue",
+        "canonical": "#0758c8",
+        "tonalRamp": [
+          "oklch(0.15 0.18 258)",
+          "oklch(0.26 0.18 258)",
+          "oklch(0.37 0.18 258)",
+          "oklch(0.48 0.18 258)",
+          "oklch(0.59 0.18 258)",
+          "oklch(0.70 0.18 258)",
+          "oklch(0.82 0.18 258)",
+          "oklch(0.95 0.18 258)"
+        ]
+      },
+      "filled-surface-blue-hover": {
+        "role": "primary",
+        "displayName": "Filled Surface Blue Hover",
+        "canonical": "#064caf",
+        "tonalRamp": [
+          "oklch(0.15 0.17 258)",
+          "oklch(0.26 0.17 258)",
+          "oklch(0.37 0.17 258)",
+          "oklch(0.48 0.17 258)",
+          "oklch(0.59 0.17 258)",
+          "oklch(0.70 0.17 258)",
+          "oklch(0.82 0.17 258)",
+          "oklch(0.95 0.17 258)"
+        ]
+      },
+      "connection-blue": {
+        "role": "secondary",
+        "displayName": "Connection Blue",
+        "canonical": "#0a84ff",
+        "tonalRamp": [
+          "oklch(0.15 0.211 255.5)",
+          "oklch(0.26 0.211 255.5)",
+          "oklch(0.37 0.211 255.5)",
+          "oklch(0.48 0.211 255.5)",
+          "oklch(0.605 0.211 255.5)",
+          "oklch(0.70 0.211 255.5)",
+          "oklch(0.82 0.211 255.5)",
+          "oklch(0.95 0.211 255.5)"
+        ]
+      },
+      "midnight": {
+        "role": "primary",
+        "displayName": "Midnight",
+        "canonical": "#071326",
+        "tonalRamp": [
+          "oklch(0.15 0.055 256)",
+          "oklch(0.26 0.055 256)",
+          "oklch(0.37 0.055 256)",
+          "oklch(0.48 0.055 256)",
+          "oklch(0.59 0.055 256)",
+          "oklch(0.70 0.055 256)",
+          "oklch(0.82 0.055 256)",
+          "oklch(0.95 0.055 256)"
+        ]
+      },
+      "midnight-raised": {
+        "role": "primary",
+        "displayName": "Midnight Raised",
+        "canonical": "#102443",
+        "tonalRamp": [
+          "oklch(0.15 0.06 256)",
+          "oklch(0.26 0.06 256)",
+          "oklch(0.37 0.06 256)",
+          "oklch(0.48 0.06 256)",
+          "oklch(0.59 0.06 256)",
+          "oklch(0.70 0.06 256)",
+          "oklch(0.82 0.06 256)",
+          "oklch(0.95 0.06 256)"
+        ]
+      },
+      "network-cyan": {
+        "role": "secondary",
+        "displayName": "Network Cyan",
+        "canonical": "#25d0ff",
+        "tonalRamp": [
+          "oklch(0.15 0.145 218)",
+          "oklch(0.26 0.145 218)",
+          "oklch(0.37 0.145 218)",
+          "oklch(0.48 0.145 218)",
+          "oklch(0.59 0.145 218)",
+          "oklch(0.70 0.145 218)",
+          "oklch(0.82 0.145 218)",
+          "oklch(0.95 0.145 218)"
+        ]
+      },
+      "signal-cyan": {
+        "role": "secondary",
+        "displayName": "Signal Cyan",
+        "canonical": "#80e8ff",
+        "tonalRamp": [
+          "oklch(0.15 0.09 218)",
+          "oklch(0.26 0.09 218)",
+          "oklch(0.37 0.09 218)",
+          "oklch(0.48 0.09 218)",
+          "oklch(0.59 0.09 218)",
+          "oklch(0.70 0.09 218)",
+          "oklch(0.82 0.09 218)",
+          "oklch(0.95 0.09 218)"
+        ]
+      },
+      "mineral-paper": {
+        "role": "neutral",
+        "displayName": "Mineral Paper",
+        "canonical": "#f7f7f2",
+        "tonalRamp": [
+          "oklch(0.15 0.006 95)",
+          "oklch(0.26 0.006 95)",
+          "oklch(0.37 0.006 95)",
+          "oklch(0.48 0.006 95)",
+          "oklch(0.59 0.006 95)",
+          "oklch(0.70 0.006 95)",
+          "oklch(0.82 0.006 95)",
+          "oklch(0.95 0.006 95)"
+        ]
+      },
+      "operational-canvas": {
+        "role": "neutral",
+        "displayName": "Operational Canvas",
+        "canonical": "#eef4f8",
+        "tonalRamp": [
+          "oklch(0.15 0.015 244)",
+          "oklch(0.26 0.015 244)",
+          "oklch(0.37 0.015 244)",
+          "oklch(0.48 0.015 244)",
+          "oklch(0.59 0.015 244)",
+          "oklch(0.70 0.015 244)",
+          "oklch(0.82 0.015 244)",
+          "oklch(0.95 0.015 244)"
+        ]
+      },
+      "card-surface": {
+        "role": "neutral",
+        "displayName": "Card Surface",
+        "canonical": "oklch(0.995 0.002 95)",
+        "tonalRamp": [
+          "oklch(0.15 0.002 95)",
+          "oklch(0.26 0.002 95)",
+          "oklch(0.37 0.002 95)",
+          "oklch(0.48 0.002 95)",
+          "oklch(0.59 0.002 95)",
+          "oklch(0.70 0.002 95)",
+          "oklch(0.82 0.002 95)",
+          "oklch(0.95 0.002 95)"
+        ]
+      },
+      "primary-ink": {
+        "role": "neutral",
+        "displayName": "Primary Ink",
+        "canonical": "#111826",
+        "tonalRamp": [
+          "oklch(0.15 0.031 253)",
+          "oklch(0.26 0.031 253)",
+          "oklch(0.37 0.031 253)",
+          "oklch(0.48 0.031 253)",
+          "oklch(0.59 0.031 253)",
+          "oklch(0.70 0.031 253)",
+          "oklch(0.82 0.031 253)",
+          "oklch(0.95 0.031 253)"
+        ]
+      },
+      "muted-ink": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "canonical": "#53667c",
+        "tonalRamp": [
+          "oklch(0.15 0.035 254)",
+          "oklch(0.26 0.035 254)",
+          "oklch(0.37 0.035 254)",
+          "oklch(0.48 0.035 254)",
+          "oklch(0.59 0.035 254)",
+          "oklch(0.70 0.035 254)",
+          "oklch(0.82 0.035 254)",
+          "oklch(0.95 0.035 254)"
+        ]
+      },
+      "pale-network": {
+        "role": "neutral",
+        "displayName": "Pale Network",
+        "canonical": "#dcecf7",
+        "tonalRamp": [
+          "oklch(0.15 0.027 242)",
+          "oklch(0.26 0.027 242)",
+          "oklch(0.37 0.027 242)",
+          "oklch(0.48 0.027 242)",
+          "oklch(0.59 0.027 242)",
+          "oklch(0.70 0.027 242)",
+          "oklch(0.82 0.027 242)",
+          "oklch(0.95 0.027 242)"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "oklch(0.89 0.024 246)",
+        "tonalRamp": [
+          "oklch(0.15 0.024 246)",
+          "oklch(0.26 0.024 246)",
+          "oklch(0.37 0.024 246)",
+          "oklch(0.48 0.024 246)",
+          "oklch(0.59 0.024 246)",
+          "oklch(0.70 0.024 246)",
+          "oklch(0.82 0.024 246)",
+          "oklch(0.95 0.024 246)"
+        ]
+      },
+      "readiness-live-surface": {
+        "role": "tertiary",
+        "displayName": "Readiness Live Surface",
+        "canonical": "#d9f8ee",
+        "tonalRamp": [
+          "oklch(0.15 0.035 174.1)",
+          "oklch(0.26 0.035 174.1)",
+          "oklch(0.37 0.035 174.1)",
+          "oklch(0.48 0.035 174.1)",
+          "oklch(0.59 0.035 174.1)",
+          "oklch(0.70 0.035 174.1)",
+          "oklch(0.82 0.035 174.1)",
+          "oklch(0.95 0.035 174.1)"
+        ]
+      },
+      "readiness-live-ink": {
+        "role": "tertiary",
+        "displayName": "Readiness Live Ink",
+        "canonical": "#08664d",
+        "tonalRamp": [
+          "oklch(0.15 0.089 168.2)",
+          "oklch(0.26 0.089 168.2)",
+          "oklch(0.37 0.089 168.2)",
+          "oklch(0.48 0.089 168.2)",
+          "oklch(0.59 0.089 168.2)",
+          "oklch(0.70 0.089 168.2)",
+          "oklch(0.82 0.089 168.2)",
+          "oklch(0.95 0.089 168.2)"
+        ]
+      },
+      "readiness-mixed-surface": {
+        "role": "tertiary",
+        "displayName": "Readiness Mixed Surface",
+        "canonical": "#deebff",
+        "tonalRamp": [
+          "oklch(0.15 0.031 258.9)",
+          "oklch(0.26 0.031 258.9)",
+          "oklch(0.37 0.031 258.9)",
+          "oklch(0.48 0.031 258.9)",
+          "oklch(0.59 0.031 258.9)",
+          "oklch(0.70 0.031 258.9)",
+          "oklch(0.82 0.031 258.9)",
+          "oklch(0.95 0.031 258.9)"
+        ]
+      },
+      "readiness-adapter-surface": {
+        "role": "tertiary",
+        "displayName": "Readiness Adapter Surface",
+        "canonical": "#fff0c9",
+        "tonalRamp": [
+          "oklch(0.15 0.053 89.5)",
+          "oklch(0.26 0.053 89.5)",
+          "oklch(0.37 0.053 89.5)",
+          "oklch(0.48 0.053 89.5)",
+          "oklch(0.59 0.053 89.5)",
+          "oklch(0.70 0.053 89.5)",
+          "oklch(0.82 0.053 89.5)",
+          "oklch(0.95 0.053 89.5)"
+        ]
+      },
+      "readiness-adapter-ink": {
+        "role": "tertiary",
+        "displayName": "Readiness Adapter Ink",
+        "canonical": "#735000",
+        "tonalRamp": [
+          "oklch(0.15 0.095 79.5)",
+          "oklch(0.26 0.095 79.5)",
+          "oklch(0.37 0.095 79.5)",
+          "oklch(0.48 0.095 79.5)",
+          "oklch(0.59 0.095 79.5)",
+          "oklch(0.70 0.095 79.5)",
+          "oklch(0.82 0.095 79.5)",
+          "oklch(0.95 0.095 79.5)"
+        ]
+      },
+      "readiness-concept-surface": {
+        "role": "tertiary",
+        "displayName": "Readiness Concept Surface",
+        "canonical": "#e9e5f4",
+        "tonalRamp": [
+          "oklch(0.15 0.021 298.2)",
+          "oklch(0.26 0.021 298.2)",
+          "oklch(0.37 0.021 298.2)",
+          "oklch(0.48 0.021 298.2)",
+          "oklch(0.59 0.021 298.2)",
+          "oklch(0.70 0.021 298.2)",
+          "oklch(0.82 0.021 298.2)",
+          "oklch(0.95 0.021 298.2)"
+        ]
+      },
+      "readiness-concept-ink": {
+        "role": "tertiary",
+        "displayName": "Readiness Concept Ink",
+        "canonical": "#51436a",
+        "tonalRamp": [
+          "oklch(0.15 0.066 300.1)",
+          "oklch(0.26 0.066 300.1)",
+          "oklch(0.37 0.066 300.1)",
+          "oklch(0.48 0.066 300.1)",
+          "oklch(0.59 0.066 300.1)",
+          "oklch(0.70 0.066 300.1)",
+          "oklch(0.82 0.066 300.1)",
+          "oklch(0.95 0.066 300.1)"
+        ]
+      },
+      "white": {
+        "role": "neutral",
+        "displayName": "White",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "oklch(0.15 0 0)",
+          "oklch(0.26 0 0)",
+          "oklch(0.37 0 0)",
+          "oklch(0.48 0 0)",
+          "oklch(0.59 0 0)",
+          "oklch(0.70 0 0)",
+          "oklch(0.82 0 0)",
+          "oklch(0.95 0 0)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Editorial Display",
+        "purpose": "Short public promises and major journey statements."
+      },
+      "headline": {
+        "displayName": "Operating Headline",
+        "purpose": "Workspace page titles and major compact sections."
+      },
+      "title": {
+        "displayName": "Component Title",
+        "purpose": "Cards, modals, summary figures, and route choices."
+      },
+      "body": {
+        "displayName": "Explanatory Body",
+        "purpose": "Public explanation and longer operational guidance."
+      },
+      "label": {
+        "displayName": "Operational Label",
+        "purpose": "Buttons, navigation, field labels, tables, and metadata."
+      },
+      "readiness": {
+        "displayName": "Capability Readiness",
+        "purpose": "Written Live, Mixed, Adapter, and Concept labels beside product-preview evidence."
+      },
+      "mono": {
+        "displayName": "Technical Metadata",
+        "purpose": "Product-preview signals, identifiers, and short technical labels."
+      }
+    },
+    "shadows": [
+      {
+        "name": "operational-rail",
+        "value": "0 18px 42px rgba(7, 19, 38, 0.12)",
+        "purpose": "Sticky desktop navigation over the operational canvas."
+      },
+      {
+        "name": "editorial-frame",
+        "value": "0 24px 70px rgba(7, 19, 38, 0.2)",
+        "purpose": "The saturated public hero frame over its bright ambient field."
+      },
+      {
+        "name": "agenda-fragment",
+        "value": "0 12px 28px rgba(7, 19, 38, 0.18)",
+        "purpose": "Floating public proof cards over working photography."
+      },
+      {
+        "name": "mobile-menu",
+        "value": "0 20px 55px rgba(0, 0, 0, 0.28)",
+        "purpose": "The public mobile menu over the Midnight header."
+      },
+      {
+        "name": "authentication-glass",
+        "value": "0 30px 90px rgba(1, 5, 24, 0.52)",
+        "purpose": "Sign-in and recovery panels over the Plexus network artwork only."
+      }
+    ],
+    "motion": [
+      {
+        "name": "state-standard",
+        "value": "180ms ease",
+        "purpose": "Color, opacity, border, and small hover transforms."
+      },
+      {
+        "name": "route-arrive",
+        "value": "420ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Route content arrival from an 8px offset and light blur."
+      },
+      {
+        "name": "hero-reveal",
+        "value": "800ms 100ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Public hero copy and media reveal."
+      },
+      {
+        "name": "program-pulse",
+        "value": "1000ms 280ms cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "The governed journey progress track."
+      },
+      {
+        "name": "sheet-transition",
+        "value": "200ms ease-in-out",
+        "purpose": "Mobile navigation sheet fade and slide."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "0.01ms",
+        "purpose": "Effective duration under prefers-reduced-motion while preserving immediate state updates."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "xl",
+        "value": "1280px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Operational Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The compact filled action for governed workspace tasks.",
+      "html": "<button class=\"ds-btn-primary\">Confirm match</button>",
+      "css": ".ds-btn-primary { display:inline-flex; align-items:center; justify-content:center; height:28px; padding:5px 8px; border:1px solid transparent; border-radius:11.2px; background:#0758c8; color:#fff; font:500 12px/19.5px Inter, sans-serif; white-space:nowrap; transition:background 180ms ease, transform 180ms ease; } .ds-btn-primary:hover { background:#064caf; } .ds-btn-primary:focus-visible { outline:2px solid #0a84ff; outline-offset:3px; } .ds-btn-primary:active { transform:translateY(1px); } .ds-btn-primary:disabled { pointer-events:none; opacity:0.5; }"
+    },
+    {
+      "name": "Public Midnight Button",
+      "kind": "button",
+      "refersTo": "button-public-dark",
+      "description": "The 48px primary action placed on a filled blue public panel.",
+      "html": "<a class=\"ds-btn-public-dark\" href=\"#\">Discuss your program</a>",
+      "css": ".ds-btn-public-dark { display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:0 20px; border:1px solid transparent; border-radius:14px; background:#071326; color:#fff; font:600 14px/20px Inter, sans-serif; text-decoration:none; transition:background 180ms ease, transform 180ms ease; } .ds-btn-public-dark:hover { background:#102443; } .ds-btn-public-dark:focus-visible { outline:2px solid #0a84ff; outline-offset:3px; } .ds-btn-public-dark:active { transform:translateY(1px); }"
+    },
+    {
+      "name": "Public Light Button",
+      "kind": "button",
+      "refersTo": "button-public-light",
+      "description": "The light companion action on a filled blue public panel.",
+      "html": "<a class=\"ds-btn-public-light\" href=\"#\">See how it works</a>",
+      "css": ".ds-btn-public-light { display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:0 20px; border:1px solid rgba(255,255,255,0.35); border-radius:14px; background:#fff; color:#0758c8; font:600 14px/20px Inter, sans-serif; text-decoration:none; transition:background 180ms ease, color 180ms ease, transform 180ms ease; } .ds-btn-public-light:hover { background:#eaf7ff; color:#064caf; } .ds-btn-public-light:focus-visible { outline:2px solid #0a84ff; outline-offset:3px; } .ds-btn-public-light:active { transform:translateY(1px); }"
+    },
+    {
+      "name": "Operational Text Field",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "A compact field for structured, high-frequency operational entry.",
+      "html": "<label class=\"ds-field-label\" for=\"ds-company\">Company name</label><input class=\"ds-input\" id=\"ds-company\" placeholder=\"Company name\">",
+      "css": ".ds-field-label { display:block; margin-bottom:8px; color:#111826; font:500 12px/19.5px Inter, sans-serif; } .ds-input { width:100%; height:28px; padding:2px 8px; border:1px solid oklch(0.89 0.024 246); border-radius:11.2px; background:#eef4f8; color:#111826; font:400 12px/19.5px Inter, sans-serif; transition:border-color 180ms ease, box-shadow 180ms ease; } .ds-input::placeholder { color:#53667c; } .ds-input:hover { border-color:#9cb1c7; } .ds-input:focus-visible { outline:none; border-color:#0a84ff; box-shadow:0 0 0 2px rgba(10,132,255,0.3); } .ds-input:disabled { cursor:not-allowed; opacity:0.5; }"
+    },
+    {
+      "name": "Capability Readiness Legend",
+      "kind": "chip",
+      "refersTo": "badge-readiness-live",
+      "description": "The four written product-readiness states and their shared definitions; color never carries readiness alone.",
+      "html": "<dl class=\"ds-readiness\"><div class=\"ds-readiness-item\"><dt class=\"ds-readiness-badge ds-readiness-live\">Live</dt><dd class=\"ds-readiness-copy\">Persisted and verified in controlled product</dd></div><div class=\"ds-readiness-item\"><dt class=\"ds-readiness-badge ds-readiness-mixed\">Mixed</dt><dd class=\"ds-readiness-copy\">Live workflow with controlled/adapter step</dd></div><div class=\"ds-readiness-item\"><dt class=\"ds-readiness-badge ds-readiness-adapter\">Adapter</dt><dd class=\"ds-readiness-copy\">Interface exists; production provider incomplete</dd></div><div class=\"ds-readiness-item\"><dt class=\"ds-readiness-badge ds-readiness-concept\">Concept</dt><dd class=\"ds-readiness-copy\">Illustrative direction, not live</dd></div></dl>",
+      "css": ".ds-readiness { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin:0; font-family:Inter, sans-serif; } .ds-readiness-item { display:grid; gap:8px; min-width:0; } .ds-readiness-badge { display:inline-flex; align-items:center; justify-content:center; justify-self:start; min-height:24px; margin:0; padding:0 8px; border-radius:9999px; font:750 11px/1.45 Inter, sans-serif; white-space:nowrap; } .ds-readiness-live { background:#d9f8ee; color:#08664d; } .ds-readiness-mixed { background:#deebff; color:#0758c8; } .ds-readiness-adapter { background:#fff0c9; color:#735000; } .ds-readiness-concept { background:#e9e5f4; color:#51436a; } .ds-readiness-copy { margin:0; color:#53667c; font-size:12px; line-height:1.5; } @media (max-width:680px) { .ds-readiness { grid-template-columns:1fr; } }"
+    },
+    {
+      "name": "Operational Card",
+      "kind": "card",
+      "refersTo": "card-operational",
+      "description": "A flat bounded group for live metrics, workflow state, or forms.",
+      "html": "<section class=\"ds-card\"><div class=\"ds-card-head\"><h3 class=\"ds-card-title\">Pending matches</h3><strong class=\"ds-card-value\">2</strong></div><p class=\"ds-card-detail\">Three opportunities require review.</p></section>",
+      "css": ".ds-card { display:flex; flex-direction:column; gap:8px; padding:16px; border:0; border-radius:14px; background:oklch(0.995 0.002 95); color:#111826; box-shadow:0 0 0 1px rgba(17,24,38,0.1); font-family:Inter, sans-serif; transition:box-shadow 180ms ease; } .ds-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; } .ds-card-title { margin:0; font-size:14px; line-height:20px; font-weight:500; } .ds-card-value { font-size:24px; line-height:28px; font-weight:600; } .ds-card-detail { margin:0; color:#53667c; font-size:12px; line-height:19.5px; } .ds-card:hover { box-shadow:0 0 0 1px rgba(17,24,38,0.16); } .ds-card:focus-within { box-shadow:0 0 0 2px rgba(10,132,255,0.3); }"
+    },
+    {
+      "name": "Active Workspace Navigation",
+      "kind": "nav",
+      "refersTo": "navigation-active",
+      "description": "The selected full-width destination in the Midnight operator rail.",
+      "html": "<a class=\"ds-nav-active\" href=\"#\"><svg class=\"ds-nav-icon\" viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M4 13h6V4H4v9Zm0 7h6v-5H4v5Zm10 0h6v-9h-6v9Zm0-16v5h6V4h-6Z\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linejoin=\"round\"/></svg><span class=\"ds-nav-label\">Dashboard</span></a>",
+      "css": ".ds-nav-active { display:flex; align-items:center; justify-content:flex-start; gap:8px; width:100%; height:40px; padding:0 12px; border:1px solid transparent; border-radius:11.2px; background:#0758c8; color:#fff; font:500 12px/16px Inter, sans-serif; text-decoration:none; transition:background 180ms ease, transform 180ms ease; } .ds-nav-icon { width:16px; height:16px; flex:none; } .ds-nav-label { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; } .ds-nav-active:hover { background:#064caf; } .ds-nav-active:focus-visible { outline:2px solid #0a84ff; outline-offset:3px; } .ds-nav-active:active { transform:translateY(1px); }"
+    },
+    {
+      "name": "Program Pulse",
+      "kind": "custom",
+      "description": "The signature five-stage journey strip for organizer orientation.",
+      "html": "<section class=\"ds-pulse\"><div class=\"ds-pulse-head\"><div><span class=\"ds-pulse-meta\">Program pulse</span><h3 class=\"ds-pulse-title\">A governed path to the next meeting</h3></div><span class=\"ds-pulse-status\"><span class=\"ds-pulse-dot\"></span>Human-reviewed</span></div><ol class=\"ds-pulse-stages\"><li class=\"ds-pulse-stage\">Profile</li><li class=\"ds-pulse-stage ds-pulse-stage-active\">Review</li><li class=\"ds-pulse-stage\">Accept</li><li class=\"ds-pulse-stage\">Meet</li><li class=\"ds-pulse-stage\">Follow up</li></ol></section>",
+      "css": ".ds-pulse { padding:20px 24px; border-radius:25.2px; background:#071326; color:#fff; font-family:Inter, sans-serif; } .ds-pulse-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; } .ds-pulse-meta { color:#9cb1c7; font-size:12px; line-height:16px; } .ds-pulse-title { margin:4px 0 0; font-size:20px; line-height:25px; font-weight:600; letter-spacing:-0.02em; } .ds-pulse-status { display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border:1px solid rgba(128,232,255,0.3); border-radius:9999px; background:rgba(128,232,255,0.1); color:#80e8ff; font:600 11px/16px Inter, sans-serif; } .ds-pulse-dot { width:6px; height:6px; border-radius:9999px; background:#80e8ff; } .ds-pulse-stages { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:4px; margin:24px 0 0; padding:0; list-style:none; } .ds-pulse-stage { position:relative; padding:10px 6px; color:#9cb1c7; font-size:11px; line-height:16px; text-align:center; } .ds-pulse-stage-active { color:#fff; } .ds-pulse-stage-active::after { position:absolute; right:0; bottom:0; left:0; height:2px; background:#0a84ff; content:\"\"; }"
+    },
+    {
+      "name": "Authentication Glass Panel",
+      "kind": "custom",
+      "description": "The scoped atmospheric bridge into secure tenant-aware access.",
+      "html": "<section class=\"ds-auth-panel\"><span class=\"ds-auth-meta\">Protected program workspace</span><h3 class=\"ds-auth-title\">Welcome back</h3><p class=\"ds-auth-copy\">Sign in to continue to your Plexus workspace.</p><label class=\"ds-auth-label\" for=\"ds-auth-email\">Email</label><input class=\"ds-auth-input\" id=\"ds-auth-email\" type=\"email\" placeholder=\"you@company.com\"><button class=\"ds-auth-button\">Login</button></section>",
+      "css": ".ds-auth-panel { width:min(100%,400px); padding:28px 32px; border:1px solid rgba(255,255,255,0.2); border-radius:26.4px; background:rgba(255,255,255,0.07); color:#fff; box-shadow:0 30px 90px rgba(1,5,24,0.52); backdrop-filter:blur(32px) saturate(1.5); font-family:Inter, sans-serif; } .ds-auth-meta { color:rgba(255,255,255,0.7); font-size:12px; line-height:16px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; } .ds-auth-title { margin:12px 0 0; font-size:26px; line-height:1.25; font-weight:600; letter-spacing:-0.02em; } .ds-auth-copy { margin:8px 0 20px; color:rgba(255,255,255,0.68); font-size:14px; line-height:24px; } .ds-auth-label { display:block; margin-bottom:8px; color:rgba(255,255,255,0.82); font-size:12px; line-height:16px; } .ds-auth-input { width:100%; height:48px; padding:0 14px; border:1px solid rgba(255,255,255,0.2); border-radius:12px; background:rgba(255,255,255,0.1); color:#fff; font:400 14px/20px Inter, sans-serif; } .ds-auth-input::placeholder { color:rgba(255,255,255,0.42); } .ds-auth-input:focus-visible { outline:none; border-color:rgba(255,255,255,0.5); box-shadow:0 0 0 2px rgba(255,255,255,0.18); } .ds-auth-button { width:100%; height:48px; margin-top:16px; border:0; border-radius:12px; background:#0a84ff; color:#071326; box-shadow:0 14px 30px rgba(14,9,39,0.2); font:600 14px/20px Inter, sans-serif; transition:opacity 180ms ease, transform 180ms ease; } .ds-auth-button:hover { opacity:0.92; } .ds-auth-button:focus-visible { outline:2px solid #fff; outline-offset:3px; } .ds-auth-button:active { transform:translateY(1px); }"
+    },
+    {
+      "name": "Product Preview Qualification",
+      "kind": "custom",
+      "description": "A unified superapp preview with its pre-launch and availability qualifications in the same first-view composition.",
+      "html": "<section class=\"ds-preview\"><div class=\"ds-preview-copy\"><h2 class=\"ds-preview-title\">The whole business journey, in one superapp.</h2><a class=\"ds-preview-action\" href=\"#ds-preview-product\">Explore the connected product</a><p class=\"ds-preview-note\">Illustrative screens are labelled. Availability varies by module.</p></div><figure class=\"ds-preview-media\" id=\"ds-preview-product\"><span class=\"ds-preview-badge\">Pre-launch product preview</span><img class=\"ds-preview-image\" src=\"/app-future/plexus-superapp-system-hero-v3.png\" alt=\"Illustrative unified Plexus superapp system\"></figure></section>",
+      "css": ".ds-preview { display:grid; grid-template-columns:.82fr minmax(620px,1.18fr); gap:32px; align-items:center; max-width:1440px; min-height:720px; margin:0 auto; padding:68px 32px 42px; background:#0758c8; color:#fff; font-family:Inter, sans-serif; } .ds-preview-copy { display:flex; flex-direction:column; align-items:flex-start; gap:20px; } .ds-preview-title { max-width:10ch; margin:0; font-size:clamp(3rem,6vw,5.75rem); line-height:.94; font-weight:600; letter-spacing:-.035em; } .ds-preview-action { display:inline-flex; align-items:center; justify-content:center; min-height:52px; padding:0 24px; border-radius:14px; background:#071326; color:#fff; font:600 14px/20px Inter, sans-serif; text-decoration:none; transition:background 180ms ease, transform 180ms ease; } .ds-preview-action:hover { background:#102443; } .ds-preview-action:active { transform:translateY(1px); } .ds-preview-note { max-width:34rem; margin:0; color:rgba(255,255,255,.78); font-size:12px; line-height:1.5; } .ds-preview-media { position:relative; min-height:620px; margin:0 -56px 0 0; overflow:hidden; border-radius:22px; background:#071326; } .ds-preview-badge { position:absolute; z-index:1; top:18px; left:20px; display:inline-flex; align-items:center; min-height:24px; padding:0 10px; border:1px solid rgba(255,255,255,.3); border-radius:9999px; background:rgba(7,19,38,.82); color:#fff; font:750 11px/1.45 Inter, sans-serif; } .ds-preview-image { width:100%; height:100%; min-height:620px; object-fit:cover; } .ds-preview :focus-visible { outline:3px solid #fff; outline-offset:3px; box-shadow:0 0 0 6px #0758c8; } @media (max-width:900px) { .ds-preview { grid-template-columns:1fr; width:calc(100% - 40px); padding-top:72px; } .ds-preview-media { min-height:560px; margin:0 -20px; } } @media (max-width:680px) { .ds-preview { width:calc(100% - 32px); min-height:0; padding:36px 0 0; } .ds-preview-copy { padding:0 12px; } .ds-preview-title { font-size:clamp(3rem,12vw,3.5rem); line-height:.97; } .ds-preview-action { width:100%; } .ds-preview-media { min-height:380px; margin:12px -22px 0; border-radius:14px 14px 0 0; } .ds-preview-badge { top:14px; left:16px; } .ds-preview-image { min-height:380px; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Governed Blue Agenda",
+    "overview": "Plexus is a calm blue operating layer where cross-border business intent becomes a human-reviewed path to a real meeting and accountable follow-up. Its public world is editorial and assured: saturated blue fields, a midnight logo bay, mineral paper, photographed working context, unified product-system imagery, and tangible agenda fragments explain the journey before they ask for action. The exact Plexus mark remains the identity anchor; it is never redrawn, recolored, or replaced by an improvised symbol.\n\nAuthenticated workspaces translate that agenda into an operating system. The typography becomes compact, the canvas shifts to pale mineral blue, and information is grouped with flat cards, hairlines, explicit statuses, and a midnight navigation rail. Connection Blue, cyan, imagery, and motion provide orientation, while product claims, provider readiness, sensitive decisions, and outcomes stay visibly human-governed and evidence-bound.\n\nAuthentication is a scoped atmospheric bridge and may place a glass panel over the Plexus network artwork. The public pre-event service is a second scoped expression: it uses the shared Midnight, Filled Surface Blue, Connection Blue, cyan, mineral, and pale-network palette with tighter campaign geometry and denser service content.",
+    "keyCharacteristics": [
+      "Saturated production-blue fields anchored by midnight and mineral paper.",
+      "Editorial public scale translated into compact operational hierarchy.",
+      "Pale network grouping and cyan signals that clarify a governed journey.",
+      "Flat, scan-first workspaces with explicit status and human review.",
+      "Pre-launch and capability-readiness qualification placed beside the visual evidence.",
+      "The exact Plexus mark, Inter typography, and restrained Geist Mono metadata.",
+      "Responsive stacking, mobile navigation sheets, and reduced-motion parity."
+    ],
+    "rules": [
+      {
+        "name": "The Filled Surface Rule",
+        "body": "Small-text filled actions and active navigation use Filled Surface Blue (`#0758c8`), never the brighter Connection Blue.",
+        "section": "colors"
+      },
+      {
+        "name": "The Signal Rule",
+        "body": "Connection Blue and the two cyan values indicate focus, progress, network activity, or ambient energy; they do not independently mean approved, compliant, ready, or successful.",
+        "section": "colors"
+      },
+      {
+        "name": "The Campaign Cohesion Rule",
+        "body": "The pre-event route uses the shared blue palette while retaining its compact 4px controls and service-led density. Signal Cyan may orient visitors on Midnight, but Filled Surface Blue remains the small-text action color.",
+        "section": "colors"
+      },
+      {
+        "name": "The One-Family Rule",
+        "body": "Inter carries the main Plexus voice across public, authenticated, and localized surfaces; do not introduce a decorative display face.",
+        "section": "typography"
+      },
+      {
+        "name": "The Metadata Rule",
+        "body": "Uppercase tracking and Geist Mono are reserved for short orientation or technical metadata; they are not the default preheading treatment for every section.",
+        "section": "typography"
+      },
+      {
+        "name": "The Sheet-not-Squeeze Rule",
+        "body": "Mobile navigation opens as a left sheet; never compress the desktop rail into an unreadable strip.",
+        "section": "layout"
+      },
+      {
+        "name": "The Record-not-Scroll Rule",
+        "body": "Dense operational tables become stacked record cards on narrow screens instead of depending on horizontal page scrolling.",
+        "section": "layout"
+      },
+      {
+        "name": "The Preview First-Viewport Rule",
+        "body": "On mobile product previews, keep the promise, full-width primary action, pre-launch qualification, and unified product image in that order before the journey rail; do not lead with a detached feature card or hide qualification below the first product view.",
+        "section": "layout"
+      },
+      {
+        "name": "The Flat-by-Default Rule",
+        "body": "If surface tone, spacing, and a hairline already establish hierarchy, do not add a shadow.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Scoped Glass Rule",
+        "body": "Backdrop blur and translucent glass belong to authentication and temporary overlays, not routine operational cards.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Curve by Scale Rule",
+        "body": "Controls are tighter than cards, cards are tighter than editorial frames, and only auth glass earns the largest system radius.",
+        "section": "shapes"
+      },
+      {
+        "name": "The Same State Rule",
+        "body": "Desktop rail, mobile sheet, table card, dialog, and localized variant must expose the same route, status, and next action.",
+        "section": "components"
+      },
+      {
+        "name": "The Human-Governed Rule",
+        "body": "Components may assist matching, preparation, and follow-up, but visual polish never turns a planned adapter, sensitive decision, or unverified outcome into a production claim.",
+        "section": "components"
+      },
+      {
+        "name": "The Qualification-at-the-Point Rule",
+        "body": "Every illustrative product treatment carries its qualification beside the visual or module copy, and every readiness label appears with the shared legend; a page-level disclaimer alone is insufficient.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "Do use Filled Surface Blue (`#0758c8`) for compact filled actions and active destinations.",
+      "Do keep Connection Blue (`#0a84ff`) for focus, progress, selection, large ambient fields, and other high-visibility signals.",
+      "Do pair every status color with readable text or an icon and preserve explicit human review.",
+      "Do preserve the exact Plexus wordmark asset and approved tenant identity without weakening contrast.",
+      "Do use mineral canvases, Pale Network grouping, and hairlines before reaching for elevation.",
+      "Do verify mobile sheet navigation, stacked records, longer translated labels, keyboard focus, and reduced motion.",
+      "Do keep authentication glass scoped to secure entry and preserve the pre-event route's compact campaign geometry within the shared blue palette.",
+      "Do place pre-launch, illustrative, and readiness qualification beside the relevant product image or module copy."
+    ],
+    "donts": [
+      "Don't use Connection Blue as the filled background behind small white CTA text.",
+      "Don't revive Harbor Teal, emerald, or lime as competing campaign accents inside the shared blue editorial system.",
+      "Don't float every operational card or apply glass and glow to routine workspace content.",
+      "Don't compress desktop rails or dense tables into unreadable mobile layouts.",
+      "Don't redraw, recolor, crop into a new symbol, or substitute the Plexus mark.",
+      "Don't use animation, color, badges, or polished imagery as evidence of approval, compliance, provider readiness, market coverage, or business outcomes.",
+      "Don't reuse Live, Mixed, Adapter, and Concept colors as generic success, warning, or category styling."
+    ]
+  }
+}

@@ -17,6 +17,7 @@ import {
   Audit01Icon,
   Building01Icon,
   Logout03Icon,
+  Mail01Icon,
   Menu01Icon,
   ResetPasswordIcon,
   Settings01Icon,
@@ -40,6 +41,13 @@ import {
 } from "@/app/actions/management"
 import { isActiveAdminRecoveryAccount } from "@/lib/admin-password-recovery"
 import type { AuthenticatedIdentity } from "@/lib/authorization"
+import {
+  emailSenderLabel,
+  emailStatusLabel,
+  emailTriggerCatalog,
+  type EmailDelivery,
+  type EmailDeliveryStatus,
+} from "@/lib/email-delivery"
 import type { Locale } from "@/lib/i18n"
 import { hasMatchingPasswordConfirmation } from "@/lib/password-confirmation"
 import type {
@@ -111,6 +119,12 @@ type Props = {
   accounts: ManagedAccount[]
   auditEvents: AuditEvent[]
   meetingCreationIncidents: MeetingCreationIncident[]
+  emailDeliveries: EmailDelivery[]
+  emailProviderReadiness: {
+    resendApiConfigured: boolean
+    resendFromConfigured: boolean
+    resendWebhookConfigured: boolean
+  }
   operations: {
     matches: TenantOperationalCount[]
     meetings: TenantOperationalCount[]
@@ -128,6 +142,7 @@ const superadminNavItems = [
   { value: "accounts", label: "Accounts", icon: ShieldUserIcon },
   { value: "reporting", label: "Reporting", icon: AnalyticsUpIcon },
   { value: "incidents", label: "Critical incidents", icon: Alert02Icon },
+  { value: "email", label: "Email sending", icon: Mail01Icon },
   { value: "settings", label: "Platform settings", icon: Settings01Icon },
   { value: "audit", label: "Audit events", icon: Audit01Icon },
 ]
@@ -157,6 +172,29 @@ function statusBadge(status: string) {
       }
     >
       {labelStatus(status)}
+    </Badge>
+  )
+}
+
+function emailStatusBadge(status: EmailDeliveryStatus) {
+  const failureStatuses: EmailDeliveryStatus[] = [
+    "bounced",
+    "complained",
+    "suppressed",
+    "failed",
+  ]
+
+  return (
+    <Badge
+      variant={
+        failureStatuses.includes(status)
+          ? "destructive"
+          : status === "delivered"
+            ? "secondary"
+            : "outline"
+      }
+    >
+      {emailStatusLabel(status)}
     </Badge>
   )
 }
@@ -638,27 +676,16 @@ function AdminRecoveryButton({
   )
 }
 
-function SuperadminTabsNav({
-  activeValue,
-  session,
-}: {
-  activeValue: string
-  session: AuthenticatedIdentity
-}) {
-  const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const activeLabel =
-    superadminNavItems.find((item) => item.value === activeValue)?.label ??
-    superadminNavItems[0].label
+function SuperadminTabsNav({ session }: { session: AuthenticatedIdentity }) {
   const navTriggerClass =
     "h-10 w-full justify-start gap-2 rounded-md px-3 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-sidebar-ring/45 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:hover:bg-primary"
 
-  function renderNavItems(onNavigate?: () => void) {
+  function renderNavItems() {
     return superadminNavItems.map((item) => (
       <TabsTrigger
         key={item.value}
         value={item.value}
         className={navTriggerClass}
-        onClick={onNavigate}
       >
         <HugeiconsIcon icon={item.icon} strokeWidth={1.7} className="size-4" />
         {item.label}
@@ -667,85 +694,108 @@ function SuperadminTabsNav({
   }
 
   return (
-    <>
-      <aside className="hidden self-stretch lg:block">
-        <div className="sticky top-4 flex min-h-[32rem] flex-col rounded-lg border border-sidebar-border bg-sidebar p-3 text-sidebar-foreground shadow-sm">
-          <div className="mb-3 rounded-md border border-sidebar-border bg-background/70 px-3 py-2">
-            <p className="text-xs font-semibold text-sidebar-foreground">
-              Plexus Platform
-            </p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Superadmin workspace
-            </p>
-          </div>
+    <aside className="hidden self-stretch lg:block">
+      <div className="sticky top-4 flex min-h-[32rem] flex-col rounded-xl border border-sidebar-border bg-sidebar p-3 text-sidebar-foreground shadow-[0_18px_42px_rgba(7,19,38,0.12)]">
+        <div className="mb-3 rounded-lg border border-white/10 bg-white/6 px-3 py-3">
+          <p className="text-xs font-semibold text-sidebar-foreground">
+            Plexus Platform
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Superadmin workspace
+          </p>
+        </div>
+        <TabsList
+          aria-label="Superadmin navigation"
+          className="h-auto w-full flex-col items-stretch gap-1 bg-transparent p-0"
+        >
+          {renderNavItems()}
+        </TabsList>
+        <div className="mt-auto rounded-lg border border-white/10 bg-white/6 px-3 py-2.5">
+          <p className="truncate text-xs font-medium text-sidebar-foreground">
+            {session.displayName}
+          </p>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+            {session.email}
+          </p>
+        </div>
+      </div>
+    </aside>
+  )
+}
+
+function SuperadminMobileNav({ activeValue }: { activeValue: string }) {
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const activeLabel =
+    superadminNavItems.find((item) => item.value === activeValue)?.label ??
+    superadminNavItems[0].label
+  const navTriggerClass =
+    "h-10 w-full justify-start gap-2 rounded-md px-3 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-sidebar-ring/45 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:hover:bg-primary"
+
+  return (
+    <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+      <div className="sticky top-3 z-30 flex items-center gap-3 rounded-lg border border-sidebar-border bg-sidebar/95 p-2.5 text-sidebar-foreground shadow-sm backdrop-blur-sm lg:hidden">
+        <div className="min-w-0 flex-1 px-1.5">
+          <p className="truncate text-xs font-semibold text-sidebar-foreground">
+            Plexus Platform
+          </p>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+            {activeLabel}
+          </p>
+        </div>
+        <SheetTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-10 shrink-0 gap-2 border-[#31527a] bg-[#0758c8] px-3 text-white hover:bg-[#064caf] hover:text-white"
+            aria-label={`Menu: ${activeLabel}`}
+          >
+            <HugeiconsIcon
+              icon={Menu01Icon}
+              strokeWidth={1.8}
+              className="size-4"
+            />
+            Menu
+          </Button>
+        </SheetTrigger>
+      </div>
+      <SheetContent
+        side="left"
+        className="w-[min(86vw,20rem)] border-sidebar-border bg-sidebar p-0 text-sidebar-foreground"
+      >
+        <SheetHeader className="border-b border-sidebar-border px-5 py-4">
+          <SheetTitle className="text-sidebar-foreground">
+            Plexus Platform
+          </SheetTitle>
+          <SheetDescription>Superadmin workspace</SheetDescription>
+        </SheetHeader>
+        <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
+          <p className="mb-2 px-3 text-[0.6875rem] font-medium tracking-wide text-muted-foreground uppercase">
+            Navigation
+          </p>
           <TabsList
             aria-label="Superadmin navigation"
             className="h-auto w-full flex-col items-stretch gap-1 bg-transparent p-0"
           >
-            {renderNavItems()}
+            {superadminNavItems.map((item) => (
+              <TabsTrigger
+                key={item.value}
+                value={item.value}
+                className={navTriggerClass}
+                onClick={() => setMobileNavOpen(false)}
+              >
+                <HugeiconsIcon
+                  icon={item.icon}
+                  strokeWidth={1.7}
+                  className="size-4"
+                />
+                {item.label}
+              </TabsTrigger>
+            ))}
           </TabsList>
-          <div className="mt-auto rounded-md border border-sidebar-border bg-background/70 px-3 py-2.5">
-            <p className="truncate text-xs font-medium text-sidebar-foreground">
-              {session.displayName}
-            </p>
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">
-              {session.email}
-            </p>
-          </div>
         </div>
-      </aside>
-
-      <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-        <div className="sticky top-3 z-30 flex items-center gap-3 rounded-lg border border-sidebar-border bg-sidebar/95 p-2.5 text-sidebar-foreground shadow-sm backdrop-blur-sm lg:hidden">
-          <div className="min-w-0 flex-1 px-1.5">
-            <p className="truncate text-xs font-semibold text-sidebar-foreground">
-              Plexus Platform
-            </p>
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">
-              {activeLabel}
-            </p>
-          </div>
-          <SheetTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-10 shrink-0 gap-2 border-sidebar-border bg-background/80 px-3 text-sidebar-foreground"
-              aria-label={`Menu: ${activeLabel}`}
-            >
-              <HugeiconsIcon
-                icon={Menu01Icon}
-                strokeWidth={1.8}
-                className="size-4"
-              />
-              Menu
-            </Button>
-          </SheetTrigger>
-        </div>
-        <SheetContent
-          side="left"
-          className="w-[min(86vw,20rem)] border-sidebar-border bg-sidebar p-0 text-sidebar-foreground"
-        >
-          <SheetHeader className="border-b border-sidebar-border px-5 py-4">
-            <SheetTitle className="text-sidebar-foreground">
-              Plexus Platform
-            </SheetTitle>
-            <SheetDescription>Superadmin workspace</SheetDescription>
-          </SheetHeader>
-          <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
-            <p className="mb-2 px-3 text-[0.6875rem] font-medium tracking-wide text-muted-foreground uppercase">
-              Navigation
-            </p>
-            <TabsList
-              aria-label="Superadmin navigation"
-              className="h-auto w-full flex-col items-stretch gap-1 bg-transparent p-0"
-            >
-              {renderNavItems(() => setMobileNavOpen(false))}
-            </TabsList>
-          </div>
-        </SheetContent>
-      </Sheet>
-    </>
+      </SheetContent>
+    </Sheet>
   )
 }
 
@@ -759,6 +809,8 @@ export function SuperadminConsole(props: Props) {
     accounts,
     auditEvents,
     meetingCreationIncidents,
+    emailDeliveries,
+    emailProviderReadiness,
     operations,
     platformSettings,
   } = props
@@ -768,6 +820,9 @@ export function SuperadminConsole(props: Props) {
   const [tenantFilter, setTenantFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("all")
   const [auditSearch, setAuditSearch] = useState("")
+  const [emailSearch, setEmailSearch] = useState("")
+  const [emailStatusFilter, setEmailStatusFilter] = useState("all")
+  const [emailSenderFilter, setEmailSenderFilter] = useState("all")
   const [activeTab, setActiveTab] = useState("admins")
 
   const tenantNames = useMemo(
@@ -788,6 +843,65 @@ export function SuperadminConsole(props: Props) {
       .toLowerCase()
       .includes(auditSearch.toLowerCase())
   )
+  const filteredEmailDeliveries = emailDeliveries.filter((delivery) => {
+    const searchText =
+      `${delivery.sender_name} ${delivery.sender_type} ${delivery.recipient_email} ${delivery.recipient_name} ${delivery.trigger_key} ${delivery.subject} ${delivery.status}`.toLowerCase()
+
+    return (
+      searchText.includes(emailSearch.toLowerCase()) &&
+      (emailStatusFilter === "all" || delivery.status === emailStatusFilter) &&
+      (emailSenderFilter === "all" ||
+        delivery.sender_type === emailSenderFilter)
+    )
+  })
+  const emailSenderGroups = useMemo(() => {
+    const groups = new Map<
+      string,
+      {
+        key: string
+        label: string
+        senderType: EmailDelivery["sender_type"]
+        total: number
+        delivered: number
+        failed: number
+      }
+    >()
+
+    for (const delivery of emailDeliveries) {
+      const key = `${delivery.sender_type}:${delivery.sender_user_id ?? delivery.sender_name}`
+      const current = groups.get(key) ?? {
+        key,
+        label: delivery.sender_name || emailSenderLabel(delivery.sender_type),
+        senderType: delivery.sender_type,
+        total: 0,
+        delivered: 0,
+        failed: 0,
+      }
+
+      current.total += 1
+      if (delivery.status === "delivered") current.delivered += 1
+      if (
+        ["bounced", "complained", "suppressed", "failed"].includes(
+          delivery.status
+        )
+      ) {
+        current.failed += 1
+      }
+      groups.set(key, current)
+    }
+
+    return [...groups.values()].sort((left, right) => right.total - left.total)
+  }, [emailDeliveries])
+  const deliveredEmails = emailDeliveries.filter(
+    (delivery) => delivery.status === "delivered"
+  ).length
+  const failedEmails = emailDeliveries.filter((delivery) =>
+    ["bounced", "complained", "suppressed", "failed"].includes(delivery.status)
+  ).length
+  const requestedAuthEmails = emailDeliveries.filter(
+    (delivery) =>
+      delivery.provider === "supabase_auth" && delivery.status === "requested"
+  ).length
   const activeTenants = tenants.filter((tenant) => tenant.status === "active")
   const activeVendors = vendors.filter((vendor) => vendor.status === "active")
   const suspendedAccounts = accounts.filter((account) => !account.active)
@@ -881,18 +995,18 @@ export function SuperadminConsole(props: Props) {
   }
 
   return (
-    <main className="min-h-svh bg-muted/20">
-      <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-4 py-5 sm:px-6 lg:px-8 lg:py-8">
-        <header className="flex flex-col gap-4 rounded-lg border bg-card p-4 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
+    <main className="min-h-svh bg-[#eef4f8]">
+      <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-5 px-4 py-4 sm:px-6 lg:px-8 lg:py-6">
+        <header className="flex flex-col gap-4 rounded-2xl border-0 bg-[#071326] p-5 text-white shadow-none sm:p-7 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
             <div className="mb-2 flex flex-wrap gap-2">
               <Badge>Superadmin</Badge>
               <Badge variant="outline">All tenants</Badge>
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            <h1 className="text-3xl font-semibold tracking-[-0.03em] sm:text-5xl">
               Plexus platform control center
             </h1>
-            <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-[#b8cadc]">
               Manage Admin tenants, every Vendor, trusted account bindings,
               cross-tenant operations, and immutable audit history.
             </p>
@@ -953,769 +1067,1109 @@ export function SuperadminConsole(props: Props) {
           </Alert>
         ) : null}
 
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <MetricCard
-            label="Admin tenants"
-            value={tenants.length}
-            detail={`${activeTenants.length} active`}
-            icon={Building01Icon}
-          />
-          <MetricCard
-            label="Vendors"
-            value={vendors.length}
-            detail={`${activeVendors.length} active across all Admins`}
-            icon={UserGroupIcon}
-          />
-          <MetricCard
-            label="Accounts"
-            value={accounts.length}
-            detail={`${suspendedAccounts.length} suspended`}
-            icon={ShieldUserIcon}
-          />
-          <MetricCard
-            label="Operational records"
-            value={
-              operations.matches.length +
-              operations.meetings.length +
-              operations.deals.length
-            }
-            detail={`${operations.matches.length} matches · ${operations.meetings.length} meetings · ${operations.deals.length} deals`}
-            icon={AnalyticsUpIcon}
-          />
-        </div>
-
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}
           orientation="vertical"
-          className="flex-col gap-4 lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start"
+          className="flex flex-col gap-4"
         >
-          <SuperadminTabsNav activeValue={activeTab} session={session} />
+          <SuperadminMobileNav activeValue={activeTab} />
 
-          <TabsContent
-            value="admins"
-            className="grid min-w-0 gap-4 lg:col-start-2 lg:row-start-1"
-          >
-            <Card>
-              <CardHeader className="gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <CardTitle>Admin tenant directory</CardTitle>
-                  <CardDescription>
-                    One isolated white-label operator per tenant.
-                  </CardDescription>
-                </div>
-                <CreateAdminDialog
-                  disabled={!provisioningConfigured}
-                  pending={pending}
-                  onSubmit={createAdmin}
-                />
-              </CardHeader>
-              <CardContent>
-                <div className="hidden md:block">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Admin tenant</TableHead>
-                        <TableHead>Support</TableHead>
-                        <TableHead>Vendors</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Created</TableHead>
-                        <TableHead className="text-right">Control</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {tenants.map((tenant) => (
-                        <TableRow key={tenant.id}>
-                          <TableCell>
-                            <div className="font-medium">{tenant.name}</div>
-                            <div className="text-muted-foreground">
-                              {tenant.slug}
-                            </div>
-                          </TableCell>
-                          <TableCell>{tenant.support_email || "—"}</TableCell>
-                          <TableCell>
-                            {
-                              vendors.filter(
-                                (vendor) => vendor.admin_id === tenant.id
-                              ).length
-                            }
-                          </TableCell>
-                          <TableCell>{statusBadge(tenant.status)}</TableCell>
-                          <TableCell>{formatDate(tenant.created_at)}</TableCell>
-                          <TableCell>
-                            <div className="flex flex-wrap justify-end gap-2">
-                              <TenantProfileDialog
-                                locale={locale}
-                                tenantId={tenant.id}
-                                initialName={tenant.name}
-                                initialSupportEmail={tenant.support_email}
-                                initialPrimaryColor={tenant.primary_color}
-                                initialLogoUrl={tenant.logo_url}
-                              />
-                              <AdminRecoveryButton
-                                account={adminAccountsByTenant.get(tenant.id)}
-                                pending={pending}
-                                provisioningConfigured={provisioningConfigured}
-                                onSend={sendAdminRecoveryLink}
-                              />
-                              <StatusControl
-                                value={tenant.status}
-                                options={["active", "suspended", "archived"]}
-                                pending={pending}
-                                onApply={(status) =>
-                                  runAction(
-                                    () =>
-                                      setTenantStatusAction({
-                                        locale,
-                                        tenantId: tenant.id,
-                                        status: status as TenantStatus,
-                                      }),
-                                    "Admin tenant status updated."
-                                  )
-                                }
-                              />
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-                <div className="grid gap-3">
-                  {tenants.map((tenant) => (
-                    <MobileRecord
-                      key={tenant.id}
-                      title={tenant.name}
-                      subtitle={tenant.support_email || tenant.slug}
-                      status={tenant.status}
-                    >
-                      <p className="text-xs text-muted-foreground">
-                        {
-                          vendors.filter(
-                            (vendor) => vendor.admin_id === tenant.id
-                          ).length
-                        }{" "}
-                        Vendors · created {formatDate(tenant.created_at)}
-                      </p>
-                      <AdminRecoveryButton
-                        account={adminAccountsByTenant.get(tenant.id)}
-                        pending={pending}
-                        provisioningConfigured={provisioningConfigured}
-                        mobile
-                        onSend={sendAdminRecoveryLink}
-                      />
-                      <StatusControl
-                        value={tenant.status}
-                        options={["active", "suspended", "archived"]}
-                        pending={pending}
-                        onApply={(status) =>
-                          runAction(
-                            () =>
-                              setTenantStatusAction({
-                                locale,
-                                tenantId: tenant.id,
-                                status: status as TenantStatus,
-                              }),
-                            "Admin tenant status updated."
-                          )
-                        }
-                      />
-                      <TenantProfileDialog
-                        locale={locale}
-                        tenantId={tenant.id}
-                        initialName={tenant.name}
-                        initialSupportEmail={tenant.support_email}
-                        initialPrimaryColor={tenant.primary_color}
-                        initialLogoUrl={tenant.logo_url}
-                        triggerLabel="Edit tenant profile"
-                      />
-                    </MobileRecord>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricCard
+              label="Admin tenants"
+              value={tenants.length}
+              detail={`${activeTenants.length} active`}
+              icon={Building01Icon}
+            />
+            <MetricCard
+              label="Vendors"
+              value={vendors.length}
+              detail={`${activeVendors.length} active across all Admins`}
+              icon={UserGroupIcon}
+            />
+            <MetricCard
+              label="Accounts"
+              value={accounts.length}
+              detail={`${suspendedAccounts.length} suspended`}
+              icon={ShieldUserIcon}
+            />
+            <MetricCard
+              label="Operational records"
+              value={
+                operations.matches.length +
+                operations.meetings.length +
+                operations.deals.length
+              }
+              detail={`${operations.matches.length} matches · ${operations.meetings.length} meetings · ${operations.deals.length} deals`}
+              icon={AnalyticsUpIcon}
+            />
+          </div>
 
-          <TabsContent
-            value="vendors"
-            className="grid min-w-0 gap-4 lg:col-start-2 lg:row-start-1"
-          >
-            <Card>
-              <CardHeader className="gap-3 lg:flex-row lg:items-end lg:justify-between">
-                <div>
-                  <CardTitle>Vendor directory</CardTitle>
-                  <CardDescription>
-                    All Vendor companies, grouped by owning Admin and subtype.
-                  </CardDescription>
-                </div>
-                <CreateVendorDialog
-                  tenants={tenants}
-                  disabled={!provisioningConfigured}
-                  pending={pending}
-                  onSubmit={createVendor}
-                />
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                <div className="grid gap-2 sm:grid-cols-3">
-                  <Input
-                    aria-label="Search Vendors"
-                    placeholder="Search name or sector"
-                    value={vendorSearch}
-                    onChange={(event) => setVendorSearch(event.target.value)}
+          <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
+            <SuperadminTabsNav session={session} />
+
+            <TabsContent
+              value="admins"
+              className="grid min-w-0 gap-4 lg:col-start-2 lg:row-start-1"
+            >
+              <Card>
+                <CardHeader className="gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <CardTitle>Admin tenant directory</CardTitle>
+                    <CardDescription>
+                      One isolated white-label operator per tenant.
+                    </CardDescription>
+                  </div>
+                  <CreateAdminDialog
+                    disabled={!provisioningConfigured}
+                    pending={pending}
+                    onSubmit={createAdmin}
                   />
-                  <NativeSelect
-                    aria-label="Filter by Admin tenant"
-                    value={tenantFilter}
-                    onChange={(event) => setTenantFilter(event.target.value)}
-                  >
-                    <option value="all">All Admin tenants</option>
+                </CardHeader>
+                <CardContent>
+                  <div className="hidden md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Admin tenant</TableHead>
+                          <TableHead>Support</TableHead>
+                          <TableHead>Vendors</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Created</TableHead>
+                          <TableHead className="text-right">Control</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {tenants.map((tenant) => (
+                          <TableRow key={tenant.id}>
+                            <TableCell>
+                              <div className="font-medium">{tenant.name}</div>
+                              <div className="text-muted-foreground">
+                                {tenant.slug}
+                              </div>
+                            </TableCell>
+                            <TableCell>{tenant.support_email || "—"}</TableCell>
+                            <TableCell>
+                              {
+                                vendors.filter(
+                                  (vendor) => vendor.admin_id === tenant.id
+                                ).length
+                              }
+                            </TableCell>
+                            <TableCell>{statusBadge(tenant.status)}</TableCell>
+                            <TableCell>
+                              {formatDate(tenant.created_at)}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap justify-end gap-2">
+                                <TenantProfileDialog
+                                  locale={locale}
+                                  tenantId={tenant.id}
+                                  initialName={tenant.name}
+                                  initialSupportEmail={tenant.support_email}
+                                  initialPrimaryColor={tenant.primary_color}
+                                  initialLogoUrl={tenant.logo_url}
+                                />
+                                <AdminRecoveryButton
+                                  account={adminAccountsByTenant.get(tenant.id)}
+                                  pending={pending}
+                                  provisioningConfigured={
+                                    provisioningConfigured
+                                  }
+                                  onSend={sendAdminRecoveryLink}
+                                />
+                                <StatusControl
+                                  value={tenant.status}
+                                  options={["active", "suspended", "archived"]}
+                                  pending={pending}
+                                  onApply={(status) =>
+                                    runAction(
+                                      () =>
+                                        setTenantStatusAction({
+                                          locale,
+                                          tenantId: tenant.id,
+                                          status: status as TenantStatus,
+                                        }),
+                                      "Admin tenant status updated."
+                                    )
+                                  }
+                                />
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <div className="grid gap-3">
                     {tenants.map((tenant) => (
-                      <option key={tenant.id} value={tenant.id}>
-                        {tenant.name}
-                      </option>
+                      <MobileRecord
+                        key={tenant.id}
+                        title={tenant.name}
+                        subtitle={tenant.support_email || tenant.slug}
+                        status={tenant.status}
+                      >
+                        <p className="text-xs text-muted-foreground">
+                          {
+                            vendors.filter(
+                              (vendor) => vendor.admin_id === tenant.id
+                            ).length
+                          }{" "}
+                          Vendors · created {formatDate(tenant.created_at)}
+                        </p>
+                        <AdminRecoveryButton
+                          account={adminAccountsByTenant.get(tenant.id)}
+                          pending={pending}
+                          provisioningConfigured={provisioningConfigured}
+                          mobile
+                          onSend={sendAdminRecoveryLink}
+                        />
+                        <StatusControl
+                          value={tenant.status}
+                          options={["active", "suspended", "archived"]}
+                          pending={pending}
+                          onApply={(status) =>
+                            runAction(
+                              () =>
+                                setTenantStatusAction({
+                                  locale,
+                                  tenantId: tenant.id,
+                                  status: status as TenantStatus,
+                                }),
+                              "Admin tenant status updated."
+                            )
+                          }
+                        />
+                        <TenantProfileDialog
+                          locale={locale}
+                          tenantId={tenant.id}
+                          initialName={tenant.name}
+                          initialSupportEmail={tenant.support_email}
+                          initialPrimaryColor={tenant.primary_color}
+                          initialLogoUrl={tenant.logo_url}
+                          triggerLabel="Edit tenant profile"
+                        />
+                      </MobileRecord>
                     ))}
-                  </NativeSelect>
-                  <NativeSelect
-                    aria-label="Filter by Vendor subtype"
-                    value={typeFilter}
-                    onChange={(event) => setTypeFilter(event.target.value)}
-                  >
-                    <option value="all">All subtypes</option>
-                    <option value="delegation">Delegation</option>
-                    <option value="partner">Partner</option>
-                  </NativeSelect>
-                </div>
-                <div className="hidden md:block">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Vendor</TableHead>
-                        <TableHead>Owning Admin</TableHead>
-                        <TableHead>Subtype</TableHead>
-                        <TableHead>Sector</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Control / transfer</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredVendors.map((vendor) => (
-                        <TableRow key={vendor.id}>
-                          <TableCell>
-                            <div className="font-medium">{vendor.name_en}</div>
-                            <div className="text-muted-foreground">
-                              {vendor.name_cn || vendor.id}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {tenantNames.get(vendor.admin_id) ?? "Unknown"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {labelStatus(vendor.vendor_type)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{vendor.sector}</TableCell>
-                          <TableCell>{statusBadge(vendor.status)}</TableCell>
-                          <TableCell>
-                            <div className="flex flex-col gap-2">
-                              <VendorDirectoryDialog
-                                locale={locale}
-                                vendor={vendor}
-                                accounts={accounts.filter(
-                                  (account) =>
-                                    account.vendor_company_id === vendor.id
-                                )}
-                                accountEditingEnabled={provisioningConfigured}
-                              />
-                              <StatusControl
-                                value={vendor.status}
-                                options={["active", "suspended", "archived"]}
-                                pending={pending}
-                                onApply={(status) =>
-                                  runAction(
-                                    () =>
-                                      setVendorStatusAction({
-                                        locale,
-                                        vendorId: vendor.id,
-                                        status: status as VendorStatus,
-                                      }),
-                                    "Vendor status updated."
-                                  )
-                                }
-                              />
-                              <TransferControl
-                                vendor={vendor}
-                                tenants={tenants}
-                                pending={pending || !provisioningConfigured}
-                                onTransfer={(destinationAdminId) =>
-                                  runAction(
-                                    () =>
-                                      transferVendorAction({
-                                        locale,
-                                        vendorId: vendor.id,
-                                        destinationAdminId,
-                                      }),
-                                    "Vendor transferred to the selected Admin."
-                                  )
-                                }
-                              />
-                            </div>
-                          </TableCell>
-                        </TableRow>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent
+              value="vendors"
+              className="grid min-w-0 gap-4 lg:col-start-2 lg:row-start-1"
+            >
+              <Card>
+                <CardHeader className="gap-3 lg:flex-row lg:items-end lg:justify-between">
+                  <div>
+                    <CardTitle>Vendor directory</CardTitle>
+                    <CardDescription>
+                      All Vendor companies, grouped by owning Admin and subtype.
+                    </CardDescription>
+                  </div>
+                  <CreateVendorDialog
+                    tenants={tenants}
+                    disabled={!provisioningConfigured}
+                    pending={pending}
+                    onSubmit={createVendor}
+                  />
+                </CardHeader>
+                <CardContent className="grid gap-4">
+                  <div className="grid gap-2 sm:grid-cols-3">
+                    <Input
+                      aria-label="Search Vendors"
+                      placeholder="Search name or sector"
+                      value={vendorSearch}
+                      onChange={(event) => setVendorSearch(event.target.value)}
+                    />
+                    <NativeSelect
+                      aria-label="Filter by Admin tenant"
+                      value={tenantFilter}
+                      onChange={(event) => setTenantFilter(event.target.value)}
+                    >
+                      <option value="all">All Admin tenants</option>
+                      {tenants.map((tenant) => (
+                        <option key={tenant.id} value={tenant.id}>
+                          {tenant.name}
+                        </option>
                       ))}
-                    </TableBody>
-                  </Table>
-                </div>
-                <div className="grid gap-3">
-                  {filteredVendors.map((vendor) => (
-                    <MobileRecord
-                      key={vendor.id}
-                      title={vendor.name_en}
-                      subtitle={`${tenantNames.get(vendor.admin_id) ?? "Unknown Admin"} · ${labelStatus(vendor.vendor_type)} · ${vendor.sector}`}
-                      status={vendor.status}
+                    </NativeSelect>
+                    <NativeSelect
+                      aria-label="Filter by Vendor subtype"
+                      value={typeFilter}
+                      onChange={(event) => setTypeFilter(event.target.value)}
                     >
-                      <VendorDirectoryDialog
-                        locale={locale}
-                        vendor={vendor}
-                        accounts={accounts.filter(
-                          (account) => account.vendor_company_id === vendor.id
-                        )}
-                        accountEditingEnabled={provisioningConfigured}
-                      />
-                      <StatusControl
-                        value={vendor.status}
-                        options={["active", "suspended", "archived"]}
-                        pending={pending}
-                        onApply={(status) =>
-                          runAction(
-                            () =>
-                              setVendorStatusAction({
-                                locale,
-                                vendorId: vendor.id,
-                                status: status as VendorStatus,
-                              }),
-                            "Vendor status updated."
-                          )
-                        }
-                      />
-                      <TransferControl
-                        vendor={vendor}
-                        tenants={tenants}
-                        pending={pending || !provisioningConfigured}
-                        onTransfer={(destinationAdminId) =>
-                          runAction(
-                            () =>
-                              transferVendorAction({
-                                locale,
-                                vendorId: vendor.id,
-                                destinationAdminId,
-                              }),
-                            "Vendor transferred to the selected Admin."
-                          )
-                        }
-                      />
-                    </MobileRecord>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent
-            value="accounts"
-            className="min-w-0 lg:col-start-2 lg:row-start-1"
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>Account and role bindings</CardTitle>
-                <CardDescription>
-                  Trusted Auth claims must match these active database bindings.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="hidden md:block">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Account</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Admin tenant</TableHead>
-                        <TableHead>Vendor binding</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Control</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {accounts.map((account) => (
-                        <TableRow key={account.id}>
-                          <TableCell>
-                            <div className="font-medium">
-                              {account.display_name}
-                            </div>
-                            <div className="text-muted-foreground">
-                              {account.email}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {labelStatus(account.role)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {account.admin_id
-                              ? (tenantNames.get(account.admin_id) ?? "Unknown")
-                              : "Platform-wide"}
-                          </TableCell>
-                          <TableCell>
-                            {account.vendor_company_id
-                              ? (vendors.find(
-                                  (vendor) =>
-                                    vendor.id === account.vendor_company_id
-                                )?.name_en ?? account.vendor_company_id)
-                              : "—"}
-                          </TableCell>
-                          <TableCell>
-                            {statusBadge(
-                              account.active ? "active" : "suspended"
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="outline"
-                                disabled={pending || !provisioningConfigured}
-                                onClick={() =>
-                                  runAction(
-                                    () =>
-                                      syncAccountClaimsAction({
-                                        locale,
-                                        userId: account.id,
-                                      }),
-                                    "Trusted Auth claims synchronized."
-                                  )
-                                }
-                              >
-                                Sync claims
-                              </Button>
-                              <Button
-                                variant={
-                                  account.active ? "destructive" : "outline"
-                                }
-                                disabled={
-                                  pending ||
-                                  !provisioningConfigured ||
-                                  account.id === session.userId
-                                }
-                                onClick={() =>
-                                  runAction(
-                                    () =>
-                                      setAccountActiveAction({
-                                        locale,
-                                        userId: account.id,
-                                        active: !account.active,
-                                      }),
-                                    account.active
-                                      ? "Account suspended."
-                                      : "Account restored."
-                                  )
-                                }
-                              >
-                                {account.active ? "Suspend" : "Restore"}
-                              </Button>
-                            </div>
-                          </TableCell>
+                      <option value="all">All subtypes</option>
+                      <option value="delegation">Delegation</option>
+                      <option value="partner">Partner</option>
+                    </NativeSelect>
+                  </div>
+                  <div className="hidden md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Vendor</TableHead>
+                          <TableHead>Owning Admin</TableHead>
+                          <TableHead>Subtype</TableHead>
+                          <TableHead>Sector</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Control / transfer</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-                <div className="grid gap-3">
-                  {accounts.map((account) => (
-                    <MobileRecord
-                      key={account.id}
-                      title={account.display_name}
-                      subtitle={`${account.email} · ${labelStatus(account.role)}`}
-                      status={account.active ? "active" : "suspended"}
-                    >
-                      <p className="text-xs text-muted-foreground">
-                        {account.admin_id
-                          ? (tenantNames.get(account.admin_id) ??
-                            "Unknown Admin")
-                          : "Platform-wide account"}
-                      </p>
-                      <Button
-                        className="w-full"
-                        variant="outline"
-                        disabled={pending || !provisioningConfigured}
-                        onClick={() =>
-                          runAction(
-                            () =>
-                              syncAccountClaimsAction({
-                                locale,
-                                userId: account.id,
-                              }),
-                            "Trusted Auth claims synchronized."
-                          )
-                        }
+                      </TableHeader>
+                      <TableBody>
+                        {filteredVendors.map((vendor) => (
+                          <TableRow key={vendor.id}>
+                            <TableCell>
+                              <div className="font-medium">
+                                {vendor.name_en}
+                              </div>
+                              <div className="text-muted-foreground">
+                                {vendor.name_cn || vendor.id}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {tenantNames.get(vendor.admin_id) ?? "Unknown"}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {labelStatus(vendor.vendor_type)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>{vendor.sector}</TableCell>
+                            <TableCell>{statusBadge(vendor.status)}</TableCell>
+                            <TableCell>
+                              <div className="flex flex-col gap-2">
+                                <VendorDirectoryDialog
+                                  locale={locale}
+                                  vendor={vendor}
+                                  accounts={accounts.filter(
+                                    (account) =>
+                                      account.vendor_company_id === vendor.id
+                                  )}
+                                  accountEditingEnabled={provisioningConfigured}
+                                />
+                                <StatusControl
+                                  value={vendor.status}
+                                  options={["active", "suspended", "archived"]}
+                                  pending={pending}
+                                  onApply={(status) =>
+                                    runAction(
+                                      () =>
+                                        setVendorStatusAction({
+                                          locale,
+                                          vendorId: vendor.id,
+                                          status: status as VendorStatus,
+                                        }),
+                                      "Vendor status updated."
+                                    )
+                                  }
+                                />
+                                <TransferControl
+                                  vendor={vendor}
+                                  tenants={tenants}
+                                  pending={pending || !provisioningConfigured}
+                                  onTransfer={(destinationAdminId) =>
+                                    runAction(
+                                      () =>
+                                        transferVendorAction({
+                                          locale,
+                                          vendorId: vendor.id,
+                                          destinationAdminId,
+                                        }),
+                                      "Vendor transferred to the selected Admin."
+                                    )
+                                  }
+                                />
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <div className="grid gap-3">
+                    {filteredVendors.map((vendor) => (
+                      <MobileRecord
+                        key={vendor.id}
+                        title={vendor.name_en}
+                        subtitle={`${tenantNames.get(vendor.admin_id) ?? "Unknown Admin"} · ${labelStatus(vendor.vendor_type)} · ${vendor.sector}`}
+                        status={vendor.status}
                       >
-                        Sync trusted claims
-                      </Button>
-                      <Button
-                        className="w-full"
-                        variant={account.active ? "destructive" : "outline"}
-                        disabled={
-                          pending ||
-                          !provisioningConfigured ||
-                          account.id === session.userId
-                        }
-                        onClick={() =>
-                          runAction(
-                            () =>
-                              setAccountActiveAction({
-                                locale,
-                                userId: account.id,
-                                active: !account.active,
-                              }),
-                            account.active
-                              ? "Account suspended."
-                              : "Account restored."
-                          )
-                        }
+                        <VendorDirectoryDialog
+                          locale={locale}
+                          vendor={vendor}
+                          accounts={accounts.filter(
+                            (account) => account.vendor_company_id === vendor.id
+                          )}
+                          accountEditingEnabled={provisioningConfigured}
+                        />
+                        <StatusControl
+                          value={vendor.status}
+                          options={["active", "suspended", "archived"]}
+                          pending={pending}
+                          onApply={(status) =>
+                            runAction(
+                              () =>
+                                setVendorStatusAction({
+                                  locale,
+                                  vendorId: vendor.id,
+                                  status: status as VendorStatus,
+                                }),
+                              "Vendor status updated."
+                            )
+                          }
+                        />
+                        <TransferControl
+                          vendor={vendor}
+                          tenants={tenants}
+                          pending={pending || !provisioningConfigured}
+                          onTransfer={(destinationAdminId) =>
+                            runAction(
+                              () =>
+                                transferVendorAction({
+                                  locale,
+                                  vendorId: vendor.id,
+                                  destinationAdminId,
+                                }),
+                              "Vendor transferred to the selected Admin."
+                            )
+                          }
+                        />
+                      </MobileRecord>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent
+              value="accounts"
+              className="min-w-0 lg:col-start-2 lg:row-start-1"
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle>Account and role bindings</CardTitle>
+                  <CardDescription>
+                    Trusted Auth claims must match these active database
+                    bindings.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="hidden md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Account</TableHead>
+                          <TableHead>Role</TableHead>
+                          <TableHead>Admin tenant</TableHead>
+                          <TableHead>Vendor binding</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Control</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {accounts.map((account) => (
+                          <TableRow key={account.id}>
+                            <TableCell>
+                              <div className="font-medium">
+                                {account.display_name}
+                              </div>
+                              <div className="text-muted-foreground">
+                                {account.email}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {labelStatus(account.role)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {account.admin_id
+                                ? (tenantNames.get(account.admin_id) ??
+                                  "Unknown")
+                                : "Platform-wide"}
+                            </TableCell>
+                            <TableCell>
+                              {account.vendor_company_id
+                                ? (vendors.find(
+                                    (vendor) =>
+                                      vendor.id === account.vendor_company_id
+                                  )?.name_en ?? account.vendor_company_id)
+                                : "—"}
+                            </TableCell>
+                            <TableCell>
+                              {statusBadge(
+                                account.active ? "active" : "suspended"
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  disabled={pending || !provisioningConfigured}
+                                  onClick={() =>
+                                    runAction(
+                                      () =>
+                                        syncAccountClaimsAction({
+                                          locale,
+                                          userId: account.id,
+                                        }),
+                                      "Trusted Auth claims synchronized."
+                                    )
+                                  }
+                                >
+                                  Sync claims
+                                </Button>
+                                <Button
+                                  variant={
+                                    account.active ? "destructive" : "outline"
+                                  }
+                                  disabled={
+                                    pending ||
+                                    !provisioningConfigured ||
+                                    account.id === session.userId
+                                  }
+                                  onClick={() =>
+                                    runAction(
+                                      () =>
+                                        setAccountActiveAction({
+                                          locale,
+                                          userId: account.id,
+                                          active: !account.active,
+                                        }),
+                                      account.active
+                                        ? "Account suspended."
+                                        : "Account restored."
+                                    )
+                                  }
+                                >
+                                  {account.active ? "Suspend" : "Restore"}
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <div className="grid gap-3">
+                    {accounts.map((account) => (
+                      <MobileRecord
+                        key={account.id}
+                        title={account.display_name}
+                        subtitle={`${account.email} · ${labelStatus(account.role)}`}
+                        status={account.active ? "active" : "suspended"}
                       >
-                        {account.active ? "Suspend" : "Restore"}
-                      </Button>
-                    </MobileRecord>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent
-            value="reporting"
-            className="min-w-0 lg:col-start-2 lg:row-start-1"
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>Cross-tenant operations</CardTitle>
-                <CardDescription>
-                  Platform-wide totals broken down by Admin tenant.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {tenants.map((tenant) => {
-                  const tenantVendors = vendors.filter(
-                    (vendor) => vendor.admin_id === tenant.id
-                  ).length
-                  const matches = operations.matches.filter(
-                    (row) => row.admin_id === tenant.id
-                  ).length
-                  const meetings = operations.meetings.filter(
-                    (row) => row.admin_id === tenant.id
-                  ).length
-                  const deals = operations.deals.filter(
-                    (row) => row.admin_id === tenant.id
-                  ).length
-
-                  return (
-                    <Card key={tenant.id}>
-                      <CardHeader>
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <CardTitle className="text-sm">
-                              {tenant.name}
-                            </CardTitle>
-                            <CardDescription>{tenant.slug}</CardDescription>
-                          </div>
-                          {statusBadge(tenant.status)}
-                        </div>
-                      </CardHeader>
-                      <CardContent className="grid grid-cols-2 gap-3 text-xs">
-                        <div>
-                          <p className="text-muted-foreground">Vendors</p>
-                          <p className="text-lg font-semibold">
-                            {tenantVendors}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Matches</p>
-                          <p className="text-lg font-semibold">{matches}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Meetings</p>
-                          <p className="text-lg font-semibold">{meetings}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Deals</p>
-                          <p className="text-lg font-semibold">{deals}</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-                })}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent
-            value="incidents"
-            className="min-w-0 lg:col-start-2 lg:row-start-1"
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>Critical meeting incidents</CardTitle>
-                <CardDescription>
-                  Automatic meeting creation failures requiring Superadmin
-                  attention. Provider credentials, tokens, and raw responses are
-                  never shown here.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-3">
-                {meetingCreationIncidents.length ? (
-                  meetingCreationIncidents.map((incident) => (
-                    <div
-                      key={incident.id}
-                      className="grid gap-3 rounded-md border border-destructive/35 bg-destructive/5 p-4"
-                    >
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Badge variant="destructive">Critical</Badge>
-                            <Badge variant="outline">
-                              {incident.provider.toUpperCase()}
-                            </Badge>
-                            <span className="text-sm font-medium">
-                              {tenantNames.get(incident.admin_id) ??
-                                "Unknown tenant"}
-                            </span>
-                          </div>
-                          <p className="mt-2 text-sm">
-                            {incident.failure_summary}
-                          </p>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {labelStatus(incident.failure_code)} · Attempt{" "}
-                            {incident.attempt_count} ·{" "}
-                            {formatDate(incident.last_attempt_at)}
-                          </p>
-                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {account.admin_id
+                            ? (tenantNames.get(account.admin_id) ??
+                              "Unknown Admin")
+                            : "Platform-wide account"}
+                        </p>
                         <Button
-                          variant="destructive"
-                          disabled={pending || incident.attempt_count >= 20}
-                          onClick={() => retryMeetingCreation(incident)}
+                          className="w-full"
+                          variant="outline"
+                          disabled={pending || !provisioningConfigured}
+                          onClick={() =>
+                            runAction(
+                              () =>
+                                syncAccountClaimsAction({
+                                  locale,
+                                  userId: account.id,
+                                }),
+                              "Trusted Auth claims synchronized."
+                            )
+                          }
                         >
-                          Retry meeting creation
+                          Sync trusted claims
                         </Button>
+                        <Button
+                          className="w-full"
+                          variant={account.active ? "destructive" : "outline"}
+                          disabled={
+                            pending ||
+                            !provisioningConfigured ||
+                            account.id === session.userId
+                          }
+                          onClick={() =>
+                            runAction(
+                              () =>
+                                setAccountActiveAction({
+                                  locale,
+                                  userId: account.id,
+                                  active: !account.active,
+                                }),
+                              account.active
+                                ? "Account suspended."
+                                : "Account restored."
+                            )
+                          }
+                        >
+                          {account.active ? "Suspend" : "Restore"}
+                        </Button>
+                      </MobileRecord>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent
+              value="reporting"
+              className="min-w-0 lg:col-start-2 lg:row-start-1"
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle>Cross-tenant operations</CardTitle>
+                  <CardDescription>
+                    Platform-wide totals broken down by Admin tenant.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {tenants.map((tenant) => {
+                    const tenantVendors = vendors.filter(
+                      (vendor) => vendor.admin_id === tenant.id
+                    ).length
+                    const matches = operations.matches.filter(
+                      (row) => row.admin_id === tenant.id
+                    ).length
+                    const meetings = operations.meetings.filter(
+                      (row) => row.admin_id === tenant.id
+                    ).length
+                    const deals = operations.deals.filter(
+                      (row) => row.admin_id === tenant.id
+                    ).length
+
+                    return (
+                      <Card key={tenant.id}>
+                        <CardHeader>
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <CardTitle className="text-sm">
+                                {tenant.name}
+                              </CardTitle>
+                              <CardDescription>{tenant.slug}</CardDescription>
+                            </div>
+                            {statusBadge(tenant.status)}
+                          </div>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-2 gap-3 text-xs">
+                          <div>
+                            <p className="text-muted-foreground">Vendors</p>
+                            <p className="text-lg font-semibold">
+                              {tenantVendors}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Matches</p>
+                            <p className="text-lg font-semibold">{matches}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Meetings</p>
+                            <p className="text-lg font-semibold">{meetings}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Deals</p>
+                            <p className="text-lg font-semibold">{deals}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent
+              value="incidents"
+              className="min-w-0 lg:col-start-2 lg:row-start-1"
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle>Critical meeting incidents</CardTitle>
+                  <CardDescription>
+                    Automatic meeting creation failures requiring Superadmin
+                    attention. Provider credentials, tokens, and raw responses
+                    are never shown here.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-3">
+                  {meetingCreationIncidents.length ? (
+                    meetingCreationIncidents.map((incident) => (
+                      <div
+                        key={incident.id}
+                        className="grid gap-3 rounded-md border border-destructive/35 bg-destructive/5 p-4"
+                      >
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge variant="destructive">Critical</Badge>
+                              <Badge variant="outline">
+                                {incident.provider.toUpperCase()}
+                              </Badge>
+                              <span className="text-sm font-medium">
+                                {tenantNames.get(incident.admin_id) ??
+                                  "Unknown tenant"}
+                              </span>
+                            </div>
+                            <p className="mt-2 text-sm">
+                              {incident.failure_summary}
+                            </p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {labelStatus(incident.failure_code)} · Attempt{" "}
+                              {incident.attempt_count} ·{" "}
+                              {formatDate(incident.last_attempt_at)}
+                            </p>
+                          </div>
+                          <Button
+                            variant="destructive"
+                            disabled={pending || incident.attempt_count >= 20}
+                            onClick={() => retryMeetingCreation(incident)}
+                          >
+                            Retry meeting creation
+                          </Button>
+                        </div>
+                        <p className="text-xs break-all text-muted-foreground">
+                          Match: {incident.match_id}
+                        </p>
                       </div>
-                      <p className="text-xs break-all text-muted-foreground">
-                        Match: {incident.match_id}
+                    ))
+                  ) : (
+                    <div className="rounded-md border border-dashed p-6 text-center">
+                      <p className="font-medium">
+                        No critical meeting incidents
+                      </p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Automatic provider creation is operating without
+                        unresolved failures.
                       </p>
                     </div>
-                  ))
-                ) : (
-                  <div className="rounded-md border border-dashed p-6 text-center">
-                    <p className="font-medium">No critical meeting incidents</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Automatic provider creation is operating without
-                      unresolved failures.
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          <TabsContent
-            value="settings"
-            className="min-w-0 lg:col-start-2 lg:row-start-1"
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>Platform settings</CardTitle>
-                <CardDescription>
-                  Audited platform-wide plans, permissions, reference data, and
-                  operational controls. These values are not tenant-editable.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-3 sm:grid-cols-2">
-                {platformSettings.map((setting) => (
-                  <PlatformSettingEditor
-                    key={setting.id}
-                    locale={locale}
-                    setting={setting}
-                  />
-                ))}
-              </CardContent>
-            </Card>
-          </TabsContent>
+            <TabsContent
+              value="email"
+              className="grid min-w-0 gap-4 lg:col-start-2 lg:row-start-1"
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle>Email provider readiness</CardTitle>
+                  <CardDescription>
+                    Business emails use the Resend API. Password recovery and
+                    setup links remain generated by Supabase Auth and require
+                    Resend to be connected as the Auth SMTP provider.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-3 sm:grid-cols-3">
+                  {[
+                    {
+                      label: "Resend API key",
+                      configured: emailProviderReadiness.resendApiConfigured,
+                      detail: "Sends business and broadcast email.",
+                    },
+                    {
+                      label: "Verified From address",
+                      configured: emailProviderReadiness.resendFromConfigured,
+                      detail: "Must use the verified Resend domain.",
+                    },
+                    {
+                      label: "Delivery webhook",
+                      configured:
+                        emailProviderReadiness.resendWebhookConfigured,
+                      detail: "Updates delivered, bounced, and failed states.",
+                    },
+                  ].map((item) => (
+                    <div key={item.label} className="rounded-md border p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-medium">{item.label}</p>
+                        <Badge
+                          variant={
+                            item.configured ? "secondary" : "destructive"
+                          }
+                        >
+                          {item.configured ? "Configured" : "Required"}
+                        </Badge>
+                      </div>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        {item.detail}
+                      </p>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
 
-          <TabsContent
-            value="audit"
-            className="min-w-0 lg:col-start-2 lg:row-start-1"
-          >
-            <Card>
-              <CardHeader>
-                <CardTitle>Audit events</CardTitle>
-                <CardDescription>
-                  Append-only history for tenant, Vendor, account, and transfer
-                  changes.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                <Input
-                  placeholder="Search action, table, role, or target ID"
-                  value={auditSearch}
-                  onChange={(event) => setAuditSearch(event.target.value)}
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <MetricCard
+                  label="Tracked recipients"
+                  value={emailDeliveries.length}
+                  detail="One record per intended recipient"
+                  icon={Mail01Icon}
                 />
-                <div className="grid gap-2">
-                  {filteredAudit.map((event) => (
-                    <details
-                      key={event.id}
-                      className="rounded-md border bg-background p-3 text-xs"
+                <MetricCard
+                  label="Delivered"
+                  value={deliveredEmails}
+                  detail="Confirmed by the Resend webhook"
+                  icon={Mail01Icon}
+                />
+                <MetricCard
+                  label="Needs attention"
+                  value={failedEmails}
+                  detail="Failed, bounced, suppressed, or complained"
+                  icon={Alert02Icon}
+                />
+                <MetricCard
+                  label="Auth requests"
+                  value={requestedAuthEmails}
+                  detail="Accepted by Supabase; SMTP delivery is separate"
+                  icon={ResetPasswordIcon}
+                />
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Sending activity by sender</CardTitle>
+                  <CardDescription>
+                    Counts are grouped by the person or system that initiated
+                    each recipient delivery.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {emailSenderGroups.length ? (
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                      {emailSenderGroups.map((group) => (
+                        <div key={group.key} className="rounded-md border p-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-medium">
+                                {group.label}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {emailSenderLabel(group.senderType)}
+                              </p>
+                            </div>
+                            <Badge variant="outline">{group.total} total</Badge>
+                          </div>
+                          <p className="mt-3 text-xs text-muted-foreground">
+                            {group.delivered} delivered · {group.failed} needs
+                            attention
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-md border border-dashed p-6 text-center">
+                      <p className="font-medium">No email activity yet</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        New Auth requests and Resend messages will appear here.
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Delivery log</CardTitle>
+                  <CardDescription>
+                    Search recipients and filter the latest 500 delivery
+                    records. “Requested” is not the same as delivered.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4">
+                  <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_180px_180px]">
+                    <Input
+                      placeholder="Search sender, recipient, subject, or trigger"
+                      value={emailSearch}
+                      onChange={(event) => setEmailSearch(event.target.value)}
+                    />
+                    <NativeSelect
+                      aria-label="Filter email status"
+                      value={emailStatusFilter}
+                      onChange={(event) =>
+                        setEmailStatusFilter(event.target.value)
+                      }
                     >
-                      <summary className="cursor-pointer list-none">
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Badge variant="outline">
-                              {event.action.toUpperCase()}
-                            </Badge>
-                            <span className="font-medium">
-                              {event.target_table}
-                            </span>
+                      <option value="all">All statuses</option>
+                      <option value="requested">Requested</option>
+                      <option value="queued">Queued</option>
+                      <option value="sent">Sent</option>
+                      <option value="delivered">Delivered</option>
+                      <option value="delivery_delayed">Delayed</option>
+                      <option value="failed">Failed</option>
+                      <option value="bounced">Bounced</option>
+                      <option value="complained">Complained</option>
+                      <option value="suppressed">Suppressed</option>
+                    </NativeSelect>
+                    <NativeSelect
+                      aria-label="Filter email sender"
+                      value={emailSenderFilter}
+                      onChange={(event) =>
+                        setEmailSenderFilter(event.target.value)
+                      }
+                    >
+                      <option value="all">All senders</option>
+                      <option value="supabase_auth">Supabase Auth</option>
+                      <option value="plexus_system">Plexus system</option>
+                      <option value="superadmin">Superadmin</option>
+                      <option value="admin">Admin</option>
+                      <option value="vendor">Vendor</option>
+                    </NativeSelect>
+                  </div>
+
+                  <div className="hidden overflow-x-auto md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Sender</TableHead>
+                          <TableHead>Recipient</TableHead>
+                          <TableHead>Message</TableHead>
+                          <TableHead>Provider</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Requested</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredEmailDeliveries.map((delivery) => (
+                          <TableRow key={delivery.id}>
+                            <TableCell>
+                              <div className="font-medium">
+                                {delivery.sender_name}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {emailSenderLabel(delivery.sender_type)}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div>{delivery.recipient_name || "—"}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {delivery.recipient_email}
+                              </div>
+                            </TableCell>
+                            <TableCell className="max-w-64">
+                              <div className="truncate font-medium">
+                                {delivery.subject}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {labelStatus(delivery.trigger_key)}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline">
+                                {delivery.provider === "supabase_auth"
+                                  ? "Supabase Auth"
+                                  : "Resend"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="grid gap-1">
+                                {emailStatusBadge(delivery.status)}
+                                {delivery.status_detail ? (
+                                  <span className="max-w-56 text-xs text-muted-foreground">
+                                    {delivery.status_detail}
+                                  </span>
+                                ) : null}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {formatDate(delivery.requested_at)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  <div className="grid gap-3 md:hidden">
+                    {filteredEmailDeliveries.map((delivery) => (
+                      <div key={delivery.id} className="rounded-md border p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium">
+                              {delivery.subject}
+                            </p>
+                            <p className="truncate text-xs text-muted-foreground">
+                              {delivery.recipient_email}
+                            </p>
+                          </div>
+                          {emailStatusBadge(delivery.status)}
+                        </div>
+                        <p className="mt-3 text-xs text-muted-foreground">
+                          {delivery.sender_name} ·{" "}
+                          {emailSenderLabel(delivery.sender_type)} ·{" "}
+                          {formatDate(delivery.requested_at)}
+                        </p>
+                        {delivery.status_detail ? (
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            {delivery.status_detail}
+                          </p>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+
+                  {!filteredEmailDeliveries.length ? (
+                    <p className="rounded-md border border-dashed p-5 text-center text-sm text-muted-foreground">
+                      No delivery records match these filters.
+                    </p>
+                  ) : null}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Email action coverage</CardTitle>
+                  <CardDescription>
+                    The expected sender, recipient, and delivery owner for every
+                    email-capable Plexus action.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="hidden overflow-x-auto md:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Action</TableHead>
+                          <TableHead>Sender</TableHead>
+                          <TableHead>Recipient</TableHead>
+                          <TableHead>Delivery owner</TableHead>
+                          <TableHead>After setup</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {emailTriggerCatalog.map((trigger) => (
+                          <TableRow key={trigger.key}>
+                            <TableCell className="font-medium">
+                              {trigger.label}
+                            </TableCell>
+                            <TableCell>{trigger.sender}</TableCell>
+                            <TableCell>{trigger.recipient}</TableCell>
+                            <TableCell>{trigger.provider}</TableCell>
+                            <TableCell className="max-w-80 text-muted-foreground">
+                              {trigger.behavior}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <div className="grid gap-3 md:hidden">
+                    {emailTriggerCatalog.map((trigger) => (
+                      <div key={trigger.key} className="rounded-md border p-3">
+                        <p className="text-sm font-medium">{trigger.label}</p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {trigger.sender} → {trigger.recipient}
+                        </p>
+                        <Badge className="mt-3" variant="outline">
+                          {trigger.provider}
+                        </Badge>
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          {trigger.behavior}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent
+              value="settings"
+              className="min-w-0 lg:col-start-2 lg:row-start-1"
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle>Platform settings</CardTitle>
+                  <CardDescription>
+                    Audited platform-wide plans, permissions, reference data,
+                    and operational controls. These values are not
+                    tenant-editable.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-3 sm:grid-cols-2">
+                  {platformSettings.map((setting) => (
+                    <PlatformSettingEditor
+                      key={setting.id}
+                      locale={locale}
+                      setting={setting}
+                    />
+                  ))}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent
+              value="audit"
+              className="min-w-0 lg:col-start-2 lg:row-start-1"
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle>Audit events</CardTitle>
+                  <CardDescription>
+                    Append-only history for tenant, Vendor, account, and
+                    transfer changes.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4">
+                  <Input
+                    placeholder="Search action, table, role, or target ID"
+                    value={auditSearch}
+                    onChange={(event) => setAuditSearch(event.target.value)}
+                  />
+                  <div className="grid gap-2">
+                    {filteredAudit.map((event) => (
+                      <details
+                        key={event.id}
+                        className="rounded-md border bg-background p-3 text-xs"
+                      >
+                        <summary className="cursor-pointer list-none">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge variant="outline">
+                                {event.action.toUpperCase()}
+                              </Badge>
+                              <span className="font-medium">
+                                {event.target_table}
+                              </span>
+                              <span className="text-muted-foreground">
+                                {event.actor_role ?? "system"}
+                              </span>
+                            </div>
                             <span className="text-muted-foreground">
-                              {event.actor_role ?? "system"}
+                              {formatDate(event.created_at)}
                             </span>
                           </div>
-                          <span className="text-muted-foreground">
-                            {formatDate(event.created_at)}
-                          </span>
+                        </summary>
+                        <div className="mt-3 grid gap-2 border-t pt-3">
+                          <p className="break-all">
+                            Target: {event.target_id ?? "—"} · Tenant:{" "}
+                            {event.admin_id
+                              ? (tenantNames.get(event.admin_id) ??
+                                event.admin_id)
+                              : "Platform"}
+                          </p>
+                          <pre className="max-h-72 overflow-auto rounded bg-muted p-3 text-[11px]">
+                            {JSON.stringify(
+                              {
+                                before: event.before_values,
+                                after: event.after_values,
+                                requestId: event.request_id,
+                              },
+                              null,
+                              2
+                            )}
+                          </pre>
                         </div>
-                      </summary>
-                      <div className="mt-3 grid gap-2 border-t pt-3">
-                        <p className="break-all">
-                          Target: {event.target_id ?? "—"} · Tenant:{" "}
-                          {event.admin_id
-                            ? (tenantNames.get(event.admin_id) ??
-                              event.admin_id)
-                            : "Platform"}
-                        </p>
-                        <pre className="max-h-72 overflow-auto rounded bg-muted p-3 text-[11px]">
-                          {JSON.stringify(
-                            {
-                              before: event.before_values,
-                              after: event.after_values,
-                              requestId: event.request_id,
-                            },
-                            null,
-                            2
-                          )}
-                        </pre>
-                      </div>
-                    </details>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                      </details>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </div>
         </Tabs>
       </div>
     </main>

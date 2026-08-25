@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 
 import {
   MatchDiscovery,
@@ -28,6 +28,10 @@ export default async function VendorDiscoverPage({
 
   if (!session.vendorType) {
     notFound()
+  }
+
+  if (session.tenantVendorDiscoveryEnabled === false) {
+    redirect(`/${normalizedLocale}/vendor?section=matches`)
   }
 
   const supabase = await createSupabaseServerClient()

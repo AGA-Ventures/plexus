@@ -1,5 +1,12 @@
 import Image from "next/image"
 import Link from "next/link"
+import { HugeiconsIcon } from "@hugeicons/react"
+import {
+  ArrowDown01Icon,
+  ArrowUpRight01Icon,
+  Globe02Icon,
+  Menu01Icon,
+} from "@hugeicons/core-free-icons"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -12,89 +19,230 @@ type SiteHeaderProps = {
   content: PublicContent
   locale: PublicLocale
   currentPath?: string
+  supportedLocales?: PublicLocale[]
+}
+
+const headerCopy: Record<
+  PublicLocale,
+  { preview: string; preEvent: string; menu: string; language: string }
+> = {
+  en: {
+    preview: "Product preview",
+    preEvent: "Pre-event service",
+    menu: "Menu",
+    language: "Choose language",
+  },
+  ms: {
+    preview: "Pratonton produk",
+    preEvent: "Perkhidmatan pra-acara",
+    menu: "Menu",
+    language: "Pilih bahasa",
+  },
+  "zh-Hant": {
+    preview: "產品預覽",
+    preEvent: "活動前服務",
+    menu: "選單",
+    language: "選擇語言",
+  },
 }
 
 export function SiteHeader({
   content,
   locale,
   currentPath = "/",
+  supportedLocales = ["en", "ms", "zh-Hant"],
 }: SiteHeaderProps) {
+  const labels = headerCopy[locale]
   const navItems = [
     { label: content.nav.howItWorks, href: "/how-it-works" },
-    { label: content.nav.forVendors, href: "/for-vendors" },
+    { label: content.nav.forVendors, href: "/for-program-operators" },
     { label: content.nav.forBusinesses, href: "/for-businesses" },
-    { label: content.nav.pricing, href: "/pricing" },
+    { label: labels.preview, href: "/app" },
   ]
+  const locales = [
+    { label: "English", shortLabel: "EN", value: "en" as const },
+    {
+      label: "Bahasa Malaysia",
+      shortLabel: "BM",
+      value: "ms" as const,
+    },
+    {
+      label: "繁體中文",
+      shortLabel: "繁中",
+      value: "zh-Hant" as const,
+    },
+  ].filter((item) => supportedLocales.includes(item.value))
+  const activeLocale =
+    locales.find((item) => item.value === locale) ?? locales[0]
+  const preEventActive = currentPath === "/pre-event"
 
   return (
-    <header className="mx-auto w-full max-w-7xl px-4 pt-5 sm:px-6 lg:px-8">
-      <div className="flex items-center justify-between gap-4 rounded-md border border-[#c7ceda]/16 bg-[#071326]/86 px-3 py-3 shadow-2xl shadow-black/35 backdrop-blur-xl sm:px-4">
+    <header className="relative z-40 border-b border-white/12 bg-[#071326] text-white">
+      <div className="mx-auto flex min-h-[4.25rem] w-full max-w-[1240px] items-center gap-3 px-4 sm:px-6 xl:px-5">
         <Link
           href={withLocale("/", locale)}
-          className="flex min-w-0 items-center gap-3"
+          className="flex min-h-11 shrink-0 items-center rounded-md focus-visible:ring-2 focus-visible:ring-[#80e8ff] focus-visible:outline-none"
           aria-label={content.meta.siteName}
         >
           <Image
-            src="/plexus-brand-mark.png"
-            alt=""
-            width={245}
-            height={145}
-            className="size-10 rounded-md border border-[#0a84ff]/35 bg-[#071326] object-cover p-1.5 shadow-[0_0_26px_rgba(37,208,255,0.18)]"
+            src="/plexus-wordmark-transparent-trimmed.png"
+            alt="Plexus"
+            width={1933}
+            height={311}
+            priority
+            className="h-auto w-36 object-contain sm:w-[9.75rem]"
           />
-          <span className="min-w-0 leading-tight">
-            <Image
-              src="/plexus-brand-wordmark.png"
-              alt="Plexus"
-              width={720}
-              height={215}
-              className="h-5 w-32 object-contain object-left sm:h-6 sm:w-40"
-            />
-            <span className="hidden max-w-72 truncate text-[0.68rem] tracking-[0.16em] text-[#c7ceda]/70 uppercase sm:block">
-              {content.meta.tagline}
-            </span>
-          </span>
         </Link>
 
-        <nav className="hidden items-center rounded-md border border-[#c7ceda]/12 bg-white/5 p-1 text-sm text-[#c7ceda] lg:flex">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={withLocale(item.href, locale)}
-              className="rounded px-3 py-2 transition hover:bg-[#0a84ff]/16 hover:text-white"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="flex shrink-0 items-center gap-2">
-          <div className="hidden items-center rounded-md border border-[#c7ceda]/12 bg-white/5 p-1 sm:flex">
-            {[
-              { label: "EN", locale: "en" as const },
-              { label: "BM", locale: "ms" as const },
-              { label: "繁體中文", locale: "zh-Hant" as const },
-            ].map((item) => (
+        <nav className="ml-auto hidden min-w-0 items-center gap-0.5 text-[0.8125rem] xl:flex">
+          {navItems.map((item) => {
+            const active = currentPath === item.href
+            return (
               <Link
-                key={item.locale}
-                href={withLocale(currentPath, item.locale)}
+                key={item.href}
+                href={withLocale(item.href, locale)}
+                aria-current={active ? "page" : undefined}
                 className={[
-                  "rounded px-2.5 py-1.5 text-xs font-medium transition",
-                  locale === item.locale
+                  "shrink-0 rounded-lg px-2.5 py-2.5 font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-[#80e8ff] focus-visible:outline-none",
+                  active
                     ? "bg-white text-[#071326]"
-                    : "text-[#c7ceda] hover:bg-[#0a84ff]/16 hover:text-white",
+                    : "text-[#dcecf7] hover:bg-white/10 hover:text-white",
                 ].join(" ")}
               >
                 {item.label}
               </Link>
-            ))}
-          </div>
+            )
+          })}
+        </nav>
+
+        <div className="ml-auto flex shrink-0 items-center gap-2 xl:ml-2">
+          <Link
+            href={withLocale("/pre-event", locale)}
+            aria-current={preEventActive ? "page" : undefined}
+            className={[
+              "hidden min-h-10 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-[0.8125rem] font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-[#80e8ff] focus-visible:outline-none xl:inline-flex",
+              preEventActive
+                ? "border-white/25 bg-white/10 text-white"
+                : "border-[#80e8ff]/20 bg-[#80e8ff]/[0.04] text-[#80e8ff] hover:border-[#80e8ff]/35 hover:bg-[#80e8ff]/10 hover:text-white",
+            ].join(" ")}
+          >
+            {labels.preEvent}
+            <HugeiconsIcon
+              icon={ArrowUpRight01Icon}
+              size={14}
+              strokeWidth={1.8}
+              aria-hidden="true"
+            />
+          </Link>
+
+          <details className="group relative">
+            <summary
+              role="button"
+              aria-label={labels.language}
+              className="flex min-h-10 cursor-pointer list-none items-center gap-1.5 rounded-lg border border-white/14 bg-white/[0.03] px-2.5 text-xs font-semibold text-white transition-colors hover:border-white/25 hover:bg-white/[0.08] focus-visible:ring-2 focus-visible:ring-[#80e8ff] focus-visible:outline-none [&::-webkit-details-marker]:hidden"
+            >
+              <HugeiconsIcon
+                icon={Globe02Icon}
+                size={15}
+                strokeWidth={1.8}
+                aria-hidden="true"
+                className="hidden text-[#80e8ff] sm:block"
+              />
+              <span>{activeLocale.shortLabel}</span>
+              <HugeiconsIcon
+                icon={ArrowDown01Icon}
+                size={14}
+                strokeWidth={1.9}
+                aria-hidden="true"
+                className="text-white/60 transition-transform duration-200 group-open:rotate-180"
+              />
+            </summary>
+            <div className="absolute right-0 z-50 mt-2 grid min-w-48 gap-1 rounded-lg bg-white p-2 text-[#071326] shadow-[0_20px_55px_rgba(0,0,0,0.28)]">
+              {locales.map((item) => (
+                <Link
+                  key={item.value}
+                  href={withLocale(currentPath, item.value)}
+                  aria-current={locale === item.value ? "true" : undefined}
+                  className={[
+                    "flex min-h-11 items-center justify-between gap-4 rounded-md px-3 py-2 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-[#0a84ff] focus-visible:outline-none",
+                    locale === item.value
+                      ? "bg-[#dcecf7] text-[#0758c8]"
+                      : "text-[#405872] hover:bg-[#eef4f8] hover:text-[#111826]",
+                  ].join(" ")}
+                >
+                  <span>{item.label}</span>
+                  <span className="text-[0.65rem] font-semibold tracking-[0.12em] text-[#6a7a8e]">
+                    {item.shortLabel}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </details>
+
           <Button
             asChild
             size="sm"
-            className="h-9 bg-[#0a84ff] px-4 text-white shadow-[0_0_26px_rgba(10,132,255,0.32)] hover:bg-[#25d0ff] hover:text-[#071326]"
+            className="hidden h-10 rounded-lg bg-[#0758c8] px-4 text-white hover:bg-[#064caf] sm:inline-flex"
           >
             <Link href={withLocale("/login", locale)}>{content.nav.login}</Link>
           </Button>
+
+          <details className="group relative xl:hidden">
+            <summary
+              role="button"
+              className="grid size-11 cursor-pointer list-none place-items-center rounded-lg border border-white/16 bg-white/[0.06] text-white transition-colors hover:bg-white/12 focus-visible:ring-2 focus-visible:ring-[#80e8ff] focus-visible:outline-none [&::-webkit-details-marker]:hidden"
+            >
+              <span className="sr-only">{labels.menu}</span>
+              <HugeiconsIcon
+                icon={Menu01Icon}
+                size={20}
+                strokeWidth={1.8}
+                aria-hidden="true"
+              />
+            </summary>
+            <div className="absolute right-0 z-50 mt-3 w-[min(22rem,calc(100vw-2rem))] rounded-xl bg-[#f7f7f2] p-3 text-[#111826] shadow-[0_20px_55px_rgba(0,0,0,0.28)]">
+              <nav className="grid gap-1">
+                {navItems.map((item) => {
+                  const active = currentPath === item.href
+                  return (
+                    <Link
+                      key={item.href}
+                      href={withLocale(item.href, locale)}
+                      aria-current={active ? "page" : undefined}
+                      className={[
+                        "flex min-h-12 items-center rounded-lg px-4 py-3 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-[#0a84ff] focus-visible:outline-none",
+                        active
+                          ? "bg-[#071326] text-white"
+                          : "hover:bg-[#dcecf7]",
+                      ].join(" ")}
+                    >
+                      {item.label}
+                    </Link>
+                  )
+                })}
+                <Link
+                  href={withLocale("/pre-event", locale)}
+                  aria-current={preEventActive ? "page" : undefined}
+                  className={[
+                    "flex min-h-12 items-center rounded-lg px-4 py-3 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-[#0a84ff] focus-visible:outline-none",
+                    preEventActive
+                      ? "bg-[#071326] text-white"
+                      : "bg-[#dcecf7] text-[#0758c8] hover:bg-[#cfe5f5]",
+                  ].join(" ")}
+                >
+                  {labels.preEvent}
+                </Link>
+              </nav>
+              <div className="mt-3 border-t border-[#cbd9e5] pt-3 sm:hidden">
+                <Link
+                  href={withLocale("/login", locale)}
+                  className="flex min-h-11 items-center justify-center rounded-lg bg-[#0758c8] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#064caf] focus-visible:ring-2 focus-visible:ring-[#0a84ff] focus-visible:outline-none"
+                >
+                  {content.nav.login}
+                </Link>
+              </div>
+            </div>
+          </details>
         </div>
       </div>
     </header>

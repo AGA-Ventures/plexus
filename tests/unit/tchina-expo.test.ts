@@ -7,6 +7,7 @@ import {
   tchinaRegistrationRequestSchema,
 } from "@/lib/tchina-expo"
 import { getTChinaLocalPreviewEvent } from "@/lib/tchina-expo-preview"
+import { composeInternationalPhoneNumber } from "@/lib/international-phone"
 
 function shared() {
   return {
@@ -72,6 +73,23 @@ describe("TChina Expo registration contract", () => {
     expect(tchinaRegistrationRequestSchema.safeParse(visitor()).success).toBe(
       true
     )
+  })
+
+  it("accepts a number composed from a calling code and local entry", () => {
+    const mobileNumber = composeInternationalPhoneNumber("US", "555 555 5555")
+    const malaysianMobileNumber = composeInternationalPhoneNumber(
+      "MY",
+      "12 345 6789"
+    )
+
+    expect(mobileNumber).toBe("+1 555 555 5555")
+    expect(malaysianMobileNumber).toBe("+60 12 345 6789")
+    expect(
+      tchinaRegistrationRequestSchema.safeParse({
+        ...visitor(),
+        mobileNumber,
+      }).success
+    ).toBe(true)
   })
 
   it("requires branch-specific fields and rejects branch mixing", () => {

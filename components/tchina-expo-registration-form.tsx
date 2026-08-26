@@ -3,9 +3,11 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useMemo, useState, type FormEvent } from "react"
+import type { CountryCode } from "libphonenumber-js"
 import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
+  ArrowDown01Icon,
   Building01Icon,
   Calendar03Icon,
   CheckmarkCircle02Icon,
@@ -18,10 +20,28 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import type { EventAttendeeType, TChinaLocale } from "@/lib/tchina-expo"
 import { tchinaAttendanceDates } from "@/lib/tchina-expo"
 import type { TChinaPublicEvent } from "@/lib/tchina-expo-server"
+import {
+  composeInternationalPhoneNumber,
+  countryCallingCodeOptions,
+  type CountryCallingCodeOption,
+} from "@/lib/international-phone"
+import {
+  Command,
+  CommandEmpty,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 type FormState = {
   fullName: string
   email: string
+  mobileCountry: CountryCode | ""
   mobileNumber: string
   chatPlatform: "none" | "whatsapp" | "wechat"
   chatId: string
@@ -50,6 +70,7 @@ type FormState = {
 const initialForm: FormState = {
   fullName: "",
   email: "",
+  mobileCountry: "MY",
   mobileNumber: "",
   chatPlatform: "none",
   chatId: "",
@@ -84,6 +105,19 @@ const sectorOptions = [
   ["Professional services", "专业服务"],
 ] as const
 
+const chineseRegionNames = new Intl.DisplayNames(["zh-Hans"], {
+  type: "region",
+})
+
+function displayCountryName(
+  option: CountryCallingCodeOption,
+  locale: TChinaLocale
+) {
+  return locale === "zh"
+    ? (chineseRegionNames.of(option.countryCode) ?? option.countryName)
+    : option.countryName
+}
+
 const copy = {
   en: {
     eyebrow: "Guangzhou · 31 Aug—4 Sep 2026",
@@ -111,7 +145,13 @@ const copy = {
     fullName: "Full name",
     email: "Email address",
     mobile: "International mobile number",
-    mobileHint: "Include the country code, for example +60 12 345 6789.",
+    mobileCode: "Calling code",
+    searchCallingCode: "Search country or calling code…",
+    searchCountry: "Search country…",
+    noCountryMatches: "No matching country found.",
+    selectCountry: "Select a country",
+    mobileHint: "Choose your calling code, then enter your mobile number.",
+    mobilePlaceholder: "12 345 6789",
     contactApp: "WhatsApp / WeChat",
     none: "I do not use either",
     contactId: "WhatsApp number or WeChat ID",
@@ -163,7 +203,7 @@ const copy = {
     venue: "Venue",
     validationRequired: "Complete this field.",
     validationEmail: "Enter a valid email address.",
-    validationMobile: "Enter an international number beginning with +.",
+    validationMobile: "Choose a calling code and enter a valid mobile number.",
     validationChoice: "Select at least one option.",
     validationConsent: "Consent is required to submit.",
   },
@@ -192,7 +232,13 @@ const copy = {
     fullName: "姓名",
     email: "电子邮箱",
     mobile: "国际手机号码",
-    mobileHint: "请包含国家代码，例如 +60 12 345 6789。",
+    mobileCode: "国家代码",
+    searchCallingCode: "搜索国家或国家代码…",
+    searchCountry: "搜索国家…",
+    noCountryMatches: "未找到匹配的国家。",
+    selectCountry: "选择国家",
+    mobileHint: "请选择国家代码，再输入您的手机号码。",
+    mobilePlaceholder: "12 345 6789",
     contactApp: "WhatsApp / 微信",
     none: "两者都不使用",
     contactId: "WhatsApp 号码或微信号",
@@ -240,7 +286,7 @@ const copy = {
     venue: "地点",
     validationRequired: "请填写此项。",
     validationEmail: "请输入有效的电子邮箱。",
-    validationMobile: "请输入以 + 开头的国际号码。",
+    validationMobile: "请选择国家代码并输入有效手机号码。",
     validationChoice: "请至少选择一项。",
     validationConsent: "必须同意后方可提交。",
   },
@@ -275,6 +321,9 @@ export function TChinaExpoRegistrationForm({
   const oppositeLocale = locale === "en" ? "zh" : "en"
   const pathLabel =
     attendeeType === "business_delegate" ? t.delegate : t.visitor
+  const internationalMobileNumber = form.mobileCountry
+    ? composeInternationalPhoneNumber(form.mobileCountry, form.mobileNumber)
+    : ""
   const questionnaireRows = useMemo(() => {
     if (attendeeType === "business_delegate") {
       return [
@@ -306,6 +355,16 @@ export function TChinaExpoRegistrationForm({
     })
   }
 
+  function updateMobileCountry(value: CountryCode | "") {
+    setForm((current) => ({ ...current, mobileCountry: value }))
+    setErrors((current) => {
+      if (!current.mobileNumber) return current
+      const next = { ...current }
+      delete next.mobileNumber
+      return next
+    })
+  }
+
   function toggleList(
     key: "attendanceDates" | "sectors" | "industryInterests",
     value: string
@@ -326,7 +385,7 @@ export function TChinaExpoRegistrationForm({
       if (!form.fullName.trim()) nextErrors.fullName = t.validationRequired
       if (!/^\S+@\S+\.\S+$/.test(form.email))
         nextErrors.email = t.validationEmail
-      if (!/^\+[1-9][0-9 ()-]{6,30}$/.test(form.mobileNumber)) {
+      if (!/^\+[1-9][0-9 ()-]{6,30}$/.test(internationalMobileNumber)) {
         nextErrors.mobileNumber = t.validationMobile
       }
       if (form.chatPlatform !== "none" && !form.chatId.trim()) {
@@ -395,7 +454,7 @@ export function TChinaExpoRegistrationForm({
       attendeeType,
       fullName: form.fullName,
       email: form.email,
-      mobileNumber: form.mobileNumber,
+      mobileNumber: internationalMobileNumber,
       chatPlatform: form.chatPlatform,
       chatId: form.chatId,
       countryRegion: form.countryRegion,
@@ -553,22 +612,6 @@ export function TChinaExpoRegistrationForm({
               <div className="mt-8 border-t border-slate-200 pt-6">
                 <ProgressStrip labels={t.stepLabels} step={step} />
               </div>
-              <div className="mt-8 border-t border-slate-200 pt-6" aria-hidden>
-                <h2 className="text-lg font-semibold text-slate-900">
-                  {t.sharedTitle}
-                </h2>
-                <p className="mt-1 text-sm text-slate-500">{t.sharedIntro}</p>
-                <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                  {[t.fullName, t.email].map((label) => (
-                    <div key={label}>
-                      <span className="text-xs font-medium text-slate-600">
-                        {label}
-                      </span>
-                      <span className="mt-2 block h-11 rounded-xl border border-slate-200 bg-white" />
-                    </div>
-                  ))}
-                </div>
-              </div>
             </section>
           ) : null}
 
@@ -603,35 +646,66 @@ export function TChinaExpoRegistrationForm({
                     autoComplete="email"
                   />
                 </Field>
-                <Field
-                  label={t.mobile}
-                  hint={t.mobileHint}
-                  error={errors.mobileNumber}
-                  field="mobileNumber"
-                >
-                  <input
-                    data-field="mobileNumber"
-                    className={inputClass}
-                    value={form.mobileNumber}
-                    onChange={(e) => update("mobileNumber", e.target.value)}
-                    type="tel"
-                    autoComplete="tel"
-                    placeholder="+60 12 345 6789"
-                  />
-                </Field>
-                <Field
-                  label={t.country}
-                  error={errors.countryRegion}
-                  field="countryRegion"
-                >
-                  <input
-                    data-field="countryRegion"
-                    className={inputClass}
+                <div className="block text-sm font-medium text-slate-800">
+                  <span id="mobile-number-label">{t.mobile}</span>
+                  <div
+                    className="mt-2 grid min-h-12 grid-cols-[8rem_minmax(0,1fr)] overflow-hidden rounded-xl border border-slate-300 bg-white text-[15px] text-slate-950 shadow-sm transition focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-100"
+                    role="group"
+                    aria-labelledby="mobile-number-label"
+                  >
+                    <CountryPicker
+                      kind="calling-code"
+                      locale={locale}
+                      value={form.mobileCountry}
+                      onChange={(value) =>
+                        updateMobileCountry(value as FormState["mobileCountry"])
+                      }
+                      label={t.mobileCode}
+                      searchPlaceholder={t.searchCallingCode}
+                      emptyLabel={t.noCountryMatches}
+                      triggerClassName="h-full w-full rounded-none border-0 border-r border-slate-300 bg-slate-50 px-3 text-sm font-semibold tabular-nums shadow-none"
+                    />
+                    <input
+                      data-field="mobileNumber"
+                      aria-label={t.mobile}
+                      aria-describedby="mobile-number-hint"
+                      className="min-w-0 bg-transparent px-3.5 py-2.5 outline-none placeholder:text-slate-400"
+                      value={form.mobileNumber}
+                      onChange={(e) => update("mobileNumber", e.target.value)}
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel-national"
+                      placeholder={t.mobilePlaceholder}
+                    />
+                  </div>
+                  <span
+                    id="mobile-number-hint"
+                    className="mt-2 block text-xs leading-5 font-normal text-slate-500"
+                  >
+                    {t.mobileHint}
+                  </span>
+                  {errors.mobileNumber ? (
+                    <FieldError>{errors.mobileNumber}</FieldError>
+                  ) : null}
+                </div>
+                <div className="block text-sm font-medium text-slate-800">
+                  <span id="country-region-label">{t.country}</span>
+                  <CountryPicker
+                    kind="country"
+                    locale={locale}
                     value={form.countryRegion}
-                    onChange={(e) => update("countryRegion", e.target.value)}
-                    autoComplete="country-name"
+                    onChange={(value) => update("countryRegion", value)}
+                    label={t.country}
+                    searchPlaceholder={t.searchCountry}
+                    emptyLabel={t.noCountryMatches}
+                    placeholder={t.selectCountry}
+                    dataField="countryRegion"
+                    triggerClassName={inputClass}
                   />
-                </Field>
+                  {errors.countryRegion ? (
+                    <FieldError>{errors.countryRegion}</FieldError>
+                  ) : null}
+                </div>
                 <Field
                   label={t.contactApp}
                   hint={t.contactCollectOnly}
@@ -924,7 +998,7 @@ export function TChinaExpoRegistrationForm({
               >
                 <ReviewRow label={t.fullName} value={form.fullName} />
                 <ReviewRow label={t.email} value={form.email} />
-                <ReviewRow label={t.mobile} value={form.mobileNumber} />
+                <ReviewRow label={t.mobile} value={internationalMobileNumber} />
                 <ReviewRow label={t.country} value={form.countryRegion} />
                 <ReviewRow
                   label={t.dates}
@@ -1029,6 +1103,167 @@ export function TChinaExpoRegistrationForm({
         </div>
       </form>
     </EventShell>
+  )
+}
+
+function CountryPicker({
+  kind,
+  locale,
+  value,
+  onChange,
+  label,
+  searchPlaceholder,
+  emptyLabel,
+  placeholder,
+  dataField,
+  triggerClassName,
+}: {
+  kind: "calling-code" | "country"
+  locale: TChinaLocale
+  value: string
+  onChange: (value: string) => void
+  label: string
+  searchPlaceholder: string
+  emptyLabel: string
+  placeholder?: string
+  dataField?: string
+  triggerClassName: string
+}) {
+  const [open, setOpen] = useState(false)
+  const selectedOption = countryCallingCodeOptions.find((option) => {
+    if (kind === "calling-code") return option.countryCode === value
+
+    return (
+      option.countryName === value ||
+      displayCountryName(option, locale) === value
+    )
+  })
+  const listId = `${kind}-country-list`
+  const selectedLabel = selectedOption
+    ? kind === "calling-code"
+      ? `${displayCountryName(selectedOption, locale)}, +${selectedOption.callingCode}`
+      : displayCountryName(selectedOption, locale)
+    : placeholder
+
+  function selectCountry(option: CountryCallingCodeOption) {
+    onChange(
+      kind === "calling-code"
+        ? option.countryCode
+        : displayCountryName(option, locale)
+    )
+    setOpen(false)
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          data-field={dataField}
+          role="combobox"
+          aria-label={`${label}${selectedLabel ? `: ${selectedLabel}` : ""}`}
+          aria-expanded={open}
+          aria-controls={listId}
+          className={`flex min-w-0 items-center justify-between gap-2 text-left outline-none focus-visible:ring-4 focus-visible:ring-blue-100 ${triggerClassName}`}
+        >
+          {selectedOption ? (
+            <span className="flex min-w-0 items-center gap-2">
+              <CountryFlag option={selectedOption} />
+              <span className="truncate">
+                {kind === "calling-code"
+                  ? `+${selectedOption.callingCode}`
+                  : displayCountryName(selectedOption, locale)}
+              </span>
+            </span>
+          ) : (
+            <span className="truncate text-slate-400">{placeholder}</span>
+          )}
+          <HugeiconsIcon
+            icon={ArrowDown01Icon}
+            className="size-4 shrink-0 text-slate-500"
+            strokeWidth={1.8}
+            aria-hidden
+          />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        collisionPadding={16}
+        className="max-h-[min(24rem,var(--radix-popover-content-available-height))] min-h-0 w-[min(20rem,calc(100vw-2rem))] gap-0 p-0"
+      >
+        <Command
+          className="min-h-0"
+          filter={(itemValue, search) => {
+            const terms = search
+              .toLocaleLowerCase()
+              .replaceAll("+", "")
+              .trim()
+              .split(/\s+/)
+              .filter(Boolean)
+
+            return terms.every((term) =>
+              itemValue.toLocaleLowerCase().includes(term)
+            )
+              ? 1
+              : 0
+          }}
+        >
+          <CommandInput placeholder={searchPlaceholder} aria-label={label} />
+          <CommandList
+            id={listId}
+            className="max-h-[min(20rem,var(--radix-popover-content-available-height))] min-h-0"
+          >
+            <CommandEmpty>{emptyLabel}</CommandEmpty>
+            {countryCallingCodeOptions.map((option) => {
+              const countryName = displayCountryName(option, locale)
+              const selected =
+                kind === "calling-code"
+                  ? option.countryCode === value
+                  : option.countryName === value || countryName === value
+
+              return (
+                <CommandItem
+                  key={option.countryCode}
+                  value={`${countryName} ${option.countryName} ${option.countryCode} ${option.callingCode}`}
+                  data-checked={selected || undefined}
+                  aria-selected={selected}
+                  onSelect={() => selectCountry(option)}
+                >
+                  <CountryFlag option={option} lazy />
+                  <span className="min-w-0 flex-1 truncate">{countryName}</span>
+                  {kind === "calling-code" ? (
+                    <span className="shrink-0 font-semibold tabular-nums">
+                      +{option.callingCode}
+                    </span>
+                  ) : null}
+                </CommandItem>
+              )
+            })}
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+function CountryFlag({
+  option,
+  lazy = false,
+}: {
+  option: CountryCallingCodeOption
+  lazy?: boolean
+}) {
+  return (
+    <Image
+      src={`/tchina-country-flags/${option.countryCode.toLowerCase()}.svg`}
+      alt=""
+      aria-hidden="true"
+      width={20}
+      height={20}
+      loading={lazy ? "lazy" : "eager"}
+      unoptimized
+      className="size-5 shrink-0"
+    />
   )
 }
 

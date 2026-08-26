@@ -8,6 +8,14 @@ reviewed together.
 
 ### 2026-08-26
 
+- Removed the inert contact-field preview from the TChina registration Path
+  step, leaving contact data entry exclusively in the following details step.
+- Replaced the TChina registration phone field with a Malaysia-defaulted,
+  flag-labelled country calling-code selector and a separate local-number entry
+  while retaining the normalized international-number submission contract; its
+  245 flags are local, attributed SVG assets rather than third-party requests.
+- Added searchable country pickers to the TChina registration calling-code and
+  Country / region fields in English and Simplified Chinese.
 - Opened the production TChina Expo questionnaire in English and Simplified
   Chinese with visibly labelled sample venue, organizer, address, and support
   details for controlled live testing; official event details remain pending.

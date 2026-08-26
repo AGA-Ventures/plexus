@@ -6,6 +6,7 @@ export type LoginBranding = {
   primaryColor: string
   accentForeground: string
   supportEmail?: string
+  tenantUnavailable?: boolean
 }
 
 export const platformLoginBranding: LoginBranding = {

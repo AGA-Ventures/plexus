@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  authorizeVendorRealtime,
   getDelegationVisibleResources,
   getVendorDashboardMetrics,
   getVendorRealtimeTargets,
@@ -175,6 +176,51 @@ const resources = [
 ] satisfies EventResource[]
 
 describe("Vendor dashboard", () => {
+  it("authorizes Realtime with the authenticated session before subscribing", async () => {
+    const calls: string[] = []
+    const authorized = await authorizeVendorRealtime({
+      auth: {
+        async getSession() {
+          calls.push("get-session")
+          return {
+            data: { session: { access_token: "authenticated-token" } },
+            error: null,
+          }
+        },
+      },
+      realtime: {
+        async setAuth(token) {
+          calls.push(`set-auth:${token}`)
+        },
+      },
+    })
+
+    expect(authorized).toBe(true)
+    expect(calls).toEqual([
+      "get-session",
+      "set-auth:authenticated-token",
+    ])
+  })
+
+  it("does not authorize Realtime without an authenticated session", async () => {
+    let setAuthCalled = false
+    const authorized = await authorizeVendorRealtime({
+      auth: {
+        async getSession() {
+          return { data: { session: null }, error: null }
+        },
+      },
+      realtime: {
+        async setAuth() {
+          setAuthCalled = true
+        },
+      },
+    })
+
+    expect(authorized).toBe(false)
+    expect(setAuthCalled).toBe(false)
+  })
+
   it("shows only resources explicitly shared with Delegation Vendors", () => {
     expect(getDelegationVisibleResources(resources)).toEqual(
       resources.slice(0, 2)

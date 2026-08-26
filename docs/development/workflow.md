@@ -2,7 +2,7 @@
 
 **Owner:** Engineering
 **Review trigger:** Branch, review, verification, or delivery-process change
-**Last reviewed:** 2026-07-27
+**Last reviewed:** 2026-08-26
 
 ## Start every session
 
@@ -15,6 +15,11 @@ git status
 
 Never assume the current branch, push remote, database project, or Vercel
 target.
+
+Open the [Plexus Development Command Center](plexus-command-center.html) before
+framing meaningful work. Use it as the core visual review, then follow its
+links to the canonical documents for detailed product, architecture, security,
+delivery, and operational claims.
 
 ## Branch workflow
 
@@ -44,6 +49,8 @@ flowchart LR
 
 ### 1. Frame
 
+- Review the command center for current posture, priorities, architecture, and
+  production-honesty boundaries.
 - State the user outcome and measurable acceptance criteria.
 - Identify the owning module and owner.
 - Identify data, authorization, provider, and operational impact.
@@ -73,6 +80,12 @@ npm run verify:release
 
 Add `npm run test:rls` for authorization/schema work and `npm run test:e2e`
 for route, login, responsive, or workflow changes.
+
+Re-open the command center before handoff. If the change affects any displayed
+claim, update its editorial `PLEXUS` data together with the owning canonical
+document. Run `npm run docs:command-center` after adding, removing, or moving a
+Markdown file or App Router route; `npm run docs:check` rejects a stale
+inventory.
 
 ### 5. Review and release
 

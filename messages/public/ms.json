@@ -5,13 +5,98 @@
   },
   "nav": {
     "home": "Laman Utama",
-    "howItWorks": "Cara Ia Berfungsi",
-    "forVendors": "Untuk Pengendali Program",
-    "forBusinesses": "Untuk Pemilik Perniagaan",
+    "howItWorks": "Cara ia berfungsi",
+    "product": "Produk",
+    "events": "Acara",
+    "audiences": "Khalayak",
+    "forVendors": "Pengendali program",
+    "forBusinesses": "Pemilik perniagaan",
     "pricing": "Harga",
     "about": "Tentang Kami",
     "contact": "Hubungi",
     "login": "Log Masuk"
+  },
+  "audiences": {
+    "business": "Pemilik perniagaan",
+    "operators": "Pengendali program",
+    "investment": "Promosi pelaburan",
+    "government": "Kerajaan & dua hala"
+  },
+  "homeAudienceRouter": {
+    "title": "Pilih laluan Plexus untuk peranan anda.",
+    "body": "Satu perjalanan terkawal menyokong perniagaan peserta, pengendali program, pasukan promosi pelaburan dan program kerajaan.",
+    "business": {
+      "body": "Cipta satu profil syarikat berstruktur, semak peluang yang dikongsi penganjur, dan teruskan hanya melalui pengenalan bersama.",
+      "cta": "Cipta profil"
+    },
+    "operators": {
+      "body": "Kendalikan ruang kerja berjenama untuk pengambilan ahli, padanan yang disemak, mesyuarat, perjanjian dan susulan yang bertanggungjawab.",
+      "cta": "Kendalikan program"
+    },
+    "investment": {
+      "body": "Bentangkan zon, projek dan konteks dasar, tapis minat masuk, serta selaras lawatan delegasi yang benar-benar dilaksanakan di lapangan.",
+      "cta": "Tarik pelaburan"
+    },
+    "government": {
+      "body": "Urus delegasi rasmi, jejak status MOU, dan pastikan penyediaan, tadbir urus serta audit jelas merentas program dua hala.",
+      "cta": "Selaras delegasi"
+    },
+    "events": {
+      "title": "Acara",
+      "body": "Padankan dalam talian, bertemu di lapangan, dan teruskan susulan.",
+      "cta": "Lihat program akan datang"
+    }
+  },
+  "homeEventsLayer": {
+    "label": "Lapisan acara",
+    "title": "Hubungan tidak berakhir apabila acara tamat.",
+    "body": "Plexus ialah jambatan antara bilik dan rekod — padanan sebelum acara, daftar masuk di lokasi dan padanan 1-ke-1, kemudian susulan yang biasanya hilang selepas semua orang pulang.",
+    "recordTitle": "Dalam talian ↔ Di lapangan, satu rekod",
+    "online": "Padanan dalam talian",
+    "onGround": "Acara di lapangan",
+    "recordBody": "Daftar masuk QR, meja 1-ke-1 berjadual, sokongan jurubahasa dan pegawai perhubungan, serta undian langsung — semuanya ditulis kembali ke perjalanan terkawal yang sama.",
+    "phases": [
+      {
+        "title": "Persediaan pra-acara",
+        "body": "Objektif, padanan dan mesyuarat yang disahkan sebelum perjalanan."
+      },
+      {
+        "title": "Padanan 1-ke-1 di lokasi",
+        "body": "Daftar masuk QR, pusingan mengikut masa dan meja mesyuarat yang ditempah."
+      },
+      {
+        "title": "Delegasi & lawatan tapak",
+        "body": "Jadual perjalanan, jurubahasa dan pegawai perhubungan diselaraskan dalam satu pelan."
+      },
+      {
+        "title": "Susulan yang bertanggungjawab",
+        "body": "Keputusan, pemilik dan tindakan seterusnya dibawa kembali ke dalam rekod."
+      }
+    ]
+  },
+  "homeCapabilityShowcase": {
+    "label": "Peta keupayaan",
+    "title": "Pratonton yang kemas bukan bukti setiap modul sudah tersedia.",
+    "body": "Peta yang diselenggara membezakan tingkah laku produk yang disahkan daripada langkah terkawal, penyesuai penyedia dan hala tuju masa depan — supaya anda sentiasa tahu apa yang benar-benar tersedia.",
+    "cta": "Lihat kesemua 12 modul",
+    "meta": "12 bidang keupayaan · tahap kesiapsiagaan sentiasa jelas",
+    "previewLabel": "Paparan produk ilustrasi",
+    "status": {
+      "live": "Aktif",
+      "mixed": "Campuran",
+      "adapter": "Penyesuai",
+      "concept": "Konsep"
+    },
+    "modules": [
+      { "number": "04", "title": "Direktori & padanan" },
+      { "number": "07", "title": "Operasi acara" },
+      { "number": "05", "title": "Mesyuarat & jurubahasa" },
+      { "number": "09", "title": "Pematuhan" },
+      { "number": "10", "title": "Tadbir urus & audit" },
+      { "number": "06", "title": "Urus niaga & dokumen" },
+      { "number": "11", "title": "Pelaporan & kebolehcerapan" },
+      { "number": "12", "title": "Bantuan AI PLEXA" }
+    ]
   },
   "hero": {
     "eyebrow": "Padanan B2B dipimpin penganjur",
@@ -225,39 +310,92 @@
     },
     "for-businesses": {
       "title": "Cari rakan kongsi yang lebih sesuai tanpa kebisingan networking.",
-      "body": "Plexus memberi pemilik perniagaan cara berpandu untuk membina profil, menerima padanan dan menukar pengenalan kepada mesyuarat.",
+      "body": "Plexus memberi syarikat peserta cara berpandu untuk membina profil, menyemak peluang yang dikongsi penganjur dan membawa pengenalan bersama kepada mesyuarat serta susulan.",
       "points": [
         "Cipta profil perniagaan berstruktur.",
         "Semak padanan rakan kongsi terpilih.",
         "Jejak persediaan mesyuarat dan susulan."
-      ]
+      ],
+      "feature": {
+        "title": "Mulakan dengan profil, bukan reruai.",
+        "body": "Cipta satu profil syarikat berstruktur, semak peluang yang dikongsi penganjur, dan teruskan hanya melalui pengenalan bersama. Tiada pendekatan rambang, tiada kebisingan networking.",
+        "cta": "Cipta profil",
+        "href": "/login"
+      }
     },
     "how-it-works": {
-      "title": "Daripada profil kepada senarai pendek rakan kongsi.",
-      "body": "Plexus menukar data perniagaan kepada aliran padanan yang jelas.",
+      "title": "Daripada profil kepada tindakan yang bertanggungjawab.",
+      "body": "Plexus mengikuti rangka lima langkah yang jelas daripada konteks syarikat yang boleh dibandingkan kepada tindakan seterusnya yang mempunyai pemilik.",
       "points": [
-        "Kumpul data profil yang boleh dibandingkan.",
-        "Skor kesesuaian mengikut sektor, matlamat dan kesiapsiagaan.",
-        "Selaras mesyuarat dan langkah susulan."
-      ]
+        "Profil — Kumpul data syarikat yang boleh dibandingkan dalam satu rekod berstruktur.",
+        "Padan — Semak cadangan kesesuaian merentas sektor, matlamat dan kesiapsiagaan.",
+        "Bertemu — Selaras mesyuarat, jurubahasa dan konteks.",
+        "Bersetuju — Pastikan semakan dan tandatangan jelas kepada kedua-dua pihak.",
+        "Bertindak — Tetapkan tindakan seterusnya dan pemilik yang bertanggungjawab."
+      ],
+      "closing": {
+        "body": "Rangka yang sama menyokong setiap khalayak — pemilik perniagaan, pengendali, promosi pelaburan dan kerajaan."
+      }
     },
     "pricing": {
-      "title": "Harga untuk pengendali program.",
-      "body": "Harga MVP kini melalui rundingan sementara rakan pelancaran membentuk pakej.",
+      "title": "Harga mengikut program yang anda kendalikan.",
+      "body": "Plexus kini ditawarkan melalui penglibatan pelancaran yang ditetapkan skopnya. Cadangan anda mengambil kira model program, jumlah peserta, modul yang diaktifkan, bahasa, onboarding dan sokongan operasi.",
+      "sectionTitle": "Mulakan dengan skop operasi yang sesuai.",
+      "sectionBody": "Dalam fasa pra-pelancaran, tiada senarai harga layan diri. Kami menetapkan skop operasi bersama pasukan anda sebelum menyediakan cadangan.",
       "points": [
-        "Pakej pilot untuk pelancaran awal.",
-        "Pakej white-label untuk komuniti berulang.",
-        "Sokongan enterprise untuk program pelbagai pasaran."
-      ]
+        {
+          "title": "Program perintis",
+          "body": "Lancarkan satu program yang dipersetujui dalam satu pasaran. Sesuai untuk mengesahkan onboarding peserta, padanan yang disemak penganjur, mesyuarat dan tindakan susulan yang bertanggungjawab dengan kumpulan yang ditetapkan."
+        },
+        {
+          "title": "Ruang kerja program berjenama",
+          "body": "Jalankan program berulang dalam ruang kerja white-label untuk dewan perniagaan, badan perdagangan, persatuan atau penganjur acara. Skop boleh merangkumi pengurusan peserta, mesyuarat, operasi acara, komunikasi dan pelaporan."
+        },
+        {
+          "title": "Program pelbagai pasaran",
+          "body": "Selaraskan program dua hala atau pelbagai pasaran dengan tadbir urus, penyetempatan, pelaporan dan sokongan operasi tambahan. Skop ditetapkan mengikut organisasi yang mengambil bahagian dan tanggungjawab penyampaian."
+        }
+      ],
+      "closing": {
+        "title": "Perkara yang dinyatakan dalam cadangan anda",
+        "body": "Setiap cadangan menyatakan modul yang disertakan, jumlah peserta, bahasa, onboarding, sokongan operasi dan tanggungjawab penyampaian sebelum kerja bermula.",
+        "cta": "Minta cadangan mengikut skop",
+        "href": "/contact"
+      }
     },
     "about": {
-      "title": "Dibina untuk Malaysia, Macau dan koridor perniagaan Asia seterusnya.",
-      "body": "Plexus direka untuk organisasi yang mahu program perniagaan rentas sempadan menjadi lebih tersusun, telus dan bertanggungjawab.",
+      "title": "Dibina untuk perniagaan rentas sempadan yang bertanggungjawab.",
+      "body": "Plexus ialah lapisan operasi berbilang bahasa dalam fasa pra-pelancaran untuk program perniagaan rentas sempadan—bermula dengan koridor Malaysia–Macao dan Greater China, serta direka untuk berkembang melalui pengendali white-label tempatan.",
+      "sectionTitle": "Mengapa Plexus diwujudkan.",
+      "sectionBody": "Program rentas sempadan memerlukan lebih daripada sekadar pengenalan. Plexus menyatukan individu, konteks, keputusan dan tindakan seterusnya dalam satu perjalanan yang ditadbir.",
       "points": [
-        "Berpangkalan operasi di Malaysia.",
-        "Fokus koridor Macau dan Greater China.",
-        "Model white-label untuk institusi tempatan yang dipercayai."
-      ]
+        {
+          "title": "Visi kami",
+          "body": "Sebuah superapp operasi perniagaan yang dipercayai dan boleh dikonfigurasi, yang membantu program rentas sempadan bergerak daripada onboarding kepada pengenalan yang berkelayakan, mesyuarat, perjanjian dan kerjasama berterusan—tanpa membina aplikasi berbeza untuk setiap pasaran atau program."
+        },
+        {
+          "title": "Misi kami",
+          "body": "Memberikan pengendali program dan syarikat peserta satu ruang kerja berbilang bahasa serta white-label yang menggantikan profil, hamparan, senarai pendek dan tindakan susulan selepas acara yang berasingan dengan satu rekod operasi yang bertanggungjawab."
+        },
+        {
+          "title": "Semakan manusia sebagai asas reka bentuk",
+          "body": "Automasi boleh membantu padanan dan aliran kerja, tetapi keputusan perniagaan, pematuhan, undang-undang, kredit dan penyedia yang sensitif kekal boleh disemak, dipulihkan dan diaudit."
+        },
+        {
+          "title": "Skop yang jelas dan terlindung",
+          "body": "Akses identiti, organisasi dan syarikat sentiasa jelas. Setiap organisasi hanya melihat data dan aliran kerja yang dibenarkan oleh peranan dan programnya."
+        },
+        {
+          "title": "Bermula di Asia, direka untuk berkembang",
+          "body": "Plexus pada peringkat awal memberi tumpuan kepada koridor perniagaan Malaysia–Macao dan Greater China. Seni binanya bertujuan menyokong lebih banyak pasaran, jenama tenant dan program melalui operasi white-label tempatan."
+        }
+      ],
+      "closing": {
+        "title": "Janji produk kami",
+        "body": "Kami tidak menganggap antara muka yang kemas sebagai bukti bahawa setiap keupayaan sudah tersedia. Kesiapsiagaan penyedia, ketersediaan pasaran dan skop penyampaian disahkan bagi setiap program.",
+        "cta": "Bincangkan program anda",
+        "href": "/contact"
+      }
     },
     "contact": {
       "title": "Bercakap dengan Plexus.",
@@ -331,6 +469,205 @@
       ]
     }
   },
+  "trust": {
+    "principle": "Direka untuk semakan manusia"
+  },
+  "investmentPage": {
+    "eyebrow": "Promosi pelaburan · 招商引资",
+    "title": "Tarik pelaburan yang tepat — bukan sekadar perhatian terbanyak.",
+    "body": "Plexus memberi pasukan promosi pelaburan, zon dan program koridor cara berstruktur untuk membentangkan projek, menapis minat masuk yang serius, serta menyelaras lawatan delegasi yang benar-benar dilaksanakan di lapangan.",
+    "primaryCta": "Bincangkan program pelaburan",
+    "secondaryCta": "Lihat pratonton produk",
+    "sections": [
+      {
+        "title": "Bentangkan peluang",
+        "body": "Tukar zon, projek dan insentif menjadi profil berstruktur yang boleh dibandingkan, bukan fail PDF dan slaid. Rekod fokus sektor, peringkat projek, kesiapsiagaan tanah atau kemudahan, konteks insentif dan pihak berkuasa yang bertanggungjawab."
+      },
+      {
+        "title": "Tapis minat yang serius",
+        "body": "Minat masuk disemak dari segi kesesuaian dan kerelevanan sebelum sampai kepada pasukan anda, supaya masa digunakan untuk pelabur yang layak — bukan pertanyaan rambang. Semakan penganjur dan penerimaan bersama kekal dalam aliran kerja."
+      },
+      {
+        "title": "Selaras lawatan",
+        "body": "Bawa pelabur yang layak daripada minat kepada lawatan di lapangan: jadual delegasi, lawatan tapak, sokongan jurubahasa dan pegawai perhubungan, serta pelan ketibaan yang diselaraskan — semuanya dalam satu rekod."
+      },
+      {
+        "title": "Jejak hingga hasil",
+        "body": "Pastikan status surat niat dan MOU, pemilik yang dinamakan serta tindakan seterusnya kekal jelas selepas jelajah promosi tamat, supaya momentum tidak hilang apabila semua pulang."
+      }
+    ],
+    "projectsEyebrow": "Peluang ilustrasi",
+    "projectsTitle": "Contoh projek dan zon pra-pelancaran.",
+    "trustLine": "Pengenalan, insentif dan perkhidmatan tempatan bergantung pada kesesuaian, ketersediaan dan pihak berkuasa yang bertanggungjawab. Hasil perniagaan dan pelaburan tidak dijamin."
+  },
+  "governmentPage": {
+    "eyebrow": "Kerajaan & dua hala",
+    "title": "Kendalikan delegasi rasmi dengan rekod yang boleh dipertanggungjawabkan.",
+    "body": "Plexus ialah lapisan operasi terkawal untuk pihak berkuasa perdagangan, majlis dua hala dan agensi pembangunan ekonomi — delegasi berstruktur, pengenalan yang disemak, acara terselaras, serta jejak yang boleh diaudit daripada mesyuarat pertama hingga MOU ditandatangani.",
+    "primaryCta": "Terangkan program dua hala anda",
+    "secondaryCta": "Cara ia berfungsi",
+    "sections": [
+      {
+        "title": "Pengurusan delegasi",
+        "body": "Bina senarai delegasi dengan peranan, skop tenant dan rekod syarikat yang jelas, supaya setiap peserta dan penganjur melihat tepat perkara yang sepatutnya — dan bukan yang lain."
+      },
+      {
+        "title": "Pengenalan terkawal",
+        "body": "Pengenalan rasmi bergerak hanya melalui semakan penganjur dan penerimaan bersama. Pemadanan membantu keputusan; ia tidak pernah membuat keputusan."
+      },
+      {
+        "title": "Operasi acara dua hala",
+        "body": "Forum, lawatan tapak, penjadualan jurubahasa dan sokongan pegawai perhubungan diselaraskan dalam satu pelan, di lapangan dan dalam talian, lalu direkodkan semula dalam rekod yang sama."
+      },
+      {
+        "title": "Status perjanjian & MOU",
+        "body": "Kemajuan tandatangan, penandatangan dan status perjanjian kekal jelas kepada kedua-dua pihak dalam program dua hala."
+      },
+      {
+        "title": "Tadbir urus, audit & pelaporan",
+        "body": "Penyediaan akses, audit acara berkeistimewaan dan pelaporan pascaprogram ialah sebahagian daripada platform. Skop residensi data dan penyedia ditentukan bagi setiap program — lihat peta keupayaan untuk tahap kesiapsiagaan semasa."
+      }
+    ],
+    "trustLine": "Skop pematuhan dan residensi data disahkan bagi setiap program bersama pihak berkuasa yang bertanggungjawab. Sesetengah keupayaan tadbir urus dan penyedia masih pada peringkat adapter atau peta jalan — lihat peta keupayaan."
+  },
+  "events": {
+    "index": {
+      "eyebrow": "Lapisan acara",
+      "title": "Hubungan tidak berakhir apabila acara tamat.",
+      "body": "Plexus menjadi jambatan antara bilik dan rekod. Buat padanan sebelum acara, daftar masuk dan jalankan mesyuarat 1-ke-1 di lapangan, kemudian bawa susulan kembali ke dalam perjalanan terkawal yang sama.",
+      "primaryCta": "Jalankan acara anda dengan Plexus",
+      "programsTitle": "Program akan datang & terkini",
+      "upcoming": "Akan datang",
+      "past": "Lepas",
+      "noPast": "Belum ada program lepas berbentuk ilustrasi yang disenaraikan.",
+      "viewEvent": "Lihat acara",
+      "howEyebrow": "Tiga fasa",
+      "howTitle": "Cara acara dijalankan di Plexus",
+      "phases": [
+        {
+          "title": "Sebelum",
+          "body": "Objektif direkodkan, padanan disediakan, dan mesyuarat disahkan sebelum sesiapa memulakan perjalanan."
+        },
+        {
+          "title": "Pada hari acara",
+          "body": "Daftar masuk QR, pusingan 1-ke-1 mengikut masa, meja mesyuarat ditempah, sokongan jurubahasa dan pegawai perhubungan, serta undian langsung."
+        },
+        {
+          "title": "Selepas",
+          "body": "Keputusan, pemilik yang dinamakan dan tindakan seterusnya dibawa kembali ke dalam rekod."
+        }
+      ],
+      "ctaTitle": "Merancang delegasi, forum atau malam padanan?",
+      "ctaAction": "Bincangkan acara anda",
+      "trustLine": "Setiap program yang disenaraikan ialah ilustrasi dan pra-pelancaran sehingga penganjur yang bertanggungjawab mengesahkan tarikh, penyertaan dan skop pelaksanaan."
+    },
+    "detail": {
+      "overview": "Gambaran keseluruhan",
+      "whoShouldJoin": "Siapa patut menyertai",
+      "flow": "Aliran tiga fasa",
+      "before": "Sebelum",
+      "onsite": "Pada hari acara",
+      "after": "Selepas",
+      "atGlance": "Sekilas pandang",
+      "sectors": "Sektor",
+      "expectedFormat": "Format dijangka",
+      "languages": "Bahasa & jurubahasa",
+      "interpreter": "Sokongan jurubahasa dirancang.",
+      "noInterpreter": "Tiada sokongan jurubahasa dirancang buat masa ini.",
+      "expressInterest": "Nyatakan minat",
+      "allEvents": "Kembali ke semua acara",
+      "relatedAudience": "Khalayak berkaitan",
+      "audienceDescriptions": {
+        "business": "Pemilik perniagaan dan syarikat peserta yang mencari pengenalan rentas sempadan yang disemak.",
+        "operators": "Pengendali program, dewan perniagaan dan penganjur yang menyelaras penyertaan ahli serta pelaksanaan acara.",
+        "investment": "Pasukan promosi pelaburan, zon dan pemilik projek yang membentangkan peluang layak.",
+        "government": "Pihak berkuasa perdagangan, majlis dua hala dan agensi pembangunan ekonomi yang menyelaras program rasmi."
+      },
+      "eventTypes": {
+        "delegation": "Delegasi",
+        "forum": "Forum",
+        "matchmaking": "Padanan",
+        "roadshow": "Jelajah promosi pelaburan"
+      }
+    },
+    "labels": {
+      "illustrative": "Ilustrasi · pra-pelancaran",
+      "status": {
+        "upcoming": "Akan datang",
+        "past": "Lepas"
+      },
+      "format": {
+        "online": "Dalam talian",
+        "hybrid": "Hibrid",
+        "onground": "Di lapangan"
+      }
+    },
+    "items": {
+      "macau-malaysia-business-delegation": {
+        "title": "Delegasi Perniagaan Macau–Malaysia",
+        "summary": "Delegasi rentas sempadan yang menghubungkan syarikat Macau dan Malaysia melalui padanan yang disemak serta mesyuarat 1-ke-1 di lapangan. Delegasi tiba dengan pengenalan yang disahkan, jadual kerja dan sokongan jurubahasa yang diatur lebih awal.",
+        "before": "Delegasi mengemukakan objektif dan jenis rakan sasaran; Plexus menyediakan padanan yang disemak serta mengesahkan mesyuarat sebelum perjalanan.",
+        "onsite": "Daftar masuk QR, pusingan 1-ke-1 mengikut masa di meja ditempah, serta sokongan jurubahasa dan pegawai perhubungan di lokasi.",
+        "after": "Tindakan seterusnya yang dipersetujui, pemilik yang dinamakan dan rekod mesyuarat dibawa kembali ke perjalanan Plexus setiap syarikat."
+      },
+      "malayconnect-delegation-forum": {
+        "title": "Forum Delegasi MalayConnect",
+        "summary": "Forum delegasi September yang menggabungkan pameran pelaburan dengan padanan B2B berstruktur. Pengendali program mengurus ruang kerja berjenama; pasukan promosi pelaburan membentangkan projek; syarikat peserta memohon pengenalan yang disemak.",
+        "before": "Pengendali menyusun profil ahli dan meluluskan padanan; pelabur dan syarikat menetapkan objektif sebelum forum.",
+        "onsite": "Pameran pelaburan, sesi padanan berjadual, pendaftaran lawatan tapak dan penyelarasan pegawai perhubungan secara langsung.",
+        "after": "Status MOU/LOI, pemilik susulan dan pelaporan pascaforum kekal jelas kepada penganjur."
+      },
+      "klang-region-business-night": {
+        "title": "Malam Perniagaan Wilayah Klang — Pemadan 1-ke-1",
+        "summary": "Malam networking berskala chapter yang dijalankan sebagai padanan 1-ke-1 berstruktur: ahli menetapkan pilihan lebih awal, dipadankan dalam pusingan mengikut masa, mendaftar masuk melalui QR dan mengundi anugerah secara langsung. Direka untuk komuniti ahli besar yang mahukan isyarat, bukan pergaulan rambang.",
+        "before": "Ahli melengkapkan pilihan; pemadan membina pusingan berdasarkan matlamat dan sektor yang dikongsi.",
+        "onsite": "Daftar masuk QR, beberapa pusingan 1-ke-1 mengikut masa dan undian anugerah secara langsung.",
+        "after": "Setiap ahli menyimpan hubungan padanan, nota dan langkah seterusnya yang dipersetujui."
+      },
+      "greater-bay-malaysia-investment-roadshow": {
+        "title": "Jelajah Promosi Pelaburan Greater Bay Area × Malaysia",
+        "summary": "Jelajah promosi pelaburan yang membentangkan projek dan insentif koridor kepada pelabur layak, dengan niat yang disemak serta lawatan delegasi terselaras. Dirangka untuk agensi promosi pelaburan dan program kerajaan dua hala.",
+        "before": "Zon dan projek diterbitkan sebagai profil berstruktur; niat pelabur disemak dari segi kesesuaian sebelum padanan.",
+        "onsite": "Pembentangan projek, mesyuarat 1-ke-1 yang layak dan penyelarasan lawatan tapak.",
+        "after": "Status LOI/MOU dan tindakan seterusnya dijejak hingga hasil dengan pemilik yang dinamakan."
+      }
+    }
+  },
+  "investmentProjects": {
+    "labels": {
+      "illustrative": "Ilustrasi · pra-pelancaran",
+      "location": "Lokasi",
+      "sector": "Sektor",
+      "stage": "Peringkat",
+      "incentiveContext": "Konteks insentif"
+    },
+    "items": {
+      "selangor-agri-food-park": {
+        "title": "Taman Pemprosesan Agri-Makanan Selangor",
+        "location": "Selangor, Malaysia",
+        "sector": "Makanan & Minuman / Pemprosesan agro",
+        "stage": "Tanah sedia · mencari tenant utama",
+        "incentiveContext": "Insentif zon standard terpakai; disahkan bersama pihak berkuasa yang bertanggungjawab.",
+        "summary": "Peluang taman pemprosesan untuk pelabur F&B dan pemprosesan agro serantau, dengan kesiapsiagaan kemudahan berstruktur serta semakan kesesuaian sektor."
+      },
+      "green-energy-corridor": {
+        "title": "Koridor Tenaga Hijau Malaysia–Macao",
+        "location": "Malaysia (pelbagai tapak)",
+        "sector": "Tenaga hijau / Teknologi bersih",
+        "stage": "Saluran projek · padanan rakan kongsi",
+        "incentiveContext": "Kelayakan insentif disemak bagi setiap projek bersama pihak berkuasa yang bertanggungjawab.",
+        "summary": "Saluran tenaga hijau rentas sempadan yang menghubungkan pemilik projek Malaysia dengan pelabur koridor melalui pengenalan layak yang disemak."
+      },
+      "digital-economy-zone": {
+        "title": "Zon Ekonomi Digital Lembah Klang",
+        "location": "Lembah Klang, Malaysia",
+        "sector": "Ekonomi digital / Fintech",
+        "stage": "Pengambilan tenant utama",
+        "incentiveContext": "Insentif ekonomi digital; skop disahkan bagi setiap pemohon.",
+        "summary": "Profil zon ekonomi digital yang membentangkan fokus sektor, kesiapsiagaan kemudahan dan konteks insentif kepada pelabur masuk yang layak."
+      }
+    }
+  },
   "legal": {
     "staticNotice": "Halaman MVP ini sengaja dibuat statik dan sedia untuk dimasukkan salinan undang-undang sebelum pelancaran produksi.",
     "terms": {
@@ -365,12 +702,11 @@
       "facebook": "Facebook"
     },
     "platformLinks": [
-      { "label": "Cara Ia Berfungsi", "href": "/how-it-works" },
-      { "label": "Sokongan Pra-acara", "href": "/pre-event" },
-      { "label": "Untuk Pengendali Program", "href": "/for-program-operators" },
-      { "label": "Untuk Pemilik Perniagaan", "href": "/for-businesses" },
-      { "label": "Harga", "href": "/pricing" },
-      { "label": "Negara Disokong", "href": "/pre-event#country-support" }
+      { "label": "Pemilik perniagaan", "href": "/for-businesses" },
+      { "label": "Pengendali program", "href": "/for-program-operators" },
+      { "label": "Promosi pelaburan", "href": "/for-investment" },
+      { "label": "Kerajaan & dua hala", "href": "/for-government" },
+      { "label": "Acara", "href": "/events" }
     ],
     "companyLinks": [
       { "label": "Tentang Kami", "href": "/about" },

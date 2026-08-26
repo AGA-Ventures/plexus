@@ -2,7 +2,7 @@
 
 **Owner:** Engineering and security
 **Review trigger:** Route, role, login, or provisioning change
-**Last reviewed:** 2026-08-25
+**Last reviewed:** 2026-08-26
 
 ## Login routing
 
@@ -15,7 +15,31 @@ All roles use one email/password login with two presentation modes:
 The tenant mode displays the Admin tenant's name, logo, primary color, and
 support contact. Tenant branding is resolved on the server and falls back to
 the Plexus platform presentation when the requested tenant is invalid,
-inactive, or unavailable.
+inactive, or unavailable. That fallback includes a privacy-safe unavailable
+notice without confirming whether a tenant exists, plus an actionable route to
+the approved public support options.
+
+The shared form does not offer a persistence toggle because the application
+does not currently provide different session-duration policies. Authentication
+and binding failures return stable reason codes to the browser; the localized
+interface translates those codes into non-technical recovery messages while
+server-side authorization detail remains outside the client response. Password
+reveal labels, validation, recovery confirmation, and support actions follow
+the active portal locale. A successful password update is announced once in an
+inline status, and its one-time query flag is removed without hiding the status
+from the current view.
+
+The shared platform and tenant presentation uses the Governed Checkpoint
+composition: a fixed Midnight identity rail opens into a bright ordered canvas
+for localized Identity, Workspace, and Responsible next step stages. The
+credential form occupies the active Identity lane without a floating card;
+Workspace and Responsible next step remain visible as subsequent governed
+lanes, and support closes the credential task as a first-class destination.
+The rail uses the approved network raster as a decorative full-bleed field and
+an opacity-only luminance cycle that becomes static under reduced-motion user
+preferences. Mobile preserves the same order in a task-first stack. This
+presentation does not alter authentication, authorization, tenant resolution,
+or redirect behavior.
 
 Authenticated Superadmins and Admins can open
 `/[locale]/login-preview?tenantId=<tenant-uuid>` to inspect the tenant
@@ -53,6 +77,12 @@ Admins additionally receive tenant-scoped white-label controls; role, tenant,
 email ownership, account state, and account deletion remain governed by the
 operator workflows and trusted server actions.
 
+Admin, Vendor, and Superadmin routes share one configurable workspace
+navigation shell. Each role supplies its permitted destinations, tenant or
+platform brand, active section, and account controls, while the desktop rail,
+mobile header, navigation sheet, responsive breakpoint, and interaction model
+remain common.
+
 Tenant-branded login accepts the owning Admin and Vendors bound to that Admin
 tenant. It rejects Superadmins and accounts belonging to any other tenant. The
 tenant slug is presentation and validation context only; it never grants a
@@ -84,19 +114,33 @@ external Admin and Vendor recipients.
 
 ## Public marketing routes
 
-| Route                                      | Session requirement | Purpose                                                                   |
-| ------------------------------------------ | ------------------- | ------------------------------------------------------------------------- |
-| `/` and marketing pages                    | None                | Present the pre-launch platform, governed journey, audiences, and support |
-| `/for-program-operators?lang=<locale>`      | None                | Canonical public page for chambers, trade bodies, and event organizers    |
-| `/for-vendors?lang=<locale>`                | None                | Compatibility redirect to the program-operator route                      |
-| `/pre-event?lang=<locale>`                  | None                | Special worldwide inquiry, matching preparation, and concierge handoff    |
-| `/app`                                     | None                | English-only, clearly labelled illustrative pre-launch product preview    |
+| Route                                  | Session requirement | Purpose                                                                       |
+| -------------------------------------- | ------------------- | ----------------------------------------------------------------------------- |
+| `/` and marketing pages                | None                | Present the pre-launch platform, governed journey, audiences, and support     |
+| `/for-businesses?lang=<locale>`        | None                | Business-owner profile, reviewed opportunity, and mutual-introduction path    |
+| `/for-program-operators?lang=<locale>` | None                | Canonical public page for chambers, trade bodies, and event organizers        |
+| `/for-investment?lang=<locale>`        | None                | Investment-promotion projects, qualification, visits, and outcome tracking    |
+| `/for-government?lang=<locale>`        | None                | Governed official delegation, bilateral event, MOU, audit, and reporting path |
+| `/events?lang=<locale>`                | None                | Illustrative pre-launch event index with before, on-the-day, and after phases |
+| `/events/[slug]?lang=<locale>`         | None                | Request-aware localized detail for one illustrative seeded event              |
+| `/for-vendors?lang=<locale>`           | None                | Compatibility redirect to the program-operator route                          |
+| `/pre-event?lang=<locale>`             | None                | Special worldwide inquiry, matching preparation, and concierge handoff        |
+| `/app`                                 | None                | English-only, clearly labelled illustrative pre-launch product preview        |
 
-The public header and homepage route visitors between these three layers and
-the localized login without implying that concept capabilities are live. The
-main public site and product preview use the Plexus blue editorial system. The
-pre-event route remains an intentional emerald/lime campaign exception and
-links back to the shared public experience.
+One shared public header exposes the product, events, pricing, and a four-part
+audience group for Business owners, Program operators, Investment promotion,
+and Government & bilateral. Homepage, product preview, pre-event, marketing,
+event, and both legal route families use the same wordmark, locale selector,
+login action, responsive breakpoint, and mobile menu without implying that
+illustrative or concept capabilities are live. The entire public experience
+uses the Plexus blue editorial system.
+
+The event index and detail routes read four plain seed records from
+`data/events.ts`; the investment-promotion page reads three plain project
+records from `data/investment-projects.ts`. Every record is labelled
+illustrative and pre-launch in English, Bahasa Malaysia, and Traditional
+Chinese. The source does not represent confirmed operations, attendance,
+partners, incentives, or business outcomes.
 
 The public site and pre-event campaign accept English, Bahasa Malaysia, and Traditional
 Chinese through the existing public `lang` query. It lists worldwide departure
@@ -112,22 +156,24 @@ configuration exists. Public inquiry channels are read only from
 
 ## Canonical public auth routes
 
-| Route                                             | Session requirement | Purpose                                  |
-| ------------------------------------------------- | ------------------- | ---------------------------------------- |
-| `/[locale]/login`                                 | None                | Shared role-directed login               |
-| `/[locale]/forgot-password`                       | None                | Generic recovery-email request           |
-| `/auth/callback`                                  | One-time Auth code  | PKCE recovery-session exchange           |
-| `/[locale]/reset-password`                        | Recovered user      | Update the recovered account password    |
-| `/[locale]/vendor-signup/[tenantSlug]/delegation` | None                | Tenant-branded Delegation application    |
-| `/[locale]/vendor-signup/[tenantSlug]/partner`    | None                | Tenant-branded Partner application       |
-| `POST /api/vendor-applications`                   | None                | Validated server-only application insert |
+| Route                                             | Session requirement | Purpose                                                                 |
+| ------------------------------------------------- | ------------------- | ----------------------------------------------------------------------- |
+| `/[locale]/login`                                 | None                | Shared role-directed login                                              |
+| `/[locale]/forgot-password`                       | None                | Generic recovery-email request                                          |
+| `/auth/callback`                                  | One-time Auth code  | PKCE recovery-session exchange                                          |
+| `/[locale]/reset-password`                        | Recovered user      | Update the recovered account password                                   |
+| `/[locale]/vendor-signup/[tenantSlug]/delegation` | None                | Tenant-branded Delegation application                                   |
+| `/[locale]/vendor-signup/[tenantSlug]/partner`    | None                | Tenant-branded Partner application                                      |
+| `POST /api/vendor-applications`                   | None                | Validated server-only application insert                                |
+| `/[locale]/tchina-expo`                           | None                | English/Simplified Chinese questionnaire for the published Plexus event |
+| `POST /api/tchina-expo/registrations`             | None                | Strict server-bound Plexus TChina registration insert                   |
 
 ## Canonical protected routes
 
 | Route                       | Allowed role      | Scope                                                                              |
 | --------------------------- | ----------------- | ---------------------------------------------------------------------------------- |
-| `/[locale]/superadmin`      | Superadmin        | All tenants                                                                        |
-| `/[locale]/admin`           | Admin             | Own tenant                                                                         |
+| `/[locale]/superadmin`      | Superadmin        | All tenants plus the Plexus-owned TChina singleton and registrations               |
+| `/[locale]/admin`           | Admin             | Own tenant; no TChina access                                                       |
 | `/[locale]/admin/vendors`   | Admin             | Own tenant Vendors and users                                                       |
 | `/[locale]/login-preview`   | Superadmin, Admin | Any tenant or own tenant                                                           |
 | `/[locale]/vendor`          | Vendor            | Own company                                                                        |
@@ -165,6 +211,34 @@ The hourly production cron sends pending-application reminders after 24 hours,
 meeting reminders approximately 24 hours before start, and daily incomplete
 MOU reminders. Existing reminder rows suppress duplicates for the same source
 on the same UTC day.
+
+## Resource routes
+
+| Route                         | Method | Access                       | Purpose                                            |
+| ----------------------------- | ------ | ---------------------------- | -------------------------------------------------- |
+| `/api/admin/resources`        | POST   | Owning Admin                 | Create validated tenant resource metadata          |
+| `/api/admin/resources`        | PATCH  | Owning Admin                 | Change Delegation visibility for an own-tenant row |
+| `/api/admin/resources/upload` | POST   | Owning Admin                 | Validate and store one private event resource      |
+| `/api/resources/[id]/file`    | GET    | Authorized resource audience | Redirect to the URL or a 60-second signed file URL |
+
+Resource creation derives the tenant from the authenticated Admin and relies on
+RLS for row scope. Uploads use a tenant-prefixed private Storage path, validate
+metadata and the 15 MiB file boundary, and remove the object if metadata insert
+fails. File access requires an authenticated session; RLS decides whether the
+requesting user can see the resource row before any redirect is issued.
+
+## Compliance routes
+
+| Route                       | Method | Access              | Purpose                                      |
+| --------------------------- | ------ | ------------------- | -------------------------------------------- |
+| `/api/compliance/vendors`   | GET    | Superadmin or Admin | Return sanitized provider-readiness metadata |
+| `/api/compliance/screening` | POST   | Superadmin or Admin | Validate and run configured provider checks  |
+
+Compliance credentials remain server-only. The readiness route returns only
+provider labels, required variable names, and configured state. Screening
+validates the company payload, skips Malaysia-only checks outside Malaysia,
+uses bounded provider requests, and returns sanitized failure states without
+exposing credentials.
 
 ## Meeting routes
 

@@ -2,7 +2,7 @@
 
 **Owner:** Release owner
 **Review trigger:** Hosting, target, environment, branch, or release change
-**Last reviewed:** 2026-07-28
+**Last reviewed:** 2026-08-26
 
 The machine-readable destinations are in `.deployment-targets.json`. Release
 scripts fail closed when the checkout points elsewhere.
@@ -23,22 +23,24 @@ https://plexus-gules.vercel.app
 
 ## Current automation state
 
-Manual production deployment is working. Automatic Vercel Git deployment is
-blocked until the Vercel GitHub integration receives write/admin access to
-`AGA-Ventures/plexus`.
+The Vercel Git integration points to `AGA-Ventures/plexus`, `main` is the
+production branch, required Supabase variable scopes pass the read-only target
+check, and the latest `main` Production deployment is `READY`. The public alias
+returned HTTP 200 on 2026-08-26. A fresh feature-branch Preview-to-production
+run is still required as repeatable release evidence.
 
-One-time completion:
+Verification sequence:
 
-1. Grant the Vercel GitHub app access to the repository.
-2. Run:
+1. Run:
 
    ```bash
-   vercel git connect https://github.com/AGA-Ventures/plexus
    npm run verify:deploy
    ```
 
-3. Confirm feature branches create Preview deployments and `main` creates
+2. Confirm feature branches create Preview deployments and `main` creates
    Production deployments in the approved project.
+3. Record the Preview URL, production deployment ID, commit, and smoke-test
+   evidence in the release record and project status.
 
 ## Release sequence
 
@@ -59,7 +61,7 @@ push.
 
 ## Manual Vercel fallback
 
-While Git integration is unavailable:
+If the automatic Git path needs controlled recovery:
 
 ```bash
 npm run deploy:preview
@@ -150,8 +152,8 @@ prepare a forward database fix, and follow the
 
 ## Dependency advisories
 
-The release gate blocks critical production findings. Current high findings are
-in the supported Next.js build-time PostCSS and Sharp dependency tree and are
-tracked upstream. Do not run `npm audit fix --force`; it proposes an unsafe
-framework downgrade. Reassess whenever a supported Next.js release resolves
-the chain.
+The release gate blocks critical production findings. As of 2026-08-26, both
+the full audit and `npm audit --omit=dev` report zero vulnerabilities after the
+supported Next.js 16.3.3 and toolchain updates. Keep Next.js and
+`eslint-config-next` aligned, prefer compatible parent-package upgrades, and do
+not use `npm audit fix --force` to bypass framework compatibility.

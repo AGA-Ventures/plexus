@@ -23,6 +23,13 @@ import {
 
 type SearchParams = Promise<{ lang?: string }>
 
+type ClosingCopy = {
+  title?: string
+  body: string
+  cta?: string
+  href?: string
+}
+
 const pageCopy: Record<
   PublicLocale,
   { status: string; next: string; back: string; principle: string }
@@ -62,8 +69,15 @@ export async function PublicMarketingPage({
   const page = content.pages[slug]
   const labels = pageCopy[locale]
   const currentPath = currentPathOverride ?? `/${slug}`
+  const isNarrativePage = slug === "about"
   const nextHref = slug === "contact" ? "/pre-event#contact" : "/contact"
   const contactPage = slug === "contact" ? content.pages.contact : null
+  const feature = "feature" in page ? page.feature : null
+  const sectionTitle =
+    "sectionTitle" in page ? page.sectionTitle : content.how.title
+  const sectionBody = "sectionBody" in page ? page.sectionBody : null
+  const closing: ClosingCopy | null =
+    "closing" in page ? (page.closing as ClosingCopy) : null
 
   return (
     <main className="min-h-svh bg-[#f7f7f2] text-[#111826]">
@@ -127,27 +141,101 @@ export async function PublicMarketingPage({
       <section className="px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
         <div className="mx-auto max-w-[1180px]">
           <div className="grid gap-12 lg:grid-cols-[0.72fr_1.28fr]">
-            <h2 className="text-3xl leading-tight font-semibold tracking-[-0.025em] sm:text-5xl">
-              {content.how.title}
-            </h2>
+            <div>
+              <h2 className="text-3xl leading-tight font-semibold tracking-[-0.025em] sm:text-5xl">
+                {sectionTitle}
+              </h2>
+              {sectionBody ? (
+                <p className="mt-6 max-w-md text-base leading-7 text-[#53667c]">
+                  {sectionBody}
+                </p>
+              ) : null}
+            </div>
             <div className="border-t border-[#b9cddd]">
-              {page.points.map((point) => (
-                <article
-                  key={point}
-                  className="grid gap-5 border-b border-[#b9cddd] py-7 sm:grid-cols-[auto_1fr] sm:items-start"
-                >
-                  <span className="grid size-10 place-items-center rounded-full bg-[#dcecf7] text-[#0758c8]">
+              {page.points.map((point) => {
+                const pointKey = typeof point === "string" ? point : point.title
+
+                return (
+                  <article
+                    key={pointKey}
+                    className={`grid gap-5 border-b border-[#b9cddd] py-7 ${isNarrativePage ? "" : "sm:grid-cols-[auto_1fr] sm:items-start"}`}
+                  >
+                    {!isNarrativePage ? (
+                      <span className="grid size-10 place-items-center rounded-full bg-[#dcecf7] text-[#0758c8]">
+                        <HugeiconsIcon
+                          icon={CheckmarkCircle02Icon}
+                          size={20}
+                          strokeWidth={1.8}
+                        />
+                      </span>
+                    ) : null}
+                    {typeof point === "string" ? (
+                      <p className="max-w-2xl text-lg leading-8 text-[#3f5369]">
+                        {point}
+                      </p>
+                    ) : (
+                      <div className="max-w-2xl">
+                        <h3
+                          className={`${isNarrativePage ? "text-2xl" : "text-xl"} leading-tight font-semibold tracking-[-0.02em] text-[#111826]`}
+                        >
+                          {point.title}
+                        </h3>
+                        <p className="mt-3 text-base leading-7 text-[#3f5369] sm:text-lg sm:leading-8">
+                          {point.body}
+                        </p>
+                      </div>
+                    )}
+                  </article>
+                )
+              })}
+              {closing ? (
+                <div className="border-b border-[#b9cddd] py-7">
+                  {closing.title ? (
+                    <h3 className="text-xl leading-tight font-semibold tracking-[-0.02em] text-[#111826]">
+                      {closing.title}
+                    </h3>
+                  ) : null}
+                  <p
+                    className={`max-w-2xl text-lg leading-8 text-[#3f5369] ${closing.title ? "mt-3" : ""}`}
+                  >
+                    {closing.body}
+                  </p>
+                  {closing.cta && closing.href ? (
+                    <Link
+                      href={withLocale(closing.href, locale)}
+                      className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#0758c8] hover:text-[#071326]"
+                    >
+                      {closing.cta}
+                      <HugeiconsIcon
+                        icon={ArrowRight01Icon}
+                        size={16}
+                        strokeWidth={1.8}
+                      />
+                    </Link>
+                  ) : null}
+                </div>
+              ) : null}
+              {feature ? (
+                <article className="border-b border-[#b9cddd] py-7">
+                  <h3 className="text-2xl leading-tight font-semibold tracking-[-0.02em]">
+                    {feature.title}
+                  </h3>
+                  <p className="mt-4 max-w-2xl text-lg leading-8 text-[#3f5369]">
+                    {feature.body}
+                  </p>
+                  <Link
+                    href={withLocale(feature.href, locale)}
+                    className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#0758c8] hover:text-[#071326]"
+                  >
+                    {feature.cta}
                     <HugeiconsIcon
-                      icon={CheckmarkCircle02Icon}
-                      size={20}
+                      icon={ArrowRight01Icon}
+                      size={16}
                       strokeWidth={1.8}
                     />
-                  </span>
-                  <p className="max-w-2xl text-lg leading-8 text-[#3f5369]">
-                    {point}
-                  </p>
+                  </Link>
                 </article>
-              ))}
+              ) : null}
             </div>
           </div>
 

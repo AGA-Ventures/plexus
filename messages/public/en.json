@@ -5,13 +5,98 @@
   },
   "nav": {
     "home": "Home",
-    "howItWorks": "How It Works",
-    "forVendors": "For Program Operators",
-    "forBusinesses": "For Business Owners",
+    "howItWorks": "How it works",
+    "product": "Product",
+    "events": "Events",
+    "audiences": "Audiences",
+    "forVendors": "Program operators",
+    "forBusinesses": "Business owners",
     "pricing": "Pricing",
     "about": "About",
     "contact": "Contact",
     "login": "Login"
+  },
+  "audiences": {
+    "business": "Business owners",
+    "operators": "Program operators",
+    "investment": "Investment promotion",
+    "government": "Government & bilateral"
+  },
+  "homeAudienceRouter": {
+    "title": "Choose the Plexus path for your role.",
+    "body": "One governed journey supports participating businesses, program operators, investment-promotion teams and government programs.",
+    "business": {
+      "body": "Create a structured company profile, review organizer-shared opportunities, and move forward only on mutual introductions.",
+      "cta": "Create a profile"
+    },
+    "operators": {
+      "body": "Run a branded workspace for member intake, reviewed matching, meetings, agreements and accountable follow-up.",
+      "cta": "Run a program"
+    },
+    "investment": {
+      "body": "Present zones, projects and policy context, qualify inbound interest, and coordinate delegation visits that land on the ground.",
+      "cta": "Attract investment"
+    },
+    "government": {
+      "body": "Manage official delegations, track MOU state, and keep provisioning, governance and audit visible across a bilateral program.",
+      "cta": "Coordinate a delegation"
+    },
+    "events": {
+      "title": "Events",
+      "body": "Match online, meet on the ground, and keep the follow-up.",
+      "cta": "See upcoming programs"
+    }
+  },
+  "homeEventsLayer": {
+    "label": "Events layer",
+    "title": "The connection doesn't end when the event does.",
+    "body": "Plexus is the bridge between the room and the record — pre-event matching, on-site check-in and 1-to-1 matchmaking, then the follow-up that usually goes missing after everyone flies home.",
+    "recordTitle": "Online ↔ On-ground, one record",
+    "online": "Online matching",
+    "onGround": "On-ground event",
+    "recordBody": "QR check-in, scheduled 1-to-1 tables, interpreter and liaison support, live voting — all writing back to the same governed journey.",
+    "phases": [
+      {
+        "title": "Pre-event preparation",
+        "body": "Objectives, matches and confirmed meetings before travel."
+      },
+      {
+        "title": "On-site 1-to-1 matchmaking",
+        "body": "QR check-in, timed rounds, and reserved meeting tables."
+      },
+      {
+        "title": "Delegation & site visits",
+        "body": "Itineraries, interpreters and liaison coordinated in one plan."
+      },
+      {
+        "title": "Accountable follow-up",
+        "body": "Decisions, owners and next actions carried back into the record."
+      }
+    ]
+  },
+  "homeCapabilityShowcase": {
+    "label": "Capability map",
+    "title": "A polished preview isn't proof every module is live.",
+    "body": "The maintained map separates verified product behavior from controlled steps, provider adapters and future direction — so you always know what's real.",
+    "cta": "See all 12 modules",
+    "meta": "12 capability areas · readiness kept visible",
+    "previewLabel": "Illustrative product view",
+    "status": {
+      "live": "Live",
+      "mixed": "Mixed",
+      "adapter": "Adapter",
+      "concept": "Concept"
+    },
+    "modules": [
+      { "number": "04", "title": "Directory & matching" },
+      { "number": "07", "title": "Event operations" },
+      { "number": "05", "title": "Meetings & interpreters" },
+      { "number": "09", "title": "Compliance" },
+      { "number": "10", "title": "Governance & audit" },
+      { "number": "06", "title": "Deals & documents" },
+      { "number": "11", "title": "Reporting & observability" },
+      { "number": "12", "title": "PLEXA AI assistance" }
+    ]
   },
   "hero": {
     "eyebrow": "Organizer-led B2B matching",
@@ -226,34 +311,87 @@
         "Create a structured business profile.",
         "Review curated partner matches.",
         "Track meeting preparation and follow-up."
-      ]
+      ],
+      "feature": {
+        "title": "Start with a profile, not a booth.",
+        "body": "Create one structured company profile, review organizer-shared opportunities, and only move forward on mutual introductions. No cold outreach, no networking noise.",
+        "cta": "Create a profile",
+        "href": "/login"
+      }
     },
     "how-it-works": {
-      "title": "From profile to partner shortlist.",
-      "body": "Plexus is designed around a clear workflow: profile creation, suggested fit, organizer review, mutual acceptance and participant follow-through.",
+      "title": "From profile to accountable action.",
+      "body": "Plexus follows one clear five-step spine from comparable company context to a named next action.",
       "points": [
-        "Collect comparable profile data.",
-        "Review suggested fit across sectors, goals and readiness.",
-        "Coordinate meetings and next steps."
-      ]
+        "Profile — Collect comparable company data into one structured record.",
+        "Match — Review suggested fit across sectors, goals and readiness.",
+        "Meet — Coordinate meetings, interpreters and context.",
+        "Agree — Keep review and signing visible to both sides.",
+        "Act — Assign the responsible next action and owner."
+      ],
+      "closing": {
+        "body": "The same spine serves every audience — business owners, operators, investment promotion and government."
+      }
     },
     "pricing": {
-      "title": "Pricing for program operators.",
-      "body": "MVP pricing is currently by consultation while launch partners shape package tiers.",
+      "title": "Pricing shaped around the program you run.",
+      "body": "Plexus is currently offered through scoped launch engagements. Your proposal reflects the program model, participant volume, enabled modules, languages, onboarding and operational support.",
+      "sectionTitle": "Start with the right operating scope.",
+      "sectionBody": "During pre-launch, there is no self-serve rate card. We define the operating scope with your team before preparing a proposal.",
       "points": [
-        "Pilot scope for approved initial programs.",
-        "White-label package for recurring communities.",
-        "Enterprise support for multi-market programs."
-      ]
+        {
+          "title": "Pilot program",
+          "body": "Launch one agreed program in one market. Best for validating participant onboarding, organizer-reviewed matching, meetings and accountable follow-up with a defined cohort."
+        },
+        {
+          "title": "Branded program workspace",
+          "body": "Run recurring programs in a white-label workspace for a chamber, trade body, association or event organizer. Scope can include participant management, meetings, event operations, communications and reporting."
+        },
+        {
+          "title": "Multi-market program",
+          "body": "Coordinate bilateral or multi-market programs with additional governance, localization, reporting and operating support. Scope is defined around participating organizations and delivery responsibilities."
+        }
+      ],
+      "closing": {
+        "title": "What your proposal sets out",
+        "body": "Every proposal identifies the included modules, participant volume, languages, onboarding, operational support and delivery responsibilities before work begins.",
+        "cta": "Request a scoped proposal",
+        "href": "/contact"
+      }
     },
     "about": {
-      "title": "Built for Malaysia, Macau and the next wave of Asian business corridors.",
-      "body": "Plexus is designed for organizations that need cross-border business programs to be more structured, transparent and accountable.",
+      "title": "Built for accountable cross-border business.",
+      "body": "Plexus is a pre-launch, multilingual operating layer for cross-border business programs—starting with Malaysia–Macao and Greater China corridors, and designed to extend through local, white-label operators.",
+      "sectionTitle": "Why Plexus exists.",
+      "sectionBody": "Cross-border programs need more than an introduction. Plexus keeps the people, context, decisions and next actions together in one governed journey.",
       "points": [
-        "Malaysia-first operating base.",
-        "Macau and Greater China trade corridor focus.",
-        "White-label model for trusted local institutions."
-      ]
+        {
+          "title": "Our vision",
+          "body": "A trusted, configurable business operations superapp that helps cross-border programs move from onboarding to qualified introductions, meetings, agreements and ongoing collaboration—without creating a different application for every market or program."
+        },
+        {
+          "title": "Our mission",
+          "body": "Give program operators and participating companies one multilingual, white-label workspace that replaces fragmented profiles, spreadsheets, shortlists and post-event follow-up with an accountable operating record."
+        },
+        {
+          "title": "Human-governed by design",
+          "body": "Automation may assist with matching and workflow, but sensitive business, compliance, legal, credit and provider decisions remain reviewable, recoverable and auditable."
+        },
+        {
+          "title": "Clear, protected scope",
+          "body": "Identity, organization and company access remain explicit. Each organization sees only the data and workflows its role and program permit."
+        },
+        {
+          "title": "Starting in Asia, designed to extend",
+          "body": "Plexus is initially focused on Malaysia–Macao and Greater China business corridors. Its architecture is intended to support more markets, tenant brands and programs through local, white-label operation."
+        }
+      ],
+      "closing": {
+        "title": "Our product promise",
+        "body": "We do not treat a polished interface as proof that every capability is live. Provider readiness, market availability and delivery scope are confirmed program by program.",
+        "cta": "Discuss your program",
+        "href": "/contact"
+      }
     },
     "contact": {
       "title": "Talk to Plexus.",
@@ -327,6 +465,205 @@
       ]
     }
   },
+  "trust": {
+    "principle": "Human-reviewed by design"
+  },
+  "investmentPage": {
+    "eyebrow": "Investment promotion · 招商引资",
+    "title": "Attract the right investment — not just the most attention.",
+    "body": "Plexus gives investment-promotion teams, zones and corridor programs a structured way to present projects, qualify serious inbound interest, and coordinate delegation visits that actually land on the ground.",
+    "primaryCta": "Discuss an investment program",
+    "secondaryCta": "See the product preview",
+    "sections": [
+      {
+        "title": "Present the opportunity",
+        "body": "Turn zones, projects and incentives into structured, comparable profiles instead of PDFs and slide decks. Capture sector focus, project stage, land/facility readiness, incentive context and the responsible authority."
+      },
+      {
+        "title": "Qualify serious interest",
+        "body": "Inbound interest is reviewed for fit and relevance before it reaches your team, so you spend time on qualified investors — not cold noise. Organizer review and mutual acceptance stay in the workflow."
+      },
+      {
+        "title": "Coordinate the visit",
+        "body": "Move a qualified investor from interest to an on-ground visit: delegation itineraries, site visits, interpreter and liaison support, and a coordinated arrival plan — all in one record."
+      },
+      {
+        "title": "Track to outcome",
+        "body": "Keep letters of intent and MOU state, named owners and next actions visible after the roadshow ends, so momentum doesn't disappear when everyone flies home."
+      }
+    ],
+    "projectsEyebrow": "Illustrative opportunities",
+    "projectsTitle": "Pre-launch project and zone examples.",
+    "trustLine": "Introductions, incentives and local services depend on fit, availability and the responsible authority. Business and investment outcomes are not guaranteed."
+  },
+  "governmentPage": {
+    "eyebrow": "Government & bilateral",
+    "title": "Run official delegations with a record you can stand behind.",
+    "body": "Plexus is a governed operating layer for trade authorities, bilateral councils and economic-development agencies — structured delegations, reviewed introductions, coordinated events, and an auditable trail from first meeting to signed MOU.",
+    "primaryCta": "Brief us on your bilateral program",
+    "secondaryCta": "How it works",
+    "sections": [
+      {
+        "title": "Delegation management",
+        "body": "Build the delegation roster with explicit roles, tenant scope and company records, so every participant and organizer sees exactly what they should — and nothing they shouldn't."
+      },
+      {
+        "title": "Governed introductions",
+        "body": "Official introductions move only through organizer review and mutual acceptance. Matching assists the decision; it never makes it."
+      },
+      {
+        "title": "Bilateral event operations",
+        "body": "Forums, site visits, interpreter scheduling and liaison support are coordinated in one plan, on-ground and online, writing back to the same record."
+      },
+      {
+        "title": "Agreement & MOU state",
+        "body": "Signing progress, signatories and agreement state stay visible across both sides of a bilateral program."
+      },
+      {
+        "title": "Governance, audit & reporting",
+        "body": "Provisioning, privileged-event audit and post-program reporting are part of the platform. Data-residency and provider scope are handled per program — see the capability map for current readiness."
+      }
+    ],
+    "trustLine": "Compliance and data-residency scope is confirmed per program with the responsible authority. Some governance and provider capabilities are adapter- or roadmap-stage — see the capability map."
+  },
+  "events": {
+    "index": {
+      "eyebrow": "Events layer",
+      "title": "The connection doesn't end when the event does.",
+      "body": "Plexus is the bridge between the room and the record. Match before the event, check in and run 1-to-1 meetings on-ground, then carry the follow-up back into the same governed journey.",
+      "primaryCta": "Run your event with Plexus",
+      "programsTitle": "Upcoming & recent programs",
+      "upcoming": "Upcoming",
+      "past": "Past",
+      "noPast": "No illustrative past programs are listed yet.",
+      "viewEvent": "View event",
+      "howEyebrow": "Three phases",
+      "howTitle": "How an event runs on Plexus",
+      "phases": [
+        {
+          "title": "Before",
+          "body": "Objectives captured, matches prepared, meetings confirmed before anyone travels."
+        },
+        {
+          "title": "On the day",
+          "body": "QR check-in, timed 1-to-1 rounds, reserved meeting tables, interpreter and liaison support, live voting."
+        },
+        {
+          "title": "After",
+          "body": "Decisions, named owners and next actions carried back into the record."
+        }
+      ],
+      "ctaTitle": "Planning a delegation, forum or matchmaking night?",
+      "ctaAction": "Discuss your event",
+      "trustLine": "Every listed program is illustrative and pre-launch until the responsible organizer confirms dates, participation and delivery scope."
+    },
+    "detail": {
+      "overview": "Overview",
+      "whoShouldJoin": "Who should join",
+      "flow": "The three-phase flow",
+      "before": "Before",
+      "onsite": "On the day",
+      "after": "After",
+      "atGlance": "At a glance",
+      "sectors": "Sectors",
+      "expectedFormat": "Expected format",
+      "languages": "Languages & interpreter",
+      "interpreter": "Interpreter support is planned.",
+      "noInterpreter": "No interpreter support is currently planned.",
+      "expressInterest": "Express interest",
+      "allEvents": "Back to all events",
+      "relatedAudience": "Relevant audience",
+      "audienceDescriptions": {
+        "business": "Business owners and participating companies seeking reviewed cross-border introductions.",
+        "operators": "Program operators, chambers and organizers coordinating member participation and event delivery.",
+        "investment": "Investment-promotion teams, zones and project owners presenting qualified opportunities.",
+        "government": "Trade authorities, bilateral councils and economic-development agencies coordinating official programs."
+      },
+      "eventTypes": {
+        "delegation": "Delegation",
+        "forum": "Forum",
+        "matchmaking": "Matchmaking",
+        "roadshow": "Investment roadshow"
+      }
+    },
+    "labels": {
+      "illustrative": "Illustrative · pre-launch",
+      "status": {
+        "upcoming": "Upcoming",
+        "past": "Past"
+      },
+      "format": {
+        "online": "Online",
+        "hybrid": "Hybrid",
+        "onground": "On-ground"
+      }
+    },
+    "items": {
+      "macau-malaysia-business-delegation": {
+        "title": "Macau–Malaysia Business Delegation",
+        "summary": "A cross-border delegation connecting Macau and Malaysian companies through reviewed matching and on-ground 1-to-1 meetings. Delegates arrive with confirmed introductions, a working itinerary, and interpreter support arranged in advance.",
+        "before": "Delegates submit objectives and target partner types; Plexus prepares reviewed matches and confirms meetings before travel.",
+        "onsite": "QR check-in, timed 1-to-1 rounds at reserved tables, interpreter and liaison support on the floor.",
+        "after": "Agreed next actions, named owners and meeting records carried back into each company's Plexus journey."
+      },
+      "malayconnect-delegation-forum": {
+        "title": "MalayConnect Delegation Forum",
+        "summary": "A September delegation forum pairing an investment showcase with structured B2B matching. Program operators run a branded workspace; investment-promotion teams present projects; participating companies request reviewed introductions.",
+        "before": "Operators structure member profiles and approve matches; investors and companies set objectives ahead of the forum.",
+        "onsite": "Investment showcase, scheduled matchmaking sessions, site-visit sign-ups, and live liaison coordination.",
+        "after": "MOU/LOI state, follow-up owners and post-forum reporting kept visible to the organizer."
+      },
+      "klang-region-business-night": {
+        "title": "Klang Region Business Night — 1-to-1 Matchmaker",
+        "summary": "A chapter-scale networking night run as a structured 1-to-1 matchmaker: members set preferences ahead of time, get matched across timed rounds, check in by QR, and vote on live awards. Designed for large member communities that want signal instead of random mingling.",
+        "before": "Members complete preference selection; the matcher builds rounds across shared goals and sectors.",
+        "onsite": "QR check-in, multiple timed 1-to-1 rounds, and live awards voting.",
+        "after": "Each member keeps their matched contacts, notes and agreed next steps."
+      },
+      "greater-bay-malaysia-investment-roadshow": {
+        "title": "Greater Bay Area × Malaysia Investment Roadshow",
+        "summary": "An investment-promotion roadshow presenting corridor projects and incentives to qualified investors, with reviewed intent and coordinated delegation visits. Framed for investment-promotion agencies and bilateral government programs.",
+        "before": "Zones and projects published as structured profiles; investor intent reviewed for fit before matching.",
+        "onsite": "Project presentations, qualified 1-to-1 meetings, and site-visit coordination.",
+        "after": "LOI/MOU state and next actions tracked to outcome with named owners."
+      }
+    }
+  },
+  "investmentProjects": {
+    "labels": {
+      "illustrative": "Illustrative · pre-launch",
+      "location": "Location",
+      "sector": "Sector",
+      "stage": "Stage",
+      "incentiveContext": "Incentive context"
+    },
+    "items": {
+      "selangor-agri-food-park": {
+        "title": "Selangor Agri-Food Processing Park",
+        "location": "Selangor, Malaysia",
+        "sector": "Food & Beverage / Agri-processing",
+        "stage": "Land ready · seeking anchor tenants",
+        "incentiveContext": "Standard zone incentives apply; confirmed with the responsible authority.",
+        "summary": "A processing-park opportunity positioned for regional F&B and agri-processing investors, with structured facility readiness and sector-fit review."
+      },
+      "green-energy-corridor": {
+        "title": "Malaysia–Macao Green Energy Corridor",
+        "location": "Malaysia (multi-site)",
+        "sector": "Green energy / Cleantech",
+        "stage": "Project pipeline · partner matching",
+        "incentiveContext": "Incentive eligibility reviewed per project with the responsible authority.",
+        "summary": "A cross-border green-energy pipeline connecting Malaysian project owners with corridor investors through reviewed, qualified introductions."
+      },
+      "digital-economy-zone": {
+        "title": "Klang Valley Digital Economy Zone",
+        "location": "Klang Valley, Malaysia",
+        "sector": "Digital economy / Fintech",
+        "stage": "Anchor-tenant intake",
+        "incentiveContext": "Digital-economy incentives; scope confirmed per applicant.",
+        "summary": "A digital-economy zone profile presenting sector focus, facility readiness and incentive context to qualified inbound investors."
+      }
+    }
+  },
   "legal": {
     "staticNotice": "This MVP page is intentionally static and ready for legal copy to be dropped in before production launch.",
     "terms": {
@@ -361,12 +698,11 @@
       "facebook": "Facebook"
     },
     "platformLinks": [
-      { "label": "How It Works", "href": "/how-it-works" },
-      { "label": "Pre-event Support", "href": "/pre-event" },
-      { "label": "For Program Operators", "href": "/for-program-operators" },
-      { "label": "For Business Owners", "href": "/for-businesses" },
-      { "label": "Pricing", "href": "/pricing" },
-      { "label": "Countries We Serve", "href": "/pre-event#country-support" }
+      { "label": "Business owners", "href": "/for-businesses" },
+      { "label": "Program operators", "href": "/for-program-operators" },
+      { "label": "Investment promotion", "href": "/for-investment" },
+      { "label": "Government & bilateral", "href": "/for-government" },
+      { "label": "Events", "href": "/events" }
     ],
     "companyLinks": [
       { "label": "About Us", "href": "/about" },

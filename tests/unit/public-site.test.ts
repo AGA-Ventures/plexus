@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { withLocale } from "@/lib/public-site"
+import { getPublicContent, publicLocales, withLocale } from "@/lib/public-site"
 
 describe("public site locale routing", () => {
   it("keeps locale parameters before route fragments", () => {
@@ -13,5 +13,39 @@ describe("public site locale routing", () => {
     expect(withLocale("/contact?source=footer", "zh-Hant")).toBe(
       "/contact?source=footer&lang=zh-Hant"
     )
+  })
+
+  it("keeps pricing proposals scoped and actionable in every public locale", () => {
+    for (const locale of publicLocales) {
+      const pricing = getPublicContent(locale).pages.pricing
+
+      expect(pricing.sectionTitle).toBeTruthy()
+      expect(pricing.sectionBody).toBeTruthy()
+      expect(pricing.points).toHaveLength(3)
+      expect(pricing.points.every((point) => point.title && point.body)).toBe(
+        true
+      )
+      expect(pricing.closing.title).toBeTruthy()
+      expect(pricing.closing.body).toBeTruthy()
+      expect(pricing.closing.cta).toBeTruthy()
+      expect(pricing.closing.href).toBe("/contact")
+    }
+  })
+
+  it("keeps the public vision evidence-bound in every locale", () => {
+    for (const locale of publicLocales) {
+      const about = getPublicContent(locale).pages.about
+
+      expect(about.sectionTitle).toBeTruthy()
+      expect(about.sectionBody).toBeTruthy()
+      expect(about.points).toHaveLength(5)
+      expect(about.points.every((point) => point.title && point.body)).toBe(
+        true
+      )
+      expect(about.closing.title).toBeTruthy()
+      expect(about.closing.body).toBeTruthy()
+      expect(about.closing.cta).toBeTruthy()
+      expect(about.closing.href).toBe("/contact")
+    }
   })
 })

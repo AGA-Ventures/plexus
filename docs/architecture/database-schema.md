@@ -2,7 +2,8 @@
 
 **Owner:** Engineering and data/security
 **Review trigger:** Every database migration
-**Last verified against live Supabase:** 2026-07-28; next migration reviewed 2026-07-29
+**Last verified against live Supabase:** 2026-08-26
+**Committed migration inventory reviewed:** 2026-08-26
 **Project:** `Plexus` (`pnjblggcdigekluualin`)
 
 ## Source of truth
@@ -11,14 +12,16 @@ Committed migrations in `supabase/migrations/` are the schema source of truth.
 This document is a reviewed human-readable snapshot of the live project plus
 the next committed migration where explicitly marked.
 
-Current committed inventory after the Vendor application migration (apply and
-advisor verification remain release steps):
+Current committed inventory through
+`20260825202901_index_tchina_registration_links.sql` (applied to the linked
+Supabase project):
 
 - PostgreSQL 17
-- 31 migrations
-- 25 public tables
-- 25 of 25 public tables have RLS enabled
-- 80 public-table RLS policies
+- 48 migrations
+- 32 public tables
+- 32 of 32 public tables enable RLS in committed migrations
+- Public-table policies cover the documented role, tenant, and Plexus singleton
+  boundaries
 - 0 public views and 0 public enum types
 - 4 Storage buckets: private `event-resources`, public `tenant-branding`,
   private `vendor-profile-documents`, and private `mou-documents`
@@ -37,6 +40,7 @@ erDiagram
     ADMIN_TENANTS ||--o{ USER_PROFILES : "owns admins/vendors"
     ADMIN_TENANTS ||--o{ VENDOR_COMPANIES : "owns"
     ADMIN_TENANTS ||--o{ VENDOR_APPLICATIONS : "receives"
+    TCHINA_EVENTS ||--o{ EVENT_REGISTRATIONS : "receives"
     VENDOR_APPLICATIONS o|--o| VENDOR_COMPANIES : "approved as"
     VENDOR_COMPANIES ||--|| DELEGATION_COMPANIES : "delegation subtype"
     VENDOR_COMPANIES ||--|| PARTNER_COMPANIES : "partner subtype"
@@ -148,7 +152,67 @@ vendor_applications (
   created_at timestamptz NOT NULL default now(),
   updated_at timestamptz NOT NULL default now()
 )
+
+tchina_events (
+  id uuid PK default gen_random_uuid(),
+  singleton_key text UNIQUE NOT NULL default 'plexus' CHECK (= 'plexus'),
+  title text NOT NULL default 'TChina Expo 2026',
+  city text NOT NULL default 'Guangzhou',
+  venue_name text NOT NULL default '',
+  venue_address text NOT NULL default '',
+  organizer_name text NOT NULL default '',
+  support_email text NOT NULL default '',
+  starts_on date NOT NULL default '2026-08-31',
+  ends_on date NOT NULL default '2026-09-04',
+  timezone text NOT NULL default 'Asia/Shanghai',
+  registration_open boolean NOT NULL default false,
+  published_at timestamptz NULL,
+  created_at timestamptz NOT NULL default now(),
+  updated_at timestamptz NOT NULL default now()
+)
+
+event_registrations (
+  id uuid PK default gen_random_uuid(),
+  event_id uuid NOT NULL FK -> tchina_events.id,
+  reference_code text UNIQUE NOT NULL,
+  attendee_type text NOT NULL,
+  normalized_email text NOT NULL,
+  full_name text NOT NULL,
+  mobile_number text NOT NULL,
+  chat_platform text NOT NULL default 'none',
+  chat_id text NOT NULL default '',
+  country_region text NOT NULL,
+  preferred_language text NOT NULL,
+  attendance_dates date[] NOT NULL,
+  answers jsonb NOT NULL,
+  status text NOT NULL default 'pending',
+  reviewed_by uuid NULL FK -> auth.users.id,
+  reviewed_at timestamptz NULL,
+  vendor_company_id uuid NULL FK -> vendor_companies.id,
+  auth_user_id uuid NULL FK -> auth.users.id,
+  receipt_email_sent_at timestamptz NULL,
+  invitation_email_sent_at timestamptz NULL,
+  setup_email_sent_at timestamptz NULL,
+  consented_at timestamptz NOT NULL,
+  created_at timestamptz NOT NULL default now(),
+  updated_at timestamptz NOT NULL default now()
+)
 ```
+
+`tchina_events` is a platform singleton whose only legal `singleton_key` is
+`plexus`. It has no tenant or Admin foreign key. Registration cannot open until
+the exact venue, organizer, support email, and publication timestamp are
+present. Event dates and timezone are fixed to the approved Guangzhou campaign.
+
+`event_registrations` stores queryable contact/status fields and one typed
+branch answer object. A partial unique index allows only one non-rejected row
+per event and normalized email, while permitting a rejected attendee to submit
+again. Submitted identity, contact, attendance, consent, and answers are
+immutable. Status transitions, event consistency, approved-only invitation
+timestamps, and service-only Business Delegate finalization are trigger- and
+constraint-enforced. Records have no automatic expiry; confirmed Superadmin
+deletion removes only the registration, not linked accounts or audit/email
+ledgers.
 
 `admin_tenants.vendor_discovery_enabled` is the owning Admin's tenant capability
 switch for Vendor self-service browsing. When disabled, the application hides
@@ -651,22 +715,23 @@ metadata insert, replacement, or deletion.
 
 ## RLS access summary
 
-| Data class              | Superadmin  | Admin                     | Vendor                         |
-| ----------------------- | ----------- | ------------------------- | ------------------------------ |
-| Tenants                 | All         | Own tenant                | Own tenant reference           |
-| User profiles           | All         | Own tenant Vendors        | Own active profile             |
-| Vendor directory        | All         | Own tenant                | Own company                    |
-| Subtype profile         | All         | Own tenant                | Own subtype/company            |
-| Candidate directory     | All         | Own tenant                | Opposite subtype in own tenant |
-| Matches/meetings/deals  | All         | Own tenant                | Records involving own company  |
-| Provider links/tokens   | Server only | Server only               | Server only                    |
-| Itinerary               | All         | Own tenant manage         | Published own-tenant entries   |
-| Site visits             | All         | Own tenant manage         | Assigned Delegation only       |
-| Announcements/resources | All         | Own tenant manage         | Permitted audience             |
-| Email delivery ledger   | Read-only   | None                      | None                           |
-| Profile documents       | All         | Own tenant read/delete    | Own company upload/read/delete |
-| Settings                | All/manage  | Provisioning setting read | None                           |
-| Audit events            | All         | Own tenant read           | None                           |
+| Data class                 | Superadmin                   | Admin                     | Vendor                         |
+| -------------------------- | ---------------------------- | ------------------------- | ------------------------------ |
+| Tenants                    | All                          | Own tenant                | Own tenant reference           |
+| User profiles              | All                          | Own tenant Vendors        | Own active profile             |
+| Vendor directory           | All                          | Own tenant                | Own company                    |
+| Subtype profile            | All                          | Own tenant                | Own subtype/company            |
+| Candidate directory        | All                          | Own tenant                | Opposite subtype in own tenant |
+| Matches/meetings/deals     | All                          | Own tenant                | Records involving own company  |
+| Provider links/tokens      | Server only                  | Server only               | Server only                    |
+| Itinerary                  | All                          | Own tenant manage         | Published own-tenant entries   |
+| Site visits                | All                          | Own tenant manage         | Assigned Delegation only       |
+| Announcements/resources    | All                          | Own tenant manage         | Permitted audience             |
+| Email delivery ledger      | Read-only                    | None                      | None                           |
+| Profile documents          | All                          | Own tenant read/delete    | Own company upload/read/delete |
+| TChina event/registrations | Read/manage Plexus singleton | None                      | None                           |
+| Settings                   | All/manage                   | Provisioning setting read | None                           |
+| Audit events               | All                          | Own tenant read           | None                           |
 
 All policies first require an active actor. Write policies use both `USING` and
 `WITH CHECK` where applicable so a user cannot move a row outside its permitted
@@ -680,7 +745,10 @@ The Vendor workspace
 subscribes only to its own subtype/company row, its participating match rows,
 and the meeting/deal rows related to its currently visible match IDs.
 Postgres Changes authorization continues to use the tables' existing RLS
-policies; the browser receives no service-role credential.
+policies; the browser receives no service-role credential. Before registering
+those filters, the client resolves the authenticated browser session and sets
+its access token on Realtime. This prevents the filter validation trigger from
+evaluating `match_id` with anonymous column privileges.
 
 The client listens to insert and update events, then reloads the complete
 authorized server read model so all four dashboard cards remain consistent.

@@ -7,9 +7,10 @@ documentation move together.
 ## Before starting
 
 1. Read the [documentation hub](docs/README.md).
-2. Run `npm run whereami`.
-3. Review the relevant product, architecture, security, and quality documents.
-4. Start from reviewed `main` on a dedicated branch.
+2. Open the [Development Command Center](docs/development/plexus-command-center.html).
+3. Run `npm run whereami`.
+4. Review the relevant product, architecture, security, and quality documents.
+5. Start from reviewed `main` on a dedicated branch.
 
 ```bash
 git switch main
@@ -32,12 +33,13 @@ Use the templates in [`docs/templates/`](docs/templates/).
 ## Validation
 
 ```bash
-npm run docs:check
-npm run verify:release
+npm run docs:command-center
+npm run health:check
 ```
 
-Run `npm run test:e2e` when routes, authentication, responsive UI, or business
-workflows change. Run `npm run test:rls` for database authorization changes.
+The health command includes the release gate and Playwright. Run
+`npm run test:rls` separately for database authorization changes when the
+Supabase CLI and local database are available.
 
 ## Pull requests
 

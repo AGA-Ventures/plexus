@@ -2,20 +2,30 @@
 
 **Owner:** Product and engineering
 **Review trigger:** Role, route, permission, workflow, or capability-status change
-**Last reviewed:** 2026-08-22
+**Last reviewed:** 2026-08-26
 
 ## Purpose and scope
 
 This guide explains the current Plexus application through its three
-authorization layers:
+authorization layers and the product actors they represent:
 
 1. **Superadmin** operates the whole Plexus platform.
-2. **Admin** operates one isolated tenant and the Vendors assigned to it.
-3. **Vendor** operates one company within an Admin tenant.
+2. **Admin / Organizer** operates one isolated tenant, manages Business
+   Participants, and coordinates Local Service Partners.
+3. **Business Participant** operates one participating company through the
+   current technical `vendor` authorization role.
 
-A Vendor has either a `delegation` or `partner` subtype. These subtypes change
-the Vendor workspace and business workflows; they are not separate
-authorization roles.
+A Business Participant has either a `delegation` or `partner` subtype. These
+subtypes change the current Vendor workspace and business workflows; they are
+not separate authorization roles.
+
+**Local Service Partner** is a distinct product actor for assigned operational
+services such as interpretation, travel, transportation, venue,
+accommodation, or logistics. It is not a fourth authorization role today:
+current interpreters and concierge/service relationships are managed by the
+Admin / Organizer. If service partners later receive logins, their access must
+be assignment-scoped and must not inherit Business Participant or tenant-wide
+permissions.
 
 This is a current-state guide, not a future-product promise. Application code,
 database migrations, and Row Level Security (RLS) remain the source of truth
@@ -60,13 +70,14 @@ unverified contact channels are not rendered.
 ```mermaid
 flowchart TD
     P["Plexus platform"] --> S["Superadmin<br/>all tenants"]
-    S --> A1["Admin tenant A<br/>isolated scope"]
-    S --> A2["Admin tenant B<br/>isolated scope"]
-    A1 --> V1["Vendor company<br/>own-company scope"]
-    A1 --> V2["Vendor company<br/>own-company scope"]
-    A2 --> V3["Vendor company<br/>own-company scope"]
-    V1 --> D["Delegation subtype"]
-    V2 --> R["Partner subtype"]
+    S --> A1["Admin / Organizer tenant A<br/>isolated scope"]
+    S --> A2["Admin / Organizer tenant B<br/>isolated scope"]
+    A1 --> B1["Business Participant<br/>own-company scope"]
+    A1 --> B2["Business Participant<br/>own-company scope"]
+    A2 --> B3["Business Participant<br/>own-company scope"]
+    B1 --> D["Delegation subtype"]
+    B2 --> R["Partner subtype"]
+    A1 -. "coordinates" .-> L1["Local Service Partner<br/>Admin-managed today"]
 ```
 
 The hierarchy describes data and governance scope, not automatic UI
@@ -76,11 +87,17 @@ the Admin operations portal.
 
 ## Role summary
 
-| Role       | Primary outcome                                                                                     | Data scope                                         | Main workspace         |
-| ---------- | --------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------- |
-| Superadmin | Govern Plexus, its tenants, accounts, settings, and cross-tenant operations                         | All tenants and platform records                   | `/[locale]/superadmin` |
-| Admin      | Run a branded tenant, manage its Vendors, and operate its business program                          | Own Admin tenant                                   | `/[locale]/admin`      |
-| Vendor     | Maintain one company profile and participate in matching, meetings, agreements, and event workflows | Own company and explicitly shared workflow records | `/[locale]/vendor`     |
+| Authorization role | Product actor        | Primary outcome                                                                                          | Data scope                                         | Main workspace         |
+| ------------------ | -------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ---------------------- |
+| `superadmin`       | Superadmin           | Govern the platform and standards across all tenants                                                     | All tenants and platform records                   | `/[locale]/superadmin` |
+| `admin`            | Admin / Organizer    | Operate a branded tenant, manage Business Participants, and coordinate Local Service Partners            | Own Admin tenant                                   | `/[locale]/admin`      |
+| `vendor`           | Business Participant | Represent one participating company and join permitted matching, meeting, agreement, and event workflows | Own company and explicitly shared workflow records | `/[locale]/vendor`     |
+
+Local Service Partners do not have an independent workspace or authorization
+role in the current application. Admin-managed interpreter records are the
+existing controlled example; travel and logistics relationships remain
+concierge handoffs until a scoped service-partner workflow is designed and
+implemented.
 
 All roles use the same email/password login. Trusted Supabase Auth
 `app_metadata` determines the role and bindings, after which the user is sent
@@ -160,34 +177,35 @@ flowchart LR
 
 ## Feature and permission matrix
 
-| Capability                                               | Superadmin                                               | Admin                                                                       | Vendor                                                                         |
-| -------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Shared login, role routing, logout                       | Own account                                              | Own account                                                                 | Own account                                                                    |
-| Self-service password recovery                           | Own account                                              | Own account                                                                 | Own account                                                                    |
-| Account profile settings                                 | No dedicated self-service panel                          | Edit own display name; manage branding and access from one settings dialog  | Edit own display name and review access                                        |
-| Admin tenant creation                                    | All tenants                                              | No                                                                          | No                                                                             |
-| Tenant profile and branding                              | Upload logo, edit, and preview every tenant              | Upload logo, edit, and preview own tenant                                   | View applied workspace context                                                 |
-| Tenant activation, suspension, archiving                 | Every tenant                                             | No                                                                          | No                                                                             |
-| Vendor account provisioning                              | Any active tenant                                        | Own active tenant, when platform setting permits                            | No                                                                             |
-| Vendor company status and directory                      | Every tenant                                             | Own tenant                                                                  | Own profile through Vendor workflow                                            |
-| Vendor cross-tenant transfer                             | Yes                                                      | No                                                                          | No                                                                             |
-| Account suspension/restoration and claim synchronization | All permitted accounts; cannot self-suspend              | Vendor accounts in own tenant                                               | No                                                                             |
-| Admin password recovery link                             | Send to an active Admin account from its tenant row      | Self-service only                                                           | No                                                                             |
-| Platform settings                                        | Read/write                                               | Reads the Vendor-provisioning permission used by its workflow               | No                                                                             |
-| Privileged audit history                                 | Platform-wide, latest 200 shown                          | Own tenant, latest 100 shown                                                | No                                                                             |
-| Operational tenant reporting                             | Cross-tenant totals                                      | Full own-tenant dashboard and reports                                       | Own-company summaries                                                          |
-| Delegation and Partner records                           | Platform directory/reporting                             | Create, view, update, and delete within own tenant                          | Update own registration profile                                                |
-| Match discovery                                          | No dedicated Superadmin UI                               | Manages own-tenant matching board and controls Vendor self-service browsing | Opposite-subtype directory when enabled; limited fields only                   |
-| Match status and scoring                                 | No dedicated Superadmin UI                               | Propose, score, and operate own-tenant matches                              | Request a match; own acceptance is reversible before the other Vendor responds |
-| Meetings                                                 | Legacy critical incidents and controlled retry           | Confirm Vendor-requested sessions and create protected provider links       | Mutual acceptance unlocks scheduling; future sessions open in My Meetings      |
-| Interpreter roster                                       | No dedicated Superadmin UI                               | Create, edit, set availability, delete, and assign                          | Request an available preferred interpreter                                     |
-| MOU/deal tracking                                        | Cross-tenant reporting                                   | Track status, signatory checks, and available PDF                           | Explicitly sign own side after a completed meeting; view progress/PDF          |
-| Communications                                           | Cross-tenant Email sending ledger and provider readiness | Create targeted email announcements and in-app notifications                | Receive applicable operational email and notifications                         |
-| Documents and resources                                  | No dedicated Superadmin UI                               | Add URL resources, upload private files, set audience and visibility        | Delegation subtype can view permitted resources                                |
-| Event attendance and check-in                            | Cross-tenant reporting only                              | Manual/QR check-in simulation for tenant Partners                           | Partner subtype confirms attendance and sees QR status                         |
-| Itinerary, site visits, liaison                          | Cross-tenant reporting only                              | Publish itinerary; view site visits and liaison records                     | Delegation subtype views published itinerary                                   |
-| CSV/ICS exports                                          | Reporting on screen                                      | Pre-visit CSV, post-event CSV, and meeting calendar ICS                     | Meeting ICS; Delegation itinerary CSV                                          |
-| Compliance console and APIs                              | Platform access                                          | Own authenticated access                                                    | No                                                                             |
+| Capability                                               | Superadmin                                                                       | Admin                                                                       | Vendor                                                                         |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Shared login, role routing, logout                       | Own account                                                                      | Own account                                                                 | Own account                                                                    |
+| Self-service password recovery                           | Own account                                                                      | Own account                                                                 | Own account                                                                    |
+| Account profile settings                                 | No dedicated self-service panel                                                  | Edit own display name; manage branding and access from one settings dialog  | Edit own display name and review access                                        |
+| Admin tenant creation                                    | All tenants                                                                      | No                                                                          | No                                                                             |
+| Tenant profile and branding                              | Upload logo, edit, and preview every tenant                                      | Upload logo, edit, and preview own tenant                                   | View applied workspace context                                                 |
+| Tenant activation, suspension, archiving                 | Every tenant                                                                     | No                                                                          | No                                                                             |
+| Vendor account provisioning                              | Any active tenant                                                                | Own active tenant, when platform setting permits                            | No                                                                             |
+| Vendor company status and directory                      | Every tenant                                                                     | Own tenant                                                                  | Own profile through Vendor workflow                                            |
+| Vendor cross-tenant transfer                             | Yes                                                                              | No                                                                          | No                                                                             |
+| Account suspension/restoration and claim synchronization | All permitted accounts; cannot self-suspend                                      | Vendor accounts in own tenant                                               | No                                                                             |
+| Admin password recovery link                             | Send to an active Admin account from its tenant row                              | Self-service only                                                           | No                                                                             |
+| Platform settings                                        | Read/write                                                                       | Reads the Vendor-provisioning permission used by its workflow               | No                                                                             |
+| Privileged audit history                                 | Platform-wide, latest 200 shown                                                  | Own tenant, latest 100 shown                                                | No                                                                             |
+| Operational tenant reporting                             | Cross-tenant totals                                                              | Full own-tenant dashboard and reports                                       | Own-company summaries                                                          |
+| Delegation and Partner records                           | Platform directory/reporting                                                     | Create, view, update, and delete within own tenant                          | Update own registration profile                                                |
+| Match discovery                                          | No dedicated Superadmin UI                                                       | Manages own-tenant matching board and controls Vendor self-service browsing | Opposite-subtype directory when enabled; limited fields only                   |
+| Match status and scoring                                 | No dedicated Superadmin UI                                                       | Propose, score, and operate own-tenant matches                              | Request a match; own acceptance is reversible before the other Vendor responds |
+| Meetings                                                 | Legacy critical incidents and controlled retry                                   | Confirm Vendor-requested sessions and create protected provider links       | Mutual acceptance unlocks scheduling; future sessions open in My Meetings      |
+| Interpreter roster                                       | No dedicated Superadmin UI                                                       | Create, edit, set availability, delete, and assign                          | Request an available preferred interpreter                                     |
+| MOU/deal tracking                                        | Cross-tenant reporting                                                           | Track status, signatory checks, and available PDF                           | Explicitly sign own side after a completed meeting; view progress/PDF          |
+| Communications                                           | Cross-tenant Email sending ledger and provider readiness                         | Create targeted email announcements and in-app notifications                | Receive applicable operational email and notifications                         |
+| Documents and resources                                  | No dedicated Superadmin UI                                                       | Add URL resources, upload private files, set audience and visibility        | Delegation subtype can view permitted resources                                |
+| Event attendance and check-in                            | Cross-tenant reporting only                                                      | Manual/QR check-in simulation for tenant Partners                           | Partner subtype confirms attendance and sees QR status                         |
+| TChina Expo registration                                 | Configure/publish the Plexus singleton; review, reject, and delete registrations | No access or navigation entry                                               | No protected access; any attendee may use the public questionnaire             |
+| Itinerary, site visits, liaison                          | Cross-tenant reporting only                                                      | Publish itinerary; view site visits and liaison records                     | Delegation subtype views published itinerary                                   |
+| CSV/ICS exports                                          | Reporting on screen                                                              | Pre-visit CSV, post-event CSV, and meeting calendar ICS                     | Meeting ICS; Delegation itinerary CSV                                          |
+| Compliance console and APIs                              | Platform access                                                                  | Own authenticated access                                                    | No                                                                             |
 
 Database RLS narrows Admin and Vendor actions to their permitted rows even
 where a shared Server Action supports more than one role.
@@ -822,12 +840,12 @@ See the [capability map](capability-map.md) and
 
 ## Tenant Vendor application use case
 
-| Actor      | Available behavior                                                                                                                                                                                                      |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Applicant  | Open the tenant-branded subtype link, complete the 25 public-intake profile items plus any optional information and document checklist, submit without meeting-arrangement questions or credentials, and receive a generic awaiting-review confirmation.                        |
-| Admin      | Copy either subtype link, view own-tenant pending/history applications and complete profiles, approve or reject pending applications, and resend setup email for an approved account.                                   |
-| Superadmin | Read/update application records across tenants for governance under active-role RLS, without tenant impersonation in the Admin UI.                                                                                      |
-| Vendor     | No application-table access. After approval and password setup, enter the existing Vendor workspace with the submitted profile prepopulated and upload private PDFs there.                                              |
+| Actor      | Available behavior                                                                                                                                                                                                                                       |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Applicant  | Open the tenant-branded subtype link, complete the 25 public-intake profile items plus any optional information and document checklist, submit without meeting-arrangement questions or credentials, and receive a generic awaiting-review confirmation. |
+| Admin      | Copy either subtype link, view own-tenant pending/history applications and complete profiles, approve or reject pending applications, and resend setup email for an approved account.                                                                    |
+| Superadmin | Read/update application records across tenants for governance under active-role RLS, without tenant impersonation in the Admin UI.                                                                                                                       |
+| Vendor     | No application-table access. After approval and password setup, enter the existing Vendor workspace with the submitted profile prepopulated and upload private PDFs there.                                                                               |
 
 ## Source references
 

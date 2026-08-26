@@ -10,16 +10,27 @@ import {
 
 import { Button } from "@/components/ui/button"
 import {
+  normalizePublicLocale,
   type PublicContent,
   type PublicLocale,
   withLocale,
 } from "@/lib/public-site"
 
+export type SiteHeaderLocaleOption = {
+  label: string
+  shortLabel: string
+  value: string
+  href: string
+}
+
 type SiteHeaderProps = {
   content: PublicContent
-  locale: PublicLocale
+  locale: string
   currentPath?: string
   supportedLocales?: PublicLocale[]
+  localeOptions?: SiteHeaderLocaleOption[]
+  homeHref?: string
+  loginHref?: string
 }
 
 const headerCopy: Record<
@@ -51,36 +62,59 @@ export function SiteHeader({
   locale,
   currentPath = "/",
   supportedLocales = ["en", "ms", "zh-Hant"],
+  localeOptions,
+  homeHref,
+  loginHref,
 }: SiteHeaderProps) {
-  const labels = headerCopy[locale]
+  const publicLocale = normalizePublicLocale(locale)
+  const labels = headerCopy[publicLocale]
   const navItems = [
     { label: content.nav.howItWorks, href: "/how-it-works" },
-    { label: content.nav.forVendors, href: "/for-program-operators" },
-    { label: content.nav.forBusinesses, href: "/for-businesses" },
-    { label: labels.preview, href: "/app" },
+    { label: content.nav.product, href: "/app" },
+    { label: content.nav.events, href: "/events" },
+    { label: content.nav.pricing, href: "/pricing" },
   ]
-  const locales = [
-    { label: "English", shortLabel: "EN", value: "en" as const },
-    {
-      label: "Bahasa Malaysia",
-      shortLabel: "BM",
-      value: "ms" as const,
-    },
-    {
-      label: "繁體中文",
-      shortLabel: "繁中",
-      value: "zh-Hant" as const,
-    },
-  ].filter((item) => supportedLocales.includes(item.value))
+  const audienceItems = [
+    { label: content.audiences.business, href: "/for-businesses" },
+    { label: content.audiences.operators, href: "/for-program-operators" },
+    { label: content.audiences.investment, href: "/for-investment" },
+    { label: content.audiences.government, href: "/for-government" },
+  ]
+  const locales =
+    localeOptions ??
+    [
+      { label: "English", shortLabel: "EN", value: "en" as const },
+      {
+        label: "Bahasa Malaysia",
+        shortLabel: "BM",
+        value: "ms" as const,
+      },
+      {
+        label: "繁體中文",
+        shortLabel: "繁中",
+        value: "zh-Hant" as const,
+      },
+    ]
+      .filter((item) => supportedLocales.includes(item.value))
+      .map((item) => ({
+        ...item,
+        href: withLocale(currentPath, item.value),
+      }))
   const activeLocale =
     locales.find((item) => item.value === locale) ?? locales[0]
   const preEventActive = currentPath === "/pre-event"
+  const audienceActive = audienceItems.some((item) => currentPath === item.href)
+  const resolvedHomeHref = homeHref ?? withLocale("/", publicLocale)
+  const resolvedLoginHref = loginHref ?? withLocale("/login", publicLocale)
 
   return (
-    <header className="relative z-40 border-b border-white/12 bg-[#071326] text-white">
+    <header
+      data-testid="site-header"
+      className="relative z-40 border-b border-white/12 bg-[#071326] text-white"
+    >
       <div className="mx-auto flex min-h-[4.25rem] w-full max-w-[1240px] items-center gap-3 px-4 sm:px-6 xl:px-5">
         <Link
-          href={withLocale("/", locale)}
+          href={resolvedHomeHref}
           className="flex min-h-11 shrink-0 items-center rounded-md focus-visible:ring-2 focus-visible:ring-[#80e8ff] focus-visible:outline-none"
           aria-label={content.meta.siteName}
         >
@@ -96,11 +130,13 @@ export function SiteHeader({
 
         <nav className="ml-auto hidden min-w-0 items-center gap-0.5 text-[0.8125rem] xl:flex">
           {navItems.map((item) => {
-            const active = currentPath === item.href
+            const active =
+              currentPath === item.href ||
+              (item.href === "/events" && currentPath.startsWith("/events/"))
             return (
               <Link
                 key={item.href}
-                href={withLocale(item.href, locale)}
+                href={withLocale(item.href, publicLocale)}
                 aria-current={active ? "page" : undefined}
                 className={[
                   "shrink-0 rounded-lg px-2.5 py-2.5 font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-[#80e8ff] focus-visible:outline-none",
@@ -113,11 +149,47 @@ export function SiteHeader({
               </Link>
             )
           })}
+          <details className="group relative">
+            <summary
+              className={[
+                "flex cursor-pointer list-none items-center gap-1.5 rounded-lg px-2.5 py-2.5 font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-[#80e8ff] focus-visible:outline-none [&::-webkit-details-marker]:hidden",
+                audienceActive
+                  ? "bg-white text-[#071326]"
+                  : "text-[#dcecf7] hover:bg-white/10 hover:text-white",
+              ].join(" ")}
+            >
+              {content.nav.audiences}
+              <HugeiconsIcon
+                icon={ArrowDown01Icon}
+                size={14}
+                strokeWidth={1.9}
+                aria-hidden="true"
+                className="transition-transform duration-200 group-open:rotate-180"
+              />
+            </summary>
+            <div className="absolute right-0 z-50 mt-2 grid min-w-56 gap-1 rounded-lg bg-white p-2 text-[#071326] shadow-[0_20px_55px_rgba(0,0,0,0.28)]">
+              {audienceItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={withLocale(item.href, publicLocale)}
+                  aria-current={currentPath === item.href ? "page" : undefined}
+                  className={[
+                    "flex min-h-11 items-center rounded-md px-3 py-2 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-[#0a84ff] focus-visible:outline-none",
+                    currentPath === item.href
+                      ? "bg-[#dcecf7] text-[#0758c8]"
+                      : "text-[#405872] hover:bg-[#eef4f8] hover:text-[#111826]",
+                  ].join(" ")}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
+          </details>
         </nav>
 
         <div className="ml-auto flex shrink-0 items-center gap-2 xl:ml-2">
           <Link
-            href={withLocale("/pre-event", locale)}
+            href={withLocale("/pre-event", publicLocale)}
             aria-current={preEventActive ? "page" : undefined}
             className={[
               "hidden min-h-10 shrink-0 items-center gap-1.5 rounded-lg border px-2.5 text-[0.8125rem] font-medium whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-[#80e8ff] focus-visible:outline-none xl:inline-flex",
@@ -161,7 +233,7 @@ export function SiteHeader({
               {locales.map((item) => (
                 <Link
                   key={item.value}
-                  href={withLocale(currentPath, item.value)}
+                  href={item.href}
                   aria-current={locale === item.value ? "true" : undefined}
                   className={[
                     "flex min-h-11 items-center justify-between gap-4 rounded-md px-3 py-2 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-[#0a84ff] focus-visible:outline-none",
@@ -184,7 +256,7 @@ export function SiteHeader({
             size="sm"
             className="hidden h-10 rounded-lg bg-[#0758c8] px-4 text-white hover:bg-[#064caf] sm:inline-flex"
           >
-            <Link href={withLocale("/login", locale)}>{content.nav.login}</Link>
+            <Link href={resolvedLoginHref}>{content.nav.login}</Link>
           </Button>
 
           <details className="group relative xl:hidden">
@@ -203,11 +275,14 @@ export function SiteHeader({
             <div className="absolute right-0 z-50 mt-3 w-[min(22rem,calc(100vw-2rem))] rounded-xl bg-[#f7f7f2] p-3 text-[#111826] shadow-[0_20px_55px_rgba(0,0,0,0.28)]">
               <nav className="grid gap-1">
                 {navItems.map((item) => {
-                  const active = currentPath === item.href
+                  const active =
+                    currentPath === item.href ||
+                    (item.href === "/events" &&
+                      currentPath.startsWith("/events/"))
                   return (
                     <Link
                       key={item.href}
-                      href={withLocale(item.href, locale)}
+                      href={withLocale(item.href, publicLocale)}
                       aria-current={active ? "page" : undefined}
                       className={[
                         "flex min-h-12 items-center rounded-lg px-4 py-3 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-[#0a84ff] focus-visible:outline-none",
@@ -220,8 +295,28 @@ export function SiteHeader({
                     </Link>
                   )
                 })}
+                <p className="px-4 pt-3 pb-1 text-xs font-semibold text-[#53667c]">
+                  {content.nav.audiences}
+                </p>
+                {audienceItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={withLocale(item.href, publicLocale)}
+                    aria-current={
+                      currentPath === item.href ? "page" : undefined
+                    }
+                    className={[
+                      "flex min-h-12 items-center rounded-lg px-4 py-3 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-[#0a84ff] focus-visible:outline-none",
+                      currentPath === item.href
+                        ? "bg-[#071326] text-white"
+                        : "hover:bg-[#dcecf7]",
+                    ].join(" ")}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
                 <Link
-                  href={withLocale("/pre-event", locale)}
+                  href={withLocale("/pre-event", publicLocale)}
                   aria-current={preEventActive ? "page" : undefined}
                   className={[
                     "flex min-h-12 items-center rounded-lg px-4 py-3 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-[#0a84ff] focus-visible:outline-none",
@@ -235,7 +330,7 @@ export function SiteHeader({
               </nav>
               <div className="mt-3 border-t border-[#cbd9e5] pt-3 sm:hidden">
                 <Link
-                  href={withLocale("/login", locale)}
+                  href={resolvedLoginHref}
                   className="flex min-h-11 items-center justify-center rounded-lg bg-[#0758c8] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#064caf] focus-visible:ring-2 focus-visible:ring-[#0a84ff] focus-visible:outline-none"
                 >
                   {content.nav.login}

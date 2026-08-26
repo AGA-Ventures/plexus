@@ -15,11 +15,24 @@ delivery, security, and production operations.
 | Development        | How to set up, navigate, and change the codebase        | [Developer setup](development/setup.md)                                        |
 | Project management | How work moves from idea to production                  | [Operating model](project-management/operating-model.md)                       |
 | Planning           | What is now, next, later, and blocked                   | [Roadmap](project-management/roadmap.md)                                       |
+| Active feature     | What the TChina registration slice includes and defers | [TChina Expo registration](project-management/tchina-expo-registration.md)     |
 | Version control    | How versions, branches, tags, and releases are governed | [Versioning and releases](project-management/versioning-and-releases.md)       |
 | Quality            | How behavior and release readiness are verified         | [Testing strategy](quality/testing.md)                                         |
 | Operations         | How to deploy, monitor, recover, and support            | [Deployment](operations/deployment.md)                                         |
 | Security           | How identity, tenancy, RLS, and secrets are protected   | [Authorization and data security](security/authorization-and-data-security.md) |
 | Reference          | Current state, commands, and shared vocabulary          | [Project status](reference/project-status.md)                                  |
+
+## Core development review
+
+Open the [Plexus Development Command Center](development/plexus-command-center.html)
+when framing a meaningful change and again before handoff. It is the canonical
+visual review entry point for current posture, architecture, repository shape,
+documentation, principles, and next priorities.
+
+The command center summarizes the linked canonical sources; it does not replace
+them. Run `npm run docs:command-center` after adding, removing, or moving a
+Markdown file or App Router route. Update its editorial `PLEXUS` data and health
+evidence in the same change whenever one of those claims changes.
 
 ## Source-of-truth rules
 
@@ -34,6 +47,7 @@ delivery, security, and production operations.
 | Verification commands           | `package.json`, CI workflow          | Engineering owner            |
 | Durable production state        | `docs/reference/project-status.md`   | Release owner                |
 | Change history                  | `CHANGELOG.md`                       | Every contributor            |
+| Cross-document development view | `docs/development/plexus-command-center.html` | Every contributor |
 
 Executable code, committed migrations, and machine-readable configuration win
 when documentation differs. The discrepancy must be corrected in the same

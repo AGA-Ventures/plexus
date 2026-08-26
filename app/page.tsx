@@ -2,15 +2,21 @@ import Image from "next/image"
 import Link from "next/link"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
+  AiBrain01Icon,
   ArrowRight01Icon,
+  ArrowUpRight01Icon,
   Building01Icon,
   Calendar03Icon,
   CheckmarkCircle02Icon,
   Globe02Icon,
   LicenseDraftIcon,
+  Mic02Icon,
+  Radar02Icon,
+  SecurityCheckIcon,
   UserGroupIcon,
 } from "@hugeicons/core-free-icons"
 
+import { EventHandoff } from "@/components/event-handoff"
 import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
 import { Button } from "@/components/ui/button"
@@ -233,6 +239,86 @@ const stageIcons = [
   Building01Icon,
 ]
 
+const capabilityShowcasePresentation = [
+  {
+    moduleIndex: 0,
+    icon: Radar02Icon,
+    status: "live" as const,
+    image: "/app-future/plexus-match-phone-transparent.png",
+    imageClass: "object-contain object-center p-5 sm:p-8 lg:p-6",
+    mediaClass: "bg-[#e7dfcf]",
+    position:
+      "min-h-[27rem] lg:col-start-1 lg:row-start-1 lg:col-span-4 lg:row-span-7 lg:min-h-0",
+  },
+  {
+    moduleIndex: 1,
+    icon: Calendar03Icon,
+    status: "live" as const,
+    image: "/app-future/plexus-superapp-system-hero-v4.png",
+    imageClass: "object-cover object-center",
+    mediaClass: "bg-[#071326]",
+    position:
+      "min-h-[18rem] lg:col-start-5 lg:row-start-1 lg:col-span-4 lg:row-span-4 lg:min-h-0",
+  },
+  {
+    moduleIndex: 2,
+    icon: Mic02Icon,
+    status: "mixed" as const,
+    image: "/app-future/plexus-talk.png",
+    imageClass: "object-cover object-center",
+    mediaClass: "bg-[#071326]",
+    position:
+      "min-h-[21rem] lg:col-start-5 lg:row-start-5 lg:col-span-4 lg:row-span-4 lg:min-h-0",
+  },
+  {
+    moduleIndex: 3,
+    icon: SecurityCheckIcon,
+    status: "adapter" as const,
+    image: "/app-future/agreement-studio-plexa-country-v2.png",
+    imageClass: "object-cover object-center",
+    mediaClass: "bg-[#071326]",
+    position:
+      "min-h-[22rem] lg:col-start-1 lg:row-start-8 lg:col-span-4 lg:row-span-5 lg:min-h-0",
+  },
+  {
+    moduleIndex: 4,
+    icon: CheckmarkCircle02Icon,
+    status: "live" as const,
+    image: "/app-future/mou-engine-web-transparent.png",
+    imageClass: "object-contain object-center p-4",
+    mediaClass: "bg-[#e7dfcf]",
+    position:
+      "min-h-[22rem] lg:col-start-5 lg:row-start-9 lg:col-span-4 lg:row-span-4 lg:min-h-0",
+  },
+  {
+    moduleIndex: 6,
+    icon: Building01Icon,
+    status: "mixed" as const,
+    image: "/app-future/session-summary-devices-transparent.png",
+    imageClass: "object-contain object-center p-4 sm:p-6",
+    mediaClass: "bg-[#071326]",
+    position:
+      "min-h-[23rem] lg:col-start-9 lg:row-start-7 lg:col-span-4 lg:row-span-6 lg:min-h-0",
+  },
+  {
+    moduleIndex: 7,
+    icon: AiBrain01Icon,
+    status: "concept" as const,
+    image: null,
+    imageClass: "",
+    mediaClass: "",
+    position:
+      "min-h-[23rem] lg:col-start-9 lg:row-start-1 lg:col-span-4 lg:row-span-6 lg:min-h-0",
+  },
+]
+
+const capabilityStatusClasses = {
+  live: "bg-[#d9f8ee] text-[#08664d]",
+  mixed: "bg-[#deebff] text-[#0758c8]",
+  adapter: "bg-[#fff0c9] text-[#735000]",
+  concept: "bg-[#e9e5f4] text-[#51436a]",
+}
+
 export default async function Page({
   searchParams,
 }: {
@@ -423,38 +509,288 @@ export default async function Page({
         </div>
       </section>
 
+      <section
+        aria-labelledby="home-events-title"
+        className="bg-[#f7f7f2] px-4 py-20 sm:px-6 lg:px-8 lg:py-24"
+      >
+        <div className="mx-auto max-w-[1440px]">
+          <div className="grid gap-6 lg:grid-cols-[1fr_0.72fr] lg:items-end">
+            <h2
+              id="home-events-title"
+              className="max-w-4xl text-[clamp(2.75rem,5vw,4.75rem)] leading-[0.98] font-semibold tracking-[-0.035em] text-balance"
+            >
+              {content.homeEventsLayer.title}
+            </h2>
+            <p className="max-w-2xl text-base leading-7 text-[#53667c] lg:pb-1 lg:text-lg lg:leading-8">
+              {content.homeEventsLayer.body}
+            </p>
+          </div>
+
+          <div className="mt-12 overflow-hidden rounded-[1.375rem] bg-[#071326] text-white shadow-[0_24px_70px_rgba(7,19,38,0.16)]">
+            <div className="bg-[#0758c8] p-6 sm:p-8 lg:p-10">
+              <div className="grid gap-8 lg:grid-cols-[0.92fr_1.08fr] lg:items-end">
+                <div>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="inline-flex items-center gap-2 text-sm font-semibold text-[#c2fcff]">
+                      <HugeiconsIcon
+                        icon={Calendar03Icon}
+                        size={19}
+                        strokeWidth={1.8}
+                      />
+                      {content.homeEventsLayer.label}
+                    </span>
+                    <span className="text-xs font-semibold tracking-[0.16em] text-[#cfeaff] lg:hidden">
+                      01—04
+                    </span>
+                  </div>
+                  <h3 className="mt-7 max-w-xl text-3xl leading-tight font-semibold tracking-[-0.03em] text-balance sm:text-4xl">
+                    {content.homeEventsLayer.recordTitle}
+                  </h3>
+                </div>
+
+                <div>
+                  <div className="mb-3 hidden justify-end text-xs font-semibold tracking-[0.16em] text-[#cfeaff] lg:flex">
+                    01—04
+                  </div>
+                  <EventHandoff
+                    onlineLabel={content.homeEventsLayer.online}
+                    onGroundLabel={content.homeEventsLayer.onGround}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="relative bg-[#071326]">
+              <span
+                aria-hidden="true"
+                className="absolute top-[4.85rem] right-[12.5%] left-[12.5%] hidden h-px bg-[#80e8ff]/35 lg:block"
+              />
+              <ol className="relative grid lg:grid-cols-4">
+                {content.homeEventsLayer.phases.map((phase, index) => (
+                  <li
+                    key={phase.title}
+                    className="relative border-t border-white/12 p-6 first:border-t-0 sm:p-8 lg:min-h-[17rem] lg:border-t-0 lg:border-l lg:first:border-l-0"
+                  >
+                    <span className="relative z-10 grid size-11 place-items-center rounded-full bg-[#0a84ff] text-sm font-semibold text-white tabular-nums ring-8 ring-[#071326]">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <h3 className="mt-9 text-xl font-semibold tracking-[-0.02em] sm:text-2xl">
+                      {phase.title}
+                    </h3>
+                    <p className="mt-3 max-w-sm text-sm leading-6 text-[#b8cadc] sm:text-base sm:leading-7">
+                      {phase.body}
+                    </p>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <div className="flex flex-col gap-4 bg-[#dcecf7] px-6 py-6 text-[#111826] sm:flex-row sm:items-center sm:px-8 lg:px-10">
+              <span className="grid size-11 shrink-0 place-items-center rounded-full bg-[#0758c8] text-[#80e8ff]">
+                <HugeiconsIcon
+                  icon={CheckmarkCircle02Icon}
+                  size={21}
+                  strokeWidth={1.8}
+                />
+              </span>
+              <p className="max-w-4xl text-sm leading-7 text-[#33475d] sm:text-base">
+                {content.homeEventsLayer.recordBody}
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        aria-labelledby="home-capabilities-title"
+        className="bg-[#f7f4eb] px-4 py-20 text-[#111826] sm:px-6 lg:px-8 lg:py-24"
+      >
+        <div className="mx-auto max-w-[1440px]">
+          <div className="grid gap-8 lg:grid-cols-[1fr_0.62fr] lg:items-end">
+            <h2
+              id="home-capabilities-title"
+              className="max-w-4xl text-[clamp(2.75rem,5vw,4.75rem)] leading-[0.98] font-semibold tracking-[-0.035em] text-balance"
+            >
+              {content.homeCapabilityShowcase.title}
+            </h2>
+            <p className="max-w-2xl text-base leading-7 text-[#53667c] lg:text-lg lg:leading-8">
+              {content.homeCapabilityShowcase.body}
+            </p>
+          </div>
+
+          <div
+            data-capability-grid
+            className="mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-12 lg:grid-rows-[repeat(12,minmax(0,3.125rem))]"
+          >
+            {capabilityShowcasePresentation.map((presentation) => {
+              const capability =
+                content.homeCapabilityShowcase.modules[presentation.moduleIndex]
+              const isConcept = presentation.status === "concept"
+
+              if (isConcept) {
+                return (
+                  <Link
+                    key={capability.number}
+                    href={withLocale("/app#capabilities", locale)}
+                    aria-label={`${capability.title} — ${content.homeCapabilityShowcase.cta}`}
+                    className={`${presentation.position} group relative flex overflow-hidden rounded-2xl bg-[#0758c8] p-6 text-white shadow-[0_18px_38px_rgba(7,88,200,0.24)] transition-[background-color,transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:bg-[#064caf] hover:shadow-[0_24px_46px_rgba(6,76,175,0.3)] focus-visible:outline-white sm:p-7`}
+                  >
+                    <div className="flex w-full flex-col">
+                      <div className="flex items-start justify-between gap-4">
+                        <span className="text-sm font-semibold tracking-[0.14em] text-white/70 tabular-nums">
+                          {capability.number}
+                        </span>
+                        <span
+                          className={`${capabilityStatusClasses[presentation.status]} inline-flex h-6 items-center rounded-full px-2.5 text-[0.6875rem] leading-none font-bold tracking-[0.05em] uppercase`}
+                        >
+                          {
+                            content.homeCapabilityShowcase.status[
+                              presentation.status
+                            ]
+                          }
+                        </span>
+                      </div>
+
+                      <span className="mt-8 grid size-12 place-items-center self-end rounded-full bg-white/15 text-white transition-transform duration-300 ease-out group-hover:translate-x-1 group-hover:-translate-y-1">
+                        <HugeiconsIcon
+                          icon={ArrowUpRight01Icon}
+                          size={22}
+                          strokeWidth={1.9}
+                        />
+                      </span>
+
+                      <div className="mt-auto max-w-xs">
+                        <h3 className="text-3xl leading-[1.02] font-semibold tracking-[-0.03em] text-balance sm:text-4xl">
+                          {capability.title}
+                        </h3>
+                        <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-white">
+                          {content.homeCapabilityShowcase.cta}
+                          <HugeiconsIcon
+                            icon={ArrowUpRight01Icon}
+                            size={16}
+                            strokeWidth={1.9}
+                          />
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                )
+              }
+
+              return (
+                <article
+                  key={capability.number}
+                  className={`${presentation.position} group relative overflow-hidden rounded-2xl border border-[#ddd5c6] bg-[#f3eee2] p-6 text-[#111826] shadow-[0_14px_32px_rgba(82,67,40,0.08)] sm:p-7`}
+                >
+                  <div className="relative z-20 flex items-start justify-between gap-4">
+                    <span className="text-sm font-semibold tracking-[0.14em] text-[#6f6a61] tabular-nums">
+                      {capability.number}
+                    </span>
+                    <span
+                      className={`${capabilityStatusClasses[presentation.status]} inline-flex h-6 items-center rounded-full px-2.5 text-[0.6875rem] leading-none font-bold tracking-[0.05em] uppercase`}
+                    >
+                      {
+                        content.homeCapabilityShowcase.status[
+                          presentation.status
+                        ]
+                      }
+                    </span>
+                  </div>
+
+                  {presentation.image ? (
+                    <div
+                      className={`${presentation.mediaClass} absolute inset-x-4 top-[4.25rem] bottom-[5.75rem] overflow-hidden rounded-xl sm:inset-x-5`}
+                    >
+                      <Image
+                        src={presentation.image}
+                        alt=""
+                        fill
+                        sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                        className={presentation.imageClass}
+                      />
+                      <span className="absolute top-3 left-3 rounded-full bg-[#f7f4eb]/92 px-2.5 py-1 text-[0.6875rem] font-semibold text-[#33465d] shadow-[0_5px_14px_rgba(7,19,38,0.12)]">
+                        {content.homeCapabilityShowcase.previewLabel}
+                      </span>
+                    </div>
+                  ) : null}
+
+                  <div className="absolute right-6 bottom-6 left-6 z-20 flex items-end justify-between gap-4 sm:right-7 sm:bottom-7 sm:left-7">
+                    <h3 className="max-w-[17rem] text-xl leading-tight font-semibold tracking-[-0.025em] text-balance sm:text-2xl">
+                      {capability.title}
+                    </h3>
+                    <HugeiconsIcon
+                      icon={presentation.icon}
+                      size={22}
+                      strokeWidth={1.8}
+                      className="shrink-0 text-[#0758c8]"
+                    />
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+
+          <div className="mt-7 flex flex-col gap-3 text-sm text-[#53667c] sm:flex-row sm:items-center sm:justify-between">
+            <span className="inline-flex items-center gap-2 font-semibold text-[#111826]">
+              <HugeiconsIcon icon={Radar02Icon} size={18} strokeWidth={1.8} />
+              {content.homeCapabilityShowcase.label}
+            </span>
+            <span>{content.homeCapabilityShowcase.meta}</span>
+          </div>
+        </div>
+      </section>
+
       <section className="bg-[#071326] px-4 py-20 text-white sm:px-6 lg:px-8 lg:py-24">
         <div className="mx-auto max-w-[1440px]">
           <div className="grid gap-6 lg:grid-cols-[1fr_0.7fr] lg:items-end">
             <h2 className="max-w-4xl text-4xl leading-tight font-semibold tracking-[-0.03em] sm:text-6xl">
-              {copy.routesTitle}
+              {content.homeAudienceRouter.title}
             </h2>
             <p className="max-w-xl text-base leading-7 text-[#b8cadc]">
-              {copy.routesBody}
+              {content.homeAudienceRouter.body}
             </p>
           </div>
           <div className="mt-12 grid gap-px overflow-hidden rounded-2xl bg-white/12 lg:grid-cols-3">
             {[
               {
-                title: copy.preview,
-                body: copy.previewBody,
-                href: "/app",
-                icon: Globe02Icon,
+                title: content.audiences.business,
+                body: content.homeAudienceRouter.business.body,
+                cta: content.homeAudienceRouter.business.cta,
+                href: "/for-businesses",
+                icon: Building01Icon,
                 tone: "bg-[#0758c8]",
               },
               {
-                title: copy.event,
-                body: copy.eventBody,
-                href: "/pre-event",
-                icon: Calendar03Icon,
+                title: content.audiences.operators,
+                body: content.homeAudienceRouter.operators.body,
+                cta: content.homeAudienceRouter.operators.cta,
+                href: "/for-program-operators",
+                icon: UserGroupIcon,
                 tone: "bg-[#102443]",
               },
               {
-                title: copy.workspace,
-                body: copy.workspaceBody,
-                href: "/login",
-                icon: UserGroupIcon,
+                title: content.audiences.investment,
+                body: content.homeAudienceRouter.investment.body,
+                cta: content.homeAudienceRouter.investment.cta,
+                href: "/for-investment",
+                icon: LicenseDraftIcon,
                 tone: "bg-[#0b1b32]",
+              },
+              {
+                title: content.audiences.government,
+                body: content.homeAudienceRouter.government.body,
+                cta: content.homeAudienceRouter.government.cta,
+                href: "/for-government",
+                icon: Globe02Icon,
+                tone: "bg-[#102443]",
+              },
+              {
+                title: content.homeAudienceRouter.events.title,
+                body: content.homeAudienceRouter.events.body,
+                cta: content.homeAudienceRouter.events.cta,
+                href: "/events",
+                icon: Calendar03Icon,
+                tone: "bg-[#0758c8]",
               },
             ].map((item) => (
               <Link
@@ -473,7 +809,7 @@ export default async function Page({
                   {item.body}
                 </p>
                 <span className="mt-8 inline-flex items-center gap-2 text-sm font-semibold text-white">
-                  {copy.explore}
+                  {item.cta}
                   <HugeiconsIcon
                     icon={ArrowRight01Icon}
                     size={17}

@@ -1,6 +1,4 @@
-import type { VercelConfig } from "@vercel/config/v1"
-
-export const config: VercelConfig = {
+export const config = {
   framework: "nextjs",
   crons: [
     {
@@ -8,4 +6,4 @@ export const config: VercelConfig = {
       schedule: "0 * * * *",
     },
   ],
-}
+} as const

@@ -2,22 +2,23 @@
 
 **Owner:** Product and engineering leads
 **Review cadence:** Weekly
-**Last reviewed:** 2026-07-30
+**Last reviewed:** 2026-08-26
 
 This roadmap describes outcome order, not fixed calendar promises. GitHub
 issues and pull requests hold execution detail.
 
 ## Now — controlled production
 
-| Priority | Outcome                    | Acceptance                                                                                                                      |
-| -------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| P0       | Reliable Vendor onboarding | Approval-gated application and password setup implemented; production SMTP, redirect, retention, and full E2E evidence complete |
-| P0       | Repeatable deployment      | Vercel GitHub app connected to `AGA-Ventures/plexus`; Preview and `main` deploy automatically                                   |
-| P0       | Production identity        | Branded domain, exact Supabase Site URL/redirects, production email sender                                                      |
-| P0       | Production observability   | Error tracking, uptime check, alert owner, release/error dashboard                                                              |
-| P1       | Launch cohort              | Approved Admins/Vendors provisioned, support owner assigned, onboarding completion verified                                     |
-| P1       | Release evidence           | Safari/Edge checks, mobile flows, accessibility and performance baseline                                                        |
-| P1       | Data governance            | Retention, export, deletion, consent, and contact-data handling signed off                                                      |
+| Priority | Outcome                    | Acceptance                                                                                                                       |
+| -------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| P0       | Reliable Vendor onboarding | Approval-gated application and password setup implemented; production SMTP, redirect, retention, and full E2E evidence complete  |
+| P0       | Repeatable deployment      | Vercel GitHub app connected to `AGA-Ventures/plexus`; Preview and `main` deploy automatically                                    |
+| P0       | Production identity        | Branded domain, exact Supabase Site URL/redirects, production email sender                                                       |
+| P0       | Production observability   | Error tracking, uptime check, alert owner, release/error dashboard                                                               |
+| P1       | Launch cohort              | Approved Admins/Vendors provisioned, support owner assigned, onboarding completion verified                                      |
+| P1       | Release evidence           | Safari/Edge checks, mobile flows, accessibility and performance baseline                                                         |
+| P1       | Data governance            | Retention, export, deletion, consent, and contact-data handling signed off                                                       |
+| P1       | TChina registration launch | Hosted schema is connected and closed; enter exact event details, deploy/smoke the bilingual flow, then resume approval delivery |
 
 ## Next — replace operational adapters
 
@@ -45,15 +46,15 @@ issues and pull requests hold execution detail.
 
 ## Known technical and operational debt
 
-| Item                                      | Risk                                  | Planned response                                                                                    |
-| ----------------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Legacy direct Vendor credential delivery  | Account security/support              | Prefer approval-gated application/setup flow; retire legacy temporary-password path after migration |
-| Vercel Git integration permission missing | Manual deployment dependency          | Grant repository access and verify                                                                  |
-| Provider placeholders                     | User expectation and workflow failure | Replace capability by capability                                                                    |
-| Limited observability                     | Slow incident discovery               | Add error, uptime, and product telemetry                                                            |
-| Large operational portal component        | Change coupling                       | Extract by module after behavior tests                                                              |
-| Local Supabase CLI not guaranteed         | Migration friction                    | Setup verification and contributor onboarding                                                       |
-| Upstream dependency advisories            | Supply-chain exposure                 | Track supported Next.js/sharp fixes; no forced downgrade                                            |
+| Item                                       | Risk                                  | Planned response                                                                                    |
+| ------------------------------------------ | ------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Legacy direct Vendor credential delivery   | Account security/support              | Prefer approval-gated application/setup flow; retire legacy temporary-password path after migration |
+| Automatic deployment evidence incomplete   | Release-path uncertainty              | Git link and `main` are verified; record a fresh Preview-to-production run                          |
+| Provider placeholders                      | User expectation and workflow failure | Replace capability by capability                                                                    |
+| Limited observability                      | Slow incident discovery               | Add error, uptime, and product telemetry                                                            |
+| Large operational portal component         | Change coupling                       | Extract by module after behavior tests                                                              |
+| Local Supabase stack not routinely running | Migration and RLS-test friction       | Complete local setup, start the stack, and verify pgTAP in contributor onboarding                   |
+| Upstream dependency advisories             | Supply-chain exposure                 | Track supported Next.js/sharp fixes; no forced downgrade                                            |
 
 ## Backlog intake rules
 

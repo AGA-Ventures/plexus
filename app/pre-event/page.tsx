@@ -1,10 +1,8 @@
 import Image from "next/image"
-import Link from "next/link"
 import type { Metadata } from "next"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Airplane01Icon,
-  ArrowDown01Icon,
   ArrowUpRight01Icon,
   BubbleChatTranslateIcon,
   CalendarCheckIcon,
@@ -21,6 +19,7 @@ import {
 
 import { PreEventCountryExplorer } from "@/components/pre-event-country-explorer"
 import { SiteFooter } from "@/components/site-footer"
+import { SiteHeader } from "@/components/site-header"
 import {
   buildPreEventEmailHref,
   buildPreEventWhatsAppHref,
@@ -30,8 +29,6 @@ import {
 import {
   getPublicContent,
   normalizePublicLocale,
-  type PublicContent,
-  type PublicLocale,
   withLocale,
 } from "@/lib/public-site"
 
@@ -143,7 +140,11 @@ export default async function PreEventPage({ searchParams }: PageProps) {
   return (
     <main className="min-h-svh bg-[#f7f7f2] text-[#111826]">
       <section className="bg-[#071326] text-white">
-        <PreEventHeader content={content} locale={locale} />
+        <SiteHeader
+          content={content}
+          locale={locale}
+          currentPath="/pre-event"
+        />
 
         <div className="hero-reveal mx-auto max-w-7xl px-4 pt-14 pb-8 text-center sm:px-6 sm:pt-20 lg:px-8 lg:pt-24">
           <p className="inline-flex items-center gap-2 rounded-full border border-[#80e8ff]/35 bg-[#80e8ff]/10 px-3 py-1.5 text-xs font-semibold text-[#80e8ff]">
@@ -485,129 +486,5 @@ export default async function PreEventPage({ searchParams }: PageProps) {
 
       <SiteFooter content={content} locale={locale} currentPath="/pre-event" />
     </main>
-  )
-}
-
-function PreEventHeader({
-  content,
-  locale,
-}: {
-  content: PublicContent
-  locale: PublicLocale
-}) {
-  const navItems = [
-    { label: content.nav.home, href: "/" },
-    {
-      label:
-        locale === "ms"
-          ? "Pratonton produk"
-          : locale === "zh-Hant"
-            ? "產品預覽"
-            : "Product preview",
-      href: "/app",
-    },
-    { label: content.nav.forVendors, href: "/for-program-operators" },
-    { label: content.nav.forBusinesses, href: "/for-businesses" },
-  ]
-  const locales = [
-    { shortLabel: "EN", label: "English", locale: "en" as const },
-    { shortLabel: "BM", label: "Bahasa Malaysia", locale: "ms" as const },
-    {
-      shortLabel: "繁中",
-      label: "繁體中文",
-      locale: "zh-Hant" as const,
-    },
-  ]
-  const activeLocale =
-    locales.find((item) => item.locale === locale) ?? locales[0]
-  const languageLabel =
-    locale === "ms"
-      ? "Pilih bahasa"
-      : locale === "zh-Hant"
-        ? "選擇語言"
-        : "Choose language"
-
-  return (
-    <header className="border-b border-white/12">
-      <div className="mx-auto flex min-h-16 max-w-[1440px] items-center justify-between gap-5 px-4 sm:px-6 lg:px-8">
-        <Link
-          href={withLocale("/", locale)}
-          aria-label={content.meta.siteName}
-          className="inline-flex min-h-11 items-center focus-visible:ring-2 focus-visible:ring-[#80e8ff] focus-visible:outline-none"
-        >
-          <Image
-            src="/plexus-wordmark-transparent-trimmed.png"
-            alt="Plexus"
-            width={1933}
-            height={311}
-            className="h-6 w-auto object-contain sm:h-8"
-          />
-        </Link>
-
-        <nav className="hidden items-center gap-8 text-sm font-medium text-white/78 lg:flex">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={withLocale(item.href, locale)}
-              className="py-3 transition hover:text-[#80e8ff] focus-visible:text-[#80e8ff] focus-visible:outline-none"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="flex shrink-0 items-center gap-2">
-          <details className="group relative">
-            <summary
-              role="button"
-              aria-label={languageLabel}
-              className="flex min-h-10 cursor-pointer list-none items-center gap-2 rounded-[4px] border border-white/20 bg-white/[0.03] px-3 text-xs font-semibold text-white transition hover:border-white/35 hover:bg-white/[0.07] focus-visible:ring-2 focus-visible:ring-[#80e8ff] focus-visible:outline-none [&::-webkit-details-marker]:hidden"
-            >
-              <HugeiconsIcon
-                icon={Globe02Icon}
-                size={16}
-                strokeWidth={1.8}
-                aria-hidden="true"
-                className="text-[#80e8ff]"
-              />
-              <span>{activeLocale.shortLabel}</span>
-              <HugeiconsIcon
-                icon={ArrowDown01Icon}
-                size={15}
-                strokeWidth={1.9}
-                aria-hidden="true"
-                className="text-white/65 transition-transform duration-200 group-open:rotate-180"
-              />
-            </summary>
-            <div className="absolute right-0 z-50 mt-2 grid min-w-52 gap-1 rounded-lg bg-white p-2 text-[#071326] shadow-[0_20px_55px_rgba(0,0,0,0.28)]">
-              {locales.map((item) => (
-                <Link
-                  key={item.locale}
-                  href={withLocale("/pre-event", item.locale)}
-                  aria-current={locale === item.locale ? "true" : undefined}
-                  className={[
-                    "flex min-h-11 items-center justify-between gap-4 rounded-md px-3 py-2 text-sm font-semibold transition focus-visible:ring-2 focus-visible:ring-[#0a84ff] focus-visible:outline-none",
-                    locale === item.locale
-                      ? "bg-[#dcecf7] text-[#0758c8]"
-                      : "text-[#405872] hover:bg-[#eef4f8] hover:text-[#111826]",
-                  ].join(" ")}
-                >
-                  <span>{item.label}</span>
-                  <span className="text-[0.65rem] font-semibold tracking-[0.12em] text-[#6a7a8e]">
-                    {item.shortLabel}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </details>
-          <Link
-            href={withLocale("/login", locale)}
-            className="inline-flex min-h-10 items-center justify-center rounded-[4px] border border-[#3b78c8] bg-[#0758c8] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#064caf] focus-visible:ring-2 focus-visible:ring-[#80e8ff] focus-visible:outline-none"
-          >
-            {content.nav.login}
-          </Link>
-        </div>
-      </div>
-    </header>
   )
 }

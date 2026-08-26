@@ -7,6 +7,10 @@ colors:
   connection-blue: "#0a84ff"
   midnight: "#071326"
   midnight-raised: "#102443"
+  checkpoint-ground: "#010718"
+  checkpoint-console: "#08132b"
+  checkpoint-control: "#061025"
+  checkpoint-route: "#c2fcff"
   network-cyan: "#25d0ff"
   signal-cyan: "#80e8ff"
   mineral-paper: "#f7f7f2"
@@ -76,7 +80,8 @@ rounded:
   xl: "19.6px"
   editorial: "22px"
   2xl: "25.2px"
-  auth: "26.4px"
+  auth-control: "10px"
+  auth: "16px"
   full: "9999px"
 spacing:
   xs: "4px"
@@ -125,6 +130,22 @@ components:
     rounded: "{rounded.md}"
     padding: "2px 8px"
     height: "28px"
+    width: "100%"
+  input-auth:
+    backgroundColor: "{colors.checkpoint-control}"
+    textColor: "{colors.white}"
+    typography: "{typography.label}"
+    rounded: "{rounded.auth-control}"
+    padding: "0 40px"
+    height: "52px"
+    width: "100%"
+  button-auth:
+    backgroundColor: "{colors.connection-blue}"
+    textColor: "{colors.midnight}"
+    typography: "{typography.label}"
+    rounded: "{rounded.auth-control}"
+    padding: "0 20px"
+    height: "52px"
     width: "100%"
   badge-primary:
     backgroundColor: "{colors.filled-surface-blue}"
@@ -187,7 +208,7 @@ Plexus is a calm blue operating layer where cross-border business intent becomes
 
 Authenticated workspaces translate that agenda into an operating system. The typography becomes compact, the canvas shifts to pale mineral blue, and information is grouped with flat cards, hairlines, explicit statuses, and a midnight navigation rail. Connection Blue, cyan, imagery, and motion provide orientation, while product claims, provider readiness, sensitive decisions, and outcomes stay visibly human-governed and evidence-bound.
 
-Authentication is a scoped atmospheric bridge and may place a glass panel over the Plexus network artwork. The public pre-event service is a second scoped expression: it uses the shared Midnight, Filled Surface Blue, Connection Blue, cyan, mineral, and pale-network palette with tighter campaign geometry and denser service content.
+Authentication is a scoped Governed Checkpoint: a fixed Midnight identity rail uses the approved network field and quiet twinkling nodes before opening into a bright, numbered three-stage canvas for Identity, Workspace, and Responsible next step. The credential form is unboxed inside the active first lane, while hairlines and deliberate blank lanes make the governed sequence visible without suggesting completed work. The public pre-event service is a second scoped expression: it uses the shared Midnight, Filled Surface Blue, Connection Blue, cyan, mineral, and pale-network palette with tighter campaign geometry and denser service content.
 
 **Key Characteristics:**
 
@@ -195,6 +216,7 @@ Authentication is a scoped atmospheric bridge and may place a glass panel over t
 - Editorial public scale translated into compact operational hierarchy.
 - Pale network grouping and cyan signals that clarify a governed journey.
 - Flat, scan-first workspaces with explicit status and human review.
+- A dark identity rail paired with a bright three-stage authentication canvas that becomes one aligned mobile stack.
 - Pre-launch and capability-readiness qualification placed beside the visual evidence.
 - The exact Plexus mark, Inter typography, and restrained Geist Mono metadata.
 - Responsive stacking, mobile navigation sheets, and reduced-motion parity.
@@ -207,12 +229,15 @@ The palette is a blue editorial system: deep filled surfaces carry action and st
 
 - **Filled Surface Blue** (`colors.filled-surface-blue`): The normative production blue for small-text filled calls-to-action, selected navigation, checked controls, and substantial branded panels. Its deeper hover step is `colors.filled-surface-blue-hover`.
 - **Midnight** (`colors.midnight`): The navigation rail, public dark section, hero action, and secure entry foundation. `colors.midnight-raised` is its observed hover or raised-panel step.
+- **Checkpoint Surfaces** (`colors.checkpoint-ground`, `colors.checkpoint-console`, and `colors.checkpoint-control`): The Midnight authentication rail, the bright governed canvas, and the near-white controls inset within the active lane.
 
 ### Secondary
 
 - **Connection Blue** (`colors.connection-blue`): The bright focus, caret, selection, progress-track, outline, and ambient-field value. It may fill a large authentication action with dark text, but it is not the default small-text filled CTA.
 - **Network Cyan** (`colors.network-cyan`): The brighter technical signal used by the product preview and network-oriented accents.
 - **Signal Cyan** (`colors.signal-cyan`): The softer cyan for status dots, icons, quiet links, and legible signals on Midnight.
+- **Checkpoint Rule** (`colors.checkpoint-route`): The cool one-pixel hairline separating authentication stages.
+- **Checkpoint Active** (`colors.checkpoint-active`): The reference-matched electric blue for the platform login's active stage and primary action. Tenant login may replace it with an approved readable tenant accent pair.
 
 ### Tertiary
 
@@ -276,7 +301,7 @@ The product-preview hero is one Filled Surface Blue field that pairs a concise s
 
 Authenticated Admin and Vendor pages use the same 1440px operating frame; Superadmin may extend to 1500px. At 1024px and above, a sticky 220px midnight rail sits beside a fluid content column. Below that breakpoint, the rail becomes a left-side sheet launched from a sticky midnight mobile bar. Summary metrics move from a two-column mobile grid to four columns at 1280px, and dense tables switch to stacked record cards below 768px.
 
-Authentication is capped near 1180px and becomes a brand-and-form split at 768px. Public and operational form actions stack before there is enough room for a horizontal row. Every layout must tolerate the supported English, Chinese, and Thai product locales, tenant identity, and longer translated actions without hiding the responsible next step.
+Authentication uses a fluid frame capped near 1414px. At 1024px and above, the route turns horizontal through the identity bay and credential console; at 1280px, support resolves as the third outboard checkpoint. Below 1024px, the route turns vertical and identity, credentials, and support align as one task-first stack. Public and operational form actions stack before there is enough room for a horizontal row. Every layout must tolerate the supported English, Chinese, and Thai product locales, tenant identity, and longer translated actions without hiding the responsible next step.
 
 ### Named Rules
 
@@ -288,29 +313,30 @@ Authentication is capped near 1180px and becomes a brand-and-form split at 768px
 
 ## Elevation & Depth
 
-Plexus uses tonal layering first. Operational cards are flat near-white surfaces on the cool canvas, bounded by a one-pixel ring or hairline; elevation is reserved for sticky navigation, menus, dialogs, mobile sheets, and explicitly floating public fragments. Public imagery may sit in a deep editorial frame, but glow is ambient rather than semantic. Authentication alone uses strong blur, translucency, and depth as a deliberate material exception.
+Plexus uses tonal layering first. Operational cards are flat near-white surfaces on the cool canvas, bounded by a one-pixel ring or hairline; elevation is reserved for sticky navigation, menus, dialogs, mobile sheets, and explicitly floating public fragments. Public imagery may sit in a deep editorial frame, but glow is ambient rather than semantic. Authentication also stays flat: its console is separated from the deeper page ground by tone and a one-pixel edge, while luminosity is reserved for the route and checkpoint nodes.
 
 ### Shadow Vocabulary
 
 - **Operational Rail** (`0 18px 42px rgba(7, 19, 38, 0.12)`): Sticky desktop navigation that must remain distinct from the workspace canvas.
 - **Editorial Frame** (`0 24px 70px rgba(7, 19, 38, 0.2)`): The saturated public hero frame over the bright ambient field.
 - **Agenda Fragment** (`0 12px 28px rgba(7, 19, 38, 0.18)`): Floating proof cards on public photography; the dark fragment may deepen to 0.3 opacity.
+- **Capability Tile** (`0 14px 32px rgba(82, 67, 40, 0.08)`): The quiet offset lift under warm cream cards in the homepage capability bento only.
+- **PLEXA Route** (`0 18px 38px rgba(7, 88, 200, 0.24)`): The brand-blue capability route at rest; hover deepens to `0 24px 46px rgba(6, 76, 175, 0.3)` as the card rises by 4px.
 - **Mobile Menu** (`0 20px 55px rgba(0, 0, 0, 0.28)`): The public mobile menu over Midnight.
-- **Authentication Glass** (`0 30px 90px rgba(1, 5, 24, 0.52)`): Sign-in and recovery panels over the Plexus network artwork only.
 
 ### Named Rules
 
 **The Flat-by-Default Rule.** If surface tone, spacing, and a hairline already establish hierarchy, do not add a shadow.
 
-**The Scoped Glass Rule.** Backdrop blur and translucent glass belong to authentication and temporary overlays, not routine operational cards.
+**The Governed Checkpoint Rule.** Authentication depth comes from the hard transition between the fixed Midnight identity rail and bright ordered stage canvas; backdrop blur and translucent glass are reserved for temporary overlays.
 
 ## Shapes
 
-The shared interface uses a measured curve derived from a 14px base: compact controls resolve near 11px, standard cards at 14px, grouped panels near 20–25px, and the public editorial frame at 22px. Pills are reserved for status, language, and short categorical controls. Authentication may reach 26.4px; the pre-event campaign deliberately tightens key actions to 4px. Borders remain one pixel unless focus or validation needs a stronger ring.
+The shared interface uses a measured curve derived from a 14px base: compact controls resolve near 11px, standard cards at 14px, grouped panels near 20–25px, and the public editorial frame at 22px. Pills are reserved for status, language, and short categorical controls. Authentication uses a 9px outer frame and 7px fields and actions; the pre-event campaign deliberately tightens key actions to 4px. Borders remain one pixel unless focus or validation needs a stronger ring.
 
 ### Named Rules
 
-**The Curve by Scale Rule.** Controls are tighter than cards, cards are tighter than editorial frames, and only auth glass earns the largest system radius.
+**The Curve by Scale Rule.** Controls are tighter than cards, cards are tighter than editorial frames, and authentication follows the same hierarchy instead of introducing an oversized glass radius.
 
 ## Components
 
@@ -318,7 +344,7 @@ Components are crisp, content-led, and explicit about state. Operational variant
 
 ### Buttons
 
-- **Shape:** Operational buttons use the medium control radius (`11.2px`) at a default height of 28px; public and auth actions use 48px targets with 14px or 12px corners.
+- **Shape:** Operational buttons use the medium control radius (`11.2px`) at a default height of 28px; public actions use 48px targets with 14px corners, while authentication actions use 62px targets with 7px corners.
 - **Primary:** The compact filled action is Filled Surface Blue with white text; the observed hover is Filled Surface Blue Hover. Public blue panels use a Midnight primary action and a white secondary action.
 - **Hover / Focus:** Hover changes tone or opacity with restrained motion. Keyboard focus uses the global two-pixel Connection Blue outline with a 3px offset; dark campaign and auth controls may substitute a visible white or Signal Cyan ring. The product-preview route uses a dual ring—a 3px white outline at a 3px offset plus a 6px Filled Surface Blue outer ring—so focus remains visible across both light and dark preview surfaces.
 - **Secondary / Ghost:** Outline and ghost actions stay transparent or lightly tinted until hover. Active operational press feedback moves down one pixel when the control does not open a popup.
@@ -337,12 +363,13 @@ Components are crisp, content-led, and explicit about state. Operational variant
 
 ### Inputs / Fields
 
-- **Style:** Operational fields are 28px high with a subtle cool fill, one-pixel input border, compact padding, and the medium control radius. Authentication fields expand to 48px with a translucent white fill and 12px corners.
+- **Style:** Operational fields are 28px high with a subtle cool fill, one-pixel input border, compact padding, and the medium control radius. Authentication fields expand to 52px with a dark Midnight fill and gently curved 10px corners.
 - **Focus:** Focus shifts the border to Connection Blue and adds a visible two-pixel ring; the text caret also uses Connection Blue.
 - **Error / Disabled:** Errors use both destructive text and a ring or alert treatment. Disabled controls remain legible, lower opacity, and cannot imply that an unavailable provider or permission is active.
 
 ### Navigation
 
+- **Two-System Contract:** Every public route family—including the homepage, product preview, pre-event, marketing, and both legal route sets—uses one shared `SiteHeader`. Every protected Admin, Vendor/business, and Superadmin surface uses one configurable `WorkspaceNavigationShell`; roles provide brand, destinations, active state, and account controls without redefining the rail, mobile bar, or sheet.
 - **Desktop:** A Midnight rail contains full-width 40px destinations. The active item is Filled Surface Blue with white text; inactive items use pale text and a dark tonal hover.
 - **Mobile:** A sticky Midnight bar names the current section and opens a left sheet with the same route order, selected state, account context, and logout behavior.
 - **Public:** The exact Plexus wordmark sits in a Midnight header. Active links invert to white; the filled login action uses Filled Surface Blue. Public language choices collapse into one visible current-locale control and open as a compact menu on click.
@@ -359,13 +386,21 @@ Product-preview evidence uses a shared four-state vocabulary: **Live** means per
 
 The program pulse is the signature operating component: a Midnight strip that names the governed five-stage journey and places a slim Connection Blue indicator beneath the current stage. It provides orientation, not automated scoring, and stage copy remains explicit.
 
-### Authentication Glass
+### Governed Checkpoint
 
-The auth panel is a 26.4px translucent surface with a white hairline, 32px backdrop blur, and the Authentication Glass shadow. Tenant accent values may style the 48px primary button only when foreground contrast remains readable. The Plexus network image and exact tenant or Plexus mark remain visible context, never decoration inside operational pages.
+Authentication uses a fixed 326px Midnight rail beside a bright canvas split into three explicit stages: Identity, Workspace, and Responsible next step. The first stage owns an unboxed credential form; subsequent lanes remain intentionally blank until authentication advances the user. Cool one-pixel rules define the 44% / 34% / 22% desktop grid, while Checkpoint Active (`#0668e8`) marks the active platform stage and 62px primary action; readable tenant accent pairs remain available in tenant mode. The identity rail uses the approved full-bleed Midnight network field, while the exact tenant or Plexus mark and supplied electric-blue X remain the identity anchors. On narrow screens, the rail, complete stage header, credential form, and support destination align as one task-first stack and the empty desktop lanes are removed.
+
+### Capability Bento
+
+The homepage capability showcase is a scoped warm product-editorial bento, not a replacement for operational cards or the global Plexus identity. It refuses an equal-weight dashboard grid: desktop uses an irregular 12-column composition with Directory and Compliance on the left; Event, Meetings, and Governance in the center; and PLEXA above Reporting on the right. Narrow mobile stacks the sequence into one column, with a two-column bridge only where card content remains readable.
+
+Representative modules sit on warm cream cards (`#f3eee2`) over a mineral-paper section (`#f7f4eb`), with 16px corners, a warm hairline (`#ddd5c6`), and the Capability Tile shadow. Real Plexus product previews occupy dark Midnight or warm inset frames and remain explicitly labelled as previews. Every module keeps its written Live, Mixed, Adapter, or Concept chip attached; card size never implies readiness.
+
+PLEXA is the sole interactive feature card and the saturated brand-blue interruption (`#0758c8`) in this composition. It uses white ink, shifts to Filled Surface Blue Hover (`#064caf`) with the PLEXA Route hover lift, and opens the maintained 12-module capability map. The other cards are representative evidence, not implied links.
 
 ### Motion
 
-Route arrival uses 420ms and hero reveal uses 800ms with `cubic-bezier(0.16, 1, 0.3, 1)`; the program progress track uses 1000ms with the same easing. Hover and component-state feedback stays near 180–200ms. Under `prefers-reduced-motion: reduce`, these animations stop, smooth scrolling is disabled, and state changes remain immediately understandable.
+Route arrival uses 420ms and hero reveal uses 800ms with `cubic-bezier(0.16, 1, 0.3, 1)`; the program progress track uses 1000ms with the same easing. The Governed Checkpoint network uses one 7.6s irregular opacity-only luminance cycle so its nodes breathe without moving the layout or identity marks. Hover and component-state feedback stays near 180–200ms. Under `prefers-reduced-motion: reduce`, these animations stop, the network holds a quiet static luminance, smooth scrolling is disabled, and state changes remain immediately understandable.
 
 ### Named Rules
 
@@ -385,8 +420,9 @@ Route arrival uses 420ms and hero reveal uses 800ms with `cubic-bezier(0.16, 1, 
 - **Do** preserve the exact Plexus wordmark asset and approved tenant identity without weakening contrast.
 - **Do** use mineral canvases, Pale Network grouping, and hairlines before reaching for elevation.
 - **Do** verify mobile sheet navigation, stacked records, longer translated labels, keyboard focus, and reduced motion.
-- **Do** keep authentication glass scoped to secure entry and preserve the pre-event route's compact campaign geometry within the shared blue palette.
+- **Do** keep authentication's Governed Checkpoint ordered across the identity rail, three-stage header, credentials, and support, and preserve the pre-event route's compact campaign geometry within the shared blue palette.
 - **Do** place pre-launch, illustrative, and readiness qualification beside the relevant product image or module copy.
+- **Do** preserve the capability bento's unequal editorial proportions, attached readiness chips, and one-column narrow-mobile reading order.
 
 ### Don't:
 
@@ -397,3 +433,4 @@ Route arrival uses 420ms and hero reveal uses 800ms with `cubic-bezier(0.16, 1, 
 - **Don't** redraw, recolor, crop into a new symbol, or substitute the Plexus mark.
 - **Don't** use animation, color, badges, or polished imagery as evidence of approval, compliance, provider readiness, market coverage, or business outcomes.
 - **Don't** reuse Live, Mixed, Adapter, and Concept colors as generic success, warning, or category styling.
+- **Don't** generalize the capability bento's cream cards or unequal proportions into a new global card system; its PLEXA route reuses the established Filled Surface Blue action role.

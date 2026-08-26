@@ -65,7 +65,7 @@ Authenticated E2E tests require the documented `E2E_*` variables.
 
 ## Next.js version rule
 
-This repository uses Next.js 16.2.12 and may differ from older App Router
+This repository uses Next.js 16.3.3 and may differ from older App Router
 knowledge. Before changing framework behavior, read the relevant guide under:
 
 ```text

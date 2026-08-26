@@ -16,9 +16,9 @@ import {
   Alert02Icon,
   Audit01Icon,
   Building01Icon,
+  Calendar03Icon,
   Logout03Icon,
   Mail01Icon,
-  Menu01Icon,
   ResetPasswordIcon,
   Settings01Icon,
   ShieldUserIcon,
@@ -90,14 +90,6 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
-import {
   Table,
   TableBody,
   TableCell,
@@ -107,8 +99,11 @@ import {
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { TenantProfileDialog } from "@/components/tenant-profile-dialog"
+import { TChinaExpoSuperadminPanel } from "@/components/tchina-expo-admin-console"
 import { VendorDirectoryDialog } from "@/components/vendor-directory-dialog"
 import { PlatformSettingEditor } from "@/components/platform-setting-editor"
+import { WorkspaceNavigationShell } from "@/components/workspace-navigation-shell"
+import type { TChinaEvent, TChinaRegistration } from "@/lib/tchina-expo"
 
 type Props = {
   locale: Locale
@@ -131,6 +126,8 @@ type Props = {
     deals: TenantOperationalCount[]
   }
   platformSettings: PlatformSetting[]
+  tchinaEvent: TChinaEvent | null
+  tchinaRegistrations: TChinaRegistration[]
 }
 
 const fieldClass =
@@ -142,6 +139,7 @@ const superadminNavItems = [
   { value: "accounts", label: "Accounts", icon: ShieldUserIcon },
   { value: "reporting", label: "Reporting", icon: AnalyticsUpIcon },
   { value: "incidents", label: "Critical incidents", icon: Alert02Icon },
+  { value: "tchina", label: "TChina Expo", icon: Calendar03Icon },
   { value: "email", label: "Email sending", icon: Mail01Icon },
   { value: "settings", label: "Platform settings", icon: Settings01Icon },
   { value: "audit", label: "Audit events", icon: Audit01Icon },
@@ -676,126 +674,86 @@ function AdminRecoveryButton({
   )
 }
 
-function SuperadminTabsNav({ session }: { session: AuthenticatedIdentity }) {
-  const navTriggerClass =
-    "h-10 w-full justify-start gap-2 rounded-md px-3 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-sidebar-ring/45 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:hover:bg-primary"
-
-  function renderNavItems() {
-    return superadminNavItems.map((item) => (
-      <TabsTrigger
-        key={item.value}
-        value={item.value}
-        className={navTriggerClass}
-      >
-        <HugeiconsIcon icon={item.icon} strokeWidth={1.7} className="size-4" />
-        {item.label}
-      </TabsTrigger>
-    ))
-  }
-
+function SuperadminWorkspaceBrand({ subtitle }: { subtitle: string }) {
   return (
-    <aside className="hidden self-stretch lg:block">
-      <div className="sticky top-4 flex min-h-[32rem] flex-col rounded-xl border border-sidebar-border bg-sidebar p-3 text-sidebar-foreground shadow-[0_18px_42px_rgba(7,19,38,0.12)]">
-        <div className="mb-3 rounded-lg border border-white/10 bg-white/6 px-3 py-3">
-          <p className="text-xs font-semibold text-sidebar-foreground">
-            Plexus Platform
-          </p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Superadmin workspace
-          </p>
-        </div>
-        <TabsList
-          aria-label="Superadmin navigation"
-          className="h-auto w-full flex-col items-stretch gap-1 bg-transparent p-0"
-        >
-          {renderNavItems()}
-        </TabsList>
-        <div className="mt-auto rounded-lg border border-white/10 bg-white/6 px-3 py-2.5">
-          <p className="truncate text-xs font-medium text-sidebar-foreground">
-            {session.displayName}
-          </p>
-          <p className="mt-0.5 truncate text-xs text-muted-foreground">
-            {session.email}
-          </p>
-        </div>
-      </div>
-    </aside>
+    <div className="min-w-0">
+      <p className="truncate text-xs font-semibold text-sidebar-foreground">
+        Plexus Platform
+      </p>
+      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+        {subtitle}
+      </p>
+    </div>
   )
 }
 
-function SuperadminMobileNav({ activeValue }: { activeValue: string }) {
-  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+function SuperadminWorkspaceNavigation({
+  session,
+  activeValue,
+}: {
+  session: AuthenticatedIdentity
+  activeValue: string
+}) {
   const activeLabel =
     superadminNavItems.find((item) => item.value === activeValue)?.label ??
     superadminNavItems[0].label
-  const navTriggerClass =
-    "h-10 w-full justify-start gap-2 rounded-md px-3 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-sidebar-ring/45 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:hover:bg-primary"
+  const accountContext = (
+    <div className="mt-auto rounded-lg border border-white/10 bg-white/6 px-3 py-2.5">
+      <p className="truncate text-xs font-medium text-sidebar-foreground">
+        {session.displayName}
+      </p>
+      <p className="mt-0.5 truncate text-xs text-muted-foreground">
+        {session.email}
+      </p>
+    </div>
+  )
 
   return (
-    <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-      <div className="sticky top-3 z-30 flex items-center gap-3 rounded-lg border border-sidebar-border bg-sidebar/95 p-2.5 text-sidebar-foreground shadow-sm backdrop-blur-sm lg:hidden">
-        <div className="min-w-0 flex-1 px-1.5">
-          <p className="truncate text-xs font-semibold text-sidebar-foreground">
-            Plexus Platform
-          </p>
-          <p className="mt-0.5 truncate text-xs text-muted-foreground">
-            {activeLabel}
-          </p>
-        </div>
-        <SheetTrigger asChild>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-10 shrink-0 gap-2 border-[#31527a] bg-[#0758c8] px-3 text-white hover:bg-[#064caf] hover:text-white"
-            aria-label={`Menu: ${activeLabel}`}
-          >
-            <HugeiconsIcon
-              icon={Menu01Icon}
-              strokeWidth={1.8}
-              className="size-4"
-            />
-            Menu
-          </Button>
-        </SheetTrigger>
-      </div>
-      <SheetContent
-        side="left"
-        className="w-[min(86vw,20rem)] border-sidebar-border bg-sidebar p-0 text-sidebar-foreground"
-      >
-        <SheetHeader className="border-b border-sidebar-border px-5 py-4">
-          <SheetTitle className="text-sidebar-foreground">
-            Plexus Platform
-          </SheetTitle>
-          <SheetDescription>Superadmin workspace</SheetDescription>
-        </SheetHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
-          <p className="mb-2 px-3 text-[0.6875rem] font-medium tracking-wide text-muted-foreground uppercase">
-            Navigation
-          </p>
+    <WorkspaceNavigationShell
+      desktopClassName="lg:row-span-2"
+      desktopBrand={
+        <SuperadminWorkspaceBrand subtitle="Superadmin workspace" />
+      }
+      mobileBrand={<SuperadminWorkspaceBrand subtitle={activeLabel} />}
+      sheetBrand={<SuperadminWorkspaceBrand subtitle="Superadmin workspace" />}
+      navigationLabel="Navigation"
+      menuLabel="Menu"
+      activeLabel={activeLabel}
+      sheetTitle="Plexus Platform"
+      desktopFooter={accountContext}
+      mobileFooter={accountContext}
+      renderNavigation={(surface, closeMobile) => {
+        const mobile = surface === "mobile"
+        const navTriggerClass = mobile
+          ? "h-12 w-full flex-none shrink-0 justify-start gap-3 rounded-lg px-4 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-sidebar-ring/45 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:hover:bg-primary"
+          : "h-10 w-full justify-start gap-2 rounded-md px-3 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-sidebar-ring/45 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:hover:bg-primary"
+
+        return (
           <TabsList
             aria-label="Superadmin navigation"
-            className="h-auto w-full flex-col items-stretch gap-1 bg-transparent p-0"
+            className={`h-auto w-full flex-col items-stretch bg-transparent p-0 ${
+              mobile ? "gap-1.5" : "gap-1"
+            }`}
           >
             {superadminNavItems.map((item) => (
               <TabsTrigger
                 key={item.value}
                 value={item.value}
                 className={navTriggerClass}
-                onClick={() => setMobileNavOpen(false)}
+                onClick={mobile ? closeMobile : undefined}
               >
                 <HugeiconsIcon
                   icon={item.icon}
                   strokeWidth={1.7}
-                  className="size-4"
+                  className={mobile ? "size-5" : "size-4"}
                 />
                 {item.label}
               </TabsTrigger>
             ))}
           </TabsList>
-        </div>
-      </SheetContent>
-    </Sheet>
+        )
+      }}
+    />
   )
 }
 
@@ -813,6 +771,8 @@ export function SuperadminConsole(props: Props) {
     emailProviderReadiness,
     operations,
     platformSettings,
+    tchinaEvent,
+    tchinaRegistrations,
   } = props
   const router = useRouter()
   const [pending, startTransition] = useTransition()
@@ -1073,45 +1033,46 @@ export function SuperadminConsole(props: Props) {
           orientation="vertical"
           className="flex flex-col gap-4"
         >
-          <SuperadminMobileNav activeValue={activeTab} />
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
+            <SuperadminWorkspaceNavigation
+              session={session}
+              activeValue={activeTab}
+            />
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard
-              label="Admin tenants"
-              value={tenants.length}
-              detail={`${activeTenants.length} active`}
-              icon={Building01Icon}
-            />
-            <MetricCard
-              label="Vendors"
-              value={vendors.length}
-              detail={`${activeVendors.length} active across all Admins`}
-              icon={UserGroupIcon}
-            />
-            <MetricCard
-              label="Accounts"
-              value={accounts.length}
-              detail={`${suspendedAccounts.length} suspended`}
-              icon={ShieldUserIcon}
-            />
-            <MetricCard
-              label="Operational records"
-              value={
-                operations.matches.length +
-                operations.meetings.length +
-                operations.deals.length
-              }
-              detail={`${operations.matches.length} matches · ${operations.meetings.length} meetings · ${operations.deals.length} deals`}
-              icon={AnalyticsUpIcon}
-            />
-          </div>
-
-          <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
-            <SuperadminTabsNav session={session} />
+            <div className="grid gap-3 sm:grid-cols-2 lg:col-start-2 lg:row-start-1 xl:grid-cols-4">
+              <MetricCard
+                label="Admin tenants"
+                value={tenants.length}
+                detail={`${activeTenants.length} active`}
+                icon={Building01Icon}
+              />
+              <MetricCard
+                label="Vendors"
+                value={vendors.length}
+                detail={`${activeVendors.length} active across all Admins`}
+                icon={UserGroupIcon}
+              />
+              <MetricCard
+                label="Accounts"
+                value={accounts.length}
+                detail={`${suspendedAccounts.length} suspended`}
+                icon={ShieldUserIcon}
+              />
+              <MetricCard
+                label="Operational records"
+                value={
+                  operations.matches.length +
+                  operations.meetings.length +
+                  operations.deals.length
+                }
+                detail={`${operations.matches.length} matches · ${operations.meetings.length} meetings · ${operations.deals.length} deals`}
+                icon={AnalyticsUpIcon}
+              />
+            </div>
 
             <TabsContent
               value="admins"
-              className="grid min-w-0 gap-4 lg:col-start-2 lg:row-start-1"
+              className="grid min-w-0 gap-4 lg:col-start-2 lg:row-start-2"
             >
               <Card>
                 <CardHeader className="gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1259,7 +1220,7 @@ export function SuperadminConsole(props: Props) {
 
             <TabsContent
               value="vendors"
-              className="grid min-w-0 gap-4 lg:col-start-2 lg:row-start-1"
+              className="grid min-w-0 gap-4 lg:col-start-2 lg:row-start-2"
             >
               <Card>
                 <CardHeader className="gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -1446,7 +1407,7 @@ export function SuperadminConsole(props: Props) {
 
             <TabsContent
               value="accounts"
-              className="min-w-0 lg:col-start-2 lg:row-start-1"
+              className="min-w-0 lg:col-start-2 lg:row-start-2"
             >
               <Card>
                 <CardHeader>
@@ -1618,7 +1579,7 @@ export function SuperadminConsole(props: Props) {
 
             <TabsContent
               value="reporting"
-              className="min-w-0 lg:col-start-2 lg:row-start-1"
+              className="min-w-0 lg:col-start-2 lg:row-start-2"
             >
               <Card>
                 <CardHeader>
@@ -1684,7 +1645,7 @@ export function SuperadminConsole(props: Props) {
 
             <TabsContent
               value="incidents"
-              className="min-w-0 lg:col-start-2 lg:row-start-1"
+              className="min-w-0 lg:col-start-2 lg:row-start-2"
             >
               <Card>
                 <CardHeader>
@@ -1753,7 +1714,7 @@ export function SuperadminConsole(props: Props) {
 
             <TabsContent
               value="email"
-              className="grid min-w-0 gap-4 lg:col-start-2 lg:row-start-1"
+              className="grid min-w-0 gap-4 lg:col-start-2 lg:row-start-2"
             >
               <Card>
                 <CardHeader>
@@ -2077,8 +2038,19 @@ export function SuperadminConsole(props: Props) {
             </TabsContent>
 
             <TabsContent
+              value="tchina"
+              className="min-w-0 lg:col-start-2 lg:row-start-2"
+            >
+              <TChinaExpoSuperadminPanel
+                locale={locale}
+                event={tchinaEvent}
+                registrations={tchinaRegistrations}
+              />
+            </TabsContent>
+
+            <TabsContent
               value="settings"
-              className="min-w-0 lg:col-start-2 lg:row-start-1"
+              className="min-w-0 lg:col-start-2 lg:row-start-2"
             >
               <Card>
                 <CardHeader>
@@ -2103,7 +2075,7 @@ export function SuperadminConsole(props: Props) {
 
             <TabsContent
               value="audit"
-              className="min-w-0 lg:col-start-2 lg:row-start-1"
+              className="min-w-0 lg:col-start-2 lg:row-start-2"
             >
               <Card>
                 <CardHeader>

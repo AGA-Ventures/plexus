@@ -31,7 +31,6 @@ import {
   File01Icon,
   Loading03Icon,
   Logout01Icon,
-  Menu01Icon,
   PaintBoardIcon,
   QrCodeIcon,
   SaveIcon,
@@ -129,6 +128,10 @@ import {
   getVendorMeetingProposalState,
 } from "@/lib/meeting-proposals"
 import { AdminVendorProvision } from "@/components/admin-vendor-provision"
+import {
+  WorkspaceNavigationShell,
+  type WorkspaceNavigationSurface,
+} from "@/components/workspace-navigation-shell"
 import { formatCountdown, getMeetingCountdown } from "@/lib/meeting-countdown"
 import {
   getProtectedMeetingPath,
@@ -166,6 +169,7 @@ import type { PortalSession } from "@/lib/plexus-data"
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser"
 import { cn } from "@/lib/utils"
 import {
+  authorizeVendorRealtime,
   getDelegationVisibleResources,
   getVendorDashboardMetrics,
   getVendorRealtimeTargets,
@@ -244,14 +248,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
 import {
   Table,
   TableBody,
@@ -1505,46 +1501,63 @@ export function PlexusConnectMvp({
       }, 150)
     }
 
-    let channel = supabase.channel(`vendor-dashboard-${session.userId}`)
+    let channel: ReturnType<typeof supabase.channel> | undefined
 
-    for (const target of targets) {
-      channel = channel
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: target.table,
-            filter: target.filter,
-          },
-          scheduleRefresh
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "UPDATE",
-            schema: "public",
-            table: target.table,
-            filter: target.filter,
-          },
-          scheduleRefresh
-        )
-    }
+    async function subscribeToRealtime() {
+      const authorized = await authorizeVendorRealtime(supabase)
 
-    channel.subscribe((status, error) => {
       if (!active) {
         return
       }
 
-      if (status === "SUBSCRIBED" && !error) {
-        setVendorRealtimeStatus("live")
+      if (!authorized) {
+        setVendorRealtimeStatus("degraded")
         return
       }
 
-      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || error) {
-        setVendorRealtimeStatus("degraded")
+      channel = supabase.channel(`vendor-dashboard-${session.userId}`)
+
+      for (const target of targets) {
+        channel = channel
+          .on(
+            "postgres_changes",
+            {
+              event: "INSERT",
+              schema: "public",
+              table: target.table,
+              filter: target.filter,
+            },
+            scheduleRefresh
+          )
+          .on(
+            "postgres_changes",
+            {
+              event: "UPDATE",
+              schema: "public",
+              table: target.table,
+              filter: target.filter,
+            },
+            scheduleRefresh
+          )
       }
-    })
+
+      channel.subscribe((status, error) => {
+        if (!active) {
+          return
+        }
+
+        if (status === "SUBSCRIBED" && !error) {
+          setVendorRealtimeStatus("live")
+          return
+        }
+
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || error) {
+          setVendorRealtimeStatus("degraded")
+        }
+      })
+    }
+
+    void subscribeToRealtime()
 
     const fallbackRefresh = window.setInterval(() => {
       void refreshWorkspace()
@@ -1568,7 +1581,9 @@ export function PlexusConnectMvp({
       window.clearInterval(fallbackRefresh)
       window.removeEventListener("focus", scheduleRefresh)
       document.removeEventListener("visibilitychange", refreshWhenVisible)
-      void supabase.removeChannel(channel)
+      if (channel) {
+        void supabase.removeChannel(channel)
+      }
     }
   }, [
     role,
@@ -3530,7 +3545,6 @@ function ResponsiveTabsNav({
   const mobileChildTriggerClass =
     "h-12 w-full flex-none shrink-0 justify-start gap-3 rounded-lg px-4 pl-12 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[state=active]:bg-sidebar-accent data-[state=active]:text-sidebar-accent-foreground data-[state=active]:shadow-none"
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
-  const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const activeLabel =
     items
       .flatMap((item) => [
@@ -3550,7 +3564,7 @@ function ResponsiveTabsNav({
 
   function renderNavItems(
     onNavigate?: () => void,
-    surface: "desktop" | "mobile" = "desktop"
+    surface: WorkspaceNavigationSurface = "desktop"
   ) {
     const isMobile = surface === "mobile"
     const triggerClass = isMobile ? mobileNavTriggerClass : navTriggerClass
@@ -3699,7 +3713,7 @@ function ResponsiveTabsNav({
 
   function renderExternalItems(
     onNavigate?: () => void,
-    surface: "desktop" | "mobile" = "desktop"
+    surface: WorkspaceNavigationSurface = "desktop"
   ) {
     const isMobile = surface === "mobile"
 
@@ -3727,120 +3741,90 @@ function ResponsiveTabsNav({
   }
 
   return (
-    <>
-      <aside className="hidden self-stretch lg:block">
-        <div className="sticky top-4 flex min-h-[calc(100svh-12rem)] flex-col rounded-xl border border-sidebar-border bg-sidebar p-3 text-sidebar-foreground shadow-[0_18px_42px_rgba(7,19,38,0.12)]">
-          <div className="mb-3 rounded-lg border border-white/10 bg-white/6 px-3 py-3">
-            <TenantWorkspaceBrand
-              session={session}
-              subtitle={t.workspaceSubtitle}
-              testId="tenant-workspace-brand-desktop"
-            />
-          </div>
-          {itemHref ? (
-            <nav
-              aria-label={t.navigation}
-              className="flex h-auto w-full flex-col items-stretch gap-1"
-            >
-              {renderNavItems()}
-            </nav>
-          ) : (
-            <TabsList className="h-auto w-full flex-col items-stretch gap-1 bg-transparent p-0">
-              {renderNavItems()}
-            </TabsList>
-          )}
-          {externalItems.length ? (
-            <div className="mt-1 flex flex-col gap-1 border-t border-sidebar-border pt-2">
-              {renderExternalItems()}
-            </div>
-          ) : null}
-          <SidebarUserAccount
-            role={role}
-            locale={locale}
-            session={session}
-            logout={logout}
-          />
-        </div>
-      </aside>
-      <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-        <div className="sticky top-3 z-30 flex min-h-16 items-center gap-3 rounded-lg border border-sidebar-border bg-sidebar/95 p-2.5 text-sidebar-foreground shadow-sm backdrop-blur-sm lg:hidden">
-          <div className="min-w-0 flex-1 px-1.5">
-            <TenantWorkspaceBrand
-              session={session}
-              subtitle={activeLabel}
-              testId="tenant-workspace-brand-mobile"
-              prominence="mobile"
-            />
-          </div>
-          <SheetTrigger asChild>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-11 shrink-0 gap-2 border-white/14 bg-[#0758c8] px-3.5 text-sm text-white hover:bg-[#064caf] hover:text-white"
-              aria-label={`${t.menu}: ${activeLabel}`}
-            >
-              <HugeiconsIcon
-                icon={Menu01Icon}
-                strokeWidth={1.8}
-                className="size-4"
-              />
-              {t.menu}
-            </Button>
-          </SheetTrigger>
-        </div>
-        <SheetContent
-          side="left"
-          className="border-sidebar-border bg-sidebar p-0 text-sidebar-foreground data-[side=left]:w-[calc(100vw-1.5rem)] data-[side=left]:max-w-[24rem]"
-        >
-          <SheetHeader className="border-b border-sidebar-border px-5 py-5">
-            <SheetTitle className="sr-only">
-              {session.tenantName?.trim() || "Plexus Connect"}
-            </SheetTitle>
-            <SheetDescription asChild>
-              <TenantWorkspaceBrand
-                session={session}
-                subtitle={t.workspaceSubtitle}
-                testId="tenant-workspace-brand-sheet"
-                prominence="sheet"
-              />
-            </SheetDescription>
-          </SheetHeader>
-          <div className="flex min-h-0 flex-1 flex-col">
-            <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
-              <p className="mb-2.5 px-4 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                {t.navigation}
-              </p>
-              {itemHref ? (
-                <nav
-                  aria-label={t.navigation}
-                  className="flex h-auto w-full flex-col items-stretch gap-1.5"
-                >
-                  {renderNavItems(() => setMobileNavOpen(false), "mobile")}
-                </nav>
-              ) : (
-                <TabsList className="h-auto w-full flex-col items-stretch gap-1.5 bg-transparent p-0">
-                  {renderNavItems(() => setMobileNavOpen(false), "mobile")}
-                </TabsList>
-              )}
-              {externalItems.length ? (
-                <div className="mt-3 flex flex-col gap-1.5 border-t border-sidebar-border pt-3">
-                  {renderExternalItems(() => setMobileNavOpen(false), "mobile")}
-                </div>
-              ) : null}
-            </div>
-            <div className="border-t border-sidebar-border p-3 pt-0">
-              <SidebarUserAccount
-                role={role}
-                locale={locale}
-                session={session}
-                logout={logout}
-              />
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
-    </>
+    <WorkspaceNavigationShell
+      desktopBrand={
+        <TenantWorkspaceBrand
+          session={session}
+          subtitle={t.workspaceSubtitle}
+          testId="tenant-workspace-brand-desktop"
+        />
+      }
+      mobileBrand={
+        <TenantWorkspaceBrand
+          session={session}
+          subtitle={activeLabel}
+          testId="tenant-workspace-brand-mobile"
+          prominence="mobile"
+        />
+      }
+      sheetBrand={
+        <TenantWorkspaceBrand
+          session={session}
+          subtitle={t.workspaceSubtitle}
+          testId="tenant-workspace-brand-sheet"
+          prominence="sheet"
+        />
+      }
+      navigationLabel={t.navigation}
+      menuLabel={t.menu}
+      activeLabel={activeLabel}
+      sheetTitle={session.tenantName?.trim() || "Plexus Connect"}
+      desktopFooter={
+        <SidebarUserAccount
+          role={role}
+          locale={locale}
+          session={session}
+          logout={logout}
+        />
+      }
+      mobileFooter={
+        <SidebarUserAccount
+          role={role}
+          locale={locale}
+          session={session}
+          logout={logout}
+        />
+      }
+      renderNavigation={(surface, closeMobile) => {
+        const onNavigate = surface === "mobile" ? closeMobile : undefined
+        const gapClass = surface === "mobile" ? "gap-1.5" : "gap-1"
+
+        return (
+          <>
+            {itemHref ? (
+              <nav
+                aria-label={t.navigation}
+                className={cn(
+                  "flex h-auto w-full flex-col items-stretch",
+                  gapClass
+                )}
+              >
+                {renderNavItems(onNavigate, surface)}
+              </nav>
+            ) : (
+              <TabsList
+                className={cn(
+                  "h-auto w-full flex-col items-stretch bg-transparent p-0",
+                  gapClass
+                )}
+              >
+                {renderNavItems(onNavigate, surface)}
+              </TabsList>
+            )}
+            {externalItems.length ? (
+              <div
+                className={cn(
+                  "flex flex-col border-t border-sidebar-border",
+                  surface === "mobile" ? "mt-3 gap-1.5 pt-3" : "mt-1 gap-1 pt-2"
+                )}
+              >
+                {renderExternalItems(onNavigate, surface)}
+              </div>
+            ) : null}
+          </>
+        )
+      }}
+    />
   )
 }
 

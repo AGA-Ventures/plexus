@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plexus · Development Command Center</title>
+<meta name="description" content="Canonical visual review entry point for Plexus development.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0d1117; --ink2:#161b22; --ink3:#21262d;
+    --paper:#f4f4f1; --card:#ffffff; --line:#e5e5df; --line2:#eeeee9;
+    --text:#191d23; --muted:#5f646c; --faint:#9aa0a6;
+    --teal:#0f766e; --teal-s:#e2f1ef;
+    --amber:#b26f12; --amber-s:#f8ecd8;
+    --green:#2f7d3a; --green-s:#e6f0e4;
+    --red:#b42318; --red-s:#fbe8e6;
+    --slate:#3a5a8c; --slate-s:#e7edf5;
+    --grey:#7c828b; --grey-s:#ececea;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+    --disp:'Space Grotesk',system-ui,sans-serif;
+    --body:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:var(--body);background:var(--paper);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased}
+  .app{display:flex;min-height:100vh}
+
+  /* Sidebar */
+  .side{width:236px;background:var(--ink);color:#c9d1d9;position:fixed;top:0;bottom:0;left:0;display:flex;flex-direction:column;padding:22px 16px;z-index:20}
+  .brand{display:flex;align-items:center;gap:10px;padding:4px 8px 18px;border-bottom:1px solid #21262d;margin-bottom:14px}
+  .brand svg{flex:none}
+  .brand .n{font-family:var(--disp);font-weight:600;font-size:18px;color:#fff;letter-spacing:.02em}
+  .brand .t{font-family:var(--mono);font-size:10px;color:#6e7681;letter-spacing:.08em;text-transform:uppercase}
+  .nav{display:flex;flex-direction:column;gap:2px;margin-top:4px}
+  .nav a{display:flex;align-items:center;gap:10px;color:#8b949e;text-decoration:none;font-size:13.5px;padding:8px 10px;border-radius:7px;transition:.15s}
+  .nav a .dot{width:5px;height:5px;border-radius:50%;background:#30363d;transition:.15s}
+  .nav a:hover{color:#e6edf3;background:#161b22}
+  .nav a.active{color:#fff;background:#161b22}
+  .nav a.active .dot{background:var(--teal);box-shadow:0 0 0 3px rgba(15,118,110,.25)}
+  .side .foot{margin-top:auto;font-family:var(--mono);font-size:10.5px;color:#565d66;padding:12px 8px 0;border-top:1px solid #21262d;line-height:1.7}
+
+  /* Main */
+  .main{margin-left:236px;flex:1;min-width:0}
+  .wrap{max-width:940px;margin:0 auto;padding:26px 30px 90px}
+
+  /* Hero */
+  .hero{background:var(--ink);color:#e6edf3;border-radius:16px;padding:30px 32px;position:relative;overflow:hidden;margin-bottom:14px}
+  .hero .mesh{position:absolute;right:-20px;top:-10px;opacity:.5;pointer-events:none}
+  .hero .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#58a6a0}
+  .hero h1{font-family:var(--disp);font-weight:600;font-size:30px;line-height:1.15;margin:8px 0 6px;color:#fff;letter-spacing:-.01em}
+  .hero p{color:#9da7b1;font-size:14.5px;max-width:520px}
+  .hero .prog{margin-top:20px;max-width:520px}
+  .hero .bar{height:7px;background:#21262d;border-radius:5px;overflow:hidden}
+  .hero .bar span{display:block;height:100%;background:linear-gradient(90deg,#0f766e,#2f9e92);border-radius:5px}
+  .hero .prog small{display:block;font-family:var(--mono);font-size:11px;color:#7d8791;margin-top:7px}
+
+  .statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:26px}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .stat .k{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+  .stat .v{font-family:var(--disp);font-weight:600;font-size:19px;margin-top:5px;color:var(--text)}
+  .stat .v small{font-size:12px;color:var(--muted);font-family:var(--body);font-weight:400}
+
+  section{margin-bottom:34px;scroll-margin-top:20px}
+  .sec-head{display:flex;align-items:baseline;gap:12px;margin-bottom:16px}
+  .sec-head .num{font-family:var(--mono);font-size:12px;color:var(--teal);font-weight:500}
+  .sec-head h2{font-family:var(--disp);font-weight:600;font-size:21px;letter-spacing:-.01em}
+  .sec-head .sub{font-size:13px;color:var(--muted);margin-left:auto}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px 22px}
+  .lead{font-size:14.5px;color:var(--text)}
+  .lead b{font-weight:600}
+
+  /* Phases */
+  .phase{display:flex;gap:16px;padding:15px 0;border-bottom:1px solid var(--line2)}
+  .phase:last-child{border-bottom:0}
+  .phase .rail{flex:none;display:flex;flex-direction:column;align-items:center;padding-top:3px}
+  .phase .node{width:13px;height:13px;border-radius:50%;border:2.5px solid var(--grey);background:var(--card)}
+  .phase .pb{width:2px;flex:1;background:var(--line);margin-top:4px}
+  .phase:last-child .pb{display:none}
+  .phase .body{flex:1;min-width:0}
+  .phase .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .phase .pname{font-family:var(--disp);font-weight:600;font-size:15px}
+  .phase .win{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:auto}
+  .phase .focus{font-size:13.5px;color:var(--muted);margin-top:3px}
+  .tag{font-family:var(--mono);font-size:10px;font-weight:500;letter-spacing:.04em;text-transform:uppercase;padding:3px 8px;border-radius:20px}
+  .t-done{background:var(--green-s);color:var(--green)} .n-done{border-color:var(--green);background:var(--green)}
+  .t-active{background:var(--teal-s);color:var(--teal)} .n-active{border-color:var(--teal);background:var(--teal)}
+  .t-queued{background:var(--slate-s);color:var(--slate)} .n-queued{border-color:var(--slate)}
+  .t-milestone{background:var(--amber-s);color:var(--amber)} .n-milestone{border-color:var(--amber);background:var(--amber)}
+  .t-vision{background:var(--grey-s);color:var(--grey)} .n-vision{border-color:var(--grey)}
+
+  .note{background:var(--amber-s);border:1px solid #ecd9b6;border-radius:10px;padding:11px 14px;font-size:13px;color:#6d4a12;margin-top:14px}
+  .note b{color:#5a3d0f}
+
+  /* generic grids */
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}
+  .chip{font-family:var(--mono);font-size:11.5px;background:var(--grey-s);border:1px solid var(--line);color:#41474e;padding:4px 9px;border-radius:7px}
+
+  .mini{font-family:var(--disp);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:9px}
+
+  pre.tree{font-family:var(--mono);font-size:12px;line-height:1.75;background:var(--ink);color:#adbac7;border-radius:12px;padding:16px 18px;overflow-x:auto;margin-top:4px}
+  pre.tree .c{color:#57a89f} pre.tree .m{color:#6e7681}
+
+  table.env{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+  table.env th{text-align:left;font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);padding:6px 10px;border-bottom:1px solid var(--line)}
+  table.env td{padding:9px 10px;border-bottom:1px solid var(--line2);vertical-align:top}
+  table.env td code{font-family:var(--mono);font-size:12px;background:var(--grey-s);padding:2px 6px;border-radius:5px}
+
+  ul.flow{list-style:none;display:flex;flex-direction:column;gap:8px;margin-top:4px}
+  ul.flow li{display:flex;gap:10px;font-size:13.5px;align-items:flex-start}
+  ul.flow li .s{font-family:var(--mono);font-size:11px;color:var(--teal);flex:none;width:16px;padding-top:2px}
+
+  /* docs */
+  .docrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line2);font-size:13.5px;color:inherit;text-decoration:none}
+  .docrow:last-child{border-bottom:0}
+  .docrow:hover{color:var(--teal)}
+  .docrow .p{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-left:auto}
+  .dot-s{width:8px;height:8px;border-radius:50%;flex:none}
+  .d-done{background:var(--green)} .d-progress{background:var(--teal)} .d-draft{background:var(--faint)}
+
+  /* inventory and health */
+  .inventory-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:16px 0}
+  .inventory-summary .stat{padding:12px 14px}
+  .inventory-group{border-top:1px solid var(--line2)}
+  .inventory-group:first-child{border-top:0}
+  .inventory-group summary{cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;font-family:var(--disp);font-size:13.5px;font-weight:600;list-style:none}
+  .inventory-group summary::-webkit-details-marker{display:none}
+  .inventory-group summary::after{content:"+";font-family:var(--mono);color:var(--teal)}
+  .inventory-group[open] summary::after{content:"−"}
+  .route-row{display:grid;grid-template-columns:minmax(190px,.8fr) minmax(190px,1.15fr);gap:8px 18px;padding:9px 0;border-top:1px solid var(--line2);font-size:12.5px}
+  .route-row a{font-family:var(--mono);font-size:11.5px;color:var(--text);text-decoration:none;overflow-wrap:anywhere}
+  .route-row a:hover{color:var(--teal)}
+  .route-meta{color:var(--muted)}
+  .route-meta b{font-family:var(--mono);font-size:10px;color:var(--teal);margin-right:7px}
+  .health-row{display:grid;grid-template-columns:94px minmax(150px,.7fr) 1.3fr;gap:12px;padding:12px 0;border-bottom:1px solid var(--line2);font-size:13px;align-items:start}
+  .health-row:last-child{border-bottom:0}
+  .health-state{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;border-radius:20px;padding:4px 8px;text-align:center}
+  .h-pass{background:var(--green-s);color:var(--green)}
+  .h-fail{background:var(--red-s);color:var(--red)}
+  .h-warn{background:var(--amber-s);color:var(--amber)}
+  .h-unavailable{background:var(--grey-s);color:var(--grey)}
+  .health-name{font-family:var(--disp);font-weight:600}
+  .health-evidence{color:var(--muted)}
+
+  /* principles */
+  .princ{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .pr{display:flex;gap:11px;padding:12px 14px;background:var(--card);border:1px solid var(--line);border-radius:11px}
+  .pr .pn{font-family:var(--disp);font-weight:700;font-size:15px;color:var(--teal);flex:none;line-height:1.4}
+  .pr .pt{font-size:13px}.pr .pt b{font-weight:600;display:block;margin-bottom:2px;font-family:var(--disp);font-size:13.5px}
+  .test{margin-top:14px;background:var(--teal);color:#eafffb;border-radius:12px;padding:16px 20px;font-size:14px}
+  .test b{color:#fff;font-family:var(--disp)}
+
+  /* next */
+  .step{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--line2)}
+  .step:last-child{border-bottom:0}
+  .step .rank{font-family:var(--disp);font-weight:700;font-size:20px;color:var(--line);flex:none;width:34px}
+  .step.p1 .rank{color:var(--teal)}
+  .step .st{font-family:var(--disp);font-weight:600;font-size:15px}
+  .step .sd{font-size:13px;color:var(--muted);margin-top:2px}
+  .step .sw{font-family:var(--mono);font-size:11px;color:var(--amber);margin-left:auto;flex:none;white-space:nowrap}
+
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);margin-top:12px;font-family:var(--mono)}
+  .legend span{display:flex;align-items:center;gap:5px}
+  .legend i{width:9px;height:9px;border-radius:50%;display:inline-block}
+
+  @media(max-width:820px){
+    .side{position:static;width:100%;flex-direction:row;align-items:center;padding:12px 14px;overflow-x:auto;gap:6px}
+    .brand{border:0;margin:0;padding:0 10px 0 0;flex:none}
+    .brand .t{display:none}
+    .nav{flex-direction:row;gap:4px}
+    .nav a{white-space:nowrap;padding:7px 10px}.nav a .dot{display:none}
+    .side .foot{display:none}
+    .main{margin-left:0}
+    .statgrid{grid-template-columns:1fr 1fr}
+    .two,.princ{grid-template-columns:1fr}
+    .inventory-summary{grid-template-columns:1fr 1fr}
+    .route-row,.health-row{grid-template-columns:1fr}
+    .wrap{padding:20px 16px 70px}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+        <circle cx="13" cy="5" r="2.4" fill="#2f9e92"/><circle cx="5" cy="18" r="2.4" fill="#c9d1d9"/><circle cx="21" cy="18" r="2.4" fill="#c9d1d9"/><circle cx="13" cy="13" r="2" fill="#8b949e"/>
+        <path d="M13 5L13 13M13 13L5 18M13 13L21 18M5 18L21 18" stroke="#30363d" stroke-width="1.2"/>
+      </svg>
+      <div><div class="n">Plexus</div><div class="t">Command Center</div></div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="foot" id="foot"></div>
+  </aside>
+
+  <main class="main">
+    <div class="wrap">
+      <div class="hero">
+        <svg class="mesh" width="220" height="180" viewBox="0 0 220 180" fill="none">
+          <g stroke="#1f6f68" stroke-width="1"><path d="M40 40L120 20M120 20L190 60M40 40L90 110M120 20L90 110M190 60L160 130M90 110L160 130M90 110L60 160M160 130L60 160"/></g>
+          <g fill="#2f9e92"><circle cx="40" cy="40" r="4"/><circle cx="120" cy="20" r="4"/><circle cx="190" cy="60" r="4"/><circle cx="90" cy="110" r="4"/><circle cx="160" cy="130" r="4"/><circle cx="60" cy="160" r="4"/></g>
+        </svg>
+        <div class="eyebrow">Cross-border B2B matching · multi-tenant platform</div>
+        <h1>Development, at a glance</h1>
+        <p>The canonical visual review entry point for every meaningful development. Review it when framing work and before handoff; update the <b style="color:#cdd5dd">PLEXUS</b> data block whenever product, architecture, delivery state, or priorities change.</p>
+        <div class="prog"><div class="bar"><span id="progbar" style="width:0"></span></div><small id="progtext"></small></div>
+      </div>
+
+      <div class="statgrid" id="stats"></div>
+
+      <section id="overview"><div class="sec-head"><span class="num">01</span><h2>Overview</h2></div>
+        <div class="card">
+          <p class="lead"><b>Plexus</b> is a configurable business-operations superapp that helps platform operators, regional partners, and participating companies move from onboarding to qualified introductions, meetings, agreements, and ongoing collaboration in one trusted workspace.</p>
+          <div class="two" style="margin-top:16px">
+            <div><div class="mini">Three-tier actors</div><div id="actors"></div></div>
+            <div><div class="mini">Tech stack</div><div class="chips" id="stack"></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="roadmap"><div class="sec-head"><span class="num">02</span><h2>Roadmap</h2><span class="sub">dates are targets, not promises</span></div>
+        <div class="card"><div id="phases"></div>
+          <div class="legend">
+            <span><i style="background:var(--green)"></i>done</span><span><i style="background:var(--teal)"></i>active</span><span><i style="background:var(--slate)"></i>queued</span><span><i style="background:var(--amber)"></i>milestone</span><span><i style="background:var(--grey)"></i>vision</span>
+          </div>
+          <div class="note" id="ggnote"></div>
+        </div>
+      </section>
+
+      <section id="architecture"><div class="sec-head"><span class="num">03</span><h2>Architecture</h2></div>
+        <div class="card">
+          <p class="lead"><b>One governed core, clear module boundaries.</b> The current modular monolith keeps identity, tenancy, authorization, data, and operations coherent while capabilities use stable server and domain interfaces.</p>
+          <svg viewBox="0 0 640 300" style="width:100%;height:auto;margin-top:14px" font-family="Space Grotesk,sans-serif">
+            <g id="archmods"></g>
+            <rect x="20" y="150" width="600" height="130" rx="14" fill="var(--teal-s)" stroke="#bfe0db"/>
+            <text x="38" y="176" font-size="14" font-weight="600" fill="#0f766e">Shared core</text>
+            <text x="38" y="194" font-size="11.5" fill="#4f7d78" font-family="JetBrains Mono">built once · reused by every module</text>
+            <g id="archcore"></g>
+          </svg>
+          <div class="two" style="margin-top:18px">
+            <div><div class="mini">Trust boundary</div><p style="font-size:13px;color:var(--muted)">The browser is untrusted. Trusted role bindings live in Auth app metadata, server checks validate the active identity, and Postgres RLS enforces tenant and company scope.</p></div>
+            <div><div class="mini">Evolution rule</div><p style="font-size:13px;color:var(--muted)">The modular monolith remains the preferred shape until measured scaling evidence justifies extraction. New capabilities must satisfy the documented module contract.</p></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="repo"><div class="sec-head"><span class="num">04</span><h2>Repo &amp; workflow</h2></div>
+        <div class="card">
+          <div class="mini">One application repository · GitHub controls release history</div>
+          <pre class="tree" id="repotree"></pre>
+          <div class="two" style="margin-top:18px">
+            <div>
+              <div class="mini">Branching</div>
+              <ul class="flow" id="branching"></ul>
+            </div>
+            <div>
+              <div class="mini">Environments</div>
+              <table class="env"><thead><tr><th>Git</th><th>Deploys to</th><th>Database</th></tr></thead><tbody id="envs"></tbody></table>
+              <div class="mini" style="margin-top:16px">Releases</div>
+              <div class="chips" id="releases"></div>
+            </div>
+          </div>
+          <div class="mini" style="margin-top:18px">Review → production</div>
+          <p style="font-size:13.5px;color:var(--muted)">The Next.js application moves through a short-lived branch, pull request, CI and Preview review, then a guarded production release from <code style="font-family:var(--mono);font-size:12px">main</code>.</p>
+          <ul class="flow" id="storeflow" style="margin-top:8px"></ul>
+        </div>
+      </section>
+
+      <section id="ondisk"><div class="sec-head"><span class="num">05</span><h2>On disk today</h2><span class="sub">plexus-production</span></div>
+        <div class="card">
+          <p class="lead" id="ondisknote"></p>
+          <pre class="tree" id="ondisktree"></pre>
+          <div class="mini" style="margin-top:18px">Whole worktree inventory</div>
+          <div class="chips" id="repoInventory"></div>
+        </div>
+      </section>
+
+      <section id="docs"><div class="sec-head"><span class="num">06</span><h2>All Markdown</h2><span class="sub" id="docsSummary">whole repository</span></div>
+        <div class="card" id="docsbox"></div>
+      </section>
+
+      <section id="routes"><div class="sec-head"><span class="num">07</span><h2>Current route inventory</h2><span class="sub" id="routesSummary">source-derived</span></div>
+        <div class="card">
+          <p class="lead">Every routable <code style="font-family:var(--mono);font-size:12px">page.tsx</code> and <code style="font-family:var(--mono);font-size:12px">route.ts</code> under <code style="font-family:var(--mono);font-size:12px">app/</code>, derived from the current worktree. Access labels summarize the canonical route contract.</p>
+          <div class="inventory-summary" id="routeStats"></div>
+          <div id="routesbox"></div>
+        </div>
+      </section>
+
+      <section id="health"><div class="sec-head"><span class="num">08</span><h2>System health</h2><span class="sub" id="healthSummary">evidence-based check</span></div>
+        <div class="card">
+          <p class="lead" id="healthLead"></p>
+          <div id="healthbox" style="margin-top:12px"></div>
+        </div>
+      </section>
+
+      <section id="principles"><div class="sec-head"><span class="num">09</span><h2>Principles</h2></div>
+        <div class="princ" id="principles-list"></div>
+        <div class="test" id="onelinetest"></div>
+      </section>
+
+      <section id="next"><div class="sec-head"><span class="num">10</span><h2>Do next</h2><span class="sub">unblock the next phase first</span></div>
+        <div class="card" id="nextbox"></div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ============================================================
+   CORE DEVELOPMENT REVIEW DATA — KEEP THIS BLOCK CURRENT.
+   Change a phase "status", tick a doc, reorder next steps —
+   everything below re-renders automatically. No build step.
+   Canonical code and linked documentation win if a claim differs.
+   status values: done | active | queued | milestone | vision
+   ============================================================ */
+const PLEXUS = {
+  meta:{ updated:"26 Aug 2026", domain:"plexus-gules.vercel.app", launch:"Controlled production", markets:"Malaysia · Macao/China programs" },
+  /* COMMAND_CENTER_INVENTORY_START */
+  inventory: {
+    "generated": "26 Aug 2026",
+    "repository": {
+      "branch": "main",
+      "commit": "d4bdec25ab26",
+      "e2eSpecs": 1,
+      "markdownFiles": 95,
+      "migrations": 48,
+      "pageRoutes": 62,
+      "projectFiles": 805,
+      "routeHandlers": 20,
+      "unitTestFiles": 40,
+      "workingTreeChanges": 154
+    },
+    "topLevel": [
+      {
+        "count": 195,
+        "name": ".impeccable"
+      },
+      {
+        "count": 153,
+        "name": ".agents"
+      },
+      {
+        "count": 97,
+        "name": "app"
+      },
+      {
+        "count": 64,
+        "name": "public"
+      },
+      {
+        "count": 57,
+        "name": "components"
+      },
+      {
+        "count": 55,
+        "name": "supabase"
+      },
+      {
+        "count": 53,
+        "name": "lib"
+      },
+      {
+        "count": 41,
+        "name": "tests"
+      },
+      {
+        "count": 36,
+        "name": "docs"
+      },
+      {
+        "count": 24,
+        "name": "(root files)"
+      },
+      {
+        "count": 19,
+        "name": "scripts"
+      },
+      {
+        "count": 3,
+        "name": "messages"
+      },
+      {
+        "count": 2,
+        "name": ".github"
+      },
+      {
+        "count": 2,
+        "name": "data"
+      },
+      {
+        "count": 1,
+        "name": ".claude"
+      },
+      {
+        "count": 1,
+        "name": ".codex"
+      },
+      {
+        "count": 1,
+        "name": ".githooks"
+      },
+      {
+        "count": 1,
+        "name": "hooks"
+      }
+    ],
+    "documents": [
+      {
+        "group": "Agent tooling references",
+        "items": [
+          {
+            "file": ".agents/skills/impeccable/reference/adapt.md",
+            "title": "adapt"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/adapt.native.md",
+            "title": "adapt.native"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/android.md",
+            "title": "Android platform"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/animate.md",
+            "title": "animate"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/audit.md",
+            "title": "audit"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/audit.native.md",
+            "title": "audit.native"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/bolder.md",
+            "title": "bolder"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/clarify.md",
+            "title": "clarify"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/colorize.md",
+            "title": "colorize"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/craft-floor.md",
+            "title": "Craft floor"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/craft.md",
+            "title": "Craft (deprecated alias)"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/critique.md",
+            "title": "critique"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/degraded/asset-producer.md",
+            "title": "Impeccable Asset Producer"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/degraded/documenter.md",
+            "title": "Impeccable Documenter"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/degraded/finish-reviewer.md",
+            "title": "Impeccable Finish Reviewer"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/degraded/manual-edit-applier.md",
+            "title": "Impeccable Manual Edit Applier"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/delight.md",
+            "title": "delight"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/distill.md",
+            "title": "distill"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/doctor.md",
+            "title": "doctor"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/document.md",
+            "title": "Design System: [Project Title]"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/extract.md",
+            "title": "Extract Flow"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/harden.md",
+            "title": "harden"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/hooks.md",
+            "title": "$impeccable hooks"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/init.md",
+            "title": "Init flow"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/ios.md",
+            "title": "iOS platform"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/layout.md",
+            "title": "layout"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/live-setup.md",
+            "title": "live-setup"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/live.md",
+            "title": "live"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/new-work.md",
+            "title": "New visual work"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/onboard.md",
+            "title": "onboard"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/operate.md",
+            "title": "Operate mode depth (and Read notes)"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/optimize.md",
+            "title": "optimize"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/overdrive.md",
+            "title": "overdrive"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/polish.md",
+            "title": "polish"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/quieter.md",
+            "title": "quieter"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/routing.md",
+            "title": "No-argument routing: the context-aware menu"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/shape.md",
+            "title": "Shape"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/typeset.md",
+            "title": "typeset"
+          },
+          {
+            "file": ".agents/skills/impeccable/reference/visualize.md",
+            "title": "Visualize: Direction Comps & Asset Production"
+          },
+          {
+            "file": ".agents/skills/impeccable/SKILL.md",
+            "title": "SKILL"
+          }
+        ]
+      },
+      {
+        "group": "Canonical product and engineering docs",
+        "items": [
+          {
+            "file": "docs/architecture/database-schema.md",
+            "title": "Database Schema"
+          },
+          {
+            "file": "docs/architecture/routes-and-access.md",
+            "title": "Routes and Access"
+          },
+          {
+            "file": "docs/architecture/system-overview.md",
+            "title": "System Architecture"
+          },
+          {
+            "file": "docs/development/codebase-map.md",
+            "title": "Codebase Map"
+          },
+          {
+            "file": "docs/development/environment-variables.md",
+            "title": "Environment Variables"
+          },
+          {
+            "file": "docs/development/setup.md",
+            "title": "Developer Setup"
+          },
+          {
+            "file": "docs/development/workflow.md",
+            "title": "Development Workflow"
+          },
+          {
+            "file": "docs/operations/deployment.md",
+            "title": "Deployment and Release"
+          },
+          {
+            "file": "docs/operations/incident-response.md",
+            "title": "Incident Response"
+          },
+          {
+            "file": "docs/operations/runbook.md",
+            "title": "Production Operations Runbook"
+          },
+          {
+            "file": "docs/product/capability-map.md",
+            "title": "Superapp Capability Map"
+          },
+          {
+            "file": "docs/product/features-by-role-and-use-cases.md",
+            "title": "Application Features by Role and Use Case"
+          },
+          {
+            "file": "docs/product/vision-and-scope.md",
+            "title": "Product Vision and Scope"
+          },
+          {
+            "file": "docs/project-management/admin-mou-documents.md",
+            "title": "Feature Plan: Admin MOU Documents"
+          },
+          {
+            "file": "docs/project-management/decision-log.md",
+            "title": "Architecture Decision Log"
+          },
+          {
+            "file": "docs/project-management/decisions/0001-approval-gated-tenant-vendor-applications.md",
+            "title": "ADR 0001: Approval-gated tenant Vendor applications"
+          },
+          {
+            "file": "docs/project-management/decisions/README.md",
+            "title": "Architecture Decisions"
+          },
+          {
+            "file": "docs/project-management/incidents/README.md",
+            "title": "Incident Records"
+          },
+          {
+            "file": "docs/project-management/operating-model.md",
+            "title": "Project Operating Model"
+          },
+          {
+            "file": "docs/project-management/roadmap.md",
+            "title": "Roadmap and Backlog"
+          },
+          {
+            "file": "docs/project-management/secure-meeting-links.md",
+            "title": "Secure Meeting Links"
+          },
+          {
+            "file": "docs/project-management/tchina-expo-registration.md",
+            "title": "Feature Plan: TChina Expo 2026 Registration"
+          },
+          {
+            "file": "docs/project-management/vendor-profile-documents.md",
+            "title": "Feature Plan: Private Vendor Profile Documents"
+          },
+          {
+            "file": "docs/project-management/versioning-and-releases.md",
+            "title": "Versioning and Release Control"
+          },
+          {
+            "file": "docs/quality/definition-of-done.md",
+            "title": "Definition of Done"
+          },
+          {
+            "file": "docs/quality/testing.md",
+            "title": "Full Production Test Plan and Test Case Catalog"
+          },
+          {
+            "file": "docs/README.md",
+            "title": "Plexus Documentation Hub"
+          },
+          {
+            "file": "docs/reference/command-reference.md",
+            "title": "Command Reference"
+          },
+          {
+            "file": "docs/reference/glossary.md",
+            "title": "Glossary"
+          },
+          {
+            "file": "docs/reference/project-status.md",
+            "title": "Project Status"
+          },
+          {
+            "file": "docs/security/authorization-and-data-security.md",
+            "title": "Authorization and Data Security"
+          },
+          {
+            "file": "docs/templates/architecture-decision-record.md",
+            "title": "ADR NNNN: <Decision title>"
+          },
+          {
+            "file": "docs/templates/feature-plan.md",
+            "title": "Feature Plan: <Outcome>"
+          },
+          {
+            "file": "docs/templates/incident-report.md",
+            "title": "Incident: <Short title>"
+          },
+          {
+            "file": "docs/templates/release-checklist.md",
+            "title": "Release Checklist: <Release>"
+          }
+        ]
+      },
+      {
+        "group": "Design review artifacts",
+        "items": [
+          {
+            "file": ".impeccable/briefs/admin-editorial.md",
+            "title": "Authenticated Workspace Editorial Brief"
+          },
+          {
+            "file": ".impeccable/briefs/public-editorial.md",
+            "title": "Public Pre-launch Editorial Brief"
+          },
+          {
+            "file": ".impeccable/critique/2026-08-25T19-30-26Z__components-login-form-tsx.md",
+            "title": "Login Portal Design Critique"
+          },
+          {
+            "file": ".impeccable/mocks/decision/login-surface-brief.md",
+            "title": "Login portal surface brief"
+          },
+          {
+            "file": ".impeccable/review/design-qa.md",
+            "title": "`/app` Product Preview Design QA"
+          },
+          {
+            "file": ".impeccable/surfaces/app-app-page-tsx.md",
+            "title": "Product Preview Superapp Brief"
+          },
+          {
+            "file": ".impeccable/surfaces/app-locale-admin-page-tsx.md",
+            "title": "Authenticated Workspace Editorial Brief"
+          },
+          {
+            "file": ".impeccable/surfaces/app-locale-tchina-expo-tenant-page-tsx.md",
+            "title": "TChina Expo public registration"
+          },
+          {
+            "file": ".impeccable/surfaces/app-page-tsx.md",
+            "title": "Public Pre-launch Editorial Brief"
+          },
+          {
+            "file": ".impeccable/surfaces/components-login-form-tsx.md",
+            "title": "Login portal surface brief"
+          }
+        ]
+      },
+      {
+        "group": "GitHub workflow",
+        "items": [
+          {
+            "file": ".github/PULL_REQUEST_TEMPLATE.md",
+            "title": "PULL_REQUEST_TEMPLATE"
+          }
+        ]
+      },
+      {
+        "group": "Public assets",
+        "items": [
+          {
+            "file": "public/videos/README.md",
+            "title": "Public Video Assets"
+          }
+        ]
+      },
+      {
+        "group": "Repository root",
+        "items": [
+          {
+            "file": "AGENTS.md",
+            "title": "This is NOT the Next.js you know"
+          },
+          {
+            "file": "CHANGELOG.md",
+            "title": "Changelog"
+          },
+          {
+            "file": "CONTRIBUTING.md",
+            "title": "Contributing to Plexus"
+          },
+          {
+            "file": "design-qa.md",
+            "title": "design-qa"
+          },
+          {
+            "file": "DESIGN.md",
+            "title": "Design System: Plexus"
+          },
+          {
+            "file": "PRODUCT.md",
+            "title": "Product"
+          },
+          {
+            "file": "README.md",
+            "title": "Plexus Connect"
+          }
+        ]
+      },
+      {
+        "group": "Supabase",
+        "items": [
+          {
+            "file": "supabase/README.md",
+            "title": "Supabase Development"
+          }
+        ]
+      }
+    ],
+    "routes": {
+      "handlers": [
+        {
+          "access": "Owning Admin",
+          "file": "app/api/admin/communications/route.ts",
+          "methods": [
+            "POST"
+          ],
+          "route": "/api/admin/communications"
+        },
+        {
+          "access": "Owning Admin",
+          "file": "app/api/admin/deals/[id]/document/route.ts",
+          "methods": [
+            "POST",
+            "DELETE"
+          ],
+          "route": "/api/admin/deals/[id]/document"
+        },
+        {
+          "access": "Owning Admin",
+          "file": "app/api/admin/resources/route.ts",
+          "methods": [
+            "POST",
+            "PATCH"
+          ],
+          "route": "/api/admin/resources"
+        },
+        {
+          "access": "Owning Admin",
+          "file": "app/api/admin/resources/upload/route.ts",
+          "methods": [
+            "POST"
+          ],
+          "route": "/api/admin/resources/upload"
+        },
+        {
+          "access": "Superadmin or owning Admin",
+          "file": "app/api/compliance/screening/route.ts",
+          "methods": [
+            "POST"
+          ],
+          "route": "/api/compliance/screening"
+        },
+        {
+          "access": "Superadmin or owning Admin",
+          "file": "app/api/compliance/vendors/route.ts",
+          "methods": [
+            "GET"
+          ],
+          "route": "/api/compliance/vendors"
+        },
+        {
+          "access": "Cron bearer secret",
+          "file": "app/api/cron/email-reminders/route.ts",
+          "methods": [
+            "GET"
+          ],
+          "route": "/api/cron/email-reminders"
+        },
+        {
+          "access": "Protected provider authorization",
+          "file": "app/api/lark/callback/route.ts",
+          "methods": [
+            "GET"
+          ],
+          "route": "/api/lark/callback"
+        },
+        {
+          "access": "Protected provider authorization",
+          "file": "app/api/lark/login/route.ts",
+          "methods": [
+            "GET"
+          ],
+          "route": "/api/lark/login"
+        },
+        {
+          "access": "Superadmin or owning Admin",
+          "file": "app/api/meetings/route.ts",
+          "methods": [
+            "POST"
+          ],
+          "route": "/api/meetings"
+        },
+        {
+          "access": "Admin or participating Vendor",
+          "file": "app/api/mou-documents/[id]/file/route.ts",
+          "methods": [
+            "GET"
+          ],
+          "route": "/api/mou-documents/[id]/file"
+        },
+        {
+          "access": "Authorized resource audience",
+          "file": "app/api/resources/[id]/file/route.ts",
+          "methods": [
+            "GET"
+          ],
+          "route": "/api/resources/[id]/file"
+        },
+        {
+          "access": "See routes-and-access contract",
+          "file": "app/api/tchina-expo/registrations/route.ts",
+          "methods": [
+            "POST"
+          ],
+          "route": "/api/tchina-expo/registrations"
+        },
+        {
+          "access": "Superadmin or owning Admin",
+          "file": "app/api/tenant-branding/logo/route.ts",
+          "methods": [
+            "POST"
+          ],
+          "route": "/api/tenant-branding/logo"
+        },
+        {
+          "access": "Public validated intake",
+          "file": "app/api/vendor-applications/route.ts",
+          "methods": [
+            "POST"
+          ],
+          "route": "/api/vendor-applications"
+        },
+        {
+          "access": "Owning Vendor",
+          "file": "app/api/vendor/profile-documents/route.ts",
+          "methods": [
+            "GET",
+            "POST",
+            "DELETE"
+          ],
+          "route": "/api/vendor/profile-documents"
+        },
+        {
+          "access": "Owning Vendor",
+          "file": "app/api/vendor/profile-documents/[id]/file/route.ts",
+          "methods": [
+            "GET"
+          ],
+          "route": "/api/vendor/profile-documents/[id]/file"
+        },
+        {
+          "access": "Signed provider webhook",
+          "file": "app/api/webhooks/resend/route.ts",
+          "methods": [
+            "POST"
+          ],
+          "route": "/api/webhooks/resend"
+        },
+        {
+          "access": "One-time Auth code",
+          "file": "app/auth/callback/route.ts",
+          "methods": [
+            "GET"
+          ],
+          "route": "/auth/callback"
+        },
+        {
+          "access": "Opaque time-limited link",
+          "file": "app/m/[slug]/route.ts",
+          "methods": [
+            "GET"
+          ],
+          "route": "/m/[slug]"
+        }
+      ],
+      "pages": [
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/page.tsx",
+          "route": "/"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/[locale]/page.tsx",
+          "route": "/[locale]"
+        },
+        {
+          "access": "Protected role route or alias",
+          "file": "app/[locale]/admin/page.tsx",
+          "route": "/[locale]/admin"
+        },
+        {
+          "access": "Protected role route or alias",
+          "file": "app/[locale]/admin/vendors/page.tsx",
+          "route": "/[locale]/admin/vendors"
+        },
+        {
+          "access": "Protected role route or alias",
+          "file": "app/[locale]/compliance/page.tsx",
+          "route": "/[locale]/compliance"
+        },
+        {
+          "access": "Protected role route or alias",
+          "file": "app/[locale]/compliance/malaysia-ssm-ctos/page.tsx",
+          "route": "/[locale]/compliance/malaysia-ssm-ctos"
+        },
+        {
+          "access": "Protected role route or alias",
+          "file": "app/[locale]/compliance/world-check/page.tsx",
+          "route": "/[locale]/compliance/world-check"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/[locale]/cookies/page.tsx",
+          "route": "/[locale]/cookies"
+        },
+        {
+          "access": "Protected role route or alias",
+          "file": "app/[locale]/delegation/page.tsx",
+          "route": "/[locale]/delegation"
+        },
+        {
+          "access": "Protected role route or alias",
+          "file": "app/[locale]/delegation/discover/page.tsx",
+          "route": "/[locale]/delegation/discover"
+        },
+        {
+          "access": "Public authentication",
+          "file": "app/[locale]/forgot-password/page.tsx",
+          "route": "/[locale]/forgot-password"
+        },
+        {
+          "access": "Public authentication",
+          "file": "app/[locale]/login/page.tsx",
+          "route": "/[locale]/login"
+        },
+        {
+          "access": "Protected operator preview",
+          "file": "app/[locale]/login-preview/page.tsx",
+          "route": "/[locale]/login-preview"
+        },
+        {
+          "access": "Protected role route or alias",
+          "file": "app/[locale]/partner/page.tsx",
+          "route": "/[locale]/partner"
+        },
+        {
+          "access": "Protected role route or alias",
+          "file": "app/[locale]/partner/discover/page.tsx",
+          "route": "/[locale]/partner/discover"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/[locale]/pdpa/page.tsx",
+          "route": "/[locale]/pdpa"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/[locale]/privacy/page.tsx",
+          "route": "/[locale]/privacy"
+        },
+        {
+          "access": "Verified recovery session",
+          "file": "app/[locale]/reset-password/page.tsx",
+          "route": "/[locale]/reset-password"
+        },
+        {
+          "access": "Protected role route or alias",
+          "file": "app/[locale]/superadmin/page.tsx",
+          "route": "/[locale]/superadmin"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/[locale]/tchina-expo/page.tsx",
+          "route": "/[locale]/tchina-expo"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/[locale]/tchina-expo/preview/page.tsx",
+          "route": "/[locale]/tchina-expo/preview"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/[locale]/terms/page.tsx",
+          "route": "/[locale]/terms"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/[locale]/unauthorized/page.tsx",
+          "route": "/[locale]/unauthorized"
+        },
+        {
+          "access": "Protected role route or alias",
+          "file": "app/[locale]/vendor/page.tsx",
+          "route": "/[locale]/vendor"
+        },
+        {
+          "access": "Public tenant application",
+          "file": "app/[locale]/vendor-signup/[tenantSlug]/[vendorType]/page.tsx",
+          "route": "/[locale]/vendor-signup/[tenantSlug]/[vendorType]"
+        },
+        {
+          "access": "Protected role route or alias",
+          "file": "app/[locale]/vendor/discover/page.tsx",
+          "route": "/[locale]/vendor/discover"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/about/page.tsx",
+          "route": "/about"
+        },
+        {
+          "access": "Protected role route or alias",
+          "file": "app/admin/page.tsx",
+          "route": "/admin"
+        },
+        {
+          "access": "Protected role route or alias",
+          "file": "app/admin/vendors/page.tsx",
+          "route": "/admin/vendors"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/app/page.tsx",
+          "route": "/app"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/blog/page.tsx",
+          "route": "/blog"
+        },
+        {
+          "access": "Protected role route or alias",
+          "file": "app/compliance/page.tsx",
+          "route": "/compliance"
+        },
+        {
+          "access": "Protected role route or alias",
+          "file": "app/compliance/malaysia-ssm-ctos/page.tsx",
+          "route": "/compliance/malaysia-ssm-ctos"
+        },
+        {
+          "access": "Protected role route or alias",
+          "file": "app/compliance/world-check/page.tsx",
+          "route": "/compliance/world-check"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/contact/page.tsx",
+          "route": "/contact"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/cookies/page.tsx",
+          "route": "/cookies"
+        },
+        {
+          "access": "Protected role route or alias",
+          "file": "app/delegation/page.tsx",
+          "route": "/delegation"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/events/page.tsx",
+          "route": "/events"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/events/[slug]/page.tsx",
+          "route": "/events/[slug]"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/for-businesses/page.tsx",
+          "route": "/for-businesses"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/for-government/page.tsx",
+          "route": "/for-government"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/for-investment/page.tsx",
+          "route": "/for-investment"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/for-program-operators/page.tsx",
+          "route": "/for-program-operators"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/for-vendors/page.tsx",
+          "route": "/for-vendors"
+        },
+        {
+          "access": "Public authentication",
+          "file": "app/forgot-password/page.tsx",
+          "route": "/forgot-password"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/help/page.tsx",
+          "route": "/help"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/how-it-works/page.tsx",
+          "route": "/how-it-works"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/legal/cookies/page.tsx",
+          "route": "/legal/cookies"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/legal/dpa/page.tsx",
+          "route": "/legal/dpa"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/legal/privacy/page.tsx",
+          "route": "/legal/privacy"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/legal/terms/page.tsx",
+          "route": "/legal/terms"
+        },
+        {
+          "access": "Public authentication",
+          "file": "app/login/page.tsx",
+          "route": "/login"
+        },
+        {
+          "access": "Protected role route or alias",
+          "file": "app/partner/page.tsx",
+          "route": "/partner"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/pdpa/page.tsx",
+          "route": "/pdpa"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/pre-event/page.tsx",
+          "route": "/pre-event"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/pricing/page.tsx",
+          "route": "/pricing"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/privacy/page.tsx",
+          "route": "/privacy"
+        },
+        {
+          "access": "Verified recovery session",
+          "file": "app/reset-password/page.tsx",
+          "route": "/reset-password"
+        },
+        {
+          "access": "Protected role route or alias",
+          "file": "app/superadmin/page.tsx",
+          "route": "/superadmin"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/terms/page.tsx",
+          "route": "/terms"
+        },
+        {
+          "access": "Public page or compatibility alias",
+          "file": "app/unauthorized/page.tsx",
+          "route": "/unauthorized"
+        },
+        {
+          "access": "Protected role route or alias",
+          "file": "app/vendor/page.tsx",
+          "route": "/vendor"
+        }
+      ]
+    }
+  },
+  /* COMMAND_CENTER_INVENTORY_END */
+  stats:[
+    {k:"Posture",v:"Controlled", s:"production cohort"},
+    {k:"Release",v:"0.0.1", s:"0.x delivery"},
+    {k:"Capabilities",v:"Live + adapters", s:"readiness labelled"},
+    {k:"Stack",v:"Next.js 16", s:"Supabase · Vercel"},
+  ],
+  actors:[
+    {n:"Superadmin", d:"governs the platform and standards across all tenants"},
+    {n:"Admin / Organizer", d:"operates a branded tenant, manages Business Participants and coordinates Local Service Partners"},
+    {n:"Business Participant", d:"represents a participating company and joins permitted business workflows"},
+    {n:"Local Service Partner", d:"delivers assigned operational services such as interpretation, travel and logistics"},
+  ],
+  stack:["Next.js 16","React 19","Supabase","Postgres + RLS","Vercel","Resend","TypeScript"],
+  phases:[
+    {name:"Foundation · Controlled platform", win:"Delivered", focus:"Three-tier Auth, tenancy, RLS, onboarding, matching, meetings, deals, event operations, and release verification", status:"done"},
+    {name:"Now · Production readiness", win:"Current", focus:"Reliable onboarding, repeatable deployment, production identity, observability, launch evidence, and data governance", status:"active"},
+    {name:"Next · Provider hardening", win:"After P0", focus:"Meeting, email, signing, notification, compliance, QR, and reporting integrations", status:"queued"},
+    {name:"Milestone · Operational production", win:"Acceptance-gated", focus:"P0 outcomes complete, core providers live, monitoring active, and data governance approved", status:"milestone"},
+    {name:"Later · Superapp platform", win:"Evidence-led", focus:"Capability registry, domain events, tenant configuration, Vendor teams, advanced audit, and governed AI assistance", status:"vision"},
+  ],
+  guangzhou:"<b>Production honesty:</b> a polished screen is not proof of a live capability. Call a capability live only when persistence, authorization, provider behavior, failure handling, tests, monitoring, support, and ownership are known.",
+  modules:["Onboarding","Matching","Meetings & deals","Operations"],
+  core:["Identity & tenancy","Postgres + RLS","Module services","Audit & operations"],
+  repoTree:[
+    "plexus-production/             <span class='m'># one repo · GitHub</span>",
+    "├── <span class='c'>app/</span>                    <span class='m'># routes, APIs, actions, layouts</span>",
+    "├── <span class='c'>components/</span>             <span class='m'># product and shared UI</span>",
+    "├── <span class='c'>lib/</span>                    <span class='m'># domain, auth, data, clients</span>",
+    "├── <span class='c'>supabase/migrations/</span>     <span class='m'># schema and RLS history</span>",
+    "├── <span class='c'>tests/</span>                  <span class='m'># unit and Playwright</span>",
+    "└── <span class='c'>docs/</span>                   <span class='m'># product and engineering OS</span>",
+  ],
+  branching:[
+    "<code>main</code> is the only production branch and remains deployable.",
+    "Use one short-lived <code>feature/…</code> or fix branch per coherent change.",
+    "Merge through a reviewed pull request after CI and Preview pass.",
+    "Keep behavior, schema, tests, docs, and changelog in the same change.",
+  ],
+  envs:[
+    ["feature branch / PR","Vercel <b>Preview</b>","approved scoped target"],
+    ["<code>main</code>","guarded <b>Production</b>","Plexus production"],
+  ],
+  releases:["0.x controlled delivery","1.0 operational production","semantic versions thereafter"],
+  storeflow:[
+    "frame outcome, module, authorization, data, and acceptance criteria",
+    "build on a scoped branch; update tests, docs, and changelog together",
+    "pass CI and Preview review; release from main; smoke-test and observe",
+  ],
+  onDiskNote:"Plexus is a Next.js modular monolith. This is the preferred current architecture: keep domain and module boundaries clear, and extract services only when measured operational evidence requires it.",
+  onDiskTree:[
+    "plexus-production/",
+    "├── app/  components/  lib/             <span class='m'># application</span>",
+    "├── <span class='c'>supabase/</span>                            <span class='m'># migrations, RLS tests, Auth templates</span>",
+    "├── <span class='c'>messages/</span>                            <span class='m'># localized copy</span>",
+    "├── <span class='c'>tests/</span>  scripts/  .github/          <span class='m'># quality and delivery</span>",
+    "├── <span class='c'>docs/</span>                                <span class='m'># canonical review and operating docs</span>",
+    "└── PRODUCT.md  DESIGN.md  AGENTS.md",
+  ],
+  health:{
+    checked:"26 Aug 2026 · Asia/Kuala_Lumpur",
+    summary:"Core release gates and the deployed production URL pass. The browser regression suite is not green, dependency advisories remain, and database authorization tests are unavailable locally; none of these gaps are presented as healthy.",
+    results:[
+      {state:"pass",name:"Repository orientation",evidence:"main at d4bdec25ab26; approved GitHub, Supabase, and Vercel targets; local environment matches the project."},
+      {state:"pass",name:"Markdown integrity",evidence:"90 Markdown files inventoried; all are readable and non-empty with zero broken relative Markdown links. The canonical documentation checker validates its governed scope."},
+      {state:"pass",name:"Route source and build",evidence:"56 page routes and 19 Route Handlers discovered in source; the production build generated all route modules without compilation errors."},
+      {state:"pass",name:"Release gate",evidence:"Target validation, documentation, lint, TypeScript, 201 unit tests, and the Next.js production build passed."},
+      {state:"pass",name:"Deployment and environment",evidence:"Vercel project, Git repository, main branch, and required env scopes passed the read-only check. The production alias returned HTTP 200; the latest main deployment is READY."},
+      {state:"warn",name:"Dependency audit",evidence:"No critical advisory blocks the gate; npm reports 7 high and 1 moderate transitive advisories requiring tracked dependency upgrades."},
+      {state:"fail",name:"Browser E2E",evidence:"The app rendered, but the current login regression still expects the retired ‘Discover. Connect. Agree. Grow.’ heading while the page now renders ‘One governed workspace. Every responsible next step.’ The run stopped at this broken contract; credentialed role flows remain skipped without E2E accounts."},
+      {state:"unavailable",name:"Database RLS",evidence:"The repository-local Supabase CLI started the pgTAP command, but the local PostgreSQL stack is not running, so the authorization suite could not connect."},
+    ],
+  },
+  principles:[
+    ["1","Modular monolith first","Keep the system coherent until scaling evidence requires extraction."],
+    ["2","One identity, explicit scope","Authorization comes from trusted bindings, never client state."],
+    ["3","Tenant isolation by default","Server checks and RLS both enforce scope."],
+    ["4","Human-governed automation","Sensitive decisions stay reviewable and auditable."],
+    ["5","Stable module boundaries","Use typed server and domain interfaces instead of cross-module mutation."],
+    ["6","The database is code","All schema/RLS changes via committed migrations."],
+    ["7","main stays deployable","Production changes pass review, CI, Preview, and release gates."],
+    ["8","Secrets stay server-side","Keys/tokens never in the client bundle."],
+    ["9","Docs travel with code","Update this review plus the owning canonical document in the same change."],
+    ["10","Production honesty","Distinguish live, controlled, adapter, planned, and concept capabilities."],
+  ],
+  test:"Before adding complexity, ask: <b>“Does this support a defined user outcome with explicit ownership, authorization, data, quality, and operations?”</b> If not, it is not ready to build.",
+  next:[
+    {p:1,t:"Reliable Vendor onboarding", d:"Complete production SMTP, redirects, retention, and full end-to-end evidence for the approval-gated flow.", w:"P0 now"},
+    {p:1,t:"Repeatable deployment", d:"Verify automatic Preview and main deployment through the approved Vercel Git integration.", w:"P0 now"},
+    {p:1,t:"Production identity and observability", d:"Establish the branded domain, exact Auth configuration, error tracking, uptime checks, and alert ownership.", w:"P0 now"},
+    {p:2,t:"Launch evidence", d:"Provision the controlled cohort and record Safari/Edge, mobile, accessibility, and performance evidence.", w:"P1 now"},
+    {p:2,t:"Data governance", d:"Approve retention, export, deletion, consent, and contact-data handling before broader launch.", w:"P1 now"},
+  ],
+};
+
+const $=(id)=>document.getElementById(id);
+const esc=(value)=>String(value).replace(/[&<>"']/g,(character)=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"})[character]);
+const repoHref=(file)=>file.startsWith("docs/")?`../${file.replace(/^docs\//,"")}`:`../../${file}`;
+const done = PLEXUS.phases.filter(p=>p.status==="done").length;
+const pct = Math.round(done/PLEXUS.phases.length*100);
+$("progbar").style.width=pct+"%";
+$("progtext").textContent=`${done} of ${PLEXUS.phases.length} phases complete · ${pct}% · updated ${PLEXUS.meta.updated}`;
+$("foot").innerHTML=`domain · ${PLEXUS.meta.domain}<br>launch · ${PLEXUS.meta.launch}<br>updated · ${PLEXUS.meta.updated}`;
+
+const SECS=[["overview","Overview"],["roadmap","Roadmap"],["architecture","Architecture"],["repo","Repo & workflow"],["ondisk","On disk"],["docs","All Markdown"],["routes","Routes"],["health","Health"],["principles","Principles"],["next","Do next"]];
+$("nav").innerHTML=SECS.map(([id,l])=>`<a href="#${id}" data-id="${id}"><span class="dot"></span>${l}</a>`).join("");
+
+$("stats").innerHTML=PLEXUS.stats.map(s=>`<div class="stat"><div class="k">${s.k}</div><div class="v">${s.v} <small>${s.s?"· "+s.s:""}</small></div></div>`).join("");
+$("actors").innerHTML=PLEXUS.actors.map(a=>`<div style="font-size:13px;margin-bottom:7px"><b style="font-family:var(--disp)">${a.n}</b> <span style="color:var(--muted)">— ${a.d}</span></div>`).join("");
+$("stack").innerHTML=PLEXUS.stack.map(s=>`<span class="chip">${s}</span>`).join("");
+
+$("phases").innerHTML=PLEXUS.phases.map(p=>`<div class="phase"><div class="rail"><div class="node n-${p.status}"></div><div class="pb"></div></div><div class="body"><div class="top"><span class="pname">${p.name}</span><span class="tag t-${p.status}">${p.status}</span><span class="win">${p.win}</span></div><div class="focus">${p.focus}</div></div></div>`).join("");
+$("ggnote").innerHTML=PLEXUS.guangzhou;
+
+$("archmods").innerHTML=PLEXUS.modules.map((m,i)=>{const x=20+i*152;return `<rect x="${x}" y="30" width="140" height="46" rx="10" fill="#eef1f4" stroke="#dfe3e8"/><text x="${x+70}" y="58" font-size="13.5" font-weight="600" text-anchor="middle" fill="#2b3138">${m}</text><line x1="${x+70}" y1="76" x2="${x+70}" y2="150" stroke="#cdd3da" stroke-width="1"/>`;}).join("");
+$("archcore").innerHTML=PLEXUS.core.map((c,i)=>{const x=38+i*146;return `<rect x="${x}" y="212" width="130" height="52" rx="9" fill="#fff" stroke="#cfe3df"/><text x="${x+65}" y="243" font-size="12.5" font-weight="600" text-anchor="middle" fill="#0f5d57">${c}</text>`;}).join("");
+
+$("repotree").innerHTML=PLEXUS.repoTree.join("\n");
+$("branching").innerHTML=PLEXUS.branching.map((b,i)=>`<li><span class="s">${i+1}</span><span>${b}</span></li>`).join("");
+$("envs").innerHTML=PLEXUS.envs.map(r=>`<tr><td><code>${r[0].replace(/<\/?code>/g,"")}</code></td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join("");
+$("releases").innerHTML=PLEXUS.releases.map(r=>`<span class="chip">${r}</span>`).join("");
+$("storeflow").innerHTML=PLEXUS.storeflow.map((s,i)=>`<li><span class="s">${i+1}</span><span>${s}</span></li>`).join("");
+
+$("ondisknote").innerHTML=PLEXUS.onDiskNote;
+$("ondisktree").innerHTML=PLEXUS.onDiskTree.join("\n");
+$("repoInventory").innerHTML=[
+  `<span class="chip">branch · ${esc(PLEXUS.inventory.repository.branch)}</span>`,
+  `<span class="chip">commit · ${esc(PLEXUS.inventory.repository.commit)}</span>`,
+  `<span class="chip">working changes · ${PLEXUS.inventory.repository.workingTreeChanges}</span>`,
+  ...PLEXUS.inventory.topLevel.map(item=>`<span class="chip">${esc(item.name)} · ${item.count}</span>`),
+].join("");
+
+$("docsSummary").textContent=`${PLEXUS.inventory.repository.markdownFiles} files · checked ${PLEXUS.inventory.generated}`;
+$("docsbox").innerHTML=PLEXUS.inventory.documents.map((group,index)=>`<details class="inventory-group" ${index<2?"open":""}><summary><span>${esc(group.group)}</span><span class="p">${group.items.length} files</span></summary>${group.items.map(document=>`<a class="docrow" href="${repoHref(document.file)}"><span class="dot-s d-${document.file.startsWith(".agents/")?"draft":"done"}"></span>${esc(document.title)}<span class="p">${esc(document.file)}</span></a>`).join("")}</details>`).join("");
+
+const routeGroups=[{label:"Page routes",items:PLEXUS.inventory.routes.pages},{label:"Route Handlers",items:PLEXUS.inventory.routes.handlers}];
+$("routesSummary").textContent=`${PLEXUS.inventory.repository.pageRoutes} pages · ${PLEXUS.inventory.repository.routeHandlers} handlers`;
+$("routeStats").innerHTML=[
+  ["Project files",PLEXUS.inventory.repository.projectFiles],
+  ["Page routes",PLEXUS.inventory.repository.pageRoutes],
+  ["Route Handlers",PLEXUS.inventory.repository.routeHandlers],
+  ["DB migrations",PLEXUS.inventory.repository.migrations],
+].map(([key,value])=>`<div class="stat"><div class="k">${key}</div><div class="v">${value}</div></div>`).join("");
+$("routesbox").innerHTML=routeGroups.map(group=>`<details class="inventory-group" open><summary><span>${group.label}</span><span>${group.items.length}</span></summary>${group.items.map(route=>`<div class="route-row"><a href="${repoHref(route.file)}">${esc(route.route)}</a><div class="route-meta">${route.methods?.length?`<b>${route.methods.join(" · ")}</b>`:""}${esc(route.access)}<br><span class="p">${esc(route.file)}</span></div></div>`).join("")}</details>`).join("");
+
+$("healthSummary").textContent=PLEXUS.health.checked;
+$("healthLead").textContent=PLEXUS.health.summary;
+$("healthbox").innerHTML=PLEXUS.health.results.map(result=>`<div class="health-row"><span class="health-state h-${result.state}">${result.state}</span><span class="health-name">${esc(result.name)}</span><span class="health-evidence">${esc(result.evidence)}</span></div>`).join("");
+
+$("principles-list").innerHTML=PLEXUS.principles.map(p=>`<div class="pr"><div class="pn">${p[0]}</div><div class="pt"><b>${p[1]}</b>${p[2]}</div></div>`).join("");
+$("onelinetest").innerHTML=PLEXUS.test;
+
+$("nextbox").innerHTML=PLEXUS.next.map(n=>`<div class="step p${n.p}"><div class="rank">${n.p===1?"→":"·"}</div><div style="flex:1"><div style="display:flex;align-items:baseline"><span class="st">${n.t}</span><span class="sw">${n.w}</span></div><div class="sd">${n.d}</div></div></div>`).join("");
+
+/* scroll-spy */
+const links=[...document.querySelectorAll('.nav a')];
+const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){links.forEach(l=>l.classList.toggle('active',l.dataset.id===e.target.id));}});},{rootMargin:"-45% 0px -50% 0px"});
+SECS.forEach(([id])=>{const el=document.getElementById(id);if(el)io.observe(el);});
+</script>
+</body>
+</html>

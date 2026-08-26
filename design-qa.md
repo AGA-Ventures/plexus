@@ -1,3 +1,100 @@
+## Homepage Capability Bento Brand-Blue Refinement — 2026-08-26
+
+- Replaced the orange PLEXA focal tile with established Filled Surface Blue
+  (`#0758c8`) and its existing hover step (`#064caf`) in response to the
+  brand-color constraint.
+- Switched the tile's title, route label, number, and arrow to white-derived
+  foregrounds. White on the resting blue measures 6.48:1; white on the hover
+  blue measures 7.89:1, both above WCAG AA for body text.
+- Preserved the reference-led unequal bento geometry, real product previews,
+  explicit readiness labels, responsive stacking, and the single interactive
+  route to the maintained 12-module map.
+
+## Homepage Capability Bento Reference Match — 2026-08-26
+
+**Source Visual Truth**
+
+- User-supplied warm three-column product-feature bento:
+  `/Users/chishiongtan/Desktop/Screenshot 2026-08-26 at 4.38.07 AM.png`.
+- Source raster: 1130 × 728 pixels. The binding traits are the warm cream
+  surface, unequal card heights, visual-first feature cards, three vertical
+  columns, and one saturated orange action tile.
+- Scope is the homepage capability grid only; the source's unrelated product
+  names, trial offer, logos, avatars, metrics, and claims are not Plexus
+  content and were not reproduced.
+
+**Implementation Evidence**
+
+- Route: `http://localhost:3000/?lang=en`.
+- Source-sized implementation crop:
+  `.impeccable/review/capability-bento-desktop.png`.
+- Combined reference/implementation comparison:
+  `.impeccable/review/capability-bento-comparison.png`.
+- User-width evidence: `.impeccable/review/user-1327.png` at 1327 × 964 CSS
+  pixels.
+- Mobile evidence: `.impeccable/review/capability-bento-mobile.png` at
+  390 × 844 CSS pixels.
+- The desktop implementation was rendered at a 1200 × 900 CSS viewport with
+  device pixel ratio 1. Its 1136 × 732 capability grid was cropped from the
+  viewport and normalized to the source's 1130 × 728 raster before the
+  side-by-side comparison.
+- State: English public homepage, default interaction state, all preview images
+  loaded, no hover or focus held.
+
+**Comparison History**
+
+- Iteration 1 reproduced the reference's material, three-column rhythm, mixed
+  proportions, image-led content, and orange focal tile. Review identified one
+  P2 accessibility mismatch: source-like white microcopy on bright orange did
+  not meet the production contrast floor.
+- Iteration 2 retained the orange focal surface and changed its number, arrow,
+  title, and action to Plexus Midnight ink. The post-fix combined comparison
+  preserves the reference hierarchy with readable production contrast.
+
+**Required Fidelity Surfaces**
+
+- Fonts and typography: passed; the reference's blunt sans hierarchy is
+  translated through the existing Inter-based Plexus display, title, metadata,
+  and readiness styles without introducing a decorative typeface.
+- Spacing and layout rhythm: passed; the source-sized grid resolves to three
+  equal columns and 12 tracks, with the same tall/short/tall column cadence,
+  16px card radii, warm hairlines, and restrained offset shadows.
+- Colors and visual tokens: passed; mineral paper and warm cream replace the
+  prior saturated-blue dashboard field, while one orange tile carries focus.
+  Readiness colors remain semantic and the orange tile uses Midnight ink.
+- Image quality and asset fidelity: passed; six pre-existing Plexus product and
+  working-context rasters are used directly with stable Next.js image sizing.
+  No source visual was approximated with CSS drawings, emoji, custom SVG, or
+  placeholder art.
+- Copy and content: passed; Plexus module names, numbers, candid readiness
+  labels, and “Illustrative product view” qualification replace the reference's
+  unrelated trial, integration, support, and growth claims.
+
+**Primary Interactions And Responsive Checks**
+
+- The PLEXA tile is a semantic link to `/app?lang=en#capabilities` and names
+  the “See all 12 modules” action.
+- Mobile resolves to one 358px column at the 390px viewport with zero
+  horizontal overflow; longer localized titles remain inside the card frame.
+- The 1327px user viewport preserves all three columns and the source's bento
+  hierarchy.
+- Browser console contained no error-level entries during final desktop and
+  mobile capture.
+- A focused region comparison was unnecessary because the full grid comparison
+  keeps every title, readiness label, image crop, radius, and spacing boundary
+  legible at original resolution.
+
+**Findings**
+
+- No actionable P0, P1, or P2 visual, responsive, accessibility, interaction,
+  image-fidelity, or copy issue remains in the redesigned capability section.
+
+**Final Result**
+
+- final result: passed
+
+---
+
 **Mutual Vendor Meeting Approval Verification — 2026-07-30**
 
 **Source Visual Truth**
@@ -65,6 +162,123 @@
   ("migrated"); it was replaced with plain two-Vendor approval guidance.
 - The post-fix combined comparison preserves the existing card hierarchy and
   adds the requested approval evidence with no remaining P0/P1/P2 difference.
+
+**Final Result**
+
+- final result: passed
+
+---
+
+## Governed Checkpoint Network Rail Motion — 2026-08-26
+
+**Source Visual Truth**
+
+- User-supplied 1586 × 992 Midnight network field, retained durably as
+  `public/login-governed-network.webp` with its prompt and provenance sidecar.
+- The existing shipping WebP is the same composition; decoded pixel comparison
+  measured a 0.76/255 mean absolute difference from delivery encoding.
+
+**Implementation Evidence**
+
+- Route: `http://localhost:3000/en/login?next=%2Fen%2Fsuperadmin`.
+- The full-bleed background is served directly from
+  `/login-governed-network.webp`; the supplied electric-blue X is composited
+  above it with feathered edges.
+- Two transient rail-only frames sampled 2.3 seconds apart measured a 2.13/255
+  mean absolute pixel difference, confirming visible luminance change without
+  layout movement. No full-page capture was persisted because browser autofill
+  contained private account data.
+
+**Required Fidelity Surfaces**
+
+- Asset fidelity: passed; the selected network field fills the complete rail
+  and retains the exact Plexus and tenant identity layers.
+- Motion: passed; one 7.6-second irregular opacity cycle brightens the real
+  raster nodes and lines without generated particles or layout animation.
+- Reduced motion: passed; `prefers-reduced-motion: reduce` removes the loop and
+  holds a quiet static luminance.
+- Performance: passed; both visual layers reuse one already-compressed WebP,
+  load eagerly above the fold, and animate opacity only.
+- Responsive layout: passed; the network remains decorative on the stacked
+  rail and the live desktop viewport reports zero horizontal overflow.
+
+**Findings**
+
+- The first pass muted the network too heavily and exposed a rectangular edge
+  from the older X artwork. The correction reduced the dark overlay, increased
+  network luminance, feathered the X field, and served the exact WebP source.
+- No actionable P0, P1, or P2 visual, responsive, accessibility, or motion
+  issue remains.
+
+**Final Result**
+
+- final result: passed
+
+---
+
+## Governed Checkpoint Login Reference Match — 2026-08-26
+
+**Source Visual Truth**
+
+- Binding user reference:
+  `.impeccable/mocks/decision/login-governed-checkpoint-light.png`.
+- Source dimensions: 1586 × 992 pixels.
+- The reference defines the fixed dark identity rail, bright three-stage
+  canvas, Identity-active state, unboxed credential form, and support
+  destination.
+
+**Implementation Evidence**
+
+- Route: `http://localhost:3000/en/login?next=%2Fen%2Fsuperadmin`.
+- Privacy-safe live capture:
+  `.impeccable/review/login-governed-checkpoint-implementation.png`.
+- Combined reference/implementation input:
+  `.impeccable/review/login-governed-checkpoint-comparison.png`.
+- Both comparison panels are 1280 × 720. The source is proportionally scaled
+  to the in-app browser width and top-cropped; the implementation panel is the
+  live 1280 × 720 browser viewport. The production desktop geometry retains
+  the source's exact 326px rail, 42px canvas inset, 112px stage header, and
+  44% / 34% / 22% stage split at the binding 1586px width.
+
+**Comparison History**
+
+- Iteration 1 exposed the prior dark route-line concept, which did not match
+  the supplied light three-stage reference.
+- Iteration 2 established the reference grid and revealed dark browser-autofill
+  fields plus an under-emphasized platform action.
+- Iteration 3 corrected autofill to the bright field surface, aligned the
+  wordmark and form rhythm, and matched the active-stage/button blue to the
+  supplied reference.
+
+**Required Fidelity Surfaces**
+
+- Layout: passed; the outer frame, 326px rail, header rule, stage columns,
+  first-lane form, and intentionally blank later lanes follow the source.
+- Typography: passed; headline, form title, workhorse body, field labels, and
+  monospaced uppercase stage metadata follow the reference hierarchy.
+- Colors and surfaces: passed; Midnight identity, cool bright canvas,
+  one-pixel stage rules, near-white inputs, and `#0668e8` active state match the
+  approved direction.
+- Asset fidelity: passed; the existing electric-blue Plexus X raster and exact
+  Plexus wordmark are used directly, with tenant branding preserved.
+- Interaction and accessibility: passed; labels remain programmatic, password
+  reveal toggles correctly, recovery and support remain actionable, all mobile
+  secondary controls retain the 44px floor, and no horizontal-scrolling
+  dependency was introduced.
+
+**Primary Interactions Tested**
+
+- Password reveal changed from **Show password** to **Hide password** and back.
+- **Forgot password?** remains localized and points to `/en/forgot-password`.
+- **Open support options** points to `/contact?lang=en`.
+- Browser console contained no error-level entries during the final state.
+- TypeScript, focused ESLint, tenant-branding unit tests, documentation checks,
+  and whitespace checks passed.
+
+**Findings**
+
+- No actionable P0, P1, or P2 visual, responsive, accessibility, or
+  interaction issue remains.
 
 **Final Result**
 

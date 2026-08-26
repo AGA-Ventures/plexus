@@ -34,6 +34,7 @@ const requiredDocuments = [
   "docs/development/workflow.md",
   "docs/development/codebase-map.md",
   "docs/development/environment-variables.md",
+  "docs/development/plexus-command-center.html",
   "docs/project-management/operating-model.md",
   "docs/project-management/roadmap.md",
   "docs/project-management/decision-log.md",

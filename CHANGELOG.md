@@ -8,6 +8,120 @@ reviewed together.
 
 ### 2026-08-26
 
+- Recast the homepage capability showcase as a warm editorial bento inspired
+  by the supplied reference, using real Plexus product previews, mixed card
+  proportions, explicit readiness labels, and one brand-blue PLEXA route to
+  the maintained 12-module map.
+- Animated the homepage's online-to-on-ground connector as an in-view handoff
+  signal with a responsive destination state, offscreen pausing, and a static
+  reduced-motion fallback.
+- Expanded the localized public About page with Plexus's evidence-bound vision,
+  mission, human-governed operating principles, protected-scope commitment,
+  Asia starting focus, and candid product promise.
+- Rewrote the localized public pricing page around three scoped engagement
+  models and explicit proposal inputs, replacing MVP and package shorthand
+  without inventing rates or confirmed commercial terms.
+- Added four original, clearly illustrative editorial images to the public
+  event cards, with responsive Next.js image delivery, stable crops, accessible
+  linked previews, and recoverable generation prompts.
+- Reworked the homepage event layer as one continuous online-to-on-ground
+  lifecycle rail, and replaced oversized capability icons with selected,
+  clearly labelled Plexus product-preview imagery.
+- Added an Apple-inspired homepage capability showcase with eight highlighted
+  product modules, explicit Live/Mixed/Adapter/Concept readiness, and a direct
+  route to the maintained 12-module product map in all public locales.
+- Added a redesigned homepage events layer that carries pre-event preparation,
+  on-site matchmaking, delegation coordination, and accountable follow-up into
+  one responsive governed-record composition across all three public locales.
+- Added a development-only TChina questionnaire route at
+  `/[locale]/tchina-expo/preview` for interactive local review. It uses clearly
+  marked placeholder event details, simulates completion without saving data,
+  and remains unavailable in production.
+- Refined the TChina questionnaire briefing into a capped 300–380px rail from
+  intermediate widths upward, with clearer event metadata, tighter mobile
+  grouping, and zero horizontal overflow so the active form remains the visual
+  priority.
+- Added Investment promotion and Government & bilateral as first-class public
+  audiences, plus localized `/events` and seed-driven `/events/[slug]` routes
+  backed by four explicitly illustrative pre-launch
+  event records. The homepage, shared navigation, footer, workflow, business,
+  pricing, and about copy now expose the four-audience information architecture;
+  `/for-investment` also renders three localized illustrative project examples.
+  All new public copy is available in English, Bahasa Malaysia, and Traditional
+  Chinese without changing the existing visual system or claiming confirmed
+  programs, incentives, partners, or outcomes.
+- Added the TChina Expo 2026 registration slice: one noindex public
+  questionnaire at `/[locale]/tchina-expo` for English and Simplified Chinese,
+  distinct Business Delegate and General Visitor paths, step validation,
+  review/edit, and a pending-not-confirmed receipt. Added the strict 64 KiB
+  server-bound submission API, honeypot and duplicate privacy, a Plexus-owned
+  singleton/event-registration schema with RLS and immutable-answer safeguards,
+  and a Superadmin console tab for exact event setup, publication, public-link
+  copy, search/detail, rejection, and confirmed deletion. The hosted migration
+  is applied with registration closed; normal Admins and tenants have no TChina
+  navigation or database access. A follow-up migration adds covering indexes for
+  future linked Delegate/Auth records. Approval and all invitation/setup email
+  actions remain deliberately unavailable while email provisioning is deferred.
+
+- Hardened the shared platform and tenant sign-in experience across English,
+  Simplified Chinese, Traditional Chinese, and Thai. The misleading inactive
+  “Remember me” control is removed; Server Actions now return stable safe error
+  codes instead of authorization-binding detail; visible and assistive recovery
+  copy is localized; unavailable tenant links receive a privacy-safe notice;
+  support always has an actionable destination; password-reset confirmation is
+  inline and one-time; browser autofill preserves the bright credential
+  surface; and the compact mobile layout raises secondary controls to the 44px
+  accessibility target floor.
+- Redesigned the shared platform and tenant login as the user-approved
+  Governed Checkpoint: a fixed Midnight Plexus or tenant identity rail now
+  opens into a bright three-stage canvas for Identity, Workspace, and
+  Responsible next step. The credential form occupies the active Identity lane
+  without a floating card, support remains explicit, tenant branding and auth
+  behavior are unchanged, and mobile preserves the sequence as a task-first
+  stack without horizontal overflow. The identity rail now uses the supplied
+  full-bleed network image with a restrained opacity-only twinkle that becomes
+  static for reduced-motion preferences.
+- Upgraded the global Vercel CLI from `59.3.0` to `59.5.0`, moved Next.js and
+  its aligned ESLint config to `16.3.3`, updated the `shadcn` toolchain, and
+  refreshed transitive dependencies. Both the full and production-only npm
+  audits now report zero vulnerabilities; the type-only vulnerable
+  `@vercel/config` dependency was removed without changing the `vercel.ts`
+  deployment contract.
+- Fixed Vendor Realtime subscriptions that could reach Postgres with the
+  anonymous JWT and emit `P0001 invalid column for filter match_id`. The client
+  now resolves the authenticated session and explicitly authorizes Realtime
+  before registering tenant-scoped Postgres Changes filters, with periodic and
+  focus-based refresh remaining as the recovery path.
+- Clarified the product actor model across the vision, role guide,
+  architecture, glossary, and Development Command Center. The current
+  technical `vendor` authorization role now maps explicitly to **Business
+  Participant**, **Admin / Organizer** coordinates those participants and
+  **Local Service Partners**, and service partners remain Admin-managed
+  operational relationships until assignment-scoped login permissions are
+  deliberately designed and verified.
+- Consolidated navigation into two maintained systems: one shared public
+  header now serves the homepage, product preview, pre-event, marketing, and
+  both legal route families, while one configurable workspace navigation shell
+  now serves Admin, Vendor/business, and Superadmin desktop and mobile views.
+- Added the Plexus Development Command Center to `docs/development/` as the
+  required visual review entry point for every meaningful change. It now
+  inventories the whole visible worktree, all 90 Markdown files, all 56 page
+  routes and 19 Route Handlers, and evidence-backed system health alongside the
+  canonical product, architecture, delivery, and production-readiness view.
+  `npm run docs:command-center` regenerates file and route data, documentation
+  checks reject stale inventory, and the route contract now covers the five
+  previously omitted resource and compliance handlers. The database inventory,
+  project status, and roadmap now reflect 46 committed migrations, 28
+  RLS-enabled public tables in source, the current READY Vercel production
+  deployment, the verified Git link, and the remaining live Supabase and
+  browser-evidence gaps. The README, deployment guide, and production test
+  catalog now describe the current two-party meeting-time approval flow, shared
+  blue pre-event navigation, and verified Git deployment posture instead of
+  superseded automatic-meeting and blocked-integration behavior.
+  Root contributor guidance now uses the command-center refresh plus the
+  combined release/browser health command as the standard handoff sequence.
+  Health evidence records the local RLS suite as unavailable because its
+  repository CLI cannot connect to an active local PostgreSQL stack.
 - Replaced the homepage's generic pre-event hero photograph with a purpose-built
   governed-collaboration scene. The new localized visual keeps the program
   operator, business owner, shared laptop, human-review status and four-stage

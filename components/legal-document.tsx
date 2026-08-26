@@ -3,14 +3,19 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import {
-  isChineseLocale,
+  SiteHeader,
+  type SiteHeaderLocaleOption,
+} from "@/components/site-header"
+import { Button } from "@/components/ui/button"
+import {
   isLocaleParam,
   localeLabels,
+  localeNames,
   locales,
   normalizeLocale,
   type Locale,
 } from "@/lib/i18n"
-import { Button } from "@/components/ui/button"
+import { getPublicContent, normalizePublicLocale } from "@/lib/public-site"
 
 export type LegalPageKind = "privacy" | "pdpa" | "cookies" | "terms"
 
@@ -416,6 +421,14 @@ export async function LegalDocument({
   const locale = normalizeLocale(localeParam)
   const copy = getLegalCopy(locale)
   const page = copy[kind]
+  const publicLocale = normalizePublicLocale(locale)
+  const publicContent = getPublicContent(publicLocale)
+  const localeOptions: SiteHeaderLocaleOption[] = locales.map((item) => ({
+    label: localeNames[item],
+    shortLabel: localeLabels[item],
+    value: item,
+    href: `/${item}/${kind}`,
+  }))
   const legalLinks = [
     ["privacy", copy.privacy.label],
     ["pdpa", copy.pdpa.label],
@@ -425,54 +438,14 @@ export async function LegalDocument({
 
   return (
     <main className="min-h-svh bg-white text-slate-950 dark:bg-[#08090a] dark:text-white">
-      <header className="border-b border-slate-200 bg-white/92 dark:border-white/10 dark:bg-[#0d0f10]/92">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8">
-          <Link href={`/?lang=${locale}`} className="flex items-center gap-3">
-            <span className="grid size-10 place-items-center rounded-md bg-[#052b2d] text-sm font-semibold text-[#f4c45b]">
-              PX
-            </span>
-            <span className="flex flex-col leading-tight">
-              <span className="text-sm font-semibold">Plexus Connect</span>
-              <span className="text-xs text-slate-500 dark:text-slate-400">
-                {locale === "th"
-                  ? "ศูนย์กฎหมายงาน"
-                  : locale === "zh-Hant"
-                    ? "活動法律中心"
-                    : locale === "zh"
-                      ? "活动法律中心"
-                      : "Event legal centre"}
-              </span>
-            </span>
-          </Link>
-          <div className="flex items-center gap-2">
-            {locales.map((item) => (
-              <Button
-                key={item}
-                asChild
-                size="sm"
-                variant={locale === item ? "secondary" : "outline"}
-              >
-                <Link href={`/${item}/${kind}`}>{localeLabels[item]}</Link>
-              </Button>
-            ))}
-            <Button
-              asChild
-              size="sm"
-              className="bg-[#00859a] hover:bg-[#007489]"
-            >
-              <Link href={`/${locale}/login`}>
-                {locale === "th"
-                  ? "เข้าสู่ระบบ"
-                  : isChineseLocale(locale)
-                    ? locale === "zh-Hant"
-                      ? "登入"
-                      : "登录"
-                    : "Login"}
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+      <SiteHeader
+        content={publicContent}
+        locale={locale}
+        currentPath={`/${locale}/${kind}`}
+        homeHref={`/?lang=${publicLocale}`}
+        loginHref={`/${locale}/login`}
+        localeOptions={localeOptions}
+      />
 
       <section className="border-b border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-[#0d1212]">
         <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6 lg:px-8">

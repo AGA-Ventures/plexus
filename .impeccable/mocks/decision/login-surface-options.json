@@ -1,0 +1,58 @@
+{
+  "title": "Choose the Plexus sign-in composition",
+  "question": "Each direction keeps the same secure workflow and Plexus identity. Choose the spatial idea that should lead the redesign.",
+  "options": [
+    {
+      "id": "invitation-slate",
+      "label": "The Access Invitation",
+      "kicker": "THE ROLL",
+      "lineage": "formal cross-border programme invitations and arrival credentials",
+      "thesis": "Sign-in becomes a precise invitation into a governed business workspace, not a generic account card.",
+      "palette": ["#071326", "#0758c8", "#25d0ff", "#f7f7f2"],
+      "materials": [
+        "midnight agenda slate",
+        "mineral credential sheet",
+        "cyan registration marks"
+      ],
+      "viewport": "A full-height midnight slate carries the Plexus identity and one accountable route; a mineral credential sheet docks into its lower-right edge with the sign-in task already in focus.",
+      "risk": "The invitation metaphor must remain operational and avoid feeling ceremonial or exclusive.",
+      "comp": ".impeccable/mocks/decision/login-invitation-slate.png"
+    },
+    {
+      "id": "checkpoint-gate",
+      "label": "The Governed Checkpoint",
+      "lineage": "border-control wayfinding and trusted access checkpoints",
+      "thesis": "The page makes identity verification feel like a calm, legible threshold between public space and protected work.",
+      "palette": ["#071326", "#102443", "#0a84ff", "#80e8ff"],
+      "materials": [
+        "midnight enamel",
+        "illuminated route line",
+        "flat access console"
+      ],
+      "viewport": "One continuous dark field is bisected by a bright route line; the form sits directly at the transfer point while workspace context and support occupy the two ends.",
+      "risk": "A literal checkpoint can feel severe unless the copy and spacing keep it calm and welcoming.",
+      "comp": ".impeccable/mocks/decision/login-checkpoint-gate.png"
+    },
+    {
+      "id": "control-manifest",
+      "label": "The Workspace Manifest",
+      "lineage": "programme control rooms and departure manifests",
+      "thesis": "Sign-in reads as the first concise line in an accountable operating sequence.",
+      "palette": ["#eef4f8", "#071326", "#0758c8", "#25d0ff"],
+      "materials": [
+        "pale operating canvas",
+        "ruled manifest",
+        "midnight navigation bay"
+      ],
+      "viewport": "A pale manifest spans the page with three ruled stages—identity, workspace, next action—and the credential form occupies the active first stage beside a midnight brand bay.",
+      "risk": "Its density could feel more administrative than reassuring on a first login.",
+      "comp": ".impeccable/mocks/decision/login-control-manifest.png"
+    }
+  ],
+  "reroll": true,
+  "buildPath": {
+    "value": "comp",
+    "toggle": true
+  },
+  "steer": true
+}

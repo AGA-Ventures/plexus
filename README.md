@@ -29,6 +29,7 @@ Use these entry points:
 - [Database schema](docs/architecture/database-schema.md)
 - [Routes and access model](docs/architecture/routes-and-access.md)
 - [Developer setup](docs/development/setup.md)
+- [Development Command Center](docs/development/plexus-command-center.html)
 - [Development workflow](docs/development/workflow.md)
 - [Project operating model](docs/project-management/operating-model.md)
 - [Roadmap and backlog](docs/project-management/roadmap.md)
@@ -59,23 +60,28 @@ locales are `en`, `zh`, `zh-Hant`, and `th`; `cn` aliases to `zh`.
 ## Secure Zoom and Lark meeting links
 
 Meeting creation is allowed only after the Delegation Vendor and Partner Vendor
-have each accepted the match. The second acceptance automatically creates the
-configured Zoom or Lark meeting, and Plexus shares only an expiring
-`NEXT_PUBLIC_APP_URL/m/<opaque-slug>` link. The raw provider join URL remains in
-a server-only, RLS-locked table. A provider failure preserves the agreement and
-raises a sanitized critical incident for Superadmin retry.
+have each accepted the match. The second acceptance moves the pair to **Pending
+meeting** without creating a provider session. One Vendor proposes an
+Admin-published date and time, the counterpart approves that exact proposal,
+and the database creates one shared meeting only after both approval actors and
+timestamps exist. The owning Admin then confirms Zoom or Lark; Plexus shares
+only an expiring `NEXT_PUBLIC_APP_URL/m/<opaque-slug>` link. The raw provider
+join URL remains in a server-only, RLS-locked table. A provider failure
+preserves the agreement and raises a sanitized critical incident for
+Superadmin retry.
 
 Release setup:
 
 1. Add the Supabase, Zoom, Lark, and `NEXT_PUBLIC_APP_URL` variables from
    `.env.example` to the appropriate Vercel environments.
-2. Apply `supabase/migrations/20260727182004_secure_mutual_meeting_links.sql`
-   and `20260727191200_automatic_meeting_critical_incidents.sql` before
-   deploying the dependent application code.
+2. Review `npm run supabase:plan` and apply every pending migration before
+   deploying dependent application code, including the secure-link, creation
+   job, tenant-availability, and mutual meeting-approval migrations.
 3. While signed in as a Superadmin, visit `/api/lark/login` once and approve
    the platform Lark host authorization.
-4. Accept from each Vendor to trigger the default provider automatically, or
-   call `POST /api/meetings` with an accepted match for controlled recovery:
+4. After both Vendors accept and approve the meeting time, the owning operator
+   confirms the provider through the protected workflow. `POST /api/meetings`
+   remains the controlled provider-creation boundary:
 
    ```json
    {
@@ -92,11 +98,13 @@ provider URL or a Zoom host URL.
 ## Required verification
 
 ```bash
-npm run docs:check
-npm run verify:release
-npm run test:e2e
+npm run docs:command-center
+npm run health:check
 ```
 
-The release gate verifies documentation links, approved deployment targets,
-production dependencies, lint, TypeScript, unit tests, and the Next.js
-production build.
+The command-center refresh inventories the current Markdown and App Router
+surface. The health gate then verifies documentation freshness, approved
+deployment targets, production dependencies, lint, TypeScript, unit tests, the
+Next.js production build, and desktop/mobile Playwright coverage. Run
+`npm run test:rls` separately whenever the Supabase CLI and local database are
+available.

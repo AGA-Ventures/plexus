@@ -42,11 +42,15 @@ export async function getLoginBranding(requestedSlug?: string) {
   const requestHeaders = await headers()
   const host =
     requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host")
-  const slug =
-    tenantSlugFromHostname(host) ?? normalizeTenantSlug(requestedSlug)
+  const hostSlug = tenantSlugFromHostname(host)
+  const slug = hostSlug ?? normalizeTenantSlug(requestedSlug)
+  const tenantRequested = Boolean(hostSlug || requestedSlug?.trim())
+  const platformBranding = tenantRequested
+    ? { ...platformLoginBranding, tenantUnavailable: true }
+    : platformLoginBranding
 
   if (!slug || !hasSupabaseAdminSecret()) {
-    return platformLoginBranding
+    return platformBranding
   }
 
   try {
@@ -58,11 +62,11 @@ export async function getLoginBranding(requestedSlug?: string) {
       .maybeSingle()
 
     if (result.error || !result.data) {
-      return platformLoginBranding
+      return platformBranding
     }
 
     return getTenantLoginBranding(result.data as TenantBrandingRow)
   } catch {
-    return platformLoginBranding
+    return platformBranding
   }
 }

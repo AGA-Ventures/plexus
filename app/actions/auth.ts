@@ -10,6 +10,11 @@ import {
   getRolePortalPath,
 } from "@/lib/auth"
 import {
+  getLoginProviderErrorCode,
+  getLoginValidationErrorCode,
+  type LoginErrorCode,
+} from "@/lib/login-errors"
+import {
   getAuthenticatedIdentity,
   validateAuthenticatedUser,
 } from "@/lib/authorization"
@@ -29,7 +34,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
 export type LoginActionState = {
-  error?: string
+  errorCode?: LoginErrorCode
   redirectTo?: string
 }
 
@@ -47,20 +52,6 @@ export type UpdateOwnProfileActionResult = {
   ok: boolean
   displayName?: string
   error?: string
-}
-
-function formatLoginError(message: string) {
-  const normalized = message.toLowerCase()
-
-  if (normalized.includes("invalid login credentials")) {
-    return "Email or password is incorrect. Check your details and try again."
-  }
-
-  if (normalized.includes("email not confirmed")) {
-    return "This account is not ready to sign in. Contact your workspace administrator."
-  }
-
-  return "We could not sign you in. Check your details and try again."
 }
 
 const loginSchema = z.object({
@@ -119,7 +110,7 @@ export async function loginAction(
 
   if (!parsed.success) {
     return {
-      error: parsed.error.issues[0]?.message ?? "Check your login details.",
+      errorCode: getLoginValidationErrorCode(parsed.error.issues[0]?.path[0]),
     }
   }
 
@@ -130,7 +121,7 @@ export async function loginAction(
   })
 
   if (error) {
-    return { error: formatLoginError(error.message) }
+    return { errorCode: getLoginProviderErrorCode(error.message) }
   }
 
   const metadata = getAppMetadata(data.user)
@@ -138,14 +129,14 @@ export async function loginAction(
 
   if (bindingError) {
     await supabase.auth.signOut()
-    return { error: bindingError }
+    return { errorCode: "account_access_unavailable" }
   }
 
   const authorization = await validateAuthenticatedUser(supabase, data.user)
 
   if (!authorization.ok) {
     await supabase.auth.signOut()
-    return { error: authorization.error }
+    return { errorCode: "account_access_unavailable" }
   }
 
   if (parsed.data.tenantSlug) {
@@ -166,8 +157,7 @@ export async function loginAction(
     ) {
       await supabase.auth.signOut()
       return {
-        error:
-          "This account does not belong to this workspace. Use your organization’s sign-in page.",
+        errorCode: "wrong_workspace",
       }
     }
   }

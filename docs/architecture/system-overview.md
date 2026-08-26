@@ -2,7 +2,7 @@
 
 **Owner:** Engineering
 **Review trigger:** Module boundary, runtime, provider, or data-flow change
-**Last reviewed:** 2026-07-29
+**Last reviewed:** 2026-08-26
 
 ## Runtime architecture
 
@@ -39,6 +39,27 @@ flowchart LR
 5. `SUPABASE_SECRET_KEY` is server-only and used only for privileged account
    administration.
 
+## Product actors and authorization roles
+
+Product language separates the participating company from the local providers
+that support its pre-event and event operations. This does not silently expand
+the current authorization model.
+
+| Product actor         | Current authorization mapping | Scope                                                                                                 |
+| --------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Superadmin            | `superadmin`                  | Governs the platform and standards across all tenants                                                 |
+| Admin / Organizer     | `admin`                       | Operates one branded tenant, manages Business Participants, and coordinates Local Service Partners    |
+| Business Participant  | `vendor`                      | Represents one participating company and accesses only its own and explicitly shared workflow records |
+| Local Service Partner | No independent role today     | Admin-managed interpretation, travel, transportation, venue, accommodation, or logistics relationship |
+
+A Local Service Partner must remain a managed record unless it needs to log in,
+accept an assignment, submit a quote, update delivery status, or exchange a
+document. Any future authenticated service-partner role requires an explicit
+assignment boundary, its own route and data permissions, RLS coverage, tests,
+audit behavior, and module-contract update. It must not reuse the Business
+Participant role merely because both actors may be called “vendors” outside
+the product.
+
 ## Module map
 
 | Module                   | Routes/UI                                                                                                               | Server boundary                                                          | Data                                                                                    |
@@ -50,6 +71,7 @@ flowchart LR
 | Meetings/deals           | Portals, `/api/meetings`, `/m/*`                                                                                        | Meeting automation and adapters                                          | Matches, creation jobs, meetings, protected links, tokens                               |
 | Signing/MOU              | Admin/Vendor Signing, `/api/admin/deals/*`, `/api/mou-documents/*`                                                      | Plexus actions and protected document handlers                           | Deals, private MOU metadata, Storage, audit events                                      |
 | Event operations         | Admin/Vendor portals                                                                                                    | Plexus actions                                                           | Itineraries, site visits, liaison                                                       |
+| TChina Expo registration | `/[locale]/tchina-expo`, `/[locale]/superadmin`, `/api/tchina-expo/registrations`                                       | Strict public intake and Plexus Superadmin-only setup/review actions     | Plexus singleton event configuration and one-person registration records                |
 | Communications/resources | Admin APIs, portals, Superadmin Email sending, Resend webhook and reminder route                                        | Protected actions/handlers, Resend adapter, Supabase Auth email boundary | Announcements, notifications, resources, delivery ledger, provider events, Storage      |
 | Compliance               | Protected compliance routes                                                                                             | Compliance adapter                                                       | Provider responses, no secret in client                                                 |
 | Governance               | Superadmin console                                                                                                      | Management actions                                                       | Settings, audit events, and read-only cross-tenant email operations                     |
@@ -98,6 +120,8 @@ Every new module must document and implement:
 | Documentation | Which product, schema, runbook, and changelog entries change?         |
 
 Use [Feature plan](../templates/feature-plan.md) to capture the contract.
+The implemented TChina slice is recorded in
+[TChina Expo registration](../project-management/tchina-expo-registration.md).
 The secure provider workflow is recorded in
 [Secure meeting links](../project-management/secure-meeting-links.md).
 The second Vendor acceptance claims one service-only creation job. Provider

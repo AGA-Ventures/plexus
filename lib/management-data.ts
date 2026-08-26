@@ -8,6 +8,7 @@ import type { EmailDelivery } from "@/lib/email-delivery"
 import { getEmailProviderReadiness } from "@/lib/email-delivery-service"
 import type { Locale } from "@/lib/i18n"
 import { hasSupabaseAdminSecret } from "@/lib/supabase/admin"
+import type { TChinaEvent, TChinaRegistration } from "@/lib/tchina-expo"
 import type { VendorApplication } from "@/lib/vendor-applications"
 
 export type TenantStatus = "active" | "suspended" | "archived"
@@ -198,6 +199,8 @@ export async function getSuperadminManagementData(locale: Locale) {
     settingsResult,
     meetingIncidentsResult,
     emailDeliveriesResult,
+    tchinaEventResult,
+    tchinaRegistrationsResult,
   ] = await Promise.all([
     supabase
       .from("admin_tenants")
@@ -253,7 +256,20 @@ export async function getSuperadminManagementData(locale: Locale) {
       .select("*")
       .order("created_at", { ascending: false })
       .limit(500),
+    supabase
+      .from("tchina_events")
+      .select("*")
+      .eq("singleton_key", "plexus")
+      .maybeSingle(),
+    supabase
+      .from("event_registrations")
+      .select("*")
+      .order("created_at", { ascending: false }),
   ])
+
+  if (tchinaEventResult.error) {
+    throw new Error(`Load TChina event: ${tchinaEventResult.error.message}`)
+  }
 
   return {
     session: authorization.identity,
@@ -311,6 +327,12 @@ export async function getSuperadminManagementData(locale: Locale) {
       "Load email deliveries"
     ),
     emailProviderReadiness: getEmailProviderReadiness(),
+    tchinaEvent: (tchinaEventResult.data as TChinaEvent | null) ?? null,
+    tchinaRegistrations: rowsOrThrow<TChinaRegistration>(
+      tchinaRegistrationsResult.data,
+      tchinaRegistrationsResult.error,
+      "Load TChina registrations"
+    ),
     operations: {
       matches: rowsOrThrow<TenantOperationalCount>(
         matchesResult.data,

@@ -2,7 +2,7 @@
 
 **Owner:** Engineering
 **Review trigger:** `package.json` script or release-command change
-**Last reviewed:** 2026-07-27
+**Last reviewed:** 2026-08-26
 
 ## Orientation and setup
 
@@ -26,7 +26,9 @@
 
 | Command                  | Purpose                                     |
 | ------------------------ | ------------------------------------------- |
-| `npm run docs:check`     | Validate required docs, headings, and links |
+| `npm run docs:check`     | Validate docs, links, and command-center inventory |
+| `npm run docs:command-center` | Refresh all Markdown and App Router route inventory |
+| `npm run health:check`   | Run release verification and browser E2E checks |
 | `npm run lint`           | ESLint                                      |
 | `npm run typecheck`      | TypeScript without emitting                 |
 | `npm run test:unit`      | Vitest unit suite                           |

@@ -26,6 +26,35 @@ export type VendorRealtimeTarget = {
   filter: string
 }
 
+type VendorRealtimeAuthClient = {
+  auth: {
+    getSession(): Promise<{
+      data: { session: { access_token: string } | null }
+      error: unknown
+    }>
+  }
+  realtime: {
+    setAuth(token: string): Promise<void>
+  }
+}
+
+export async function authorizeVendorRealtime(
+  client: VendorRealtimeAuthClient
+) {
+  try {
+    const { data, error } = await client.auth.getSession()
+
+    if (error || !data.session?.access_token) {
+      return false
+    }
+
+    await client.realtime.setAuth(data.session.access_token)
+    return true
+  } catch {
+    return false
+  }
+}
+
 export function getVendorDashboardMetrics({
   company,
   matches,

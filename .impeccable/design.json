@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-26T01:34:10+08:00",
+  "generatedAt": "2026-08-26T15:19:00+08:00",
   "title": "Design System: Plexus",
   "extensions": {
     "colorMeta": {
@@ -77,6 +77,81 @@
           "oklch(0.70 0.06 256)",
           "oklch(0.82 0.06 256)",
           "oklch(0.95 0.06 256)"
+        ]
+      },
+      "checkpoint-ground": {
+        "role": "primary",
+        "displayName": "Checkpoint Identity Rail",
+        "canonical": "#010718",
+        "tonalRamp": [
+          "oklch(0.15 0.04 256)",
+          "oklch(0.26 0.04 256)",
+          "oklch(0.37 0.04 256)",
+          "oklch(0.48 0.04 256)",
+          "oklch(0.59 0.04 256)",
+          "oklch(0.70 0.04 256)",
+          "oklch(0.82 0.04 256)",
+          "oklch(0.95 0.04 256)"
+        ]
+      },
+      "checkpoint-console": {
+        "role": "neutral",
+        "displayName": "Checkpoint Canvas",
+        "canonical": "#f4f8fb",
+        "tonalRamp": [
+          "oklch(0.15 0.055 256)",
+          "oklch(0.26 0.055 256)",
+          "oklch(0.37 0.055 256)",
+          "oklch(0.48 0.055 256)",
+          "oklch(0.59 0.055 256)",
+          "oklch(0.70 0.055 256)",
+          "oklch(0.82 0.055 256)",
+          "oklch(0.95 0.055 256)"
+        ]
+      },
+      "checkpoint-control": {
+        "role": "neutral",
+        "displayName": "Checkpoint Control",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "oklch(0.15 0.05 256)",
+          "oklch(0.26 0.05 256)",
+          "oklch(0.37 0.05 256)",
+          "oklch(0.48 0.05 256)",
+          "oklch(0.59 0.05 256)",
+          "oklch(0.70 0.05 256)",
+          "oklch(0.82 0.05 256)",
+          "oklch(0.95 0.05 256)"
+        ]
+      },
+      "checkpoint-route": {
+        "role": "neutral",
+        "displayName": "Checkpoint Stage Rule",
+        "canonical": "#cbd6e0",
+        "tonalRamp": [
+          "oklch(0.15 0.035 200)",
+          "oklch(0.26 0.035 200)",
+          "oklch(0.37 0.035 200)",
+          "oklch(0.48 0.035 200)",
+          "oklch(0.59 0.035 200)",
+          "oklch(0.70 0.035 200)",
+          "oklch(0.82 0.035 200)",
+          "oklch(0.95 0.035 200)"
+        ]
+      },
+      "checkpoint-active": {
+        "role": "primary",
+        "displayName": "Checkpoint Active",
+        "canonical": "#0668e8",
+        "tonalRamp": [
+          "oklch(0.15 0.19 258)",
+          "oklch(0.26 0.19 258)",
+          "oklch(0.37 0.19 258)",
+          "oklch(0.48 0.19 258)",
+          "oklch(0.59 0.19 258)",
+          "oklch(0.70 0.19 258)",
+          "oklch(0.82 0.19 258)",
+          "oklch(0.95 0.19 258)"
         ]
       },
       "network-cyan": {
@@ -382,14 +457,19 @@
         "purpose": "Floating public proof cards over working photography."
       },
       {
+        "name": "capability-tile",
+        "value": "0 14px 32px rgba(82, 67, 40, 0.08)",
+        "purpose": "Quiet offset lift under warm cream cards in the homepage capability bento only."
+      },
+      {
+        "name": "plexa-route",
+        "value": "0 18px 38px rgba(7, 88, 200, 0.24)",
+        "purpose": "The brand-blue PLEXA route at rest; hover deepens to 0 24px 46px rgba(6, 76, 175, 0.3)."
+      },
+      {
         "name": "mobile-menu",
         "value": "0 20px 55px rgba(0, 0, 0, 0.28)",
         "purpose": "The public mobile menu over the Midnight header."
-      },
-      {
-        "name": "authentication-glass",
-        "value": "0 30px 90px rgba(1, 5, 24, 0.52)",
-        "purpose": "Sign-in and recovery panels over the Plexus network artwork only."
       }
     ],
     "motion": [
@@ -412,6 +492,11 @@
         "name": "program-pulse",
         "value": "1000ms 280ms cubic-bezier(0.16, 1, 0.3, 1)",
         "purpose": "The governed journey progress track."
+      },
+      {
+        "name": "checkpoint-network-twinkle",
+        "value": "7600ms ease-in-out infinite",
+        "purpose": "An irregular opacity-only luminance cycle for the Governed Checkpoint network; static under reduced motion."
       },
       {
         "name": "sheet-transition",
@@ -508,11 +593,11 @@
       "css": ".ds-pulse { padding:20px 24px; border-radius:25.2px; background:#071326; color:#fff; font-family:Inter, sans-serif; } .ds-pulse-head { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; } .ds-pulse-meta { color:#9cb1c7; font-size:12px; line-height:16px; } .ds-pulse-title { margin:4px 0 0; font-size:20px; line-height:25px; font-weight:600; letter-spacing:-0.02em; } .ds-pulse-status { display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border:1px solid rgba(128,232,255,0.3); border-radius:9999px; background:rgba(128,232,255,0.1); color:#80e8ff; font:600 11px/16px Inter, sans-serif; } .ds-pulse-dot { width:6px; height:6px; border-radius:9999px; background:#80e8ff; } .ds-pulse-stages { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:4px; margin:24px 0 0; padding:0; list-style:none; } .ds-pulse-stage { position:relative; padding:10px 6px; color:#9cb1c7; font-size:11px; line-height:16px; text-align:center; } .ds-pulse-stage-active { color:#fff; } .ds-pulse-stage-active::after { position:absolute; right:0; bottom:0; left:0; height:2px; background:#0a84ff; content:\"\"; }"
     },
     {
-      "name": "Authentication Glass Panel",
+      "name": "Governed Checkpoint",
       "kind": "custom",
-      "description": "The scoped atmospheric bridge into secure tenant-aware access.",
-      "html": "<section class=\"ds-auth-panel\"><span class=\"ds-auth-meta\">Protected program workspace</span><h3 class=\"ds-auth-title\">Welcome back</h3><p class=\"ds-auth-copy\">Sign in to continue to your Plexus workspace.</p><label class=\"ds-auth-label\" for=\"ds-auth-email\">Email</label><input class=\"ds-auth-input\" id=\"ds-auth-email\" type=\"email\" placeholder=\"you@company.com\"><button class=\"ds-auth-button\">Login</button></section>",
-      "css": ".ds-auth-panel { width:min(100%,400px); padding:28px 32px; border:1px solid rgba(255,255,255,0.2); border-radius:26.4px; background:rgba(255,255,255,0.07); color:#fff; box-shadow:0 30px 90px rgba(1,5,24,0.52); backdrop-filter:blur(32px) saturate(1.5); font-family:Inter, sans-serif; } .ds-auth-meta { color:rgba(255,255,255,0.7); font-size:12px; line-height:16px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; } .ds-auth-title { margin:12px 0 0; font-size:26px; line-height:1.25; font-weight:600; letter-spacing:-0.02em; } .ds-auth-copy { margin:8px 0 20px; color:rgba(255,255,255,0.68); font-size:14px; line-height:24px; } .ds-auth-label { display:block; margin-bottom:8px; color:rgba(255,255,255,0.82); font-size:12px; line-height:16px; } .ds-auth-input { width:100%; height:48px; padding:0 14px; border:1px solid rgba(255,255,255,0.2); border-radius:12px; background:rgba(255,255,255,0.1); color:#fff; font:400 14px/20px Inter, sans-serif; } .ds-auth-input::placeholder { color:rgba(255,255,255,0.42); } .ds-auth-input:focus-visible { outline:none; border-color:rgba(255,255,255,0.5); box-shadow:0 0 0 2px rgba(255,255,255,0.18); } .ds-auth-button { width:100%; height:48px; margin-top:16px; border:0; border-radius:12px; background:#0a84ff; color:#071326; box-shadow:0 14px 30px rgba(14,9,39,0.2); font:600 14px/20px Inter, sans-serif; transition:opacity 180ms ease, transform 180ms ease; } .ds-auth-button:hover { opacity:0.92; } .ds-auth-button:focus-visible { outline:2px solid #fff; outline-offset:3px; } .ds-auth-button:active { transform:translateY(1px); }"
+      "description": "The supplied Midnight network identity rail with quiet twinkling nodes and the bright ordered stage canvas for Identity → Workspace → Responsible next step.",
+      "html": "<section class=\"ds-auth-checkpoint\"><aside class=\"ds-auth-rail\"><img class=\"ds-auth-network\" src=\"/login-governed-network.webp\" alt=\"\">Plexus identity</aside><div class=\"ds-auth-canvas\"><ol class=\"ds-auth-stages\"><li class=\"ds-auth-stage-active\">01 Identity</li><li>02 Workspace</li><li>03 Responsible next step</li></ol><form class=\"ds-auth-form\"><h3>Welcome back</h3><p>Sign in to continue to your Plexus workspace.</p><label for=\"ds-auth-email\">Email</label><input id=\"ds-auth-email\" type=\"email\" placeholder=\"you@company.com\"><button>Sign in →</button></form></div></section>",
+      "css": ".ds-auth-checkpoint { display:grid; grid-template-columns:326px minmax(0,1fr); min-height:720px; overflow:hidden; border:1px solid #cbd6e0; border-radius:9px; background:#f4f8fb; font-family:Inter,sans-serif; } .ds-auth-rail { position:relative; padding:345px 41px 40px; overflow:hidden; background:#010718; color:#fff; } .ds-auth-network { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:.9; } .ds-auth-canvas { min-width:0; padding:0 42px; color:#071326; } .ds-auth-stages { display:grid; grid-template-columns:44% 34% 22%; height:112px; margin:0; padding:0; border-bottom:1px solid #cbd6e0; list-style:none; color:#5a6880; font:500 12px/16px monospace; text-transform:uppercase; } .ds-auth-stages li { padding-top:68px; } .ds-auth-stage-active { position:relative; color:#071326; } .ds-auth-stage-active::after { position:absolute; bottom:-1px; left:0; width:104px; height:3px; background:#0668e8; content:\"\"; } .ds-auth-form { box-sizing:border-box; width:44%; padding:99px 46px 64px 4px; border-right:1px solid #cbd6e0; } .ds-auth-form h3 { margin:0; font-size:29px; line-height:1.2; } .ds-auth-form p { color:#5d6c83; font-size:17px; line-height:28px; } .ds-auth-form label { display:block; margin-top:56px; color:#071326; font-size:15px; } .ds-auth-form input,.ds-auth-form button { box-sizing:border-box; width:100%; height:62px; margin-top:8px; border-radius:7px; } .ds-auth-form input { border:1px solid #c5d1dd; background:#fff; } .ds-auth-form button { border:0; background:#0668e8; color:#fff; font-weight:600; }"
     },
     {
       "name": "Product Preview Qualification",
@@ -520,16 +605,24 @@
       "description": "A unified superapp preview with its pre-launch and availability qualifications in the same first-view composition.",
       "html": "<section class=\"ds-preview\"><div class=\"ds-preview-copy\"><h2 class=\"ds-preview-title\">The whole business journey, in one superapp.</h2><a class=\"ds-preview-action\" href=\"#ds-preview-product\">Explore the connected product</a><p class=\"ds-preview-note\">Illustrative screens are labelled. Availability varies by module.</p></div><figure class=\"ds-preview-media\" id=\"ds-preview-product\"><span class=\"ds-preview-badge\">Pre-launch product preview</span><img class=\"ds-preview-image\" src=\"/app-future/plexus-superapp-system-hero-v3.png\" alt=\"Illustrative unified Plexus superapp system\"></figure></section>",
       "css": ".ds-preview { display:grid; grid-template-columns:.82fr minmax(620px,1.18fr); gap:32px; align-items:center; max-width:1440px; min-height:720px; margin:0 auto; padding:68px 32px 42px; background:#0758c8; color:#fff; font-family:Inter, sans-serif; } .ds-preview-copy { display:flex; flex-direction:column; align-items:flex-start; gap:20px; } .ds-preview-title { max-width:10ch; margin:0; font-size:clamp(3rem,6vw,5.75rem); line-height:.94; font-weight:600; letter-spacing:-.035em; } .ds-preview-action { display:inline-flex; align-items:center; justify-content:center; min-height:52px; padding:0 24px; border-radius:14px; background:#071326; color:#fff; font:600 14px/20px Inter, sans-serif; text-decoration:none; transition:background 180ms ease, transform 180ms ease; } .ds-preview-action:hover { background:#102443; } .ds-preview-action:active { transform:translateY(1px); } .ds-preview-note { max-width:34rem; margin:0; color:rgba(255,255,255,.78); font-size:12px; line-height:1.5; } .ds-preview-media { position:relative; min-height:620px; margin:0 -56px 0 0; overflow:hidden; border-radius:22px; background:#071326; } .ds-preview-badge { position:absolute; z-index:1; top:18px; left:20px; display:inline-flex; align-items:center; min-height:24px; padding:0 10px; border:1px solid rgba(255,255,255,.3); border-radius:9999px; background:rgba(7,19,38,.82); color:#fff; font:750 11px/1.45 Inter, sans-serif; } .ds-preview-image { width:100%; height:100%; min-height:620px; object-fit:cover; } .ds-preview :focus-visible { outline:3px solid #fff; outline-offset:3px; box-shadow:0 0 0 6px #0758c8; } @media (max-width:900px) { .ds-preview { grid-template-columns:1fr; width:calc(100% - 40px); padding-top:72px; } .ds-preview-media { min-height:560px; margin:0 -20px; } } @media (max-width:680px) { .ds-preview { width:calc(100% - 32px); min-height:0; padding:36px 0 0; } .ds-preview-copy { padding:0 12px; } .ds-preview-title { font-size:clamp(3rem,12vw,3.5rem); line-height:.97; } .ds-preview-action { width:100%; } .ds-preview-media { min-height:380px; margin:12px -22px 0; border-radius:14px 14px 0 0; } .ds-preview-badge { top:14px; left:16px; } .ds-preview-image { min-height:380px; } }"
+    },
+    {
+      "name": "Capability Bento",
+      "kind": "custom",
+      "description": "The scoped homepage capability map: unequal warm editorial cards, real dark Plexus previews, attached readiness chips, and one brand-blue PLEXA route to the maintained 12-module map.",
+      "html": "<section class=\"ds-capability-bento\" aria-label=\"Representative Plexus capabilities\"><article class=\"ds-capability-card ds-capability-directory\"><header><span>01</span><b class=\"ds-capability-live\">Live</b></header><div class=\"ds-capability-preview\">Plexus product preview</div><h3>Directory</h3></article><article class=\"ds-capability-card ds-capability-event\"><header><span>02</span><b class=\"ds-capability-live\">Live</b></header><div class=\"ds-capability-preview\">Plexus product preview</div><h3>Event</h3></article><article class=\"ds-capability-card ds-capability-meetings\"><header><span>03</span><b class=\"ds-capability-mixed\">Mixed</b></header><div class=\"ds-capability-preview\">Plexus product preview</div><h3>Meetings</h3></article><article class=\"ds-capability-card ds-capability-compliance\"><header><span>04</span><b class=\"ds-capability-adapter\">Adapter</b></header><div class=\"ds-capability-preview\">Plexus product preview</div><h3>Compliance</h3></article><article class=\"ds-capability-card ds-capability-governance\"><header><span>05</span><b class=\"ds-capability-live\">Live</b></header><div class=\"ds-capability-preview ds-capability-preview-warm\">Plexus product preview</div><h3>Governance</h3></article><a class=\"ds-capability-plexa\" href=\"#capabilities\"><header><span>08</span><b class=\"ds-capability-concept\">Concept</b></header><span class=\"ds-capability-arrow\">↗</span><h3>PLEXA</h3><span>Open 12-module map ↗</span></a><article class=\"ds-capability-card ds-capability-reporting\"><header><span>07</span><b class=\"ds-capability-mixed\">Mixed</b></header><div class=\"ds-capability-preview\">Plexus product preview</div><h3>Reporting</h3></article></section>",
+      "css": ".ds-capability-bento { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); grid-template-rows:repeat(12,minmax(0,50px)); gap:12px; padding:28px; background:#f7f4eb; color:#111826; font-family:Inter,sans-serif; } .ds-capability-card,.ds-capability-plexa { position:relative; display:flex; min-width:0; overflow:hidden; padding:24px; border-radius:16px; } .ds-capability-card { border:1px solid #ddd5c6; background:#f3eee2; box-shadow:0 14px 32px rgba(82,67,40,.08); } .ds-capability-card header,.ds-capability-plexa header { position:absolute; z-index:2; top:24px; right:24px; left:24px; display:flex; align-items:flex-start; justify-content:space-between; gap:16px; color:#6f6a61; font-size:14px; font-weight:600; letter-spacing:.14em; } .ds-capability-card b,.ds-capability-plexa b { display:inline-flex; align-items:center; min-height:24px; padding:0 10px; border-radius:9999px; font-size:11px; line-height:1; letter-spacing:.05em; text-transform:uppercase; } .ds-capability-live { background:#d9f8ee; color:#08664d; } .ds-capability-mixed { background:#deebff; color:#0758c8; } .ds-capability-adapter { background:#fff0c9; color:#735000; } .ds-capability-concept { background:#e9e5f4; color:#51436a; } .ds-capability-preview { position:absolute; top:68px; right:20px; bottom:76px; left:20px; display:grid; place-items:center; overflow:hidden; border-radius:12px; background:#071326; color:#80e8ff; font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; } .ds-capability-preview-warm { background:#e7dfcf; color:#33465d; } .ds-capability-card h3 { align-self:flex-end; margin:0; font-size:24px; line-height:1.1; letter-spacing:-.025em; } .ds-capability-directory { grid-column:1/span 4; grid-row:1/span 7; } .ds-capability-event { grid-column:5/span 4; grid-row:1/span 4; } .ds-capability-meetings { grid-column:5/span 4; grid-row:5/span 4; } .ds-capability-compliance { grid-column:1/span 4; grid-row:8/span 5; } .ds-capability-governance { grid-column:5/span 4; grid-row:9/span 4; } .ds-capability-plexa { grid-column:9/span 4; grid-row:1/span 6; flex-direction:column; border:0; background:#0758c8; color:#fff; box-shadow:0 18px 38px rgba(7,88,200,.24); text-decoration:none; transition:background 300ms ease,box-shadow 300ms ease,transform 300ms ease; } .ds-capability-plexa header { color:rgba(255,255,255,.7); } .ds-capability-plexa h3 { margin:auto 0 20px; font-size:40px; line-height:1.02; letter-spacing:-.03em; } .ds-capability-arrow { align-self:flex-end; margin-top:56px; font-size:32px; } .ds-capability-plexa:hover { background:#064caf; box-shadow:0 24px 46px rgba(6,76,175,.3); transform:translateY(-4px); } .ds-capability-plexa:focus-visible { outline:2px solid #fff; outline-offset:3px; } .ds-capability-reporting { grid-column:9/span 4; grid-row:7/span 6; } @media (max-width:1023px) { .ds-capability-bento { grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:none; } .ds-capability-card,.ds-capability-plexa { grid-column:auto; grid-row:auto; min-height:320px; } .ds-capability-directory,.ds-capability-plexa,.ds-capability-reporting { min-height:420px; } } @media (max-width:639px) { .ds-capability-bento { grid-template-columns:1fr; padding:16px; } .ds-capability-card,.ds-capability-plexa { min-height:320px; } .ds-capability-directory,.ds-capability-plexa,.ds-capability-reporting { min-height:420px; } }"
     }
   ],
   "narrative": {
     "northStar": "The Governed Blue Agenda",
-    "overview": "Plexus is a calm blue operating layer where cross-border business intent becomes a human-reviewed path to a real meeting and accountable follow-up. Its public world is editorial and assured: saturated blue fields, a midnight logo bay, mineral paper, photographed working context, unified product-system imagery, and tangible agenda fragments explain the journey before they ask for action. The exact Plexus mark remains the identity anchor; it is never redrawn, recolored, or replaced by an improvised symbol.\n\nAuthenticated workspaces translate that agenda into an operating system. The typography becomes compact, the canvas shifts to pale mineral blue, and information is grouped with flat cards, hairlines, explicit statuses, and a midnight navigation rail. Connection Blue, cyan, imagery, and motion provide orientation, while product claims, provider readiness, sensitive decisions, and outcomes stay visibly human-governed and evidence-bound.\n\nAuthentication is a scoped atmospheric bridge and may place a glass panel over the Plexus network artwork. The public pre-event service is a second scoped expression: it uses the shared Midnight, Filled Surface Blue, Connection Blue, cyan, mineral, and pale-network palette with tighter campaign geometry and denser service content.",
+    "overview": "Plexus is a calm blue operating layer where cross-border business intent becomes a human-reviewed path to a real meeting and accountable follow-up. Its public world is editorial and assured: saturated blue fields, a midnight logo bay, mineral paper, photographed working context, unified product-system imagery, and tangible agenda fragments explain the journey before they ask for action. The exact Plexus mark remains the identity anchor; it is never redrawn, recolored, or replaced by an improvised symbol.\n\nAuthenticated workspaces translate that agenda into an operating system. The typography becomes compact, the canvas shifts to pale mineral blue, and information is grouped with flat cards, hairlines, explicit statuses, and a midnight navigation rail. Connection Blue, cyan, imagery, and motion provide orientation, while product claims, provider readiness, sensitive decisions, and outcomes stay visibly human-governed and evidence-bound.\n\nAuthentication is a scoped Governed Checkpoint: a fixed Midnight identity rail uses the approved network field and quiet twinkling nodes before opening into a bright numbered canvas for Identity, Workspace, and Responsible next step. The unboxed credential form occupies the active first lane while later lanes stay visible and ordered. The public pre-event service is a second scoped expression: it uses the shared Midnight, Filled Surface Blue, Connection Blue, cyan, mineral, and pale-network palette with tighter campaign geometry and denser service content.",
     "keyCharacteristics": [
       "Saturated production-blue fields anchored by midnight and mineral paper.",
       "Editorial public scale translated into compact operational hierarchy.",
       "Pale network grouping and cyan signals that clarify a governed journey.",
       "Flat, scan-first workspaces with explicit status and human review.",
+      "A supplied Midnight network identity rail with reduced-motion-aware twinkling paired with a bright three-stage authentication canvas that becomes one aligned mobile stack.",
       "Pre-launch and capability-readiness qualification placed beside the visual evidence.",
       "The exact Plexus mark, Inter typography, and restrained Geist Mono metadata.",
       "Responsive stacking, mobile navigation sheets, and reduced-motion parity."
@@ -581,13 +674,13 @@
         "section": "elevation"
       },
       {
-        "name": "The Scoped Glass Rule",
-        "body": "Backdrop blur and translucent glass belong to authentication and temporary overlays, not routine operational cards.",
+        "name": "The Governed Checkpoint Rule",
+        "body": "Authentication depth comes from the hard transition between the fixed Midnight identity rail and bright ordered stage canvas; backdrop blur and translucent glass are reserved for temporary overlays.",
         "section": "elevation"
       },
       {
         "name": "The Curve by Scale Rule",
-        "body": "Controls are tighter than cards, cards are tighter than editorial frames, and only auth glass earns the largest system radius.",
+        "body": "Controls are tighter than cards, cards are tighter than editorial frames, and authentication follows the same hierarchy instead of introducing an oversized glass radius.",
         "section": "shapes"
       },
       {
@@ -613,8 +706,9 @@
       "Do preserve the exact Plexus wordmark asset and approved tenant identity without weakening contrast.",
       "Do use mineral canvases, Pale Network grouping, and hairlines before reaching for elevation.",
       "Do verify mobile sheet navigation, stacked records, longer translated labels, keyboard focus, and reduced motion.",
-      "Do keep authentication glass scoped to secure entry and preserve the pre-event route's compact campaign geometry within the shared blue palette.",
-      "Do place pre-launch, illustrative, and readiness qualification beside the relevant product image or module copy."
+      "Do keep authentication's Governed Checkpoint ordered across the identity rail, three-stage header, credentials, and support, and preserve the pre-event route's compact campaign geometry within the shared blue palette.",
+      "Do place pre-launch, illustrative, and readiness qualification beside the relevant product image or module copy.",
+      "Do preserve the capability bento's unequal editorial proportions, attached readiness chips, and one-column narrow-mobile reading order."
     ],
     "donts": [
       "Don't use Connection Blue as the filled background behind small white CTA text.",
@@ -623,7 +717,8 @@
       "Don't compress desktop rails or dense tables into unreadable mobile layouts.",
       "Don't redraw, recolor, crop into a new symbol, or substitute the Plexus mark.",
       "Don't use animation, color, badges, or polished imagery as evidence of approval, compliance, provider readiness, market coverage, or business outcomes.",
-      "Don't reuse Live, Mixed, Adapter, and Concept colors as generic success, warning, or category styling."
+      "Don't reuse Live, Mixed, Adapter, and Concept colors as generic success, warning, or category styling.",
+      "Don't generalize the capability bento's cream cards or unequal proportions into a new global card system; its PLEXA route reuses the established Filled Surface Blue action role."
     ]
   }
 }

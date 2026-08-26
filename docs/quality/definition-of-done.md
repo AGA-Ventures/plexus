@@ -2,7 +2,7 @@
 
 **Owner:** Product, engineering, and release owners
 **Review trigger:** Quality or release policy change
-**Last reviewed:** 2026-07-27
+**Last reviewed:** 2026-08-26
 
 A work item is done only when all applicable sections pass.
 
@@ -56,6 +56,10 @@ A work item is done only when all applicable sections pass.
 
 ## Delivery
 
+- [ ] The [Development Command Center](../development/plexus-command-center.html)
+      was reviewed, regenerated with `npm run docs:command-center` when its file
+      inventory changed, and updated if the change affects an editorial or
+      health claim.
 - [ ] `CHANGELOG.md` is updated.
 - [ ] CI and Preview pass.
 - [ ] Required migration plan is reviewed.

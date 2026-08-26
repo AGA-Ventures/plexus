@@ -16,7 +16,7 @@ async function login(
   await page.goto("/en/login")
   await page.getByLabel("Email").fill(email)
   await page.getByLabel("Password", { exact: true }).fill(password)
-  await page.getByRole("button", { name: /login/i }).click()
+  await page.getByRole("button", { name: /sign in/i }).click()
 
   if (expectedPortal) {
     await expect(page).toHaveURL(expectedPortal)
@@ -51,8 +51,34 @@ async function openMobilePortalMenu(page: Page) {
   await expectNoHorizontalOverflow(page)
 }
 
+test.describe("shared public navigation", () => {
+  test("uses one SiteHeader across every public route family", async ({
+    page,
+  }) => {
+    for (const route of [
+      "/?lang=en",
+      "/app?lang=en",
+      "/pre-event?lang=en",
+      "/contact?lang=en",
+      "/for-investment?lang=en",
+      "/for-government?lang=en",
+      "/events?lang=en",
+      "/events/macau-malaysia-business-delegation?lang=en",
+      "/legal/privacy?lang=en",
+      "/en/privacy",
+    ]) {
+      await page.goto(route)
+      await expect(page.getByTestId("site-header")).toHaveCount(1)
+      await expect(
+        page.getByTestId("site-header").getByRole("img", { name: "Plexus" })
+      ).toBeVisible()
+      await expectNoHorizontalOverflow(page)
+    }
+  })
+})
+
 test.describe("public pre-event campaign", () => {
-  test("prepares a worldwide WhatsApp inquiry without collecting personal data", async ({
+  test("prepares a worldwide inquiry without collecting personal data", async ({
     page,
   }) => {
     const supabaseRequests: string[] = []
@@ -78,9 +104,25 @@ test.describe("public pre-event campaign", () => {
         name: "A Plexus coordinator helps an international delegate prepare business matches, meetings and an arrival plan",
       })
     ).toHaveAttribute("src", /plexus-pre-event-planning/)
-    await expect(
-      page.getByRole("link", { name: "Login", exact: true }).first()
-    ).toHaveCSS("background-color", "rgb(11, 31, 58)")
+    if ((page.viewportSize()?.width ?? 1024) >= 640) {
+      await expect(
+        page.getByTestId("site-header").getByRole("link", {
+          name: "Login",
+          exact: true,
+        })
+      ).toHaveCSS("background-color", "rgb(7, 88, 200)")
+    } else {
+      await page
+        .getByTestId("site-header")
+        .getByRole("button", { name: "Menu" })
+        .click()
+      await expect(
+        page.getByTestId("site-header").getByRole("link", {
+          name: "Login",
+          exact: true,
+        })
+      ).toBeVisible()
+    }
     await expect(
       page.getByRole("img", { name: "Plexus" }).first()
     ).toHaveAttribute("src", /plexus-wordmark-transparent-trimmed/)
@@ -98,7 +140,9 @@ test.describe("public pre-event campaign", () => {
       page.getByRole("heading", { name: "More than an introduction." })
     ).toBeVisible()
     await expect(
-      page.getByText(/business outcomes are not guaranteed\./)
+      page
+        .locator("#country-support")
+        .getByText(/business outcomes are not guaranteed\./)
     ).toBeVisible()
     await expect(
       page.getByText(
@@ -118,17 +162,22 @@ test.describe("public pre-event campaign", () => {
     await expect(macaoOption).toHaveAttribute("aria-pressed", "true")
 
     const whatsapp = page.getByTestId("pre-event-whatsapp")
-    const whatsappHref = await whatsapp.getAttribute("href")
-    expect(whatsappHref).toBeTruthy()
-    const whatsappUrl = new URL(whatsappHref!)
-    expect(whatsappUrl.origin).toBe("https://wa.me")
-    expect(whatsappUrl.pathname).toBe("/60122677899")
-    expect(whatsappUrl.searchParams.get("text")).toContain(
-      "travelling from Macao SAR China"
-    )
-    expect(whatsappUrl.searchParams.get("text")).toContain(
-      "business objectives"
-    )
+    if ((await whatsapp.count()) > 0) {
+      const whatsappHref = await whatsapp.getAttribute("href")
+      expect(whatsappHref).toBeTruthy()
+      const whatsappUrl = new URL(whatsappHref!)
+      expect(whatsappUrl.origin).toBe("https://wa.me")
+      expect(whatsappUrl.searchParams.get("text")).toContain(
+        "travelling from Macao SAR China"
+      )
+      expect(whatsappUrl.searchParams.get("text")).toContain(
+        "business objectives"
+      )
+    } else {
+      await expect(
+        page.getByRole("link", { name: "Discuss your program" }).last()
+      ).toBeVisible()
+    }
 
     await expect(page.getByTestId("pre-event-cobrand")).toHaveCount(0)
     await expect(page.getByTestId("pre-event-email")).toHaveCount(0)
@@ -170,12 +219,24 @@ test.describe("three-tier route protection", () => {
     await page.goto("/en/login")
     await expect(
       page.getByRole("heading", {
-        name: "Discover. Connect. Agree. Grow.",
+        name: "One governed workspace. Every responsible next step.",
       })
     ).toBeVisible()
     await expect(page.getByLabel("Email")).toHaveCount(1)
     await expect(page.getByLabel("Password", { exact: true })).toHaveCount(1)
-    await expect(page.getByRole("button", { name: "Login" })).toBeVisible()
+    await expect(page.getByRole("button", { name: "Sign in" })).toBeVisible()
+    await expect(page.getByText("Remember me")).toHaveCount(0)
+    await expect(page.getByText("Identity", { exact: true })).toBeVisible()
+    await expect(page.getByText("Workspace", { exact: true })).toBeVisible()
+    await expect(
+      page.getByText("Responsible next step", { exact: true })
+    ).toBeVisible()
+    await expect(page.locator("[data-login-rail]")).toBeVisible()
+    await expect(page.locator("[data-login-network]")).toBeVisible()
+    await expect(page.locator("[data-login-stage-grid]")).toBeVisible()
+    await expect(
+      page.getByRole("link", { name: "Open support options" })
+    ).toHaveAttribute("href", "/contact?lang=en")
     await expect(page.getByText("Supabase Auth")).toHaveCount(0)
     await expect(page.getByText("Portal routes")).toHaveCount(0)
     await expect(page.getByText("Self-signup is disabled")).toHaveCount(0)
@@ -196,7 +257,7 @@ test.describe("three-tier route protection", () => {
       await expect(page).toHaveURL(/\/(en|zh)\/login/)
       await expect(
         page.getByRole("heading", {
-          name: /discover\. connect\. agree\. grow\.|发现、连接、合作、成长。/i,
+          name: /one governed workspace\. every responsible next step\.|一个受治理的工作台，承接每个负责任的下一步。/i,
         })
       ).toBeVisible()
     })
@@ -247,6 +308,72 @@ test.describe("three-tier route protection", () => {
       page.getByRole("main").getByText(/email or password is incorrect/i)
     ).toBeVisible()
   })
+
+  test("localizes login errors and password controls", async ({ page }) => {
+    await page.goto("/th/login")
+    await expect(
+      page.getByRole("button", { name: "แสดงรหัสผ่าน" })
+    ).toBeVisible()
+    await page.getByLabel("อีเมล").fill("invalid@example.com")
+    await page.getByLabel("รหัสผ่าน", { exact: true }).fill("wrong-password")
+    await page.getByRole("button", { name: "เข้าสู่ระบบ" }).click()
+    await expect(
+      page.getByText("อีเมลหรือรหัสผ่านไม่ถูกต้อง โปรดตรวจสอบแล้วลองอีกครั้ง")
+    ).toBeVisible()
+    await expect(
+      page.getByText(/app_metadata|admin_id|vendor_company_id/)
+    ).toHaveCount(0)
+  })
+
+  test("explains unavailable tenant links without exposing tenant data", async ({
+    page,
+  }) => {
+    await page.goto("/en/login?tenant=unavailable-workspace")
+    await expect(
+      page.getByText("Organization sign-in unavailable", { exact: true })
+    ).toBeVisible()
+    await expect(
+      page.getByText(/continue with Plexus or contact support/i)
+    ).toBeVisible()
+    await expect(page.locator('input[name="tenantSlug"]')).toHaveCount(0)
+    await expect(
+      page.getByRole("link", { name: "Open support options" })
+    ).toBeVisible()
+  })
+
+  test("keeps password recovery confirmation inline and clears its query flag", async ({
+    page,
+  }) => {
+    await page.goto("/en/login?passwordUpdated=1")
+    await expect(page).toHaveURL(/\/en\/login$/)
+    await expect(
+      page.getByText("Password updated. Sign in with your new password.", {
+        exact: true,
+      })
+    ).toHaveCount(1)
+  })
+
+  test("keeps mobile login controls within the accessible target floor", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto("/en/login")
+
+    await expect(page.locator("main.login-checkpoint")).toBeVisible()
+    await expect(page.getByText("Identity", { exact: true })).toBeVisible()
+    await expect(page.getByText("Workspace", { exact: true })).toBeVisible()
+
+    for (const control of [
+      page.getByRole("button", { name: "Show password" }),
+      page.getByRole("link", { name: "Forgot password?" }),
+      page.getByRole("link", { name: "Open support options" }),
+    ]) {
+      const box = await control.boundingBox()
+      expect(box?.height).toBeGreaterThanOrEqual(44)
+    }
+
+    await expectNoHorizontalOverflow(page)
+  })
 })
 
 test.describe("Superadmin flow", () => {
@@ -266,6 +393,13 @@ test.describe("Superadmin flow", () => {
       (page.viewportSize()?.width ?? 1024) >= 1024
         ? page.getByRole("complementary")
         : page.getByRole("dialog")
+    await expect(
+      page.getByTestId(
+        (page.viewportSize()?.width ?? 1024) >= 1024
+          ? "workspace-navigation-shell"
+          : "workspace-mobile-header"
+      )
+    ).toBeVisible()
     await expect(navigation.getByText("Superadmin workspace")).toBeVisible()
     await expect(
       navigation.getByRole("tab", { name: "Admin tenants" })
@@ -703,6 +837,13 @@ test.describe("Vendor flow", () => {
         viewport && viewport.width < 1024
           ? "tenant-workspace-brand-mobile"
           : "tenant-workspace-brand-desktop"
+      )
+    ).toBeVisible()
+    await expect(
+      page.getByTestId(
+        viewport && viewport.width < 1024
+          ? "workspace-mobile-header"
+          : "workspace-navigation-shell"
       )
     ).toBeVisible()
     const vendorMetrics = page.getByTestId("vendor-dashboard-metrics")

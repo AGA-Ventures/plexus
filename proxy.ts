@@ -19,12 +19,15 @@ const protectedRoutePattern = new RegExp(
 
 export async function proxy(request: NextRequest) {
   const match = request.nextUrl.pathname.match(protectedRoutePattern)
+  const localizedPathMatch = request.nextUrl.pathname.match(
+    new RegExp(`^/(${localeParamPattern})(?:/|$)`)
+  )
   const requestedLanguage = request.nextUrl.searchParams.get("lang")
   const documentLanguage =
     request.nextUrl.pathname === "/app"
       ? "en"
-      : match?.[1]
-        ? normalizeLocale(match[1])
+      : match?.[1] || localizedPathMatch?.[1]
+        ? normalizeLocale(match?.[1] ?? localizedPathMatch?.[1])
         : requestedLanguage === "ms" || requestedLanguage === "my"
           ? "ms"
           : requestedLanguage &&

@@ -2,7 +2,7 @@
 
 **Owner:** Product
 **Review trigger:** Product strategy, target market, or launch-scope change
-**Last reviewed:** 2026-07-29
+**Last reviewed:** 2026-08-26
 
 ## Vision
 
@@ -20,21 +20,35 @@ integrations without creating a new application for each program.
 ```mermaid
 flowchart TD
     P["Plexus platform"] --> S["Superadmin"]
-    S --> A["Admin tenant"]
-    A --> V["Vendor company"]
-    V --> D["Delegation subtype"]
-    V --> R["Partner subtype"]
-    V --> U["Vendor users"]
+    S --> A["Admin / Organizer tenant"]
+    A --> B["Business Participant company"]
+    B --> D["Delegation subtype"]
+    B --> R["Partner subtype"]
+    B --> U["Business Participant users"]
+    A --> L["Local Service Partner"]
+    L --> I["Interpretation"]
+    L --> T["Travel and logistics"]
 ```
 
-| Role       | Primary outcome                                              |
-| ---------- | ------------------------------------------------------------ |
-| Superadmin | Operate and govern the platform across all tenants           |
-| Admin      | Run a branded, isolated tenant and manage its Vendors        |
-| Vendor     | Maintain company data and participate in permitted workflows |
+| Product actor         | Primary outcome                                                                                                       | Current access model                                  |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| Superadmin            | Govern the platform and standards across all tenants                                                                  | `superadmin` authorization role                       |
+| Admin / Organizer     | Operate a branded tenant, manage Business Participants, and coordinate Local Service Partners                         | `admin` authorization role                            |
+| Business Participant  | Represent a participating company and join permitted business workflows                                               | Current `vendor` authorization role                   |
+| Local Service Partner | Deliver assigned operational services such as interpretation, travel, transportation, venue, accommodation, or logistics | Admin-managed operational record; no separate role yet |
 
-`delegation` and `partner` are Vendor subtypes, not independent authorization
-roles.
+The current implementation still has three authorization roles:
+`superadmin`, `admin`, and `vendor`. `Vendor` remains a technical identifier in
+routes, schema, tests, and current-state documentation, but its product actor is
+the **Business Participant**. `delegation` and `partner` are Business
+Participant subtypes, not independent authorization roles.
+
+A **Local Service Partner** is separate from a Business Participant. Today,
+interpreters and other concierge/service relationships are coordinated by the
+Admin / Organizer and are not independent authenticated users. A future service
+partner login must expose only explicitly assigned requests, tasks, quotes,
+documents, and status updates; it must not inherit Business Participant or
+tenant-wide access.
 
 ## Product principles
 
@@ -58,11 +72,12 @@ roles.
 The deployed platform currently supports:
 
 - Shared email/password authentication and role-directed routing.
-- Superadmin tenant, Vendor, account, settings, reporting, and audit controls.
-- Admin tenant operations and Vendor provisioning.
+- Superadmin tenant, Business Participant, account, settings, reporting, and
+  audit controls.
+- Admin / Organizer tenant operations and Business Participant provisioning.
 - Tenant-branded Vendor applications with Admin approval and one-time password
   setup.
-- Vendor company registration profiles.
+- Business Participant company registration profiles.
 - Delegation/Partner discovery and matching.
 - Meeting, deal, itinerary, liaison, interpreter, communication, notification,
   resource, site-visit, and compliance workflow surfaces.
@@ -87,7 +102,7 @@ live, controlled, adapter, and planned capabilities.
 
 Product and delivery plans should attach measurable targets to:
 
-- Vendor onboarding completion and time to completion.
+- Business Participant onboarding completion and time to completion.
 - Qualified match acceptance rate.
 - Time from onboarding to first accepted match and first meeting.
 - Meeting completion and follow-up conversion.

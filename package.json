@@ -27,6 +27,7 @@
     "supabase:advisors": "node scripts/verify-deployment-targets.mjs --require-supabase-link && supabase db advisors --linked --type all --fail-on error",
     "test": "vitest run",
     "test:unit": "vitest run",
+    "verify:tchina-preview": "node scripts/verify-tchina-expo-preview.mjs",
     "test:rls": "supabase test db",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

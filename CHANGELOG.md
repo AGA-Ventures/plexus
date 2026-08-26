@@ -8,6 +8,9 @@ reviewed together.
 
 ### 2026-08-26
 
+- Opened the production TChina Expo questionnaire in English and Simplified
+  Chinese with visibly labelled sample venue, organizer, address, and support
+  details for controlled live testing; official event details remain pending.
 - Recast the homepage capability showcase as a warm editorial bento inspired
   by the supplied reference, using real Plexus product previews, mixed card
   proportions, explicit readiness labels, and one brand-blue PLEXA route to

@@ -1,6 +1,6 @@
 # Feature Plan: TChina Expo 2026 Registration
 
-**Status:** Database connected and closed; production code deployment and approval delivery deferred
+**Status:** Production questionnaire open with labelled sample event details; official details and approval delivery deferred
 **Owner:** Plexus Superadmin / Organizer and Engineering
 **Target:** Guangzhou, 31 August–4 September 2026
 **Capability/module:** TChina Expo registration
@@ -103,20 +103,24 @@ Plexus-operated campaign, not a tenant feature.
 - [x] Submission is bound to the Plexus singleton on the server and remains pending.
 - [x] Only Plexus Superadmin can configure/publish, copy the link, review,
       reject, and confirm deletion.
-- [x] Hosted migration is applied with registration closed, and Admin/anonymous
-      database denial is verified.
+- [x] Hosted migration is applied, and Admin/anonymous database denial is
+      verified.
+- [x] Production EN and zh questionnaire routes render with visibly labelled
+      sample event details for controlled testing.
 - [ ] Enter the exact official venue, organizer, and support email.
-- [ ] Deploy this code and complete production public/Superadmin smoke proof.
+- [ ] Complete one controlled production submission and verify it appears only
+      in the Superadmin queue.
 - [ ] Resume the provider slice before enabling approval or sending email.
 
 ## Rollout and rollback
 
-- The hosted database has one seeded, closed Plexus event. Registration cannot
-  open until all exact event fields pass the database publication constraint.
+- The hosted database has one open Plexus event with visibly labelled sample
+  venue, address, organizer, and support details. Replace every sample value
+  with verified official information before distributing the link publicly.
 - Local visual QA uses `http://localhost:3000/en/tchina-expo/preview` and the
   corresponding `/zh/` route. It uses marked fixtures and never saves data.
-- Deploy schema before routes. A closed public event renders the noindex
-  unavailable/not-found state and the submission API returns 404.
+- Deploy schema before routes. Closing the event returns the public route to
+  the noindex unavailable/not-found state and makes the submission API return 404.
 - Production smoke: open link renders, one controlled submission appears only
   in the Superadmin queue, and Admin/Vendor routes have no TChina entry.
 - Rollback: close registration, preserve submitted rows, and forward-fix code

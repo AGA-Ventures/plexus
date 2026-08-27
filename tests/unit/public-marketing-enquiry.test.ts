@@ -38,6 +38,10 @@ describe("public pricing and contact enquiries", () => {
     expect(markup).not.toContain('href="mailto:admin@ylinspiration.com"')
     expect(markup).toContain("Buat pertanyaan melalui WhatsApp")
     expect(markup).toContain('href="https://wa.me/60123456789?text=hello"')
+    expect(markup.indexOf('name="message"')).toBeLessThan(
+      markup.indexOf("Buat pertanyaan melalui WhatsApp")
+    )
+    expect(markup).not.toContain("Membuka WhatsApp dengan mesej")
   })
 
   it("renders the Contact form with pricing preselected from its query", async () => {

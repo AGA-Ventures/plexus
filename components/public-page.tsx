@@ -314,11 +314,20 @@ export async function PublicMarketingPage({
               <p className="mt-6 max-w-md text-base leading-7 text-[#53667c]">
                 {enquiryBody}
               </p>
-              <div className="mt-9 max-w-md border-t border-[#b9cddd] pt-7">
+            </div>
+            <div className="space-y-8">
+              <PublicEnquiryForm
+                copy={content.enquiry.form}
+                locale={locale}
+                sourcePage={enquirySource}
+                initialEnquiryType={enquiryType}
+                fallbackEmail={enquiryChannels.contactEmail}
+              />
+              <div className="border-t border-[#b9cddd] pt-7">
                 <h3 className="text-xl font-semibold tracking-[-0.02em] text-[#111826]">
                   {content.enquiry.whatsappTitle}
                 </h3>
-                <p className="mt-3 text-sm leading-6 text-[#53667c]">
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-[#53667c]">
                   {content.enquiry.whatsappBody}
                 </p>
                 <a
@@ -335,18 +344,8 @@ export async function PublicMarketingPage({
                   />
                   {content.enquiry.whatsappCta}
                 </a>
-                <p className="mt-4 text-sm leading-6 text-[#53667c]">
-                  {content.enquiry.whatsappNotice}
-                </p>
               </div>
             </div>
-            <PublicEnquiryForm
-              copy={content.enquiry.form}
-              locale={locale}
-              sourcePage={enquirySource}
-              initialEnquiryType={enquiryType}
-              fallbackEmail={enquiryChannels.contactEmail}
-            />
           </div>
         </section>
       ) : null}

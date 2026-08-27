@@ -92,16 +92,16 @@ test.describe("public locale continuity", () => {
       page.getByRole("link", { name: "Bahasa Malaysia BM" })
     ).toHaveAttribute("href", "/app?lang=ms")
     await expect(
-      page.getByRole("link", { name: "繁體中文 繁中" })
-    ).toHaveAttribute("href", "/app?lang=zh-Hant")
+      page.getByRole("link", { name: "简体中文 简中" })
+    ).toHaveAttribute("href", "/app?lang=zh-Hans")
 
     for (const [locale, heading, footer] of [
       [
         "ms",
-        "Keseluruhan perjalanan perniagaan, dalam satu superap.",
+        "Satu rekod operasi untuk keseluruhan perjalanan perniagaan",
         "Kembali ke laman web Plexus",
       ],
-      ["zh-Hant", "完整商業旅程 盡在一個超級應用", "返回 Plexus 網站"],
+      ["zh-Hans", "一份运营记录 贯穿整个商务流程", "返回 Plexus 网站"],
     ] as const) {
       await page.goto(`/app?lang=${locale}`)
       await expect(page.locator("html")).toHaveAttribute("lang", locale)
@@ -118,16 +118,22 @@ test.describe("public locale continuity", () => {
     expect(consoleErrors).toEqual([])
   })
 
-  test("uses the requested Traditional-Chinese heading formatting", async ({
+  test("uses the requested Simplified-Chinese heading formatting", async ({
     page,
   }) => {
     for (const [route, title] of [
-      ["/for-businesses?lang=zh-Hant", "減少無效社交 找到更合適的合作夥伴"],
-      ["/events?lang=zh-Hant", "活動結束 不代表聯繫也要結束"],
-      ["/pricing?lang=zh-Hant", "依您營運的計劃範圍制定價格"],
-      ["/for-program-operators?lang=zh-Hant", "給計劃營運方的白標工作區"],
-      ["/for-investment?lang=zh-Hant", "吸引合適的投資 而不只是更多的關注"],
-      ["/for-government?lang=zh-Hant", "以經得起檢視的記錄 運作官方代表團"],
+      ["/for-businesses?lang=zh-Hans", "减少无效社交 找到更合适的合作伙伴"],
+      [
+        "/events?lang=zh-Hans",
+        "活动前精准配对 现场有目标地会面 活动后持续跟进",
+      ],
+      [
+        "/pricing?lang=zh-Hans",
+        "围绕您的项目制定方案 而不是采用通用的按席位计价",
+      ],
+      ["/for-program-operators?lang=zh-Hans", "摆脱电子表格 轻松运营跨境项目"],
+      ["/for-investment?lang=zh-Hans", "吸引合适的投资 而不只是更多的关注"],
+      ["/for-government?lang=zh-Hans", "以清晰可审计的记录 管理官方代表团"],
     ] as const) {
       await page.goto(route)
       const heading = page.getByRole("heading", { level: 1 })
@@ -146,8 +152,17 @@ test.describe("public locale continuity", () => {
     await page.goto("/login?lang=ms&tenant=shanghai-macau&tenant=ignored")
     await expect(page).toHaveURL(/\/ms\/login\?tenant=shanghai-macau$/)
 
-    await page.goto("/forgot-password?lang=zh-Hant")
-    await expect(page).toHaveURL(/\/zh-Hant\/forgot-password$/)
+    await page.goto("/forgot-password?lang=zh-Hans")
+    await expect(page).toHaveURL(/\/zh\/forgot-password$/)
+
+    for (const route of [
+      "login",
+      "forgot-password",
+      "reset-password",
+    ] as const) {
+      await page.goto(`/${route}?lang=zh-Hant`)
+      await expect(page).toHaveURL(new RegExp(`/zh/${route}$`))
+    }
 
     await page.goto(
       "/forgot-password?lang=ms&tenant=shanghai-macau&tenant=ignored"
@@ -171,6 +186,20 @@ test.describe("public locale continuity", () => {
       page.getByRole("link", { name: "Kembali ke laman utama" })
     ).toHaveAttribute("href", "/?lang=ms")
   })
+
+  test("normalizes legacy Chinese public aliases without changing the protected Traditional locale", async ({
+    page,
+  }) => {
+    await page.goto("/?lang=zh-Hant")
+    await expect(page.locator("html")).toHaveAttribute("lang", "zh-Hans")
+    await page.getByRole("button", { name: "选择语言" }).click()
+    await expect(
+      page.getByRole("link", { name: "简体中文 简中" })
+    ).toHaveAttribute("href", "/?lang=zh-Hans")
+
+    await page.goto("/zh-Hant/login")
+    await expect(page.locator("html")).toHaveAttribute("lang", "zh-Hant")
+  })
 })
 
 test.describe("public pre-event campaign", () => {
@@ -189,15 +218,15 @@ test.describe("public pre-event campaign", () => {
     await expect(
       page.getByRole("heading", {
         level: 1,
-        name: "Build the right business relationships before you arrive.",
+        name: "Prepare the right business meetings before you travel.",
       })
     ).toBeVisible()
     await expect(page).toHaveTitle(
-      "Cross-border business matching and pre-event support | Plexus"
+      "Pre-event business matching and visit planning | Plexus"
     )
     await expect(
       page.getByRole("img", {
-        name: "A Plexus coordinator helps an international delegate prepare business matches, meetings and an arrival plan",
+        name: "Business delegates review planned meetings and visit details with a Plexus coordinator",
       })
     ).toHaveAttribute("src", /plexus-pre-event-planning/)
     if ((page.viewportSize()?.width ?? 1024) >= 640) {
@@ -233,7 +262,7 @@ test.describe("public pre-event campaign", () => {
     ).toBeVisible()
     await expect(page.getByText("Macao · Live", { exact: true })).toBeVisible()
     await expect(
-      page.getByRole("heading", { name: "More than an introduction." })
+      page.getByRole("heading", { name: "Know who you want to meet—and why." })
     ).toBeVisible()
     await expect(
       page
@@ -271,7 +300,7 @@ test.describe("public pre-event campaign", () => {
       )
     } else {
       await expect(
-        page.getByRole("link", { name: "Discuss your program" }).last()
+        page.getByRole("link", { name: "Discuss your visit" }).last()
       ).toBeVisible()
     }
 
@@ -292,12 +321,12 @@ test.describe("public pre-event campaign", () => {
     page,
   }) => {
     for (const [lang, heading] of [
-      ["ms", "Bina hubungan perniagaan yang tepat sebelum anda tiba."],
-      ["zh-Hant", "抵埗前，先建立合適的商務關係。"],
       [
-        "unsupported",
-        "Build the right business relationships before you arrive.",
+        "ms",
+        "Sediakan mesyuarat perniagaan yang tepat sebelum anda berangkat.",
       ],
+      ["zh-Hans", "出发前 先安排合适的商务会议"],
+      ["unsupported", "Prepare the right business meetings before you travel."],
     ] as const) {
       await page.goto(`/pre-event?lang=${lang}`)
       await expect(

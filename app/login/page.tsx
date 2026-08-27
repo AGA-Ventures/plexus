@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 
 import { getLoginPath } from "@/lib/password-recovery"
+import { normalizeLocale } from "@/lib/i18n"
 import { normalizePublicLocale } from "@/lib/public-site"
 
 export default async function LoginPage({
@@ -13,7 +14,9 @@ export default async function LoginPage({
   }>
 }) {
   const { lang, tenant, passwordUpdated } = await searchParams
-  const locale = normalizePublicLocale(Array.isArray(lang) ? lang[0] : lang)
+  const locale = normalizeLocale(
+    normalizePublicLocale(Array.isArray(lang) ? lang[0] : lang)
+  )
   const tenantSlug = Array.isArray(tenant) ? tenant[0] : tenant
   const updated = Array.isArray(passwordUpdated)
     ? passwordUpdated[0]

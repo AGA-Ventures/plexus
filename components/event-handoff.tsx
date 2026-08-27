@@ -52,7 +52,7 @@ export function EventHandoff({
       className="event-handoff grid items-center gap-3 sm:grid-cols-[1fr_auto_1fr]"
       data-motion={isActive ? "active" : "idle"}
     >
-      <div className="rounded-xl bg-[#071326] px-4 py-5 text-center text-sm font-semibold sm:px-5">
+      <div className="event-handoff-source rounded-xl bg-[#071326] px-4 py-5 text-center text-sm font-semibold sm:px-5">
         {onlineLabel}
       </div>
 

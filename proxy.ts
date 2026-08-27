@@ -30,6 +30,8 @@ export async function proxy(request: NextRequest) {
         ? "ms"
         : requestedLanguage &&
             [
+              "zh-Hans",
+              "zh-hans",
               "zh-Hant",
               "zh-hant",
               "zht",
@@ -39,7 +41,7 @@ export async function proxy(request: NextRequest) {
               "zh",
               "cn",
             ].includes(requestedLanguage)
-          ? "zh-Hant"
+          ? "zh-Hans"
           : "en"
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set("x-plexus-language", documentLanguage)

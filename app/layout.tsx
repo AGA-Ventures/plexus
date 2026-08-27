@@ -20,9 +20,9 @@ const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
   ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
   : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
 
-const title = "Plexus | Sharper Connections for Global Business"
+const title = "Plexus | Cross-Border Business Matching for Program Operators"
 const description =
-  "Preview Plexus, the pre-launch operating platform for governed cross-border business matching, meetings and follow-up."
+  "Run cross-border business programs with structured company profiles, operator-governed matching, confirmed meetings and visible follow-up."
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

@@ -24,7 +24,7 @@ type SiteFooterProps = {
 const publicLocaleLabels: Record<PublicLocale, string> = {
   en: "English",
   ms: "Bahasa Malaysia",
-  "zh-Hant": "繁體中文",
+  "zh-Hans": "简体中文",
 }
 
 const launchCopy: Record<
@@ -33,7 +33,7 @@ const launchCopy: Record<
 > = {
   en: {
     status: "Pre-launch",
-    line: "A governed operating layer for cross-border business programs.",
+    line: "Structured matching, meetings and follow-up for cross-border business programs.",
     preview: "Explore the product preview",
   },
   ms: {
@@ -41,10 +41,10 @@ const launchCopy: Record<
     line: "Lapisan operasi terkawal untuk program perniagaan rentas sempadan.",
     preview: "Terokai pratonton produk",
   },
-  "zh-Hant": {
-    status: "預先發佈",
-    line: "跨境商務計劃的治理型營運層。",
-    preview: "探索產品預覽",
+  "zh-Hans": {
+    status: "预发布",
+    line: "面向跨境商务项目的规范化运营平台。",
+    preview: "探索产品预览",
   },
 }
 

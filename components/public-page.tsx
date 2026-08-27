@@ -52,11 +52,11 @@ const pageCopy: Record<
     back: "Kembali ke Plexus",
     principle: "Direka untuk semakan manusia",
   },
-  "zh-Hant": {
-    status: "預先發佈應用程式",
-    next: "討論您的計劃",
+  "zh-Hans": {
+    status: "预发布应用",
+    next: "讨论您的项目",
     back: "返回 Plexus",
-    principle: "以人工審核為設計核心",
+    principle: "以人工审核为设计核心",
   },
 }
 
@@ -165,7 +165,7 @@ export async function PublicMarketingPage({
                 className="text-[#80e8ff]"
               />
               <div className="mt-16">
-                <p className="text-3xl leading-tight font-semibold tracking-[-0.025em]">
+                <p className="text-3xl leading-tight font-semibold tracking-[-0.025em] whitespace-pre-line">
                   {principle}
                 </p>
                 <p className="mt-4 max-w-md text-sm leading-6 text-[#b8cadc]">
@@ -181,7 +181,7 @@ export async function PublicMarketingPage({
         <div className="mx-auto max-w-[1180px]">
           <div className="grid gap-12 lg:grid-cols-[0.72fr_1.28fr]">
             <div>
-              <h2 className="text-3xl leading-tight font-semibold tracking-[-0.025em] sm:text-5xl">
+              <h2 className="text-3xl leading-tight font-semibold tracking-[-0.025em] whitespace-pre-line sm:text-5xl">
                 {sectionTitle}
               </h2>
               {sectionBody ? (
@@ -215,7 +215,7 @@ export async function PublicMarketingPage({
                     ) : (
                       <div className="max-w-2xl">
                         <h3
-                          className={`${isNarrativePage ? "text-2xl" : "text-xl"} leading-tight font-semibold tracking-[-0.02em] text-[#111826]`}
+                          className={`${isNarrativePage ? "text-2xl" : "text-xl"} leading-tight font-semibold tracking-[-0.02em] whitespace-pre-line text-[#111826]`}
                         >
                           {point.title}
                         </h3>
@@ -260,7 +260,7 @@ export async function PublicMarketingPage({
               ) : null}
               {feature ? (
                 <article className="border-b border-[#b9cddd] py-7">
-                  <h3 className="text-2xl leading-tight font-semibold tracking-[-0.02em]">
+                  <h3 className="text-2xl leading-tight font-semibold tracking-[-0.02em] whitespace-pre-line">
                     {feature.title}
                   </h3>
                   <p className="mt-4 max-w-2xl text-lg leading-8 text-[#3f5369]">

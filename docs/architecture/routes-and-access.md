@@ -126,9 +126,9 @@ external Admin and Vendor recipients.
 | `/for-vendors?lang=<locale>`           | None                | Compatibility redirect to the program-operator route                          |
 | `/pre-event?lang=<locale>`             | None                | Special worldwide inquiry, matching preparation, and concierge handoff        |
 | `/pricing?lang=<locale>`               | None                | Scoped-program pricing explanation, direct channels, and pricing enquiry form |
-| `/contact?lang=<locale>`               | None                | Localized public enquiry form and direct contact channels                      |
-| `/app?lang=<locale>`                   | None                | Localized, clearly labelled illustrative pre-launch product preview            |
-| `POST /api/public-enquiries`           | None                | Validated, non-persistent Resend delivery for public enquiries                 |
+| `/contact?lang=<locale>`               | None                | Localized public enquiry form and direct contact channels                     |
+| `/app?lang=<locale>`                   | None                | Localized, clearly labelled illustrative pre-launch product preview           |
+| `POST /api/public-enquiries`           | None                | Validated, non-persistent Resend delivery for public enquiries                |
 
 One shared public header exposes the product, events, pricing, and a four-part
 audience group for Business owners, Program operators, Investment promotion,
@@ -141,23 +141,26 @@ uses the Plexus blue editorial system.
 The event index and detail routes read four plain seed records from
 `data/events.ts`; the investment-promotion page reads three plain project
 records from `data/investment-projects.ts`. Every record is labelled
-illustrative and pre-launch in English, Bahasa Malaysia, and Traditional
-Chinese. The source does not represent confirmed operations, attendance,
-partners, incentives, or business outcomes.
+illustrative and pre-launch in English, Bahasa Malaysia, and Simplified
+Chinese (`zh-Hans`). The source does not represent confirmed operations,
+attendance, partners, incentives, or business outcomes.
 
-The public site and pre-event campaign accept English, Bahasa Malaysia, and Traditional
-Chinese through the existing public `lang` query. Pricing and Contact provide the same
-localized enquiry form, with Pricing selecting its scoped-proposal topic by default.
-The public form validates the request server-side, uses a honeypot and request-size cap,
-and delivers only to the configured public contact mailbox through Resend; it does not
-persist enquiries. It lists worldwide departure
-countries for inquiry context while identifying Malaysia and Macao separately
-as the current live-market focus. Selecting a country prepares a WhatsApp draft
-to the configured Plexus number; the page does not submit or persist personal
-data, sell travel inventory, issue visas, take payments, or imply operational
-coverage in every listed market. Email, callback, regional-messenger, and
-co-brand controls remain absent until verified contact or approved brand
-configuration exists. Public inquiry channels are read only from
+The public site and pre-event campaign accept English, Bahasa Malaysia, and
+Simplified Chinese (`zh-Hans`) through the existing public `lang` query. Legacy
+public Chinese aliases render Simplified Chinese and subsequent public links use
+the canonical `zh-Hans` value; protected `zh-Hant` routes remain unchanged.
+Pricing and Contact provide the same localized enquiry form, with Pricing
+selecting its scoped-proposal topic by default. The public form validates the
+request server-side, uses a honeypot and request-size cap, and delivers only to
+the configured public contact mailbox through Resend; it does not persist
+enquiries. It lists worldwide departure countries for inquiry context while
+identifying Malaysia and Macao separately as the current live-market focus.
+Selecting a country prepares a WhatsApp draft to the configured Plexus number;
+the page does not submit or persist personal data, sell travel inventory, issue
+visas, take payments, or imply operational coverage in every listed market.
+Email, callback, regional-messenger, and co-brand controls remain absent until
+verified contact or approved brand configuration exists. Public inquiry
+channels are read only from
 `PLEXUS_PUBLIC_CONTACT_EMAIL`, `PLEXUS_PUBLIC_WHATSAPP_NUMBER`, and
 `PLEXUS_PUBLIC_WHATSAPP_DISPLAY`; an unconfigured channel is not rendered.
 
@@ -188,11 +191,12 @@ configuration exists. Public inquiry channels are read only from
 | `/[locale]/compliance`      | Superadmin, Admin | Hidden shell; Admin retains own-tenant sidebar                                     |
 
 Public auth aliases (`/login`, `/forgot-password`, and `/reset-password`)
-honor the public `lang` query for English, Bahasa Malaysia, and Traditional
-Chinese before entering the locale-prefixed auth flow. Protected root aliases
-such as `/admin`, `/vendor`, and `/superadmin` redirect to English. Legacy
-`/delegation` and `/partner` routes are compatibility aliases for the Vendor
-workspace.
+honor the public `lang` query for English, Bahasa Malaysia, and Simplified
+Chinese before entering the locale-prefixed auth flow. Simplified Chinese
+normalizes to the protected portal's canonical `zh` route. Protected root
+aliases such as `/admin`, `/vendor`, and `/superadmin` redirect to English.
+Legacy `/delegation` and `/partner` routes are compatibility aliases for the
+Vendor workspace.
 
 An authenticated Vendor whose tenant has disabled Vendor discovery is
 redirected from `/[locale]/vendor/discover` to its localized **My matches**

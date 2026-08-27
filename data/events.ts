@@ -1,6 +1,6 @@
 import enContent from "@/messages/public/en.json"
 import msContent from "@/messages/public/ms.json"
-import zhHantContent from "@/messages/public/zh-Hant.json"
+import zhHansContent from "@/messages/public/zh-Hans.json"
 
 import type { PublicLocale } from "@/lib/public-site"
 
@@ -20,7 +20,7 @@ function localizedCopy(slug: EventSlug) {
   return {
     en: enContent.events.items[slug],
     ms: msContent.events.items[slug],
-    "zh-Hant": zhHantContent.events.items[slug],
+    "zh-Hans": zhHansContent.events.items[slug],
   } satisfies Record<PublicLocale, (typeof enContent.events.items)[EventSlug]>
 }
 
@@ -40,7 +40,7 @@ export const events = [
       "Tourism",
       "Digital services",
     ],
-    languages: ["EN", "繁中", "BM"],
+    languages: ["EN", "简中", "BM"],
     interpreter: true,
     eventType: "delegation",
     relatedAudience: "investment",
@@ -57,7 +57,7 @@ export const events = [
     format: "hybrid",
     audiences: ["operators", "investment", "government"],
     sectors: ["Manufacturing", "Green energy", "Logistics", "Fintech"],
-    languages: ["EN", "繁中", "BM"],
+    languages: ["EN", "简中", "BM"],
     interpreter: true,
     eventType: "forum",
     relatedAudience: "government",
@@ -74,7 +74,7 @@ export const events = [
     format: "onground",
     audiences: ["business", "operators"],
     sectors: ["Cross-sector SME"],
-    languages: ["EN", "BM", "繁中"],
+    languages: ["EN", "BM", "简中"],
     interpreter: false,
     eventType: "matchmaking",
     relatedAudience: "business",
@@ -91,7 +91,7 @@ export const events = [
     format: "hybrid",
     audiences: ["investment", "government"],
     sectors: ["Advanced manufacturing", "Green energy", "Digital economy"],
-    languages: ["EN", "繁中", "BM"],
+    languages: ["EN", "简中", "BM"],
     interpreter: true,
     eventType: "roadshow",
     relatedAudience: "investment",

@@ -280,6 +280,7 @@
 .capabilityIntro h2,
 .plexa h2,
 .cta h2 {
+  white-space: pre-line;
   font-size: clamp(3rem, 4.7vw, 5.75rem);
   font-weight: 600;
   letter-spacing: -0.035em;

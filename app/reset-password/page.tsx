@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 
 import { getResetPasswordPath } from "@/lib/password-recovery"
+import { normalizeLocale } from "@/lib/i18n"
 import { normalizePublicLocale } from "@/lib/public-site"
 
 export default async function ResetPasswordPage({
@@ -16,7 +17,9 @@ export default async function ResetPasswordPage({
   const requestedMode = Array.isArray(mode) ? mode[0] : mode
   redirect(
     getResetPasswordPath(
-      normalizePublicLocale(Array.isArray(lang) ? lang[0] : lang),
+      normalizeLocale(
+        normalizePublicLocale(Array.isArray(lang) ? lang[0] : lang)
+      ),
       Array.isArray(tenant) ? tenant[0] : tenant,
       requestedMode === "setup" ? "setup" : "recovery"
     )

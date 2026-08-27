@@ -50,7 +50,7 @@ const serviceIcons = [
 const openGraphLocales = {
   en: "en_MY",
   ms: "ms_MY",
-  "zh-Hant": "zh_Hant",
+  "zh-Hans": "zh_Hans",
 } as const
 
 export async function generateMetadata({
@@ -69,7 +69,7 @@ export async function generateMetadata({
       languages: {
         en: withLocale("/pre-event", "en"),
         ms: withLocale("/pre-event", "ms"),
-        "zh-Hant": withLocale("/pre-event", "zh-Hant"),
+        "zh-Hans": withLocale("/pre-event", "zh-Hans"),
       },
     },
     openGraph: {
@@ -126,15 +126,15 @@ export default async function PreEventPage({ searchParams }: PageProps) {
   const configuredContactLabel = genericWhatsappHref
     ? page.hero.primaryCta
     : locale === "ms"
-      ? "Bincangkan program anda"
-      : locale === "zh-Hant"
-        ? "討論您的計劃"
-        : "Discuss your program"
+      ? "Bincangkan lawatan anda"
+      : locale === "zh-Hans"
+        ? "讨论您的商务访问"
+        : "Discuss your visit"
   const campaignLabel =
     locale === "ms"
       ? "Perkhidmatan khas pra-acara"
-      : locale === "zh-Hant"
-        ? "特別活動前服務"
+      : locale === "zh-Hans"
+        ? "专项活动前服务"
         : "Special pre-event service"
 
   return (
@@ -151,7 +151,7 @@ export default async function PreEventPage({ searchParams }: PageProps) {
             <span className="size-1.5 rounded-full bg-[#80e8ff]" />
             {campaignLabel} · {page.hero.eyebrow}
           </p>
-          <h1 className="mx-auto mt-6 max-w-4xl text-5xl leading-[1.08] font-semibold tracking-[-0.035em] text-white sm:text-6xl lg:text-7xl">
+          <h1 className="mx-auto mt-6 max-w-4xl text-5xl leading-[1.08] font-semibold tracking-[-0.035em] whitespace-pre-line text-white sm:text-6xl lg:text-7xl">
             {page.hero.title}
           </h1>
           <p className="mx-auto mt-6 max-w-3xl text-base leading-7 text-white/72 sm:text-lg">
@@ -231,7 +231,7 @@ export default async function PreEventPage({ searchParams }: PageProps) {
             <p className="text-xs font-semibold tracking-[0.22em] text-[#0758c8] uppercase">
               {page.journey.eyebrow}
             </p>
-            <h2 className="mt-4 text-3xl leading-tight font-semibold tracking-[-0.025em] text-[#111826] sm:text-4xl">
+            <h2 className="mt-4 text-3xl leading-tight font-semibold tracking-[-0.025em] whitespace-pre-line text-[#111826] sm:text-4xl">
               {page.journey.title}
             </h2>
             <p className="mt-4 text-base leading-7 text-[#53667c]">
@@ -266,7 +266,7 @@ export default async function PreEventPage({ searchParams }: PageProps) {
             <p className="text-xs font-semibold tracking-[0.22em] text-[#0758c8] uppercase">
               {page.services.eyebrow}
             </p>
-            <h2 className="mt-4 max-w-2xl text-3xl leading-tight font-semibold tracking-[-0.025em] text-[#111826] sm:text-4xl">
+            <h2 className="mt-4 max-w-2xl text-3xl leading-tight font-semibold tracking-[-0.025em] whitespace-pre-line text-[#111826] sm:text-4xl">
               {page.services.title}
             </h2>
             <p className="mt-4 max-w-2xl text-base leading-7 text-[#53667c]">
@@ -327,7 +327,7 @@ export default async function PreEventPage({ searchParams }: PageProps) {
                 <p className="text-xs font-semibold tracking-[0.22em] text-[#0758c8] uppercase">
                   {page.markets.eyebrow}
                 </p>
-                <h2 className="mt-4 text-3xl leading-tight font-semibold tracking-[-0.025em] text-[#111826]">
+                <h2 className="mt-4 text-3xl leading-tight font-semibold tracking-[-0.025em] whitespace-pre-line text-[#111826]">
                   {page.markets.title}
                 </h2>
                 <p className="mt-4 text-base leading-7 text-[#53667c]">
@@ -378,7 +378,7 @@ export default async function PreEventPage({ searchParams }: PageProps) {
             <p className="text-xs font-semibold tracking-[0.22em] text-[#0758c8] uppercase">
               {page.countries.eyebrow}
             </p>
-            <h2 className="mt-4 text-3xl leading-tight font-semibold tracking-[-0.025em] text-[#111826] sm:text-4xl">
+            <h2 className="mt-4 text-3xl leading-tight font-semibold tracking-[-0.025em] whitespace-pre-line text-[#111826] sm:text-4xl">
               {page.countries.title}
             </h2>
             <p className="mt-4 text-base leading-7 text-[#53667c]">

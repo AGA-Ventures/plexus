@@ -11,7 +11,7 @@ describe("pre-event campaign helpers", () => {
   it("provides a localized worldwide country directory", () => {
     const englishCountries = getPreEventCountryOptions("en")
     const malayCountries = getPreEventCountryOptions("ms")
-    const traditionalChineseCountries = getPreEventCountryOptions("zh-Hant")
+    const simplifiedChineseCountries = getPreEventCountryOptions("zh-Hans")
 
     expect(englishCountries.length).toBeGreaterThanOrEqual(240)
     expect(englishCountries).toEqual(
@@ -26,9 +26,8 @@ describe("pre-event campaign helpers", () => {
       malayCountries.find(({ countryCode }) => countryCode === "MY")
     ).toEqual(expect.objectContaining({ countryName: "Malaysia" }))
     expect(
-      traditionalChineseCountries.find(
-        ({ countryCode }) => countryCode === "MO"
-      )?.countryName
+      simplifiedChineseCountries.find(({ countryCode }) => countryCode === "MO")
+        ?.countryName
     ).not.toBe("MO")
   })
 

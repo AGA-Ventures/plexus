@@ -28,13 +28,13 @@ const audienceLabels: Record<
     business: "Pemilik perniagaan",
     operators: "Pengendali program",
     investment: "Promosi pelaburan",
-    government: "Kerajaan & dua hala",
+    government: "Kerajaan & hubungan dua hala",
   },
-  "zh-Hant": {
-    business: "企業與業主",
-    operators: "運營方與商會",
-    investment: "招商機構",
-    government: "政府與雙邊",
+  "zh-Hans": {
+    business: "企业与业主",
+    operators: "运营方与商会",
+    investment: "招商机构",
+    government: "政府与双边",
   },
 }
 

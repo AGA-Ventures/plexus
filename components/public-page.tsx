@@ -7,6 +7,7 @@ import {
   ArrowRight01Icon,
   CheckmarkCircle02Icon,
   Globe02Icon,
+  WhatsappIcon,
 } from "@hugeicons/core-free-icons"
 
 import { SiteFooter } from "@/components/site-footer"
@@ -304,32 +305,40 @@ export async function PublicMarketingPage({
         >
           <div className="mx-auto grid max-w-[1180px] gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
             <div>
-              <h2 className="max-w-lg text-4xl leading-tight font-semibold tracking-[-0.03em] sm:text-5xl">
+              <h2
+                id={`${enquirySource}-enquiry-heading`}
+                className="max-w-lg text-4xl leading-tight font-semibold tracking-[-0.03em] sm:text-5xl"
+              >
                 {enquiryTitle}
               </h2>
               <p className="mt-6 max-w-md text-base leading-7 text-[#53667c]">
                 {enquiryBody}
               </p>
-              <div className="mt-8 border-t border-[#b9cddd]">
-                <a
-                  href={`mailto:${enquiryChannels.contactEmail}`}
-                  className="block border-b border-[#b9cddd] py-5 text-base font-semibold text-[#0758c8] underline decoration-[#9dbbd2] underline-offset-4 transition-colors hover:text-[#071326] focus-visible:ring-2 focus-visible:ring-[#0a84ff] focus-visible:outline-none"
-                >
-                  {enquiryChannels.contactEmail}
-                </a>
+              <div className="mt-9 max-w-md border-t border-[#b9cddd] pt-7">
+                <h3 className="text-xl font-semibold tracking-[-0.02em] text-[#111826]">
+                  {content.enquiry.whatsappTitle}
+                </h3>
+                <p className="mt-3 text-sm leading-6 text-[#53667c]">
+                  {content.enquiry.whatsappBody}
+                </p>
                 <a
                   href={whatsappHref}
                   target="_blank"
                   rel="noreferrer"
-                  className="block border-b border-[#b9cddd] py-5 text-base font-semibold text-[#0758c8] underline decoration-[#9dbbd2] underline-offset-4 transition-colors hover:text-[#071326] focus-visible:ring-2 focus-visible:ring-[#0a84ff] focus-visible:outline-none"
+                  className="mt-5 inline-flex min-h-12 items-center gap-3 rounded-[11px] bg-[#075e54] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#064b43] focus-visible:ring-2 focus-visible:ring-[#075e54] focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
-                  {content.enquiry.whatsappCta} ·{" "}
-                  {enquiryChannels.whatsappDisplay}
+                  <HugeiconsIcon
+                    icon={WhatsappIcon}
+                    size={20}
+                    strokeWidth={1.8}
+                    aria-hidden="true"
+                  />
+                  {content.enquiry.whatsappCta}
                 </a>
+                <p className="mt-4 text-sm leading-6 text-[#53667c]">
+                  {content.enquiry.whatsappNotice}
+                </p>
               </div>
-              <p className="mt-5 max-w-md text-sm leading-6 text-[#53667c]">
-                {content.enquiry.whatsappNotice}
-              </p>
             </div>
             <PublicEnquiryForm
               copy={content.enquiry.form}

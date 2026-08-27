@@ -35,7 +35,8 @@ describe("public pricing and contact enquiries", () => {
     expect(markup).toContain("Minta cadangan mengikut skop")
     expect(markup).toContain('name="enquiryType"')
     expect(markup).toMatch(/<option value="pricing" selected="">/)
-    expect(markup).toContain('href="mailto:admin@ylinspiration.com"')
+    expect(markup).not.toContain('href="mailto:admin@ylinspiration.com"')
+    expect(markup).toContain("Buat pertanyaan melalui WhatsApp")
     expect(markup).toContain('href="https://wa.me/60123456789?text=hello"')
   })
 

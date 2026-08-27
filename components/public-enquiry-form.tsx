@@ -7,8 +7,6 @@ import type { PublicLocale } from "@/lib/public-site"
 import type { PublicEnquiryType } from "@/lib/public-enquiry"
 
 type EnquiryFormCopy = {
-  title: string
-  body: string
   nameLabel: string
   organisationLabel: string
   emailLabel: string
@@ -183,16 +181,10 @@ export function PublicEnquiryForm({
     <form
       noValidate
       onSubmit={handleSubmit}
+      aria-labelledby={`${sourcePage}-enquiry-heading`}
       className="rounded-[14px] bg-white p-5 sm:p-8"
     >
-      <h3 className="text-2xl font-semibold tracking-[-0.02em] text-[#111826]">
-        {copy.title}
-      </h3>
-      <p className="mt-3 max-w-2xl text-base leading-7 text-[#53667c]">
-        {copy.body}
-      </p>
-
-      <div className="mt-7 grid gap-5 sm:grid-cols-2">
+      <div className="grid gap-5 sm:grid-cols-2">
         <Field
           error={fieldErrors.name}
           htmlFor={`${sourcePage}-enquiry-name`}

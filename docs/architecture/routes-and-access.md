@@ -125,7 +125,10 @@ external Admin and Vendor recipients.
 | `/events/[slug]?lang=<locale>`         | None                | Request-aware localized detail for one illustrative seeded event              |
 | `/for-vendors?lang=<locale>`           | None                | Compatibility redirect to the program-operator route                          |
 | `/pre-event?lang=<locale>`             | None                | Special worldwide inquiry, matching preparation, and concierge handoff        |
+| `/pricing?lang=<locale>`               | None                | Scoped-program pricing explanation, direct channels, and pricing enquiry form |
+| `/contact?lang=<locale>`               | None                | Localized public enquiry form and direct contact channels                      |
 | `/app?lang=<locale>`                   | None                | Localized, clearly labelled illustrative pre-launch product preview            |
+| `POST /api/public-enquiries`           | None                | Validated, non-persistent Resend delivery for public enquiries                 |
 
 One shared public header exposes the product, events, pricing, and a four-part
 audience group for Business owners, Program operators, Investment promotion,
@@ -143,7 +146,11 @@ Chinese. The source does not represent confirmed operations, attendance,
 partners, incentives, or business outcomes.
 
 The public site and pre-event campaign accept English, Bahasa Malaysia, and Traditional
-Chinese through the existing public `lang` query. It lists worldwide departure
+Chinese through the existing public `lang` query. Pricing and Contact provide the same
+localized enquiry form, with Pricing selecting its scoped-proposal topic by default.
+The public form validates the request server-side, uses a honeypot and request-size cap,
+and delivers only to the configured public contact mailbox through Resend; it does not
+persist enquiries. It lists worldwide departure
 countries for inquiry context while identifying Malaysia and Macao separately
 as the current live-market focus. Selecting a country prepares a WhatsApp draft
 to the configured Plexus number; the page does not submit or persist personal

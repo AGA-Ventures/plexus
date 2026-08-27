@@ -298,6 +298,46 @@
       "callbackBody": "Helo Plexus, sila hubungi saya tentang sokongan padanan perniagaan dan penyelarasan perjalanan pra-acara."
     }
   },
+  "enquiry": {
+    "title": "Mulakan perbincangan mengikut skop.",
+    "body": "Beritahu kami tentang program yang anda rancang. Kami akan menyemak kesesuaian dan membalas dengan langkah seterusnya yang sesuai.",
+    "formCta": "Hantar pertanyaan",
+    "whatsappCta": "Berbual di WhatsApp",
+    "whatsappNotice": "WhatsApp membuka draf mesej. Tiada mesej dihantar secara automatik.",
+    "whatsappMessage": "Helo Plexus, saya ingin membincangkan program, cadangan mengikut skop atau onboarding peserta.",
+    "form": {
+      "title": "Beritahu kami tentang program anda.",
+      "body": "Kongsi perkara asas dan pasukan Plexus akan membalas ke e-mel kerja anda.",
+      "nameLabel": "Nama anda",
+      "organisationLabel": "Organisasi",
+      "emailLabel": "E-mel kerja",
+      "phoneLabel": "Telefon",
+      "phoneOptional": "pilihan",
+      "enquiryTypeLabel": "Apakah yang anda ingin bincangkan?",
+      "enquiryTypes": {
+        "pricing": "Harga atau cadangan mengikut skop",
+        "pilot": "Program perintis atau program",
+        "onboarding": "Onboarding peserta",
+        "other": "Lain-lain"
+      },
+      "messageLabel": "Pertanyaan anda",
+      "messageHint": "Sila sertakan butiran yang mencukupi supaya kami dapat membalas dengan berguna.",
+      "submit": "Hantar pertanyaan",
+      "sending": "Menghantar pertanyaan…",
+      "successTitle": "Pertanyaan anda telah dihantar.",
+      "successBody": "Terima kasih. Pasukan Plexus akan membalas ke e-mel kerja yang anda berikan.",
+      "errors": {
+        "invalid": "Semak ruangan ini dan cuba lagi.",
+        "invalidEmail": "Masukkan e-mel kerja yang sah.",
+        "validation_failed": "Semak ruangan yang ditandakan dan cuba lagi.",
+        "request_too_large": "Pertanyaan anda terlalu panjang. Pendekkan dan cuba lagi.",
+        "invalid_request": "Kami tidak dapat membaca pertanyaan itu. Sila cuba lagi.",
+        "service_unavailable": "Penghantaran e-mel belum dikonfigurasi. Sila gunakan pautan e-mel di bawah.",
+        "delivery_failed": "Kami tidak dapat menghantar pertanyaan anda. Sila cuba lagi atau gunakan pautan e-mel di bawah.",
+        "network": "Kami tidak dapat menghubungi Plexus. Semak sambungan anda dan cuba lagi."
+      }
+    }
+  },
   "pages": {
     "for-vendors": {
       "title": "Ruang kerja white-label untuk pengendali program.",
@@ -360,7 +400,7 @@
         "title": "Perkara yang dinyatakan dalam cadangan anda",
         "body": "Setiap cadangan menyatakan modul yang disertakan, jumlah peserta, bahasa, onboarding, sokongan operasi dan tanggungjawab penyampaian sebelum kerja bermula.",
         "cta": "Minta cadangan mengikut skop",
-        "href": "/contact"
+        "href": "/contact?topic=pricing"
       }
     },
     "about": {
@@ -399,7 +439,7 @@
     },
     "contact": {
       "title": "Bercakap dengan Plexus.",
-      "body": "Halaman ini menjadi titik hubungan awam sementara borang lead penuh disiapkan.",
+      "body": "Gunakan borang pertanyaan atau saluran hubungan yang diluluskan di bawah untuk membincangkan program, onboarding peserta atau sesi pandu arah pra-pelancaran.",
       "points": [
         "Kerjasama pengendali program",
         "Program pilot",

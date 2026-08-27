@@ -324,16 +324,16 @@ const PLEXUS = {
   inventory: {
     "generated": "27 Aug 2026",
     "repository": {
-      "branch": "codex/localize-public-locale-continuity",
-      "commit": "48f758275367",
+      "branch": "codex/public-pricing-enquiry",
+      "commit": "d31638b495ec",
       "e2eSpecs": 1,
       "markdownFiles": 96,
       "migrations": 48,
       "pageRoutes": 62,
-      "projectFiles": 1052,
-      "routeHandlers": 20,
-      "unitTestFiles": 40,
-      "workingTreeChanges": 6
+      "projectFiles": 1060,
+      "routeHandlers": 21,
+      "unitTestFiles": 44,
+      "workingTreeChanges": 17
     },
     "topLevel": [
       {
@@ -349,23 +349,23 @@ const PLEXUS = {
         "name": ".agents"
       },
       {
-        "count": 97,
+        "count": 98,
         "name": "app"
       },
       {
-        "count": 57,
+        "count": 58,
         "name": "components"
+      },
+      {
+        "count": 55,
+        "name": "lib"
       },
       {
         "count": 55,
         "name": "supabase"
       },
       {
-        "count": 53,
-        "name": "lib"
-      },
-      {
-        "count": 41,
+        "count": 45,
         "name": "tests"
       },
       {
@@ -921,6 +921,14 @@ const PLEXUS = {
             "GET"
           ],
           "route": "/api/mou-documents/[id]/file"
+        },
+        {
+          "access": "See routes-and-access contract",
+          "file": "app/api/public-enquiries/route.ts",
+          "methods": [
+            "POST"
+          ],
+          "route": "/api/public-enquiries"
         },
         {
           "access": "Authorized resource audience",

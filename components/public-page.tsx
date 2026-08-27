@@ -11,7 +11,12 @@ import {
 
 import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
+import { PublicEnquiryForm } from "@/components/public-enquiry-form"
 import { Button } from "@/components/ui/button"
+import {
+  buildPublicWhatsAppHref,
+  getPublicEnquiryChannels,
+} from "@/lib/public-enquiry-email"
 import {
   getPublicContent,
   normalizePublicLocale,
@@ -21,7 +26,7 @@ import {
   withLocale,
 } from "@/lib/public-site"
 
-type SearchParams = Promise<{ lang?: string }>
+type SearchParams = Promise<{ lang?: string; topic?: string }>
 
 type ClosingCopy = {
   title?: string
@@ -69,8 +74,19 @@ export async function PublicMarketingPage({
   const page = content.pages[slug]
   const labels = pageCopy[locale]
   const currentPath = currentPathOverride ?? `/${slug}`
+  const hasEnquiryForm = slug === "contact" || slug === "pricing"
+  const enquirySource = slug === "pricing" ? "pricing" : "contact"
+  const enquiryType =
+    slug === "pricing" || params.topic === "pricing" ? "pricing" : "other"
+  const enquiryChannels = getPublicEnquiryChannels()
+  const whatsappHref = buildPublicWhatsAppHref(content.enquiry.whatsappMessage)
   const isNarrativePage = slug === "about"
-  const nextHref = slug === "contact" ? "/pre-event#contact" : "/contact"
+  const nextHref =
+    slug === "contact"
+      ? "#enquiry"
+      : slug === "pricing"
+        ? "/contact?topic=pricing"
+        : "/contact"
   const contactPage = slug === "contact" ? content.pages.contact : null
   const feature = "feature" in page ? page.feature : null
   const sectionTitle =
@@ -91,7 +107,7 @@ export async function PublicMarketingPage({
                 <span className="size-1.5 rounded-full bg-[#80e8ff]" />
                 {labels.status}
               </div>
-              <h1 className="mt-8 max-w-4xl whitespace-pre-line text-[clamp(3rem,6vw,5.75rem)] leading-[0.94] font-semibold tracking-[-0.035em] text-balance">
+              <h1 className="mt-8 max-w-4xl text-[clamp(3rem,6vw,5.75rem)] leading-[0.94] font-semibold tracking-[-0.035em] text-balance whitespace-pre-line">
                 {page.title}
               </h1>
               <p className="mt-7 max-w-2xl text-base leading-7 text-[#e4f3ff] sm:text-lg">
@@ -103,7 +119,15 @@ export async function PublicMarketingPage({
                   size="lg"
                   className="h-12 rounded-lg bg-[#071326] px-5 text-white hover:bg-[#102443]"
                 >
-                  <Link href={withLocale(nextHref, locale)}>{labels.next}</Link>
+                  <Link
+                    href={
+                      nextHref.startsWith("#")
+                        ? nextHref
+                        : withLocale(nextHref, locale)
+                    }
+                  >
+                    {slug === "contact" ? content.enquiry.formCta : labels.next}
+                  </Link>
                 </Button>
                 <Button
                   asChild
@@ -254,6 +278,51 @@ export async function PublicMarketingPage({
           ) : null}
         </div>
       </section>
+
+      {hasEnquiryForm ? (
+        <section
+          id="enquiry"
+          className="border-y border-[#b9cddd] bg-[#eef4f8] px-4 py-16 sm:px-6 lg:px-8 lg:py-24"
+        >
+          <div className="mx-auto grid max-w-[1180px] gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
+            <div>
+              <h2 className="max-w-lg text-4xl leading-tight font-semibold tracking-[-0.03em] sm:text-5xl">
+                {content.enquiry.title}
+              </h2>
+              <p className="mt-6 max-w-md text-base leading-7 text-[#53667c]">
+                {content.enquiry.body}
+              </p>
+              <div className="mt-8 border-t border-[#b9cddd]">
+                <a
+                  href={`mailto:${enquiryChannels.contactEmail}`}
+                  className="block border-b border-[#b9cddd] py-5 text-base font-semibold text-[#0758c8] underline decoration-[#9dbbd2] underline-offset-4 transition-colors hover:text-[#071326] focus-visible:ring-2 focus-visible:ring-[#0a84ff] focus-visible:outline-none"
+                >
+                  {enquiryChannels.contactEmail}
+                </a>
+                <a
+                  href={whatsappHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block border-b border-[#b9cddd] py-5 text-base font-semibold text-[#0758c8] underline decoration-[#9dbbd2] underline-offset-4 transition-colors hover:text-[#071326] focus-visible:ring-2 focus-visible:ring-[#0a84ff] focus-visible:outline-none"
+                >
+                  {content.enquiry.whatsappCta} ·{" "}
+                  {enquiryChannels.whatsappDisplay}
+                </a>
+              </div>
+              <p className="mt-5 max-w-md text-sm leading-6 text-[#53667c]">
+                {content.enquiry.whatsappNotice}
+              </p>
+            </div>
+            <PublicEnquiryForm
+              copy={content.enquiry.form}
+              locale={locale}
+              sourcePage={enquirySource}
+              initialEnquiryType={enquiryType}
+              fallbackEmail={enquiryChannels.contactEmail}
+            />
+          </div>
+        </section>
+      ) : null}
 
       {contactPage ? (
         <section

@@ -8,6 +8,12 @@ reviewed together.
 
 ### 2026-08-27
 
+- Added localized Pricing and Contact enquiry forms that submit directly to the
+  configured Plexus mailbox through Resend without storing personal data. Both
+  pages now expose email and WhatsApp channels, Pricing preselects its scoped
+  proposal topic, and invalid, unavailable, and failed-delivery states retain
+  the visitor's input with an email fallback. The documented WhatsApp number is
+  a temporary placeholder to replace before production launch.
 - Made Command Center CI validation ignore volatile Git branch, commit, and
   working-tree fields while continuing to validate the generated inventory.
 - Localized the public Product preview, including its metadata, navigation,

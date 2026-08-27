@@ -91,7 +91,7 @@ export async function PublicMarketingPage({
                 <span className="size-1.5 rounded-full bg-[#80e8ff]" />
                 {labels.status}
               </div>
-              <h1 className="mt-8 max-w-4xl text-[clamp(3rem,6vw,5.75rem)] leading-[0.94] font-semibold tracking-[-0.035em] text-balance">
+              <h1 className="mt-8 max-w-4xl whitespace-pre-line text-[clamp(3rem,6vw,5.75rem)] leading-[0.94] font-semibold tracking-[-0.035em] text-balance">
                 {page.title}
               </h1>
               <p className="mt-7 max-w-2xl text-base leading-7 text-[#e4f3ff] sm:text-lg">

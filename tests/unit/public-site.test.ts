@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest"
 
-import { getPublicContent, publicLocales, withLocale } from "@/lib/public-site"
+import {
+  getPublicContent,
+  normalizePublicLocale,
+  publicLocales,
+  withLocale,
+} from "@/lib/public-site"
 
 describe("public site locale routing", () => {
   it("keeps locale parameters before route fragments", () => {
@@ -13,6 +18,12 @@ describe("public site locale routing", () => {
     expect(withLocale("/contact?source=footer", "zh-Hant")).toBe(
       "/contact?source=footer&lang=zh-Hant"
     )
+  })
+
+  it("normalizes public Malay and Traditional Chinese locale aliases", () => {
+    expect(normalizePublicLocale("my")).toBe("ms")
+    expect(normalizePublicLocale("zh")).toBe("zh-Hant")
+    expect(normalizePublicLocale("unsupported")).toBe("en")
   })
 
   it("keeps pricing proposals scoped and actionable in every public locale", () => {

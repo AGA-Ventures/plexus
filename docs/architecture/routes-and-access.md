@@ -125,7 +125,7 @@ external Admin and Vendor recipients.
 | `/events/[slug]?lang=<locale>`         | None                | Request-aware localized detail for one illustrative seeded event              |
 | `/for-vendors?lang=<locale>`           | None                | Compatibility redirect to the program-operator route                          |
 | `/pre-event?lang=<locale>`             | None                | Special worldwide inquiry, matching preparation, and concierge handoff        |
-| `/app`                                 | None                | English-only, clearly labelled illustrative pre-launch product preview        |
+| `/app?lang=<locale>`                   | None                | Localized, clearly labelled illustrative pre-launch product preview            |
 
 One shared public header exposes the product, events, pricing, and a four-part
 audience group for Business owners, Program operators, Investment promotion,
@@ -180,9 +180,12 @@ configuration exists. Public inquiry channels are read only from
 | `/[locale]/vendor/discover` | Vendor            | Eligible opposite-subtype directory when the owning Admin enables Vendor discovery |
 | `/[locale]/compliance`      | Superadmin, Admin | Hidden shell; Admin retains own-tenant sidebar                                     |
 
-Root aliases such as `/login`, `/admin`, `/vendor`, and `/superadmin` redirect
-to English. Legacy `/delegation` and `/partner` routes are compatibility
-aliases for the Vendor workspace.
+Public auth aliases (`/login`, `/forgot-password`, and `/reset-password`)
+honor the public `lang` query for English, Bahasa Malaysia, and Traditional
+Chinese before entering the locale-prefixed auth flow. Protected root aliases
+such as `/admin`, `/vendor`, and `/superadmin` redirect to English. Legacy
+`/delegation` and `/partner` routes are compatibility aliases for the Vendor
+workspace.
 
 An authenticated Vendor whose tenant has disabled Vendor discovery is
 redirected from `/[locale]/vendor/discover` to its localized **My matches**

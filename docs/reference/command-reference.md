@@ -26,7 +26,7 @@
 
 | Command                  | Purpose                                     |
 | ------------------------ | ------------------------------------------- |
-| `npm run docs:check`     | Validate docs, links, and command-center inventory |
+| `npm run docs:check`     | Validate docs, links, and stable command-center inventory |
 | `npm run docs:command-center` | Refresh all Markdown and App Router route inventory |
 | `npm run health:check`   | Run release verification and browser E2E checks |
 | `npm run lint`           | ESLint                                      |

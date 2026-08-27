@@ -87,6 +87,7 @@
 
 .hero h1 {
   max-width: 760px;
+  white-space: pre-line;
   font-size: clamp(3rem, 6vw, 5.75rem);
   font-weight: 600;
   letter-spacing: -0.04em;
@@ -709,25 +710,41 @@
 }
 
 .statusLegend [data-state="Live"],
-.stateBadge[data-state="Live"] {
+.statusLegend [data-state="Langsung"],
+.statusLegend [data-state="已上線"],
+.stateBadge[data-state="Live"],
+.stateBadge[data-state="Langsung"],
+.stateBadge[data-state="已上線"] {
   background: #d9f8ee;
   color: #08664d;
 }
 
 .statusLegend [data-state="Mixed"],
-.stateBadge[data-state="Mixed"] {
+.statusLegend [data-state="Campuran"],
+.statusLegend [data-state="混合"],
+.stateBadge[data-state="Mixed"],
+.stateBadge[data-state="Campuran"],
+.stateBadge[data-state="混合"] {
   background: #deebff;
   color: #0758c8;
 }
 
 .statusLegend [data-state="Adapter"],
-.stateBadge[data-state="Adapter"] {
+.statusLegend [data-state="Penyesuai"],
+.statusLegend [data-state="適配器"],
+.stateBadge[data-state="Adapter"],
+.stateBadge[data-state="Penyesuai"],
+.stateBadge[data-state="適配器"] {
   background: #fff0c9;
   color: #735000;
 }
 
 .statusLegend [data-state="Concept"],
-.stateBadge[data-state="Concept"] {
+.statusLegend [data-state="Konsep"],
+.statusLegend [data-state="概念"],
+.stateBadge[data-state="Concept"],
+.stateBadge[data-state="Konsep"],
+.stateBadge[data-state="概念"] {
   background: #e9e5f4;
   color: #51436a;
 }

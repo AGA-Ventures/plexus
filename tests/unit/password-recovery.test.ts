@@ -19,6 +19,15 @@ describe("password recovery routes", () => {
     )
   })
 
+  it("keeps Malay recovery paths localized", () => {
+    expect(getForgotPasswordPath("ms", "shanghai-macau")).toBe(
+      "/ms/forgot-password?tenant=shanghai-macau"
+    )
+    expect(getLoginPath("ms", "shanghai-macau", true)).toBe(
+      "/ms/login?tenant=shanghai-macau&passwordUpdated=1"
+    )
+  })
+
   it("builds an SSR callback URL for the password recovery session", () => {
     expect(
       getPasswordRecoveryRedirectUrl({
@@ -29,6 +38,26 @@ describe("password recovery routes", () => {
     ).toBe(
       "https://plexus.example/auth/callback?next=%2Fen%2Freset-password%3Ftenant%3Dshanghai-macau"
     )
+  })
+
+  it("preserves Malay and Traditional Chinese through recovery callbacks", () => {
+    const redirect = getPasswordRecoveryRedirectUrl({
+      origin: "https://plexus.example",
+      locale: "ms",
+      tenantSlug: "shanghai-macau",
+    })
+
+    expect(redirect).toBe(
+      "https://plexus.example/auth/callback?next=%2Fms%2Freset-password%3Ftenant%3Dshanghai-macau"
+    )
+    expect(
+      parsePasswordResetPath("/zh-Hant/reset-password?tenant=shanghai-macau")
+    ).toEqual({
+      locale: "zh-Hant",
+      tenantSlug: "shanghai-macau",
+      mode: "recovery",
+      path: "/zh-Hant/reset-password?tenant=shanghai-macau",
+    })
   })
 
   it("preserves a validated setup mode for approved Vendor onboarding", () => {

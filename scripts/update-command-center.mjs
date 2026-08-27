@@ -211,8 +211,18 @@ const updated = `${source.slice(0, start)}${generatedBlock}${source.slice(
   end + endMarker.length
 )}`
 
+function normalizeVolatileRepositoryFields(value) {
+  return value
+    .replace(/("branch": )"[^"]+"/, '$1"<volatile>"')
+    .replace(/("commit": )"[^"]+"/, '$1"<volatile>"')
+    .replace(/("workingTreeChanges": )\d+/, "$1<volatile>")
+}
+
 if (checkOnly) {
-  if (updated !== source) {
+  if (
+    normalizeVolatileRepositoryFields(updated) !==
+    normalizeVolatileRepositoryFields(source)
+  ) {
     console.error(
       "✗ Development Command Center inventory is stale. Run npm run docs:command-center."
     )

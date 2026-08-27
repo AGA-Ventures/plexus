@@ -8,6 +8,8 @@ reviewed together.
 
 ### 2026-08-27
 
+- Made Command Center CI validation ignore volatile Git branch, commit, and
+  working-tree fields while continuing to validate the generated inventory.
 - Localized the public Product preview, including its metadata, navigation,
   accessible image text, readiness map, and public return links, across
   English, Bahasa Malaysia, and Traditional Chinese. Public login and password

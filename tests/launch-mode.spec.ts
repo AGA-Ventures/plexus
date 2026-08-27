@@ -101,7 +101,7 @@ test.describe("public locale continuity", () => {
         "Keseluruhan perjalanan perniagaan, dalam satu superap.",
         "Kembali ke laman web Plexus",
       ],
-      ["zh-Hant", "完整商業旅程，盡在一個超級應用。", "返回 Plexus 網站"],
+      ["zh-Hant", "完整商業旅程 盡在一個超級應用", "返回 Plexus 網站"],
     ] as const) {
       await page.goto(`/app?lang=${locale}`)
       await expect(page.locator("html")).toHaveAttribute("lang", locale)
@@ -116,6 +116,20 @@ test.describe("public locale continuity", () => {
     }
 
     expect(consoleErrors).toEqual([])
+  })
+
+  test("uses the requested Traditional-Chinese business headline break", async ({
+    page,
+  }) => {
+    await page.goto("/for-businesses?lang=zh-Hant")
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      "減少無效社交 找到更合適的合作夥伴"
+    )
+    await expect(page.getByRole("heading", { level: 1 })).toHaveCSS(
+      "white-space",
+      "pre-line"
+    )
+    await expectNoHorizontalOverflow(page)
   })
 
   test("preserves locale through public auth aliases and recovery", async ({

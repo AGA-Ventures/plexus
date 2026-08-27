@@ -14,6 +14,8 @@ reviewed together.
   recovery aliases now retain the selected locale, Malay sign-in and recovery
   copy is available, and localized 404 recovery links return visitors to the
   matching public homepage.
+- Set the requested two-line Traditional-Chinese hero headlines on the Business
+  and Product preview pages.
 
 ### 2026-08-26
 

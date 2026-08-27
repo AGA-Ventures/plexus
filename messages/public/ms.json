@@ -301,6 +301,8 @@
   "enquiry": {
     "title": "Mulakan perbincangan mengikut skop.",
     "body": "Beritahu kami tentang program yang anda rancang. Kami akan menyemak kesesuaian dan membalas dengan langkah seterusnya yang sesuai.",
+    "pricingTitle": "Minta cadangan mengikut skop.",
+    "pricingBody": "Beritahu kami anggaran jumlah peserta, pasaran, tarikh program, bahasa dan sokongan yang anda perlukan. Kami akan menyemak keperluan anda dan membalas ke e-mel kerja anda.",
     "formCta": "Hantar pertanyaan",
     "whatsappCta": "Berbual di WhatsApp",
     "whatsappNotice": "WhatsApp membuka draf mesej. Tiada mesej dihantar secara automatik.",
@@ -322,8 +324,12 @@
       },
       "messageLabel": "Pertanyaan anda",
       "messageHint": "Sila sertakan butiran yang mencukupi supaya kami dapat membalas dengan berguna.",
+      "pricingMessageLabel": "Keperluan program",
+      "pricingMessageHint": "Sertakan anggaran jumlah peserta, pasaran, tarikh program, bahasa dan sokongan yang anda perlukan.",
       "submit": "Hantar pertanyaan",
       "sending": "Menghantar pertanyaan…",
+      "pricingSubmit": "Minta cadangan mengikut skop",
+      "pricingSending": "Menghantar permintaan cadangan…",
       "successTitle": "Pertanyaan anda telah dihantar.",
       "successBody": "Terima kasih. Pasukan Plexus akan membalas ke e-mel kerja yang anda berikan.",
       "errors": {
@@ -378,10 +384,12 @@
       }
     },
     "pricing": {
-      "title": "Harga mengikut program yang anda kendalikan.",
-      "body": "Plexus kini ditawarkan melalui penglibatan pelancaran yang ditetapkan skopnya. Cadangan anda mengambil kira model program, jumlah peserta, modul yang diaktifkan, bahasa, onboarding dan sokongan operasi.",
-      "sectionTitle": "Mulakan dengan skop operasi yang sesuai.",
-      "sectionBody": "Dalam fasa pra-pelancaran, tiada senarai harga layan diri. Kami menetapkan skop operasi bersama pasukan anda sebelum menyediakan cadangan.",
+      "title": "Harga mengikut keperluan program anda.",
+      "body": "Cadangan Plexus ditetapkan mengikut jumlah peserta, pasaran, bahasa, modul pilihan dan tahap sokongan operasi. Mulakan dengan program perintis atau bina program pelbagai pasaran yang berulang.",
+      "principle": "Satu skop. Tanggungjawab yang jelas.",
+      "principleBody": "Sebelum kerja bermula, cadangan anda menjelaskan modul pilihan, sokongan operasi dan tanggungjawab penyampaian kepada semua pihak yang terlibat.",
+      "sectionTitle": "Pilih skop permulaan yang sesuai.",
+      "sectionBody": "Plexus menggunakan harga mengikut skop, bukan pelan per peserta yang generik. Kami menetapkan keperluan program bersama pasukan anda sebelum menyediakan cadangan.",
       "points": [
         {
           "title": "Program perintis",
@@ -400,7 +408,7 @@
         "title": "Perkara yang dinyatakan dalam cadangan anda",
         "body": "Setiap cadangan menyatakan modul yang disertakan, jumlah peserta, bahasa, onboarding, sokongan operasi dan tanggungjawab penyampaian sebelum kerja bermula.",
         "cta": "Minta cadangan mengikut skop",
-        "href": "/contact?topic=pricing"
+        "href": "#enquiry"
       }
     },
     "about": {

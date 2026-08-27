@@ -31,7 +31,8 @@ describe("public pricing and contact enquiries", () => {
   it("renders the localized pricing form with pricing preselected", async () => {
     const markup = await renderPage("pricing", { lang: "ms" })
 
-    expect(markup).toContain('href="/contact?topic=pricing&amp;lang=ms"')
+    expect(markup).toContain('href="#enquiry"')
+    expect(markup).toContain("Minta cadangan mengikut skop")
     expect(markup).toContain('name="enquiryType"')
     expect(markup).toMatch(/<option value="pricing" selected="">/)
     expect(markup).toContain('href="mailto:admin@ylinspiration.com"')

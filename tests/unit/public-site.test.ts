@@ -39,7 +39,7 @@ describe("public site locale routing", () => {
       expect(pricing.closing.title).toBeTruthy()
       expect(pricing.closing.body).toBeTruthy()
       expect(pricing.closing.cta).toBeTruthy()
-      expect(pricing.closing.href).toBe("/contact?topic=pricing")
+      expect(pricing.closing.href).toBe("#enquiry")
       expect(
         getPublicContent(locale).enquiry.form.enquiryTypes.pricing
       ).toBeTruthy()

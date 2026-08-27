@@ -18,8 +18,12 @@ type EnquiryFormCopy = {
   enquiryTypes: Record<PublicEnquiryType, string>
   messageLabel: string
   messageHint: string
+  pricingMessageLabel: string
+  pricingMessageHint: string
   submit: string
   sending: string
+  pricingSubmit: string
+  pricingSending: string
   successTitle: string
   successBody: string
   errors: Record<
@@ -173,6 +177,7 @@ export function PublicEnquiryForm({
 
   const fieldClassName =
     "mt-2 min-h-12 w-full rounded-[11px] border bg-[#f7f7f2] px-3 text-base text-[#111826] outline-none transition placeholder:text-[#607084] aria-invalid:border-[#a33a00] focus-visible:border-[#0a84ff] focus-visible:ring-2 focus-visible:ring-[#0a84ff]/35"
+  const isPricing = sourcePage === "pricing"
 
   return (
     <form
@@ -300,8 +305,8 @@ export function PublicEnquiryForm({
       <Field
         error={fieldErrors.message}
         htmlFor={`${sourcePage}-enquiry-message`}
-        label={copy.messageLabel}
-        hint={copy.messageHint}
+        label={isPricing ? copy.pricingMessageLabel : copy.messageLabel}
+        hint={isPricing ? copy.pricingMessageHint : copy.messageHint}
         className="mt-5"
         required
       >
@@ -358,7 +363,13 @@ export function PublicEnquiryForm({
         disabled={status === "submitting"}
         className="mt-6 min-h-12 rounded-[11px] bg-[#0758c8] px-5 text-sm text-white hover:bg-[#064caf]"
       >
-        {status === "submitting" ? copy.sending : copy.submit}
+        {status === "submitting"
+          ? isPricing
+            ? copy.pricingSending
+            : copy.sending
+          : isPricing
+            ? copy.pricingSubmit
+            : copy.submit}
       </Button>
     </form>
   )

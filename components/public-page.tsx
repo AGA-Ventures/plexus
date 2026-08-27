@@ -80,12 +80,22 @@ export async function PublicMarketingPage({
     slug === "pricing" || params.topic === "pricing" ? "pricing" : "other"
   const enquiryChannels = getPublicEnquiryChannels()
   const whatsappHref = buildPublicWhatsAppHref(content.enquiry.whatsappMessage)
+  const enquiryTitle =
+    slug === "pricing" ? content.enquiry.pricingTitle : content.enquiry.title
+  const enquiryBody =
+    slug === "pricing" ? content.enquiry.pricingBody : content.enquiry.body
+  const principle =
+    slug === "pricing" ? content.pages.pricing.principle : labels.principle
+  const principleBody =
+    slug === "pricing"
+      ? content.pages.pricing.principleBody
+      : content.problem.body
   const isNarrativePage = slug === "about"
   const nextHref =
     slug === "contact"
       ? "#enquiry"
       : slug === "pricing"
-        ? "/contact?topic=pricing"
+        ? "#enquiry"
         : "/contact"
   const contactPage = slug === "contact" ? content.pages.contact : null
   const feature = "feature" in page ? page.feature : null
@@ -126,7 +136,11 @@ export async function PublicMarketingPage({
                         : withLocale(nextHref, locale)
                     }
                   >
-                    {slug === "contact" ? content.enquiry.formCta : labels.next}
+                    {slug === "contact"
+                      ? content.enquiry.formCta
+                      : slug === "pricing"
+                        ? content.pages.pricing.closing.cta
+                        : labels.next}
                   </Link>
                 </Button>
                 <Button
@@ -151,10 +165,10 @@ export async function PublicMarketingPage({
               />
               <div className="mt-16">
                 <p className="text-3xl leading-tight font-semibold tracking-[-0.025em]">
-                  {labels.principle}
+                  {principle}
                 </p>
                 <p className="mt-4 max-w-md text-sm leading-6 text-[#b8cadc]">
-                  {content.problem.body}
+                  {principleBody}
                 </p>
               </div>
             </div>
@@ -226,7 +240,11 @@ export async function PublicMarketingPage({
                   </p>
                   {closing.cta && closing.href ? (
                     <Link
-                      href={withLocale(closing.href, locale)}
+                      href={
+                        closing.href.startsWith("#")
+                          ? closing.href
+                          : withLocale(closing.href, locale)
+                      }
                       className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#0758c8] hover:text-[#071326]"
                     >
                       {closing.cta}
@@ -287,10 +305,10 @@ export async function PublicMarketingPage({
           <div className="mx-auto grid max-w-[1180px] gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
             <div>
               <h2 className="max-w-lg text-4xl leading-tight font-semibold tracking-[-0.03em] sm:text-5xl">
-                {content.enquiry.title}
+                {enquiryTitle}
               </h2>
               <p className="mt-6 max-w-md text-base leading-7 text-[#53667c]">
-                {content.enquiry.body}
+                {enquiryBody}
               </p>
               <div className="mt-8 border-t border-[#b9cddd]">
                 <a

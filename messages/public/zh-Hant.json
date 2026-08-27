@@ -293,6 +293,8 @@
   "enquiry": {
     "title": "開始按範圍商討。",
     "body": "告訴我們您正在規劃的計劃。我們會檢視契合度，並回覆合適的下一步。",
+    "pricingTitle": "索取按範圍制定的方案。",
+    "pricingBody": "請告訴我們預計參與人數、市場、計劃日期、語言及所需支援。我們會檢視您的需求，並回覆至您的工作電郵。",
     "formCta": "提交查詢",
     "whatsappCta": "透過 WhatsApp 聯絡",
     "whatsappNotice": "WhatsApp 會開啟訊息草稿，不會自動傳送任何訊息。",
@@ -314,8 +316,12 @@
       },
       "messageLabel": "您的查詢",
       "messageHint": "請提供足夠詳情，讓我們可以作出有用的回覆。",
+      "pricingMessageLabel": "計劃需求",
+      "pricingMessageHint": "請包括預計參與人數、市場、計劃日期、語言及所需支援。",
       "submit": "提交查詢",
       "sending": "正在提交查詢…",
+      "pricingSubmit": "索取按範圍制定的方案",
+      "pricingSending": "正在提交方案申請…",
       "successTitle": "您的查詢已送出。",
       "successBody": "謝謝您。Plexus 團隊會回覆至您提供的工作電郵。",
       "errors": {
@@ -370,10 +376,12 @@
       }
     },
     "pricing": {
-      "title": "依您營運的計劃範圍制定價格",
-      "body": "Plexus 目前以明確範圍的上線合作方式提供服務。方案會根據計劃模式、參與者數量、啟用模組、語言、導入及營運支援而定。",
-      "sectionTitle": "從合適的營運範圍開始。",
-      "sectionBody": "預先發佈期間暫不提供自助式價目表。我們會先與您的團隊確認營運範圍，再提供方案。",
+      "title": "按您的計劃需求制定價格。",
+      "body": "Plexus 方案會根據參與人數、市場、語言、所選模組及營運支援程度制定。您可從試點開始，亦可建立持續運行的多市場計劃。",
+      "principle": "一個清晰範圍。各方責任明確。",
+      "principleBody": "工作開始前，方案會向所有參與方清楚列明所選模組、營運支援及交付責任。",
+      "sectionTitle": "選擇合適的起步範圍。",
+      "sectionBody": "Plexus 採用按範圍定價，而非通用的按席位方案。我們會先與您的團隊確認計劃需求，再準備方案。",
       "points": [
         {
           "title": "試點計劃",
@@ -392,7 +400,7 @@
         "title": "方案會列明的內容",
         "body": "每份方案會在工作開始前列明所含模組、參與者數量、語言、導入、營運支援及交付責任。",
         "cta": "索取按範圍制定的方案",
-        "href": "/contact?topic=pricing"
+        "href": "#enquiry"
       }
     },
     "about": {

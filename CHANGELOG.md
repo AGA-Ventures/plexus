@@ -6,6 +6,15 @@ reviewed together.
 
 ## Unreleased
 
+### 2026-08-27
+
+- Localized the public Product preview, including its metadata, navigation,
+  accessible image text, readiness map, and public return links, across
+  English, Bahasa Malaysia, and Traditional Chinese. Public login and password
+  recovery aliases now retain the selected locale, Malay sign-in and recovery
+  copy is available, and localized 404 recovery links return visitors to the
+  matching public homepage.
+
 ### 2026-08-26
 
 - Removed the inert contact-field preview from the TChina registration Path

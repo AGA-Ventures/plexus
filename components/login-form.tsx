@@ -82,6 +82,56 @@ const copy: Partial<Record<Locale, LoginCopy>> & { en: LoginCopy } = {
     previewMessage: "Sign-in is disabled in preview mode.",
     previewSubmit: "Preview only",
   },
+  ms: {
+    platformTitle:
+      "Satu ruang kerja terkawal. Setiap langkah seterusnya yang bertanggungjawab.",
+    tenantTitle: "Bina hubungan perniagaan yang dipercayai di satu tempat.",
+    platformDescription:
+      "Akses selamat untuk pengendali program, syarikat peserta dan pasukan platform Plexus.",
+    tenantDescription:
+      "Gerbang peribadi organisasi anda kepada orang, perkongsian dan kemajuan.",
+    checkpointIdentity: "Identiti",
+    checkpointWorkspace: "Ruang kerja",
+    checkpointNextStep: "Langkah seterusnya yang bertanggungjawab",
+    welcome: "Selamat kembali",
+    platformPrompt: "Log masuk untuk meneruskan ke ruang kerja Plexus anda.",
+    tenantPrompt: "Log masuk untuk meneruskan ke {name}.",
+    email: "E-mel",
+    emailPlaceholder: "anda@syarikat.com",
+    password: "Kata laluan",
+    passwordPlaceholder: "Masukkan kata laluan anda",
+    submit: "Log masuk",
+    submitting: "Sedang log masuk...",
+    success: "Berjaya log masuk. Membuka ruang kerja anda.",
+    forgotPassword: "Lupa kata laluan?",
+    showPassword: "Tunjukkan kata laluan",
+    hidePassword: "Sembunyikan kata laluan",
+    passwordUpdated:
+      "Kata laluan dikemas kini. Log masuk dengan kata laluan baharu anda.",
+    supportQuestion: "Perlukan bantuan untuk mengakses akaun anda?",
+    supportEmailAction: "E-mel sokongan ruang kerja",
+    supportPageAction: "Buka pilihan sokongan",
+    poweredBy: "Dikuasakan oleh Plexus",
+    loginProblem: "Tidak dapat log masuk",
+    invalidEmail: "Masukkan alamat e-mel yang sah.",
+    passwordRequired: "Masukkan kata laluan anda.",
+    invalidCredentials:
+      "E-mel atau kata laluan tidak betul. Semak butiran anda dan cuba lagi.",
+    accountNotReady:
+      "Akaun ini belum sedia untuk log masuk. Hubungi sokongan untuk bantuan.",
+    signInFailed:
+      "Kami tidak dapat melog masuk anda. Semak butiran anda dan cuba lagi.",
+    accountAccessUnavailable:
+      "Kami tidak dapat membuka akaun ini. Hubungi sokongan untuk mengesahkan akses anda.",
+    wrongWorkspace:
+      "Akaun ini bukan milik ruang kerja ini. Gunakan halaman log masuk organisasi anda.",
+    tenantUnavailableTitle: "Log masuk organisasi tidak tersedia",
+    tenantUnavailableDescription:
+      "Pautan organisasi ini tidak tersedia. Teruskan dengan Plexus atau hubungi sokongan untuk pautan log masuk yang betul.",
+    previewTitle: "Pratonton jenama",
+    previewMessage: "Log masuk dilumpuhkan dalam mod pratonton.",
+    previewSubmit: "Pratonton sahaja",
+  },
   zh: {
     platformTitle: "一个受治理的工作台，承接每个负责任的下一步。",
     tenantTitle: "在一个平台建立可信的商业关系。",
@@ -229,7 +279,11 @@ const loginErrorCopyKeys: Record<LoginErrorCode, string> = {
 
 function getPublicSupportPath(locale: Locale) {
   const publicLocale =
-    locale === "zh" || locale === "zh-Hant" ? "zh-Hant" : "en"
+    locale === "ms"
+      ? "ms"
+      : locale === "zh" || locale === "zh-Hant"
+        ? "zh-Hant"
+        : "en"
 
   return `/contact?lang=${publicLocale}`
 }

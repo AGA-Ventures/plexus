@@ -24,25 +24,23 @@ export async function proxy(request: NextRequest) {
   )
   const requestedLanguage = request.nextUrl.searchParams.get("lang")
   const documentLanguage =
-    request.nextUrl.pathname === "/app"
-      ? "en"
-      : match?.[1] || localizedPathMatch?.[1]
-        ? normalizeLocale(match?.[1] ?? localizedPathMatch?.[1])
-        : requestedLanguage === "ms" || requestedLanguage === "my"
-          ? "ms"
-          : requestedLanguage &&
-              [
-                "zh-Hant",
-                "zh-hant",
-                "zht",
-                "zh-tw",
-                "zh_TW",
-                "tw",
-                "zh",
-                "cn",
-              ].includes(requestedLanguage)
-            ? "zh-Hant"
-            : "en"
+    match?.[1] || localizedPathMatch?.[1]
+      ? normalizeLocale(match?.[1] ?? localizedPathMatch?.[1])
+      : requestedLanguage === "ms" || requestedLanguage === "my"
+        ? "ms"
+        : requestedLanguage &&
+            [
+              "zh-Hant",
+              "zh-hant",
+              "zht",
+              "zh-tw",
+              "zh_TW",
+              "tw",
+              "zh",
+              "cn",
+            ].includes(requestedLanguage)
+          ? "zh-Hant"
+          : "en"
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set("x-plexus-language", documentLanguage)
   const forwardedRequest = { headers: requestHeaders }

@@ -114,6 +114,44 @@ const copy: Partial<Record<Locale, RecoveryCopy>> & { en: RecoveryCopy } = {
     backToLogin: "Back to login",
     requestNewLink: "Request a new recovery link",
   },
+  ms: {
+    platformKicker: "Superap perniagaan",
+    tenantKicker: "Ruang kerja perniagaan peribadi",
+    platformTitle: "Pulihkan akses dengan selamat.",
+    tenantTitle: "Kembali ke ruang kerja perniagaan anda yang dipercayai.",
+    platformDescription:
+      "Gunakan pautan e-mel yang disahkan untuk memilih kata laluan baharu bagi akaun Plexus anda.",
+    tenantDescription:
+      "Pautan pemulihan anda mengembalikan anda ke ruang kerja organisasi yang betul.",
+    poweredBy: "Dikuasakan oleh Plexus",
+    forgotTitle: "Tetapkan semula kata laluan anda",
+    forgotPrompt:
+      "Masukkan e-mel akaun anda dan kami akan menghantar pautan pemulihan yang selamat.",
+    email: "E-mel",
+    emailPlaceholder: "anda@syarikat.com",
+    sendLink: "Hantar pautan pemulihan",
+    sendingLink: "Menghantar pautan...",
+    checkInbox: "Semak peti masuk anda",
+    checkInboxDescription:
+      "Jika akaun yang layak sepadan dengan e-mel itu, pautan pemulihan sedang dihantar.",
+    requestProblem: "Tidak dapat meneruskan",
+    invalidLinkTitle: "Pautan pemulihan tidak tersedia",
+    invalidLinkDescription:
+      "Pautan pemulihan itu tidak sah atau telah tamat tempoh. Minta pautan baharu di bawah.",
+    resetTitle: "Tetapkan kata laluan baharu",
+    resetPrompt:
+      "Pilih kata laluan sekurang-kurangnya 12 aksara, kemudian log masuk semula.",
+    newPassword: "Kata laluan baharu",
+    confirmPassword: "Sahkan kata laluan baharu",
+    passwordPlaceholder: "Sekurang-kurangnya 12 aksara",
+    updatePassword: "Kemas kini kata laluan",
+    updatingPassword: "Mengemas kini kata laluan...",
+    passwordProblem: "Kata laluan tidak dikemas kini",
+    passwordUpdated:
+      "Kata laluan dikemas kini. Log masuk dengan kata laluan baharu anda.",
+    backToLogin: "Kembali ke log masuk",
+    requestNewLink: "Minta pautan pemulihan baharu",
+  },
   zh: {
     platformKicker: "商业超级应用",
     tenantKicker: "专属商业工作台",
@@ -239,6 +277,14 @@ const setupCopy: Partial<
     submit: "Set password",
     submitting: "Setting password...",
     success: "Account ready. Sign in with your new password.",
+  },
+  ms: {
+    title: "Sediakan akaun Vendor anda",
+    prompt:
+      "Permohonan anda telah diluluskan. Pilih kata laluan sekurang-kurangnya 12 aksara untuk mengaktifkan akses selamat.",
+    submit: "Tetapkan kata laluan",
+    submitting: "Menetapkan kata laluan...",
+    success: "Akaun sedia. Log masuk dengan kata laluan baharu anda.",
   },
   zh: {
     title: "设置您的供应商账号",

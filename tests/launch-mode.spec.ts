@@ -77,6 +77,83 @@ test.describe("shared public navigation", () => {
   })
 })
 
+test.describe("public locale continuity", () => {
+  test("localizes Product preview and preserves public navigation locale", async ({
+    page,
+  }) => {
+    const consoleErrors: string[] = []
+    page.on("console", (message) => {
+      if (message.type() === "error") consoleErrors.push(message.text())
+    })
+
+    await page.goto("/app?lang=en")
+    await page.getByRole("button", { name: "Choose language" }).click()
+    await expect(
+      page.getByRole("link", { name: "Bahasa Malaysia BM" })
+    ).toHaveAttribute("href", "/app?lang=ms")
+    await expect(
+      page.getByRole("link", { name: "繁體中文 繁中" })
+    ).toHaveAttribute("href", "/app?lang=zh-Hant")
+
+    for (const [locale, heading, footer] of [
+      [
+        "ms",
+        "Keseluruhan perjalanan perniagaan, dalam satu superap.",
+        "Kembali ke laman web Plexus",
+      ],
+      ["zh-Hant", "完整商業旅程，盡在一個超級應用。", "返回 Plexus 網站"],
+    ] as const) {
+      await page.goto(`/app?lang=${locale}`)
+      await expect(page.locator("html")).toHaveAttribute("lang", locale)
+      await expect(
+        page.getByRole("heading", { level: 1, name: heading })
+      ).toBeVisible()
+      await expect(page.getByRole("link", { name: footer })).toHaveAttribute(
+        "href",
+        `/?lang=${locale}`
+      )
+      await expectNoHorizontalOverflow(page)
+    }
+
+    expect(consoleErrors).toEqual([])
+  })
+
+  test("preserves locale through public auth aliases and recovery", async ({
+    page,
+  }) => {
+    await page.goto("/login?lang=ms&tenant=shanghai-macau")
+    await expect(page).toHaveURL(/\/ms\/login\?tenant=shanghai-macau$/)
+
+    await page.goto("/login?lang=ms&tenant=shanghai-macau&tenant=ignored")
+    await expect(page).toHaveURL(/\/ms\/login\?tenant=shanghai-macau$/)
+
+    await page.goto("/forgot-password?lang=zh-Hant")
+    await expect(page).toHaveURL(/\/zh-Hant\/forgot-password$/)
+
+    await page.goto(
+      "/forgot-password?lang=ms&tenant=shanghai-macau&tenant=ignored"
+    )
+    await expect(page).toHaveURL(
+      /\/ms\/forgot-password\?tenant=shanghai-macau$/
+    )
+
+    await page.goto(
+      "/reset-password?lang=ms&tenant=shanghai-macau&tenant=ignored"
+    )
+    await expect(page).toHaveURL(/\/ms\/reset-password\?tenant=shanghai-macau$/)
+  })
+
+  test("preserves locale on a 404 recovery link", async ({ page }) => {
+    await page.goto("/missing-page?lang=ms")
+    await expect(
+      page.getByRole("heading", { name: "Halaman tidak ditemui" })
+    ).toBeVisible()
+    await expect(
+      page.getByRole("link", { name: "Kembali ke laman utama" })
+    ).toHaveAttribute("href", "/?lang=ms")
+  })
+})
+
 test.describe("public pre-event campaign", () => {
   test("prepares a worldwide inquiry without collecting personal data", async ({
     page,

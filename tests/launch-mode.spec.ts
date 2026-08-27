@@ -118,18 +118,23 @@ test.describe("public locale continuity", () => {
     expect(consoleErrors).toEqual([])
   })
 
-  test("uses the requested Traditional-Chinese business headline break", async ({
+  test("uses the requested Traditional-Chinese heading formatting", async ({
     page,
   }) => {
-    await page.goto("/for-businesses?lang=zh-Hant")
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      "減少無效社交 找到更合適的合作夥伴"
-    )
-    await expect(page.getByRole("heading", { level: 1 })).toHaveCSS(
-      "white-space",
-      "pre-line"
-    )
-    await expectNoHorizontalOverflow(page)
+    for (const [route, title] of [
+      ["/for-businesses?lang=zh-Hant", "減少無效社交 找到更合適的合作夥伴"],
+      ["/events?lang=zh-Hant", "活動結束 不代表聯繫也要結束"],
+      ["/pricing?lang=zh-Hant", "依您營運的計劃範圍制定價格"],
+      ["/for-program-operators?lang=zh-Hant", "給計劃營運方的白標工作區"],
+      ["/for-investment?lang=zh-Hant", "吸引合適的投資 而不只是更多的關注"],
+      ["/for-government?lang=zh-Hant", "以經得起檢視的記錄 運作官方代表團"],
+    ] as const) {
+      await page.goto(route)
+      const heading = page.getByRole("heading", { level: 1 })
+      await expect(heading).toHaveText(title)
+      await expect(heading).toHaveCSS("white-space", "pre-line")
+      await expectNoHorizontalOverflow(page)
+    }
   })
 
   test("preserves locale through public auth aliases and recovery", async ({

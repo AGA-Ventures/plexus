@@ -14,8 +14,9 @@ reviewed together.
   recovery aliases now retain the selected locale, Malay sign-in and recovery
   copy is available, and localized 404 recovery links return visitors to the
   matching public homepage.
-- Set the requested two-line Traditional-Chinese hero headlines on the Business
-  and Product preview pages.
+- Refined requested Traditional-Chinese hero headlines: added two-line titles
+  to Business, Events, Product preview, Investment, and Government pages, and
+  removed terminal punctuation from Pricing and Program operator titles.
 
 ### 2026-08-26
 

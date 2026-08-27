@@ -213,7 +213,7 @@ const updated = `${source.slice(0, start)}${generatedBlock}${source.slice(
 
 function normalizeVolatileRepositoryFields(value) {
   return value
-    .replace(/("branch": )"[^"]+"/, '$1"<volatile>"')
+    .replace(/("branch": )"[^"]*"/, '$1"<volatile>"')
     .replace(/("commit": )"[^"]+"/, '$1"<volatile>"')
     .replace(/("workingTreeChanges": )\d+/, "$1<volatile>")
 }

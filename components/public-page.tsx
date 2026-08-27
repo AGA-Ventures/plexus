@@ -7,11 +7,17 @@ import {
   ArrowRight01Icon,
   CheckmarkCircle02Icon,
   Globe02Icon,
+  WhatsappIcon,
 } from "@hugeicons/core-free-icons"
 
 import { SiteFooter } from "@/components/site-footer"
 import { SiteHeader } from "@/components/site-header"
+import { PublicEnquiryForm } from "@/components/public-enquiry-form"
 import { Button } from "@/components/ui/button"
+import {
+  buildPublicWhatsAppHref,
+  getPublicEnquiryChannels,
+} from "@/lib/public-enquiry-email"
 import {
   getPublicContent,
   normalizePublicLocale,
@@ -21,7 +27,7 @@ import {
   withLocale,
 } from "@/lib/public-site"
 
-type SearchParams = Promise<{ lang?: string }>
+type SearchParams = Promise<{ lang?: string; topic?: string }>
 
 type ClosingCopy = {
   title?: string
@@ -69,8 +75,29 @@ export async function PublicMarketingPage({
   const page = content.pages[slug]
   const labels = pageCopy[locale]
   const currentPath = currentPathOverride ?? `/${slug}`
+  const hasEnquiryForm = slug === "contact" || slug === "pricing"
+  const enquirySource = slug === "pricing" ? "pricing" : "contact"
+  const enquiryType =
+    slug === "pricing" || params.topic === "pricing" ? "pricing" : "other"
+  const enquiryChannels = getPublicEnquiryChannels()
+  const whatsappHref = buildPublicWhatsAppHref(content.enquiry.whatsappMessage)
+  const enquiryTitle =
+    slug === "pricing" ? content.enquiry.pricingTitle : content.enquiry.title
+  const enquiryBody =
+    slug === "pricing" ? content.enquiry.pricingBody : content.enquiry.body
+  const principle =
+    slug === "pricing" ? content.pages.pricing.principle : labels.principle
+  const principleBody =
+    slug === "pricing"
+      ? content.pages.pricing.principleBody
+      : content.problem.body
   const isNarrativePage = slug === "about"
-  const nextHref = slug === "contact" ? "/pre-event#contact" : "/contact"
+  const nextHref =
+    slug === "contact"
+      ? "#enquiry"
+      : slug === "pricing"
+        ? "#enquiry"
+        : "/contact"
   const contactPage = slug === "contact" ? content.pages.contact : null
   const feature = "feature" in page ? page.feature : null
   const sectionTitle =
@@ -91,7 +118,7 @@ export async function PublicMarketingPage({
                 <span className="size-1.5 rounded-full bg-[#80e8ff]" />
                 {labels.status}
               </div>
-              <h1 className="mt-8 max-w-4xl whitespace-pre-line text-[clamp(3rem,6vw,5.75rem)] leading-[0.94] font-semibold tracking-[-0.035em] text-balance">
+              <h1 className="mt-8 max-w-4xl text-[clamp(3rem,6vw,5.75rem)] leading-[0.94] font-semibold tracking-[-0.035em] text-balance whitespace-pre-line">
                 {page.title}
               </h1>
               <p className="mt-7 max-w-2xl text-base leading-7 text-[#e4f3ff] sm:text-lg">
@@ -103,7 +130,19 @@ export async function PublicMarketingPage({
                   size="lg"
                   className="h-12 rounded-lg bg-[#071326] px-5 text-white hover:bg-[#102443]"
                 >
-                  <Link href={withLocale(nextHref, locale)}>{labels.next}</Link>
+                  <Link
+                    href={
+                      nextHref.startsWith("#")
+                        ? nextHref
+                        : withLocale(nextHref, locale)
+                    }
+                  >
+                    {slug === "contact"
+                      ? content.enquiry.formCta
+                      : slug === "pricing"
+                        ? content.pages.pricing.closing.cta
+                        : labels.next}
+                  </Link>
                 </Button>
                 <Button
                   asChild
@@ -127,10 +166,10 @@ export async function PublicMarketingPage({
               />
               <div className="mt-16">
                 <p className="text-3xl leading-tight font-semibold tracking-[-0.025em]">
-                  {labels.principle}
+                  {principle}
                 </p>
                 <p className="mt-4 max-w-md text-sm leading-6 text-[#b8cadc]">
-                  {content.problem.body}
+                  {principleBody}
                 </p>
               </div>
             </div>
@@ -202,7 +241,11 @@ export async function PublicMarketingPage({
                   </p>
                   {closing.cta && closing.href ? (
                     <Link
-                      href={withLocale(closing.href, locale)}
+                      href={
+                        closing.href.startsWith("#")
+                          ? closing.href
+                          : withLocale(closing.href, locale)
+                      }
                       className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-[#0758c8] hover:text-[#071326]"
                     >
                       {closing.cta}
@@ -254,6 +297,58 @@ export async function PublicMarketingPage({
           ) : null}
         </div>
       </section>
+
+      {hasEnquiryForm ? (
+        <section
+          id="enquiry"
+          className="border-y border-[#b9cddd] bg-[#eef4f8] px-4 py-16 sm:px-6 lg:px-8 lg:py-24"
+        >
+          <div className="mx-auto grid max-w-[1180px] gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:gap-16">
+            <div>
+              <h2
+                id={`${enquirySource}-enquiry-heading`}
+                className="max-w-lg text-4xl leading-tight font-semibold tracking-[-0.03em] sm:text-5xl"
+              >
+                {enquiryTitle}
+              </h2>
+              <p className="mt-6 max-w-md text-base leading-7 text-[#53667c]">
+                {enquiryBody}
+              </p>
+            </div>
+            <div className="space-y-8">
+              <PublicEnquiryForm
+                copy={content.enquiry.form}
+                locale={locale}
+                sourcePage={enquirySource}
+                initialEnquiryType={enquiryType}
+                fallbackEmail={enquiryChannels.contactEmail}
+              />
+              <div className="border-t border-[#b9cddd] pt-7">
+                <h3 className="text-xl font-semibold tracking-[-0.02em] text-[#111826]">
+                  {content.enquiry.whatsappTitle}
+                </h3>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-[#53667c]">
+                  {content.enquiry.whatsappBody}
+                </p>
+                <a
+                  href={whatsappHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-5 inline-flex min-h-12 items-center gap-3 rounded-[11px] bg-[#075e54] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#064b43] focus-visible:ring-2 focus-visible:ring-[#075e54] focus-visible:ring-offset-2 focus-visible:outline-none"
+                >
+                  <HugeiconsIcon
+                    icon={WhatsappIcon}
+                    size={20}
+                    strokeWidth={1.8}
+                    aria-hidden="true"
+                  />
+                  {content.enquiry.whatsappCta}
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {contactPage ? (
         <section

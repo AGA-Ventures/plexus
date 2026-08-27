@@ -290,6 +290,51 @@
       "callbackBody": "你好 Plexus，請聯絡我了解活動前商務配對及行程協調支援。"
     }
   },
+  "enquiry": {
+    "title": "開始按範圍商討。",
+    "body": "告訴我們您正在規劃的計劃。我們會檢視契合度，並回覆合適的下一步。",
+    "pricingTitle": "索取按範圍制定的方案。",
+    "pricingBody": "請告訴我們預計參與人數、市場、計劃日期、語言及所需支援。我們會檢視您的需求，並回覆至您的工作電郵。",
+    "formCta": "提交查詢",
+    "whatsappTitle": "偏好使用 WhatsApp？",
+    "whatsappBody": "直接透過 WhatsApp 向 Plexus 提交查詢，並在那裡與我們的團隊繼續溝通。",
+    "whatsappCta": "透過 WhatsApp 查詢",
+    "whatsappMessage": "你好 Plexus，我想商討計劃、按範圍制定的方案或參與者導入。",
+    "form": {
+      "nameLabel": "您的姓名",
+      "organisationLabel": "機構名稱",
+      "emailLabel": "工作電郵",
+      "phoneLabel": "電話",
+      "phoneOptional": "選填",
+      "enquiryTypeLabel": "您希望商討甚麼？",
+      "enquiryTypes": {
+        "pricing": "價格或按範圍制定的方案",
+        "pilot": "試點或計劃",
+        "onboarding": "參與者導入",
+        "other": "其他"
+      },
+      "messageLabel": "您的查詢",
+      "messageHint": "請提供足夠詳情，讓我們可以作出有用的回覆。",
+      "pricingMessageLabel": "計劃需求",
+      "pricingMessageHint": "請包括預計參與人數、市場、計劃日期、語言及所需支援。",
+      "submit": "提交查詢",
+      "sending": "正在提交查詢…",
+      "pricingSubmit": "索取按範圍制定的方案",
+      "pricingSending": "正在提交方案申請…",
+      "successTitle": "您的查詢已送出。",
+      "successBody": "謝謝您。Plexus 團隊會回覆至您提供的工作電郵。",
+      "errors": {
+        "invalid": "請檢查此欄位後再試。",
+        "invalidEmail": "請輸入有效的工作電郵。",
+        "validation_failed": "請檢查標示的欄位後再試。",
+        "request_too_large": "您的查詢內容過長，請縮短後再試。",
+        "invalid_request": "我們無法讀取該查詢，請再試一次。",
+        "service_unavailable": "電郵寄送尚未設定，請使用下方的電郵連結。",
+        "delivery_failed": "我們無法送出您的查詢，請再試一次或使用下方的電郵連結。",
+        "network": "我們無法連線至 Plexus，請檢查網絡後再試。"
+      }
+    }
+  },
   "pages": {
     "for-vendors": {
       "title": "給計劃營運方的白標工作區",
@@ -330,10 +375,12 @@
       }
     },
     "pricing": {
-      "title": "依您營運的計劃範圍制定價格",
-      "body": "Plexus 目前以明確範圍的上線合作方式提供服務。方案會根據計劃模式、參與者數量、啟用模組、語言、導入及營運支援而定。",
-      "sectionTitle": "從合適的營運範圍開始。",
-      "sectionBody": "預先發佈期間暫不提供自助式價目表。我們會先與您的團隊確認營運範圍，再提供方案。",
+      "title": "按您的計劃需求制定價格。",
+      "body": "Plexus 方案會根據參與人數、市場、語言、所選模組及營運支援程度制定。您可從試點開始，亦可建立持續運行的多市場計劃。",
+      "principle": "一個清晰範圍。各方責任明確。",
+      "principleBody": "工作開始前，方案會向所有參與方清楚列明所選模組、營運支援及交付責任。",
+      "sectionTitle": "選擇合適的起步範圍。",
+      "sectionBody": "Plexus 採用按範圍定價，而非通用的按席位方案。我們會先與您的團隊確認計劃需求，再準備方案。",
       "points": [
         {
           "title": "試點計劃",
@@ -352,7 +399,7 @@
         "title": "方案會列明的內容",
         "body": "每份方案會在工作開始前列明所含模組、參與者數量、語言、導入、營運支援及交付責任。",
         "cta": "索取按範圍制定的方案",
-        "href": "/contact"
+        "href": "#enquiry"
       }
     },
     "about": {
@@ -391,7 +438,7 @@
     },
     "contact": {
       "title": "聯絡 Plexus。",
-      "body": "完整潛在客戶表單完成前，此頁可作為公開聯絡入口。",
+      "body": "請使用下方的查詢表單或已核准聯絡渠道，商討計劃、參與企業導入或預先發佈導覽。",
       "points": ["計劃營運方洽談", "試點項目", "參與企業 onboarding"],
       "faqTitle": "開始前的常見問題。",
       "faqBody": "為計劃營運方與參與企業整理的重點。每個獲批計劃的可用功能與範圍均會另行確認。",

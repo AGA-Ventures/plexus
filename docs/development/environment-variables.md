@@ -17,8 +17,8 @@ explains ownership and scope; it never contains real secrets.
 | `SUPABASE_SERVICE_ROLE_KEY`            | No              | Optional alias   | No       | Supported   | Legacy server-only alias when no secret key is present       |
 | `NEXT_PUBLIC_SITE_URL`                 | Yes             | Optional         | Optional | Recommended | Canonical origin for recovery links and metadata             |
 | `NEXT_PUBLIC_APP_URL`                  | Yes             | Required         | Required | Required    | Exact origin used to build wrapped meeting links             |
-| `PLEXUS_PUBLIC_CONTACT_EMAIL`          | No              | Optional         | Optional | Recommended | Approved public inquiry mailbox rendered as a mail link      |
-| `PLEXUS_PUBLIC_WHATSAPP_NUMBER`        | No              | Optional         | Optional | Optional    | Approved WhatsApp destination rendered on the pre-event page |
+| `PLEXUS_PUBLIC_CONTACT_EMAIL`          | No              | Optional         | Optional | Recommended | Approved public inquiry mailbox rendered as a mail link and the server-only recipient for public enquiries |
+| `PLEXUS_PUBLIC_WHATSAPP_NUMBER`        | No              | Optional         | Optional | Optional    | Approved WhatsApp destination rendered on public inquiry and pre-event pages; replace the temporary example before launch |
 | `PLEXUS_PUBLIC_WHATSAPP_DISPLAY`       | No              | Optional         | Optional | Optional    | Human-readable form of the approved WhatsApp number          |
 
 ## Meeting provider variables

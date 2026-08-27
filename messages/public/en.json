@@ -294,6 +294,51 @@
       "callbackBody": "Hello Plexus, please contact me about pre-event business-matching and travel coordination support."
     }
   },
+  "enquiry": {
+    "title": "Start a scoped conversation.",
+    "body": "Tell us about the programme you are planning. We will review the fit and reply with the appropriate next step.",
+    "pricingTitle": "Request a scoped proposal.",
+    "pricingBody": "Tell us your expected participant numbers, markets, programme dates, languages and the support you need. We will review your requirements and reply to your work email.",
+    "formCta": "Send an enquiry",
+    "whatsappTitle": "Prefer WhatsApp?",
+    "whatsappBody": "Send your enquiry directly to Plexus and continue the conversation with our team there.",
+    "whatsappCta": "Enquire on WhatsApp",
+    "whatsappMessage": "Hello Plexus, I would like to discuss a programme, scoped proposal or participant onboarding.",
+    "form": {
+      "nameLabel": "Your name",
+      "organisationLabel": "Organisation",
+      "emailLabel": "Work email",
+      "phoneLabel": "Phone",
+      "phoneOptional": "optional",
+      "enquiryTypeLabel": "What would you like to discuss?",
+      "enquiryTypes": {
+        "pricing": "Pricing or scoped proposal",
+        "pilot": "Pilot or programme",
+        "onboarding": "Participant onboarding",
+        "other": "Other"
+      },
+      "messageLabel": "Your enquiry",
+      "messageHint": "Please include enough detail for us to respond usefully.",
+      "pricingMessageLabel": "Programme requirements",
+      "pricingMessageHint": "Include expected participant numbers, markets, programme dates, languages and the support you need.",
+      "submit": "Send enquiry",
+      "sending": "Sending enquiry…",
+      "pricingSubmit": "Request a scoped proposal",
+      "pricingSending": "Sending proposal request…",
+      "successTitle": "Your enquiry has been sent.",
+      "successBody": "Thank you. The Plexus team will reply to the work email you provided.",
+      "errors": {
+        "invalid": "Check this field and try again.",
+        "invalidEmail": "Enter a valid work email.",
+        "validation_failed": "Check the highlighted fields and try again.",
+        "request_too_large": "Your enquiry is too long. Please shorten it and try again.",
+        "invalid_request": "We could not read that enquiry. Please try again.",
+        "service_unavailable": "Email delivery is not configured yet. Please use the email link below.",
+        "delivery_failed": "We could not send your enquiry. Please try again or use the email link below.",
+        "network": "We could not reach Plexus. Check your connection and try again."
+      }
+    }
+  },
   "pages": {
     "for-vendors": {
       "title": "A white-label workspace for program operators.",
@@ -334,29 +379,31 @@
       }
     },
     "pricing": {
-      "title": "Pricing shaped around the program you run.",
-      "body": "Plexus is currently offered through scoped launch engagements. Your proposal reflects the program model, participant volume, enabled modules, languages, onboarding and operational support.",
-      "sectionTitle": "Start with the right operating scope.",
-      "sectionBody": "During pre-launch, there is no self-serve rate card. We define the operating scope with your team before preparing a proposal.",
+      "title": "Pricing built around your programme.",
+      "body": "Plexus proposals are scoped to your participant volume, markets, languages, selected modules and level of operational support. Start with a pilot or build a recurring multi-market programme.",
+      "principle": "One scope. Clear responsibilities.",
+      "principleBody": "Before work begins, your proposal makes the selected modules, operating support and delivery responsibilities clear to everyone involved.",
+      "sectionTitle": "Choose the right starting scope.",
+      "sectionBody": "Plexus uses scoped pricing rather than a generic per-seat plan. We define the programme requirements with your team before preparing a proposal.",
       "points": [
         {
-          "title": "Pilot program",
-          "body": "Launch one agreed program in one market. Best for validating participant onboarding, organizer-reviewed matching, meetings and accountable follow-up with a defined cohort."
+          "title": "Pilot programme",
+          "body": "Launch one agreed programme in one market. Best for validating participant onboarding, organiser-reviewed matching, meetings and accountable follow-up with a defined cohort."
         },
         {
-          "title": "Branded program workspace",
-          "body": "Run recurring programs in a white-label workspace for a chamber, trade body, association or event organizer. Scope can include participant management, meetings, event operations, communications and reporting."
+          "title": "Branded programme workspace",
+          "body": "Run recurring programmes in a white-label workspace for a chamber, trade body, association or event organiser. Scope can include participant management, meetings, event operations, communications and reporting."
         },
         {
-          "title": "Multi-market program",
-          "body": "Coordinate bilateral or multi-market programs with additional governance, localization, reporting and operating support. Scope is defined around participating organizations and delivery responsibilities."
+          "title": "Multi-market programme",
+          "body": "Coordinate bilateral or multi-market programmes with additional governance, localisation, reporting and operating support. Scope is defined around participating organisations and delivery responsibilities."
         }
       ],
       "closing": {
         "title": "What your proposal sets out",
         "body": "Every proposal identifies the included modules, participant volume, languages, onboarding, operational support and delivery responsibilities before work begins.",
         "cta": "Request a scoped proposal",
-        "href": "/contact"
+        "href": "#enquiry"
       }
     },
     "about": {

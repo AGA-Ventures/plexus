@@ -298,6 +298,51 @@
       "callbackBody": "Helo Plexus, sila hubungi saya tentang sokongan padanan perniagaan dan penyelarasan perjalanan pra-acara."
     }
   },
+  "enquiry": {
+    "title": "Mulakan perbincangan mengikut skop.",
+    "body": "Beritahu kami tentang program yang anda rancang. Kami akan menyemak kesesuaian dan membalas dengan langkah seterusnya yang sesuai.",
+    "pricingTitle": "Minta cadangan mengikut skop.",
+    "pricingBody": "Beritahu kami anggaran jumlah peserta, pasaran, tarikh program, bahasa dan sokongan yang anda perlukan. Kami akan menyemak keperluan anda dan membalas ke e-mel kerja anda.",
+    "formCta": "Hantar pertanyaan",
+    "whatsappTitle": "Lebih suka menggunakan WhatsApp?",
+    "whatsappBody": "Hantar pertanyaan anda terus kepada Plexus dan teruskan perbualan dengan pasukan kami di sana.",
+    "whatsappCta": "Buat pertanyaan melalui WhatsApp",
+    "whatsappMessage": "Helo Plexus, saya ingin membincangkan program, cadangan mengikut skop atau onboarding peserta.",
+    "form": {
+      "nameLabel": "Nama anda",
+      "organisationLabel": "Organisasi",
+      "emailLabel": "E-mel kerja",
+      "phoneLabel": "Telefon",
+      "phoneOptional": "pilihan",
+      "enquiryTypeLabel": "Apakah yang anda ingin bincangkan?",
+      "enquiryTypes": {
+        "pricing": "Harga atau cadangan mengikut skop",
+        "pilot": "Program perintis atau program",
+        "onboarding": "Onboarding peserta",
+        "other": "Lain-lain"
+      },
+      "messageLabel": "Pertanyaan anda",
+      "messageHint": "Sila sertakan butiran yang mencukupi supaya kami dapat membalas dengan berguna.",
+      "pricingMessageLabel": "Keperluan program",
+      "pricingMessageHint": "Sertakan anggaran jumlah peserta, pasaran, tarikh program, bahasa dan sokongan yang anda perlukan.",
+      "submit": "Hantar pertanyaan",
+      "sending": "Menghantar pertanyaan…",
+      "pricingSubmit": "Minta cadangan mengikut skop",
+      "pricingSending": "Menghantar permintaan cadangan…",
+      "successTitle": "Pertanyaan anda telah dihantar.",
+      "successBody": "Terima kasih. Pasukan Plexus akan membalas ke e-mel kerja yang anda berikan.",
+      "errors": {
+        "invalid": "Semak ruangan ini dan cuba lagi.",
+        "invalidEmail": "Masukkan e-mel kerja yang sah.",
+        "validation_failed": "Semak ruangan yang ditandakan dan cuba lagi.",
+        "request_too_large": "Pertanyaan anda terlalu panjang. Pendekkan dan cuba lagi.",
+        "invalid_request": "Kami tidak dapat membaca pertanyaan itu. Sila cuba lagi.",
+        "service_unavailable": "Penghantaran e-mel belum dikonfigurasi. Sila gunakan pautan e-mel di bawah.",
+        "delivery_failed": "Kami tidak dapat menghantar pertanyaan anda. Sila cuba lagi atau gunakan pautan e-mel di bawah.",
+        "network": "Kami tidak dapat menghubungi Plexus. Semak sambungan anda dan cuba lagi."
+      }
+    }
+  },
   "pages": {
     "for-vendors": {
       "title": "Ruang kerja white-label untuk pengendali program.",
@@ -338,10 +383,12 @@
       }
     },
     "pricing": {
-      "title": "Harga mengikut program yang anda kendalikan.",
-      "body": "Plexus kini ditawarkan melalui penglibatan pelancaran yang ditetapkan skopnya. Cadangan anda mengambil kira model program, jumlah peserta, modul yang diaktifkan, bahasa, onboarding dan sokongan operasi.",
-      "sectionTitle": "Mulakan dengan skop operasi yang sesuai.",
-      "sectionBody": "Dalam fasa pra-pelancaran, tiada senarai harga layan diri. Kami menetapkan skop operasi bersama pasukan anda sebelum menyediakan cadangan.",
+      "title": "Harga mengikut keperluan program anda.",
+      "body": "Cadangan Plexus ditetapkan mengikut jumlah peserta, pasaran, bahasa, modul pilihan dan tahap sokongan operasi. Mulakan dengan program perintis atau bina program pelbagai pasaran yang berulang.",
+      "principle": "Satu skop. Tanggungjawab yang jelas.",
+      "principleBody": "Sebelum kerja bermula, cadangan anda menjelaskan modul pilihan, sokongan operasi dan tanggungjawab penyampaian kepada semua pihak yang terlibat.",
+      "sectionTitle": "Pilih skop permulaan yang sesuai.",
+      "sectionBody": "Plexus menggunakan harga mengikut skop, bukan pelan per peserta yang generik. Kami menetapkan keperluan program bersama pasukan anda sebelum menyediakan cadangan.",
       "points": [
         {
           "title": "Program perintis",
@@ -360,7 +407,7 @@
         "title": "Perkara yang dinyatakan dalam cadangan anda",
         "body": "Setiap cadangan menyatakan modul yang disertakan, jumlah peserta, bahasa, onboarding, sokongan operasi dan tanggungjawab penyampaian sebelum kerja bermula.",
         "cta": "Minta cadangan mengikut skop",
-        "href": "/contact"
+        "href": "#enquiry"
       }
     },
     "about": {
@@ -399,7 +446,7 @@
     },
     "contact": {
       "title": "Bercakap dengan Plexus.",
-      "body": "Halaman ini menjadi titik hubungan awam sementara borang lead penuh disiapkan.",
+      "body": "Gunakan borang pertanyaan atau saluran hubungan yang diluluskan di bawah untuk membincangkan program, onboarding peserta atau sesi pandu arah pra-pelancaran.",
       "points": [
         "Kerjasama pengendali program",
         "Program pilot",

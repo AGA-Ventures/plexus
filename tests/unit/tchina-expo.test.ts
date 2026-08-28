@@ -92,6 +92,26 @@ describe("TChina Expo registration contract", () => {
     ).toBe(true)
   })
 
+  it("accepts email as the preferred contact method", () => {
+    const maximumLengthEmail = `${"a".repeat(64)}@${"b".repeat(63)}.${"c".repeat(63)}.${"d".repeat(63)}.${"e".repeat(63)}`
+
+    expect(maximumLengthEmail).toHaveLength(320)
+    expect(
+      tchinaRegistrationRequestSchema.safeParse({
+        ...visitor(),
+        email: maximumLengthEmail,
+        chatPlatform: "email",
+        chatId: "",
+      }).success
+    ).toBe(true)
+    expect(
+      tchinaRegistrationRequestSchema.safeParse({
+        ...visitor(),
+        chatId: "x".repeat(121),
+      }).success
+    ).toBe(false)
+  })
+
   it("requires branch-specific fields and rejects branch mixing", () => {
     expect(
       tchinaRegistrationRequestSchema.safeParse({

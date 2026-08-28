@@ -114,6 +114,24 @@ describe("POST /api/tchina-expo/registrations", () => {
     expect(mocks.insert.mock.calls[0]?.[0]).not.toHaveProperty("admin_id")
   })
 
+  it("uses the submitted email for the Email contact method", async () => {
+    const response = await POST(
+      request({
+        ...body(),
+        chatPlatform: "email",
+        chatId: "untrusted@example.invalid",
+      })
+    )
+
+    expect(response.status).toBe(200)
+    expect(mocks.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chat_platform: "email",
+        chat_id: "amina@example.com",
+      })
+    )
+  })
+
   it("returns the same success response for new and duplicate submissions", async () => {
     const created = await POST(request(body()))
     mocks.maybeSingle.mockResolvedValueOnce({

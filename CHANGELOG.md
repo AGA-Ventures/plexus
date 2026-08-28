@@ -16,6 +16,12 @@ reviewed together.
   horizontal connector behind the four event phases. Removed Simplified Chinese
   from the English investment eyebrow, aligned its section typography with the
   shared role-page scale, and corrected Event operations readiness to Mixed.
+- Made the TChina registration WhatsApp contact number default to the entered
+  international mobile number, while retaining any manually entered alternative;
+  placed country before mobile, added Email as a preferred contact method, and
+  label the identifier by the selected method. Business-matching interest now
+  explains that organizer follow-up may use the supplied email without sending
+  automated messages.
 
 ### 2026-08-27
 

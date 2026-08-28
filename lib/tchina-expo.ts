@@ -64,8 +64,8 @@ const sharedRegistrationFields = {
     .min(7)
     .max(32)
     .regex(/^\+[1-9][0-9 ()-]{6,30}$/, "Use an international number."),
-  chatPlatform: z.enum(["none", "whatsapp", "wechat"]),
-  chatId: optionalText(120),
+  chatPlatform: z.enum(["none", "email", "whatsapp", "wechat"]),
+  chatId: optionalText(320),
   countryRegion: z.string().trim().min(2).max(120),
   preferredLanguage: z.enum(["en", "zh"]),
   attendanceDates: z
@@ -94,7 +94,18 @@ export const tchinaRegistrationRequestSchema = z.discriminatedUnion(
       })
       .strict(),
   ]
-)
+).superRefine((registration, context) => {
+  if (
+    registration.chatPlatform !== "email" &&
+    registration.chatId.length > 120
+  ) {
+    context.addIssue({
+      code: "custom",
+      message: "Contact ID must be at most 120 characters.",
+      path: ["chatId"],
+    })
+  }
+})
 
 export type TChinaRegistrationRequest = z.infer<
   typeof tchinaRegistrationRequestSchema
@@ -125,7 +136,7 @@ export type TChinaRegistration = {
   normalized_email: string
   full_name: string
   mobile_number: string
-  chat_platform: "none" | "whatsapp" | "wechat"
+  chat_platform: "none" | "email" | "whatsapp" | "wechat"
   chat_id: string
   country_region: string
   preferred_language: TChinaLocale

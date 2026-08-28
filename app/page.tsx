@@ -263,7 +263,7 @@ const capabilityShowcasePresentation = [
   {
     moduleIndex: 1,
     icon: Calendar03Icon,
-    status: "live" as const,
+    status: "mixed" as const,
     image: "/app-future/plexus-superapp-system-hero-v4.png",
     imageClass: "object-cover object-center",
     mediaClass: "bg-[#071326]",

@@ -22,6 +22,7 @@ reviewed together.
   label the identifier by the selected method. Business-matching interest now
   explains that organizer follow-up may use the supplied email without sending
   automated messages.
+  Aligned Malay and Simplified Chinese readiness-badge colors with English.
 
 ### 2026-08-27
 

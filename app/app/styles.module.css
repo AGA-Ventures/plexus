@@ -711,11 +711,11 @@
 }
 
 .statusLegend [data-state="Live"],
-.statusLegend [data-state="Langsung"],
-.statusLegend [data-state="已上線"],
+.statusLegend [data-state="Aktif"],
+.statusLegend [data-state="已上线"],
 .stateBadge[data-state="Live"],
-.stateBadge[data-state="Langsung"],
-.stateBadge[data-state="已上線"] {
+.stateBadge[data-state="Aktif"],
+.stateBadge[data-state="已上线"] {
   background: #d9f8ee;
   color: #08664d;
 }
@@ -732,10 +732,10 @@
 
 .statusLegend [data-state="Adapter"],
 .statusLegend [data-state="Penyesuai"],
-.statusLegend [data-state="適配器"],
+.statusLegend [data-state="适配器"],
 .stateBadge[data-state="Adapter"],
 .stateBadge[data-state="Penyesuai"],
-.stateBadge[data-state="適配器"] {
+.stateBadge[data-state="适配器"] {
   background: #fff0c9;
   color: #735000;
 }

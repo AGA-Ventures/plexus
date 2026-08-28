@@ -6,6 +6,12 @@ reviewed together.
 
 ## Unreleased
 
+### 2026-08-28
+
+- Tightened the homepage's mobile online-to-on-ground handoff, restarted the
+  highlighted capability card sequence at 01, and corrected the Deals &
+  documents card mapping and Mixed readiness label.
+
 ### 2026-08-27
 
 - Reframed the English public-site copy around the program-operator outcome:

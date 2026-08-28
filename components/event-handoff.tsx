@@ -49,7 +49,7 @@ export function EventHandoff({
   return (
     <div
       ref={rootRef}
-      className="event-handoff grid items-center gap-3 sm:grid-cols-[1fr_auto_1fr]"
+      className="event-handoff grid items-center gap-0 sm:grid-cols-[1fr_auto_1fr] sm:gap-3"
       data-motion={isActive ? "active" : "idle"}
     >
       <div className="event-handoff-source rounded-xl bg-[#071326] px-4 py-5 text-center text-sm font-semibold sm:px-5">
@@ -58,7 +58,7 @@ export function EventHandoff({
 
       <div
         aria-hidden="true"
-        className="event-handoff-route relative mx-auto h-14 w-7 sm:h-7 sm:w-28"
+        className="event-handoff-route relative mx-auto h-12 w-8 sm:h-7 sm:w-28"
       >
         <span className="event-handoff-track absolute top-0 left-1/2 h-full w-px -translate-x-1/2 bg-[#c2fcff]/35 sm:top-1/2 sm:left-0 sm:h-px sm:w-full sm:translate-x-0 sm:-translate-y-1/2" />
         <span className="event-handoff-trace absolute top-0 left-1/2 h-full w-px origin-top -translate-x-1/2 bg-[#c2fcff] sm:top-1/2 sm:left-0 sm:h-px sm:w-full sm:origin-left sm:translate-x-0 sm:-translate-y-1/2" />

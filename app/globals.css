@@ -250,12 +250,12 @@
   }
   66% {
     opacity: 1;
-    transform: translateX(-50%) translateY(2.875rem) scale(1);
+    transform: translateX(-50%) translateY(2.375rem) scale(1);
   }
   72%,
   100% {
     opacity: 0;
-    transform: translateX(-50%) translateY(2.875rem) scale(0.72);
+    transform: translateX(-50%) translateY(2.375rem) scale(0.72);
   }
 }
 

@@ -84,6 +84,24 @@ describe("public site locale routing", () => {
     expectTranslationContract(english, getPublicContent("zh-Hans"))
   })
 
+  it("uses the approved concise Simplified Chinese display headlines", () => {
+    const zhHans = getPublicContent("zh-Hans")
+
+    expect(zhHans.hero.title).toBe("从跨境引荐到会面\n从会面到行动")
+    expect(zhHans.problem.title).toBe("跨境 B2B 配对困在表格里\n成果就难延续")
+    expect(zhHans.preEvent.hero.title).toBe("出发前\n安排合适的商务会面")
+    expect(zhHans.pages["for-vendors"].title).toBe("告别表格\n统一运营跨境项目")
+    expect(zhHans.pages.pricing.title).toBe("按项目定制方案\n不按席位套价")
+    expect(zhHans.investmentPage.title).toBe("吸引合适投资\n不只追求关注")
+    expect(zhHans.governmentPage.title).toBe("用可审计记录\n管理官方代表团")
+    expect(zhHans.events.index.title).toBe(
+      "会前精准配对\n现场有效会面\n会后持续跟进"
+    )
+    expect(zhHans.pages["how-it-works"].title).toBe(
+      "从企业资料到责任明确的行动"
+    )
+  })
+
   it("keeps pricing proposals scoped and actionable in every public locale", () => {
     for (const locale of publicLocales) {
       const pricing = getPublicContent(locale).pages.pricing

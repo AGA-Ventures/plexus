@@ -4,7 +4,7 @@
 **Owner:** Plexus Superadmin / Organizer and Engineering
 **Target:** Guangzhou, 31 August–4 September 2026
 **Capability/module:** TChina Expo registration
-**Last updated:** 2026-08-26
+**Last updated:** 2026-08-28
 
 ## Problem and evidence
 
@@ -68,7 +68,7 @@ Plexus-operated campaign, not a tenant feature.
 | Domain events             | Publish/update, rejection, and deletion are written to `audit_events`                                                        |
 | External providers        | None active in this slice; email and Auth setup deliberately deferred                                                        |
 | Failure/retry/idempotency | Same success for duplicate/honeypot; one non-rejected normalized email per event; rejected email may resubmit                |
-| UX states/locales/mobile  | EN/zh, four steps, validation focus, review editing, capped briefing rail from 880px, stacked mobile layout, pending receipt |
+| UX states/locales/mobile  | EN/zh, four steps, validation focus, country before mobile details, preferred contact method after them, Email reuses the supplied email address, WhatsApp defaults to the international mobile number but remains editable, business-matching follow-up may use the supplied email without automated messages, review editing, capped briefing rail from 880px, stacked mobile layout, pending receipt |
 | Tests                     | Zod/API unit tests, pgTAP RLS contract, hosted RLS probes, and browser route checks                                          |
 | Monitoring/support        | Superadmin-configured support email; API errors log only sanitized database codes                                            |
 | Documentation             | Module, routes, schema, role guide, test catalog, status, roadmap, changelog, and Development Command Center                 |

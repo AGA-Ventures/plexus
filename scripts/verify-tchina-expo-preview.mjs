@@ -39,6 +39,47 @@ try {
   await page
     .getByRole("textbox", { name: "International mobile number" })
     .fill("555 555 5555")
+  await page
+    .getByRole("combobox", { name: "Preferred contact method" })
+    .selectOption("whatsapp")
+  await assert.equal(
+    await page
+      .getByRole("textbox", { name: "WhatsApp number" })
+      .inputValue(),
+    "+1 555 555 5555"
+  )
+  await page
+    .getByRole("textbox", { name: "WhatsApp number" })
+    .fill("0168422880")
+  await page
+    .getByRole("textbox", { name: "International mobile number" })
+    .fill("555 555 5556")
+  await assert.equal(
+    await page
+      .getByRole("textbox", { name: "WhatsApp number" })
+      .inputValue(),
+    "0168422880"
+  )
+  await page
+    .getByRole("combobox", { name: "Preferred contact method" })
+    .selectOption("email")
+  await assert.equal(await page.locator('[data-field="chatId"]').count(), 0)
+  await page
+    .getByRole("combobox", { name: "Preferred contact method" })
+    .selectOption("whatsapp")
+  await page
+    .getByRole("combobox", { name: "Preferred contact method" })
+    .selectOption("wechat")
+  await page.getByRole("textbox", { name: "WeChat ID" }).waitFor()
+  await page
+    .getByRole("combobox", { name: "Preferred contact method" })
+    .selectOption("whatsapp")
+  await assert.equal(
+    await page
+      .getByRole("textbox", { name: "WhatsApp number" })
+      .inputValue(),
+    "0168422880"
+  )
   const countryRegion = page.getByRole("combobox", {
     name: /^Country \/ region:/,
   })
@@ -57,7 +98,8 @@ try {
   await page
     .getByRole("heading", { name: "Review before submitting" })
     .waitFor()
-  await page.getByText("+1 555 555 5555", { exact: true }).waitFor()
+  await page.getByText("+1 555 555 5556", { exact: true }).waitFor()
+  await page.getByText("0168422880", { exact: true }).waitFor()
 
   const chinesePage = await browser.newPage({
     viewport: { width: 430, height: 932 },
@@ -75,6 +117,7 @@ try {
     (await chineseCallingCode.getAttribute("aria-label")) ?? "",
     /马来西亚, \+60/
   )
+  await chineseCallingCode.scrollIntoViewIfNeeded()
   await chineseCallingCode.focus()
   await chineseCallingCode.press("Enter")
   await chinesePage.getByPlaceholder("搜索国家或国家代码…").fill("中国")
@@ -86,6 +129,7 @@ try {
   const chineseCountryRegion = chinesePage.getByRole("combobox", {
     name: /^国家 \/ 地区:/,
   })
+  await chineseCountryRegion.scrollIntoViewIfNeeded()
   await chineseCountryRegion.focus()
   await chineseCountryRegion.press("Enter")
   await chinesePage.getByPlaceholder("搜索国家…").fill("马来西亚")

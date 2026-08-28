@@ -303,7 +303,7 @@ export function TChinaExpoSuperadminPanel({
                   <div className="grid gap-5 text-sm sm:grid-cols-2">
                     <Info label="Mobile" value={registration.mobile_number} />
                     <Info
-                      label="WhatsApp / WeChat"
+                      label="Preferred contact method"
                       value={
                         registration.chat_platform === "none"
                           ? "Not supplied"

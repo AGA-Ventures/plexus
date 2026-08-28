@@ -43,7 +43,7 @@ type FormState = {
   email: string
   mobileCountry: CountryCode | ""
   mobileNumber: string
-  chatPlatform: "none" | "whatsapp" | "wechat"
+  chatPlatform: "none" | "email" | "whatsapp" | "wechat"
   chatId: string
   countryRegion: string
   preferredLanguage: TChinaLocale
@@ -152,9 +152,11 @@ const copy = {
     selectCountry: "Select a country",
     mobileHint: "Choose your calling code, then enter your mobile number.",
     mobilePlaceholder: "12 345 6789",
-    contactApp: "WhatsApp / WeChat",
+    contactApp: "Preferred contact method",
     none: "I do not use either",
-    contactId: "WhatsApp number or WeChat ID",
+    emailMethod: "Email",
+    whatsAppNumber: "WhatsApp number",
+    weChatId: "WeChat ID",
     contactCollectOnly:
       "Collected for reference only. No automated message will be sent.",
     country: "Country / region",
@@ -175,6 +177,8 @@ const copy = {
     partners: "Desired partners",
     outcomes: "Desired outcomes from the expo",
     matching: "I am interested in business-matching meetings.",
+    matchingHint:
+      "The organizer may contact you at the email address you provided about registration and business matching. No automated messages will be sent.",
     organization: "Organization (optional)",
     visitorPosition: "Position / title (optional)",
     interests: "Industry interests",
@@ -239,9 +243,11 @@ const copy = {
     selectCountry: "选择国家",
     mobileHint: "请选择国家代码，再输入您的手机号码。",
     mobilePlaceholder: "12 345 6789",
-    contactApp: "WhatsApp / 微信",
+    contactApp: "首选联系方式",
     none: "两者都不使用",
-    contactId: "WhatsApp 号码或微信号",
+    emailMethod: "电子邮箱",
+    whatsAppNumber: "WhatsApp 号码",
+    weChatId: "微信号",
     contactCollectOnly: "仅作资料记录，不会发送自动消息。",
     country: "国家 / 地区",
     language: "首选语言",
@@ -261,6 +267,8 @@ const copy = {
     partners: "希望对接的合作伙伴",
     outcomes: "期望从展会获得的成果",
     matching: "我有兴趣参加商务配对洽谈。",
+    matchingHint:
+      "主办方可能会通过您提供的电子邮箱联系您，提供登记及商务配对相关更新。不会发送自动消息。",
     organization: "机构名称（选填）",
     visitorPosition: "职位（选填）",
     interests: "感兴趣的行业",
@@ -296,6 +304,13 @@ const inputClass =
   "mt-2 min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-[15px] text-slate-950 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
 const textareaClass = `${inputClass} min-h-28 resize-y`
 
+function composeMobileNumber(
+  country: FormState["mobileCountry"],
+  number: string
+) {
+  return country ? composeInternationalPhoneNumber(country, number) : ""
+}
+
 export function TChinaExpoRegistrationForm({
   locale,
   event,
@@ -314,6 +329,7 @@ export function TChinaExpoRegistrationForm({
     ...initialForm,
     preferredLanguage: locale,
   }))
+  const [whatsAppOverride, setWhatsAppOverride] = useState<string | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -321,9 +337,22 @@ export function TChinaExpoRegistrationForm({
   const oppositeLocale = locale === "en" ? "zh" : "en"
   const pathLabel =
     attendeeType === "business_delegate" ? t.delegate : t.visitor
-  const internationalMobileNumber = form.mobileCountry
-    ? composeInternationalPhoneNumber(form.mobileCountry, form.mobileNumber)
-    : ""
+  const internationalMobileNumber = composeMobileNumber(
+    form.mobileCountry,
+    form.mobileNumber
+  )
+  const selectedContactApp =
+    form.chatPlatform === "email"
+      ? t.emailMethod
+      : form.chatPlatform === "whatsapp"
+      ? "WhatsApp"
+      : form.chatPlatform === "wechat"
+        ? "WeChat / 微信"
+        : t.none
+  const selectedContactIdLabel =
+    form.chatPlatform === "whatsapp" ? t.whatsAppNumber : t.weChatId
+  const preferredContactId =
+    form.chatPlatform === "email" ? form.email : form.chatId
   const questionnaireRows = useMemo(() => {
     if (attendeeType === "business_delegate") {
       return [
@@ -355,14 +384,66 @@ export function TChinaExpoRegistrationForm({
     })
   }
 
-  function updateMobileCountry(value: CountryCode | "") {
-    setForm((current) => ({ ...current, mobileCountry: value }))
+  function updateMobile(
+    changes: Partial<Pick<FormState, "mobileCountry" | "mobileNumber">>
+  ) {
+    setForm((current) => {
+      const previousMobileNumber = composeMobileNumber(
+        current.mobileCountry,
+        current.mobileNumber
+      )
+      const next = { ...current, ...changes }
+      const mobileNumber = composeMobileNumber(
+        next.mobileCountry,
+        next.mobileNumber
+      )
+      const usesMobileForWhatsApp =
+        current.chatPlatform === "whatsapp" &&
+        (!current.chatId || current.chatId === previousMobileNumber)
+
+      return {
+        ...next,
+        chatId: usesMobileForWhatsApp ? mobileNumber : current.chatId,
+      }
+    })
     setErrors((current) => {
       if (!current.mobileNumber) return current
       const next = { ...current }
       delete next.mobileNumber
       return next
     })
+  }
+
+  function updateChatPlatform(value: FormState["chatPlatform"]) {
+    if (form.chatPlatform === "whatsapp") {
+      setWhatsAppOverride(
+        form.chatId === internationalMobileNumber ? null : form.chatId
+      )
+    }
+    setForm((current) => ({
+      ...current,
+      chatPlatform: value,
+      chatId:
+        value === "email"
+          ? current.email
+          : value === "whatsapp"
+          ? (whatsAppOverride ??
+            composeMobileNumber(current.mobileCountry, current.mobileNumber))
+          : current.chatId,
+    }))
+    setErrors((current) => {
+      if (!current.chatId) return current
+      const next = { ...current }
+      delete next.chatId
+      return next
+    })
+  }
+
+  function updateChatId(value: string) {
+    update("chatId", value)
+    if (form.chatPlatform === "whatsapp") {
+      setWhatsAppOverride(value === internationalMobileNumber ? null : value)
+    }
   }
 
   function toggleList(
@@ -388,7 +469,11 @@ export function TChinaExpoRegistrationForm({
       if (!/^\+[1-9][0-9 ()-]{6,30}$/.test(internationalMobileNumber)) {
         nextErrors.mobileNumber = t.validationMobile
       }
-      if (form.chatPlatform !== "none" && !form.chatId.trim()) {
+      if (
+        form.chatPlatform !== "none" &&
+        form.chatPlatform !== "email" &&
+        !form.chatId.trim()
+      ) {
         nextErrors.chatId = t.validationRequired
       }
       if (!form.countryRegion.trim())
@@ -456,7 +541,7 @@ export function TChinaExpoRegistrationForm({
       email: form.email,
       mobileNumber: internationalMobileNumber,
       chatPlatform: form.chatPlatform,
-      chatId: form.chatId,
+      chatId: preferredContactId,
       countryRegion: form.countryRegion,
       preferredLanguage: form.preferredLanguage,
       attendanceDates: form.attendanceDates,
@@ -647,48 +732,6 @@ export function TChinaExpoRegistrationForm({
                   />
                 </Field>
                 <div className="block text-sm font-medium text-slate-800">
-                  <span id="mobile-number-label">{t.mobile}</span>
-                  <div
-                    className="mt-2 grid min-h-12 grid-cols-[8rem_minmax(0,1fr)] overflow-hidden rounded-xl border border-slate-300 bg-white text-[15px] text-slate-950 shadow-sm transition focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-100"
-                    role="group"
-                    aria-labelledby="mobile-number-label"
-                  >
-                    <CountryPicker
-                      kind="calling-code"
-                      locale={locale}
-                      value={form.mobileCountry}
-                      onChange={(value) =>
-                        updateMobileCountry(value as FormState["mobileCountry"])
-                      }
-                      label={t.mobileCode}
-                      searchPlaceholder={t.searchCallingCode}
-                      emptyLabel={t.noCountryMatches}
-                      triggerClassName="h-full w-full rounded-none border-0 border-r border-slate-300 bg-slate-50 px-3 text-sm font-semibold tabular-nums shadow-none"
-                    />
-                    <input
-                      data-field="mobileNumber"
-                      aria-label={t.mobile}
-                      aria-describedby="mobile-number-hint"
-                      className="min-w-0 bg-transparent px-3.5 py-2.5 outline-none placeholder:text-slate-400"
-                      value={form.mobileNumber}
-                      onChange={(e) => update("mobileNumber", e.target.value)}
-                      type="tel"
-                      inputMode="tel"
-                      autoComplete="tel-national"
-                      placeholder={t.mobilePlaceholder}
-                    />
-                  </div>
-                  <span
-                    id="mobile-number-hint"
-                    className="mt-2 block text-xs leading-5 font-normal text-slate-500"
-                  >
-                    {t.mobileHint}
-                  </span>
-                  {errors.mobileNumber ? (
-                    <FieldError>{errors.mobileNumber}</FieldError>
-                  ) : null}
-                </div>
-                <div className="block text-sm font-medium text-slate-800">
                   <span id="country-region-label">{t.country}</span>
                   <CountryPicker
                     kind="country"
@@ -706,6 +749,50 @@ export function TChinaExpoRegistrationForm({
                     <FieldError>{errors.countryRegion}</FieldError>
                   ) : null}
                 </div>
+                <div className="block text-sm font-medium text-slate-800">
+                  <span id="mobile-number-label">{t.mobile}</span>
+                  <div
+                    className="mt-2 grid min-h-12 grid-cols-[8rem_minmax(0,1fr)] overflow-hidden rounded-xl border border-slate-300 bg-white text-[15px] text-slate-950 shadow-sm transition focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-100"
+                    role="group"
+                    aria-labelledby="mobile-number-label"
+                  >
+                    <CountryPicker
+                      kind="calling-code"
+                      locale={locale}
+                      value={form.mobileCountry}
+                      onChange={(value) =>
+                        updateMobile({
+                          mobileCountry: value as FormState["mobileCountry"],
+                        })
+                      }
+                      label={t.mobileCode}
+                      searchPlaceholder={t.searchCallingCode}
+                      emptyLabel={t.noCountryMatches}
+                      triggerClassName="h-full w-full rounded-none border-0 border-r border-slate-300 bg-slate-50 px-3 text-sm font-semibold tabular-nums shadow-none"
+                    />
+                    <input
+                      data-field="mobileNumber"
+                      aria-label={t.mobile}
+                      aria-describedby="mobile-number-hint"
+                      className="min-w-0 bg-transparent px-3.5 py-2.5 outline-none placeholder:text-slate-400"
+                      value={form.mobileNumber}
+                      onChange={(e) => updateMobile({ mobileNumber: e.target.value })}
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="tel-national"
+                      placeholder={t.mobilePlaceholder}
+                    />
+                  </div>
+                  <span
+                    id="mobile-number-hint"
+                    className="mt-2 block text-xs leading-5 font-normal text-slate-500"
+                  >
+                    {t.mobileHint}
+                  </span>
+                  {errors.mobileNumber ? (
+                    <FieldError>{errors.mobileNumber}</FieldError>
+                  ) : null}
+                </div>
                 <Field
                   label={t.contactApp}
                   hint={t.contactCollectOnly}
@@ -715,20 +802,20 @@ export function TChinaExpoRegistrationForm({
                     className={inputClass}
                     value={form.chatPlatform}
                     onChange={(e) =>
-                      update(
-                        "chatPlatform",
+                      updateChatPlatform(
                         e.target.value as FormState["chatPlatform"]
                       )
                     }
                   >
                     <option value="none">{t.none}</option>
+                    <option value="email">{t.emailMethod}</option>
                     <option value="whatsapp">WhatsApp</option>
                     <option value="wechat">WeChat / 微信</option>
                   </select>
                 </Field>
-                {form.chatPlatform !== "none" ? (
+                {form.chatPlatform !== "none" && form.chatPlatform !== "email" ? (
                   <Field
-                    label={t.contactId}
+                    label={selectedContactIdLabel}
                     error={errors.chatId}
                     field="chatId"
                   >
@@ -736,7 +823,7 @@ export function TChinaExpoRegistrationForm({
                       data-field="chatId"
                       className={inputClass}
                       value={form.chatId}
-                      onChange={(e) => update("chatId", e.target.value)}
+                      onChange={(e) => updateChatId(e.target.value)}
                     />
                   </Field>
                 ) : (
@@ -913,7 +1000,12 @@ export function TChinaExpoRegistrationForm({
                     update("businessMatchingInterest", e.target.checked)
                   }
                 />
-                {t.matching}
+                <span>
+                  <span className="block">{t.matching}</span>
+                  <span className="mt-1 block text-xs leading-5 text-blue-800">
+                    {t.matchingHint}
+                  </span>
+                </span>
               </label>
             </section>
           ) : null}
@@ -999,6 +1091,10 @@ export function TChinaExpoRegistrationForm({
                 <ReviewRow label={t.fullName} value={form.fullName} />
                 <ReviewRow label={t.email} value={form.email} />
                 <ReviewRow label={t.mobile} value={internationalMobileNumber} />
+                <ReviewRow label={t.contactApp} value={selectedContactApp} />
+                {form.chatPlatform !== "none" && form.chatPlatform !== "email" ? (
+                  <ReviewRow label={selectedContactIdLabel} value={form.chatId} />
+                ) : null}
                 <ReviewRow label={t.country} value={form.countryRegion} />
                 <ReviewRow
                   label={t.dates}

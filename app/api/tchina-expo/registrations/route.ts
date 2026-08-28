@@ -84,7 +84,10 @@ export async function POST(request: Request) {
         full_name: parsed.data.fullName,
         mobile_number: normalizeTChinaPhone(parsed.data.mobileNumber),
         chat_platform: parsed.data.chatPlatform,
-        chat_id: parsed.data.chatId,
+        chat_id:
+          parsed.data.chatPlatform === "email"
+            ? normalizeTChinaEmail(parsed.data.email)
+            : parsed.data.chatId,
         country_region: parsed.data.countryRegion,
         preferred_language: parsed.data.preferredLanguage,
         attendance_dates: parsed.data.attendanceDates,

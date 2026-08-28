@@ -22,10 +22,10 @@ const copy = {
     body: "Halaman ini tidak tersedia. Kembali ke laman utama Plexus atau log masuk daripada pautan ruang kerja anda.",
     action: "Kembali ke laman utama",
   },
-  "zh-Hant": {
-    title: "找不到頁面",
-    body: "此頁面無法使用。請返回 Plexus 首頁，或使用您的工作區連結登入。",
-    action: "返回首頁",
+  "zh-Hans": {
+    title: "找不到页面",
+    body: "此页面无法访问。请返回 Plexus 首页，或通过您的工作区链接登录。",
+    action: "返回首页",
   },
 }
 

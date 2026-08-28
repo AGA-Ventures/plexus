@@ -37,7 +37,7 @@ export const preEventCampaignConfig: PreEventCampaignConfig = {
 const localeTags: Record<PublicLocale, string> = {
   en: "en-MY",
   ms: "ms-MY",
-  "zh-Hant": "zh-Hant",
+  "zh-Hans": "zh-Hans",
 }
 
 export function getPreEventCountryOptions(

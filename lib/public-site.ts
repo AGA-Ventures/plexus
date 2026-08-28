@@ -2,9 +2,9 @@ import { headers } from "next/headers"
 
 import enContent from "@/messages/public/en.json"
 import msContent from "@/messages/public/ms.json"
-import zhHantContent from "@/messages/public/zh-Hant.json"
+import zhHansContent from "@/messages/public/zh-Hans.json"
 
-export const publicLocales = ["en", "ms", "zh-Hant"] as const
+export const publicLocales = ["en", "ms", "zh-Hans"] as const
 
 export type PublicLocale = (typeof publicLocales)[number]
 export type PublicContent = typeof enContent
@@ -17,7 +17,7 @@ export type PublicLegalSlug = Exclude<
 const contentByLocale: Record<PublicLocale, PublicContent> = {
   en: enContent,
   ms: msContent,
-  "zh-Hant": zhHantContent,
+  "zh-Hans": zhHansContent,
 }
 
 export type TenantBranding = {
@@ -37,8 +37,10 @@ export function normalizePublicLocale(value?: string): PublicLocale {
   }
 
   if (
-    value === "zh-Hant" ||
+    value === "zh-Hans" ||
+    value === "zh-hans" ||
     value === "zh-hant" ||
+    value === "zh-Hant" ||
     value === "zht" ||
     value === "zh-tw" ||
     value === "zh_TW" ||
@@ -46,7 +48,7 @@ export function normalizePublicLocale(value?: string): PublicLocale {
     value === "zh" ||
     value === "cn"
   ) {
-    return "zh-Hant"
+    return "zh-Hans"
   }
 
   return "en"

@@ -49,11 +49,11 @@ const headerCopy: Record<
     menu: "Menu",
     language: "Pilih bahasa",
   },
-  "zh-Hant": {
-    preview: "產品預覽",
-    preEvent: "活動前服務",
-    menu: "選單",
-    language: "選擇語言",
+  "zh-Hans": {
+    preview: "产品预览",
+    preEvent: "活动前服务",
+    menu: "菜单",
+    language: "选择语言",
   },
 }
 
@@ -61,7 +61,7 @@ export function SiteHeader({
   content,
   locale,
   currentPath = "/",
-  supportedLocales = ["en", "ms", "zh-Hant"],
+  supportedLocales = ["en", "ms", "zh-Hans"],
   localeOptions,
   homeHref,
   loginHref,
@@ -90,9 +90,9 @@ export function SiteHeader({
         value: "ms" as const,
       },
       {
-        label: "繁體中文",
-        shortLabel: "繁中",
-        value: "zh-Hant" as const,
+        label: "简体中文",
+        shortLabel: "简中",
+        value: "zh-Hans" as const,
       },
     ]
       .filter((item) => supportedLocales.includes(item.value))

@@ -1,6 +1,6 @@
 import enContent from "@/messages/public/en.json"
 import msContent from "@/messages/public/ms.json"
-import zhHantContent from "@/messages/public/zh-Hant.json"
+import zhHansContent from "@/messages/public/zh-Hans.json"
 
 import type { PublicLocale } from "@/lib/public-site"
 
@@ -10,7 +10,7 @@ function localizedCopy(slug: InvestmentProjectSlug) {
   return {
     en: enContent.investmentProjects.items[slug],
     ms: msContent.investmentProjects.items[slug],
-    "zh-Hant": zhHantContent.investmentProjects.items[slug],
+    "zh-Hans": zhHansContent.investmentProjects.items[slug],
   } satisfies Record<
     PublicLocale,
     (typeof enContent.investmentProjects.items)[InvestmentProjectSlug]

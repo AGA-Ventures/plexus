@@ -11,6 +11,7 @@ import { supportedMarkets } from "@/lib/markets"
 describe("i18n route coverage", () => {
   it("normalizes market locale aliases", () => {
     expect(normalizeLocale("cn")).toBe("zh")
+    expect(normalizeLocale("zh-Hans")).toBe("zh")
     expect(normalizeLocale("zh-tw")).toBe("zh-Hant")
     expect(normalizeLocale("jp")).toBe("ja")
     expect(normalizeLocale("kr")).toBe("ko")
@@ -22,6 +23,7 @@ describe("i18n route coverage", () => {
 
   it("accepts every public locale route", () => {
     expect(locales.every((locale) => isLocaleParam(locale))).toBe(true)
+    expect(isLocaleParam("zh-Hans")).toBe(true)
   })
 
   it("only offers fully translated locales inside protected portals", () => {

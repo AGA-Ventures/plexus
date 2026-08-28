@@ -13,7 +13,7 @@ const validEnquiry = {
   phone: "",
   enquiryType: "pricing",
   message: "We would like a proposal for our 2027 trade program.",
-  locale: "zh-Hant",
+  locale: "zh-Hans",
   sourcePage: "contact",
 }
 

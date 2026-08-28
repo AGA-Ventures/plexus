@@ -773,8 +773,8 @@ The role-protected workspaces sit behind a public layer that includes:
   operator and participant workflows, human-governed matching, languages,
   consultation pricing, scoped access, follow-up, and the next inquiry route.
 - Public privacy, terms, cookie, DPA, PDPA, and legal-information routes.
-- Public marketing content in English, Bahasa Malaysia, and Traditional
-  Chinese.
+- Public marketing content in English, Bahasa Malaysia, and Simplified
+  Chinese (`zh-Hans`).
 - Tenant-aware public branding based on a supported Plexus subdomain.
 - Tenant-specific Delegation and Partner application links. These collect a
   complete company profile for Admin review but do not create an account.

@@ -32,7 +32,7 @@ describe("public pricing and contact enquiries", () => {
     const markup = await renderPage("pricing", { lang: "ms" })
 
     expect(markup).toContain('href="#enquiry"')
-    expect(markup).toContain("Minta cadangan mengikut skop")
+    expect(markup).toContain("Minta cadangan berdasarkan keperluan")
     expect(markup).toContain('name="enquiryType"')
     expect(markup).toMatch(/<option value="pricing" selected="">/)
     expect(markup).not.toContain('href="mailto:admin@ylinspiration.com"')
@@ -46,7 +46,7 @@ describe("public pricing and contact enquiries", () => {
 
   it("renders the Contact form with pricing preselected from its query", async () => {
     const markup = await renderPage("contact", {
-      lang: "zh-Hant",
+      lang: "zh-Hans",
       topic: "pricing",
     })
 

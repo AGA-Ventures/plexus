@@ -37,6 +37,8 @@ type EditorialCopy = {
   journeyRecordLabel: string
   governanceTitle: string
   governanceBody: string
+  howItWorksCta: string
+  businessPath: string
   stages: Array<{
     title: string
     body: string
@@ -56,48 +58,51 @@ type EditorialCopy = {
 
 const editorialCopy: Record<PublicLocale, EditorialCopy> = {
   en: {
-    status: "Pre-launch application",
-    statusDetail: "Selected program workflows are being prepared for launch.",
+    status: "Pre-launch · Pilot programs by consultation",
+    statusDetail:
+      "Available workflows and delivery scope are confirmed program by program.",
     heroImageAlt:
       "Program operator and business owner reviewing a governed Plexus company journey together",
-    journeyTitle: "From company profile to accountable follow-up.",
+    journeyTitle: "One record from company profile to next action.",
     journeyBody:
-      "Plexus moves approved context through organizer review, mutual acceptance, a confirmed meeting and the next responsible action.",
+      "Each introduction follows a clear, operator-governed process. Participants work from permitted company context, both businesses decide whether to proceed, and teams can keep follow-up visible in the operating record.",
     journeyOwnerLabel: "Decision owner",
     journeyRecordLabel: "Recorded outcome",
-    governanceTitle: "Human decisions stay visible.",
+    governanceTitle: "People make the decisions.",
     governanceBody:
-      "Matching assists the organizer; participant choice and accountable ownership remain explicit at every handoff.",
+      "Plexus can help surface relevant matches within operator-governed programs, but participants choose whether to connect and important handoffs remain visible.",
+    howItWorksCta: "See how Plexus works",
+    businessPath: "Joining through a program? See the business journey.",
     stages: [
       {
-        title: "Company profile",
-        body: "Structure capabilities, objectives and partner criteria.",
+        title: "Build the company profile",
+        body: "Capture capabilities, objectives and preferred partner criteria.",
         owner: "Participating company",
         record: "Approved company profile",
       },
       {
-        title: "Organizer review",
-        body: "Review fit and context before an opportunity is shared.",
-        owner: "Program operator",
-        record: "Reviewed opportunity",
+        title: "Request a match",
+        body: "A participant requests a connection from permitted company opportunities.",
+        owner: "Participating company",
+        record: "Match request",
       },
       {
-        title: "Mutual acceptance",
-        body: "Both sides choose whether a connection should move forward.",
+        title: "Choose to connect",
+        body: "Both businesses decide whether the introduction should move forward.",
         owner: "Both companies",
         record: "Mutual decision",
       },
       {
-        title: "Confirmed meeting",
-        body: "Coordinate participants, timing and meeting context.",
+        title: "Meet with context",
+        body: "Coordinate participants, timing, interpreters and meeting objectives.",
         owner: "Operator and participants",
         record: "Confirmed meeting record",
       },
       {
-        title: "Agreement & follow-up",
-        body: "Record outcomes, ownership and the next responsible action.",
+        title: "Own the follow-up",
+        body: "Record the outcome and, when needed, the responsible person and next action.",
         owner: "Both companies",
-        record: "Outcome, owner and next action",
+        record: "Outcome and follow-up details",
       },
     ],
     routesTitle: "Choose the Plexus experience you need.",
@@ -115,58 +120,60 @@ const editorialCopy: Record<PublicLocale, EditorialCopy> = {
     explore: "Explore",
   },
   ms: {
-    status: "Aplikasi pra-pelancaran",
+    status: "Pra-pelancaran · Program rintis melalui rundingan",
     statusDetail:
-      "Aliran kerja program terpilih sedang disediakan untuk pelancaran.",
+      "Aliran kerja yang tersedia dan skop penyampaian disahkan bagi setiap program.",
     heroImageAlt:
-      "Pengendali program dan pemilik perniagaan menyemak perjalanan syarikat Plexus yang terkawal bersama-sama",
+      "Pengendali program dan pemilik perniagaan bersama-sama menyemak perjalanan syarikat Plexus yang ditadbir",
     journeyTitle:
-      "Daripada profil syarikat kepada susulan yang bertanggungjawab.",
+      "Satu rekod daripada profil syarikat kepada tindakan seterusnya.",
     journeyBody:
-      "Plexus membawa konteks yang diluluskan melalui semakan penganjur, penerimaan bersama, mesyuarat yang disahkan dan tindakan bertanggungjawab seterusnya.",
+      "Setiap pengenalan mengikuti proses jelas yang ditadbir oleh pengendali. Peserta menggunakan konteks syarikat yang dibenarkan, kedua-dua perniagaan memutuskan sama ada mahu meneruskan, dan pasukan boleh memastikan susulan dapat dilihat dalam rekod operasi.",
     journeyOwnerLabel: "Pemilik keputusan",
     journeyRecordLabel: "Hasil direkodkan",
-    governanceTitle: "Keputusan manusia kekal jelas.",
+    governanceTitle: "Manusia membuat keputusan.",
     governanceBody:
-      "Pemadanan membantu penganjur; pilihan peserta dan pemilikan tindakan kekal nyata pada setiap serahan.",
+      "Plexus boleh membantu menemukan padanan yang relevan dalam program yang ditadbir oleh pengendali, tetapi peserta memilih sama ada mahu berhubung dan penyerahan penting kekal dapat dilihat.",
+    howItWorksCta: "Lihat cara Plexus berfungsi",
+    businessPath: "Menyertai melalui program? Lihat perjalanan perniagaan.",
     stages: [
       {
-        title: "Profil syarikat",
-        body: "Susun keupayaan, objektif dan kriteria rakan kongsi.",
+        title: "Bina profil syarikat",
+        body: "Rekod keupayaan, objektif dan kriteria rakan kongsi pilihan.",
         owner: "Syarikat peserta",
         record: "Profil syarikat diluluskan",
       },
       {
-        title: "Semakan penganjur",
-        body: "Semak kesesuaian dan konteks sebelum peluang dikongsi.",
-        owner: "Pengendali program",
-        record: "Peluang yang telah disemak",
+        title: "Minta padanan",
+        body: "Peserta meminta hubungan daripada peluang syarikat yang dibenarkan.",
+        owner: "Syarikat peserta",
+        record: "Permintaan padanan",
       },
       {
-        title: "Penerimaan bersama",
-        body: "Kedua-dua pihak memilih sama ada hubungan diteruskan.",
+        title: "Pilih untuk berhubung",
+        body: "Kedua-dua perniagaan memutuskan sama ada pengenalan perlu diteruskan.",
         owner: "Kedua-dua syarikat",
         record: "Keputusan bersama",
       },
       {
-        title: "Mesyuarat disahkan",
-        body: "Selaras peserta, masa dan konteks mesyuarat.",
+        title: "Bertemu dengan konteks",
+        body: "Selaraskan peserta, masa, jurubahasa dan objektif mesyuarat.",
         owner: "Pengendali dan peserta",
         record: "Rekod mesyuarat disahkan",
       },
       {
-        title: "Perjanjian & susulan",
-        body: "Rekod hasil, pemilikan dan tindakan seterusnya.",
+        title: "Bertanggungjawab terhadap susulan",
+        body: "Rekod hasil dan, apabila diperlukan, pihak bertanggungjawab serta tindakan seterusnya.",
         owner: "Kedua-dua syarikat",
-        record: "Hasil, pemilik dan tindakan seterusnya",
+        record: "Hasil dan butiran susulan",
       },
     ],
     routesTitle: "Pilih pengalaman Plexus yang anda perlukan.",
     routesBody:
-      "Pratonton produk, perkhidmatan pra-acara khas dan ruang kerja kini mempunyai laluan yang jelas.",
+      "Pratonton produk, perkhidmatan pra-acara khas dan ruang kerja operasi kini mempunyai laluan yang jelas dan saling berhubung.",
     preview: "Pratonton produk",
     previewBody:
-      "Lihat visi aplikasi pra-pelancaran dan pengalaman peserta yang berhubung.",
+      "Lihat visi aplikasi pra-pelancaran dan pengalaman peserta yang saling berhubung.",
     event: "Perkhidmatan pra-acara",
     eventBody:
       "Sediakan objektif, padanan, mesyuarat dan butiran ketibaan untuk program tertentu.",
@@ -175,58 +182,61 @@ const editorialCopy: Record<PublicLocale, EditorialCopy> = {
       "Log masuk ke ruang kerja pengendali program, syarikat peserta atau platform Plexus mengikut peranan anda.",
     explore: "Terokai",
   },
-  "zh-Hant": {
-    status: "預先發佈應用程式",
-    statusDetail: "指定計劃工作流程正在為正式發佈作準備。",
-    heroImageAlt: "計劃營運方與企業負責人共同檢視受治理的 Plexus 企業流程",
-    journeyTitle: "從公司檔案到有責任的後續跟進。",
+  "zh-Hans": {
+    status: "预发布 · 试点项目需另行洽谈",
+    statusDetail: "可用流程及交付范围按项目逐一确认。",
+    heroImageAlt: "项目运营方与企业负责人共同查看由 Plexus 治理的企业参与流程",
+    journeyTitle: "从企业资料到下一步行动\n记录始终连贯",
     journeyBody:
-      "Plexus 將已核准的背景資料帶入主辦方審核、雙方接受、確認會議及下一個負責任的行動。",
-    journeyOwnerLabel: "決策者",
-    journeyRecordLabel: "記錄結果",
-    governanceTitle: "人工決策始終清晰可見。",
+      "每项引荐均遵循由运营方治理的清晰流程。参与者使用获准开放的企业背景信息，双方企业自行决定是否继续推进，团队也可以在运营记录中保持后续进展清晰可见。",
+    journeyOwnerLabel: "决策者",
+    journeyRecordLabel: "记录结果",
+    governanceTitle: "决定始终由人作出",
     governanceBody:
-      "配對協助主辦方；參與者選擇與行動責任在每個交接點保持明確。",
+      "Plexus 可在运营方治理的项目中协助发现相关配对，但是否建立联系由参与者决定，重要交接也保持清晰可见。",
+    howItWorksCta: "了解 Plexus 的运作方式",
+    businessPath: "通过项目加入？查看企业参与流程。",
     stages: [
       {
-        title: "公司檔案",
-        body: "整理能力、目標和合作夥伴條件。",
-        owner: "參與企業",
-        record: "已核准的公司檔案",
+        title: "建立企业资料",
+        body: "记录企业能力、目标及理想合作伙伴条件。",
+        owner: "参与企业",
+        record: "已批准的企业资料",
       },
       {
-        title: "主辦方審核",
-        body: "在分享機會前審核匹配度與背景。",
-        owner: "計劃營運方",
-        record: "已審核的商機",
+        title: "申请配对",
+        body: "参与者从获准开放的企业机会中申请建立联系。",
+        owner: "参与企业",
+        record: "配对申请",
       },
       {
-        title: "雙方接受",
-        body: "雙方決定是否推進聯繫。",
-        owner: "雙方企業",
-        record: "雙方決定",
+        title: "选择是否联系",
+        body: "双方企业决定是否继续推进引荐。",
+        owner: "双方企业",
+        record: "双方决定",
       },
       {
-        title: "確認會議",
-        body: "協調參與者、時間和會議背景。",
-        owner: "營運方與參與者",
-        record: "已確認的會議記錄",
+        title: "带着背景会面",
+        body: "协调参与者、时间、口译员及会议目标。",
+        owner: "运营方与参与者",
+        record: "已确认的会议记录",
       },
       {
-        title: "協議與跟進",
-        body: "記錄結果、負責人和下一個行動。",
-        owner: "雙方企業",
-        record: "結果、負責人與下一步",
+        title: "负责后续跟进",
+        body: "记录结果，并在需要时注明负责人及下一步行动。",
+        owner: "双方企业",
+        record: "结果及跟进详情",
       },
     ],
-    routesTitle: "選擇您需要的 Plexus 體驗。",
-    routesBody: "產品預覽、特別活動前服務和營運工作區現已擁有清晰連接的路由。",
-    preview: "產品預覽",
-    previewBody: "查看預先發佈應用程式願景與連接的參與者體驗。",
-    event: "活動前服務",
-    eventBody: "為特定計劃準備商務目標、配對、會議和抵達細節。",
-    workspace: "營運工作區",
-    workspaceBody: "依角色登入計劃營運方、參與企業或 Plexus 平台工作區。",
+    routesTitle: "选择您需要的 Plexus 体验",
+    routesBody: "产品预览、专项活动前服务及运营工作区现在都有清晰互通的入口。",
+    preview: "产品预览",
+    previewBody: "查看预发布应用愿景及互联的参与者体验。",
+    event: "活动前服务",
+    eventBody: "为特定项目准备商务目标、配对、会议及抵达详情。",
+    workspace: "运营工作区",
+    workspaceBody:
+      "根据您的角色，登录项目运营方、参与企业或 Plexus 平台工作区。",
     explore: "探索",
   },
 }
@@ -342,7 +352,7 @@ export default async function Page({
                   <span className="size-1.5 rounded-full bg-[#80e8ff]" />
                   {copy.status}
                 </div>
-                <h1 className="mt-5 max-w-3xl text-[2.85rem] leading-[0.94] font-semibold tracking-[-0.035em] text-balance sm:mt-7 sm:text-[clamp(3.25rem,5vw,4.75rem)]">
+                <h1 className="mt-5 max-w-3xl text-[2.85rem] leading-[0.94] font-semibold tracking-[-0.035em] text-balance whitespace-pre-line sm:mt-7 sm:text-[clamp(3.25rem,5vw,4.75rem)]">
                   {content.hero.title}
                 </h1>
                 <p className="mt-5 max-w-xl text-sm leading-6 text-[#e7f5ff] sm:mt-7 sm:text-lg sm:leading-7">
@@ -367,11 +377,17 @@ export default async function Page({
                     variant="outline"
                     className="h-12 rounded-lg border-white/35 !bg-white px-5 text-sm !text-[#0758c8] hover:!bg-[#eaf7ff]"
                   >
-                    <Link href={withLocale("/for-businesses", locale)}>
-                      {content.cta.business}
+                    <Link href={withLocale("/how-it-works", locale)}>
+                      {copy.howItWorksCta}
                     </Link>
                   </Button>
                 </div>
+                <Link
+                  href={withLocale("/for-businesses", locale)}
+                  className="mt-5 inline-flex text-sm font-semibold text-[#e7f5ff] underline decoration-white/35 underline-offset-4 transition-colors hover:text-white hover:decoration-white"
+                >
+                  {copy.businessPath}
+                </Link>
               </div>
 
               <div className="mt-12 hidden items-center gap-3 text-xs font-semibold text-[#e5f6ff] lg:flex">
@@ -438,7 +454,7 @@ export default async function Page({
       >
         <div className="mx-auto max-w-[1440px]">
           <div className="grid gap-6 lg:grid-cols-[1fr_0.68fr] lg:items-end">
-            <h2 className="max-w-4xl text-[clamp(2.75rem,5vw,4.75rem)] leading-[0.98] font-semibold tracking-[-0.035em] text-balance">
+            <h2 className="max-w-4xl text-[clamp(2.75rem,5vw,4.75rem)] leading-[0.98] font-semibold tracking-[-0.035em] text-balance whitespace-pre-line">
               {copy.journeyTitle}
             </h2>
             <p className="max-w-2xl text-base leading-7 text-[#53667c] lg:pb-1 lg:text-lg lg:leading-8">
@@ -517,7 +533,7 @@ export default async function Page({
           <div className="grid gap-6 lg:grid-cols-[1fr_0.72fr] lg:items-end">
             <h2
               id="home-events-title"
-              className="max-w-4xl text-[clamp(2.75rem,5vw,4.75rem)] leading-[0.98] font-semibold tracking-[-0.035em] text-balance"
+              className="max-w-4xl text-[clamp(2.75rem,5vw,4.75rem)] leading-[0.98] font-semibold tracking-[-0.035em] text-balance whitespace-pre-line"
             >
               {content.homeEventsLayer.title}
             </h2>
@@ -543,7 +559,7 @@ export default async function Page({
                       01—04
                     </span>
                   </div>
-                  <h3 className="mt-7 max-w-xl text-3xl leading-tight font-semibold tracking-[-0.03em] text-balance sm:text-4xl">
+                  <h3 className="mt-7 max-w-xl text-3xl leading-tight font-semibold tracking-[-0.03em] text-balance whitespace-pre-line sm:text-4xl">
                     {content.homeEventsLayer.recordTitle}
                   </h3>
                 </div>
@@ -609,7 +625,7 @@ export default async function Page({
           <div className="grid gap-8 lg:grid-cols-[1fr_0.62fr] lg:items-end">
             <h2
               id="home-capabilities-title"
-              className="max-w-4xl text-[clamp(2.75rem,5vw,4.75rem)] leading-[0.98] font-semibold tracking-[-0.035em] text-balance"
+              className="max-w-4xl text-[clamp(2.75rem,5vw,4.75rem)] leading-[0.98] font-semibold tracking-[-0.035em] text-balance whitespace-pre-line"
             >
               {content.homeCapabilityShowcase.title}
             </h2>
@@ -743,7 +759,7 @@ export default async function Page({
       <section className="bg-[#071326] px-4 py-20 text-white sm:px-6 lg:px-8 lg:py-24">
         <div className="mx-auto max-w-[1440px]">
           <div className="grid gap-6 lg:grid-cols-[1fr_0.7fr] lg:items-end">
-            <h2 className="max-w-4xl text-4xl leading-tight font-semibold tracking-[-0.03em] sm:text-6xl">
+            <h2 className="max-w-4xl text-4xl leading-tight font-semibold tracking-[-0.03em] whitespace-pre-line sm:text-6xl">
               {content.homeAudienceRouter.title}
             </h2>
             <p className="max-w-xl text-base leading-7 text-[#b8cadc]">
@@ -820,6 +836,28 @@ export default async function Page({
               </Link>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="bg-[#dcecf7] px-4 py-20 text-[#111826] sm:px-6 lg:px-8 lg:py-24">
+        <div className="mx-auto grid max-w-[1180px] gap-8 rounded-[1.375rem] bg-white p-7 shadow-[0_20px_55px_rgba(7,19,38,0.1)] sm:p-10 lg:grid-cols-[1fr_auto] lg:items-end lg:p-14">
+          <div>
+            <h2 className="max-w-4xl text-4xl leading-tight font-semibold tracking-[-0.03em] text-balance sm:text-6xl">
+              {content.cta.title}
+            </h2>
+            <p className="mt-5 max-w-3xl text-base leading-7 text-[#53667c] sm:text-lg sm:leading-8">
+              {content.cta.body}
+            </p>
+          </div>
+          <Button
+            asChild
+            size="lg"
+            className="h-12 rounded-lg bg-[#0758c8] px-5 text-white hover:bg-[#064caf]"
+          >
+            <Link href={withLocale("/contact", locale)}>
+              {content.cta.vendor}
+            </Link>
+          </Button>
         </div>
       </section>
 

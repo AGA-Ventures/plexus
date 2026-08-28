@@ -22,7 +22,7 @@ import {
 const dateLocales: Record<PublicLocale, string> = {
   en: "en-MY",
   ms: "ms-MY",
-  "zh-Hant": "zh-Hant-MO",
+  "zh-Hans": "zh-Hans-MO",
 }
 
 const audienceRoutes: Record<EventAudience, string> = {

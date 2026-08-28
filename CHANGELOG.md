@@ -8,6 +8,20 @@ reviewed together.
 
 ### 2026-08-27
 
+- Reframed the English public-site copy around the program-operator outcome:
+  cross-border introductions that become meetings and accountable next actions.
+  The homepage now uses clearer human-reviewed journey, event, capability, and
+  audience language, adds a final program CTA, and aligns key page headlines,
+  footer positioning, and default metadata with that promise. The English
+  Pre-event Service page now leads with visit preparation, clearer availability
+  boundaries, and one consistent inquiry action.
+- Replaced the public Traditional Chinese locale with Simplified Chinese
+  (`zh-Hans`), while retaining the protected portal's existing `zh` and
+  `zh-Hant` routes. Copy-edited the public Bahasa Malaysia and Simplified
+  Chinese dictionaries and inline public-page text for grammar, terminology,
+  punctuation, and source fidelity; legacy public Chinese aliases now resolve
+  to `zh-Hans`, and `zh-Hans` public auth aliases continue into the protected
+  portal's canonical `zh` route.
 - Added localized Pricing and Contact enquiry forms that submit directly to the
   configured Plexus mailbox through Resend without storing personal data. Both
   pages also offer WhatsApp as a distinct enquiry path, Pricing preselects its
@@ -22,9 +36,10 @@ reviewed together.
   recovery aliases now retain the selected locale, Malay sign-in and recovery
   copy is available, and localized 404 recovery links return visitors to the
   matching public homepage.
-- Refined requested Traditional-Chinese hero headlines: added two-line titles
-  to Business, Events, Product preview, Investment, and Government pages, and
-  removed terminal punctuation from Pricing and Program operator titles.
+- Standardized Simplified Chinese display headlines across the public pages and
+  Product preview: clause commas now become intentional line breaks and terminal
+  full stops are removed. Refined the homepage online-to-on-ground handoff into
+  a clearer send, relay, and receive sequence with reduced-motion support.
 
 ### 2026-08-26
 

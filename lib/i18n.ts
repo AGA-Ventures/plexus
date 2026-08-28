@@ -17,6 +17,8 @@ export const localeParams = [
   "en",
   "zh",
   "cn",
+  "zh-Hans",
+  "zh-hans",
   "zh-Hant",
   "zh-hant",
   "zht",
@@ -90,7 +92,12 @@ export function isLocaleParam(value: string): value is LocaleParam {
 }
 
 export function normalizeLocale(value?: string): Locale {
-  if (value === "zh" || value === "cn") {
+  if (
+    value === "zh" ||
+    value === "cn" ||
+    value === "zh-Hans" ||
+    value === "zh-hans"
+  ) {
     return "zh"
   }
 

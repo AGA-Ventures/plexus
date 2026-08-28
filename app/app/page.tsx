@@ -99,7 +99,7 @@ const productPreviewCopy: Record<PublicLocale, ProductPreviewCopy> = {
       {
         name: "Event operations",
         detail: "Itineraries, site visits, liaison, interpreters",
-        state: "Live",
+        state: "Mixed",
       },
       {
         name: "Communications & resources",
@@ -263,7 +263,7 @@ const productPreviewCopy: Record<PublicLocale, ProductPreviewCopy> = {
         name: "Operasi acara",
         detail:
           "Jadual perjalanan, lawatan tapak, pegawai perhubungan dan jurubahasa",
-        state: "Aktif",
+        state: "Campuran",
       },
       {
         name: "Komunikasi dan sumber",
@@ -409,7 +409,7 @@ const productPreviewCopy: Record<PublicLocale, ProductPreviewCopy> = {
       {
         name: "活动运营",
         detail: "行程、实地考察、联络协调和口译",
-        state: "已上线",
+        state: "混合",
       },
       { name: "沟通与资源", detail: "公告、通知和私有文件", state: "混合" },
       {

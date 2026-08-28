@@ -13,7 +13,9 @@ reviewed together.
   documents card mapping and Mixed readiness label. Replaced the handoff's
   button-like arrow with a cleaner directional transfer signal and centered its
   travel corridor across mobile and desktop layouts. Removed the decorative
-  horizontal connector behind the four event phases.
+  horizontal connector behind the four event phases. Removed Simplified Chinese
+  from the English investment eyebrow, aligned its section typography with the
+  shared role-page scale, and corrected Event operations readiness to Mixed.
 
 ### 2026-08-27
 

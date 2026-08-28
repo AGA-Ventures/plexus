@@ -62,12 +62,11 @@ export function EventHandoff({
       >
         <span className="event-handoff-track absolute top-0 left-1/2 h-full w-px -translate-x-1/2 bg-[#c2fcff]/35 sm:top-1/2 sm:left-0 sm:h-px sm:w-full sm:translate-x-0 sm:-translate-y-1/2" />
         <span className="event-handoff-trace absolute top-0 left-1/2 h-full w-px origin-top -translate-x-1/2 bg-[#c2fcff] sm:top-1/2 sm:left-0 sm:h-px sm:w-full sm:origin-left sm:translate-x-0 sm:-translate-y-1/2" />
-        <span className="event-handoff-signal absolute top-0 left-1/2 size-2.5 -translate-x-1/2 rounded-full bg-[#c2fcff] sm:top-1/2 sm:left-0 sm:-translate-y-1/2" />
-        <span className="event-handoff-arrow absolute top-1/2 left-1/2 grid size-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-[#c2fcff]/65 bg-[#0758c8] text-[#c2fcff]">
+        <span className="event-handoff-signal absolute top-0 left-1/2 grid size-5 -translate-x-1/2 place-items-center text-[#c2fcff] drop-shadow-[0_4px_8px_rgba(7,19,38,0.3)] sm:top-1/2 sm:left-0 sm:-translate-y-1/2">
           <HugeiconsIcon
             icon={ArrowRight01Icon}
-            size={16}
-            strokeWidth={2}
+            size={20}
+            strokeWidth={2.4}
             className="rotate-90 sm:rotate-0"
           />
         </span>

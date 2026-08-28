@@ -10,7 +10,8 @@ reviewed together.
 
 - Tightened the homepage's mobile online-to-on-ground handoff, restarted the
   highlighted capability card sequence at 01, and corrected the Deals &
-  documents card mapping and Mixed readiness label.
+  documents card mapping and Mixed readiness label. Replaced the handoff's
+  button-like arrow with a cleaner directional transfer signal.
 
 ### 2026-08-27
 

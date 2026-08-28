@@ -577,10 +577,6 @@ export default async function Page({
             </div>
 
             <div className="relative bg-[#071326]">
-              <span
-                aria-hidden="true"
-                className="absolute top-[4.85rem] right-[12.5%] left-[12.5%] hidden h-px bg-[#80e8ff]/35 lg:block"
-              />
               <ol className="relative grid lg:grid-cols-4">
                 {content.homeEventsLayer.phases.map((phase, index) => (
                   <li

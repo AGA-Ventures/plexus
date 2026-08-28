@@ -12,7 +12,8 @@ reviewed together.
   highlighted capability card sequence at 01, and corrected the Deals &
   documents card mapping and Mixed readiness label. Replaced the handoff's
   button-like arrow with a cleaner directional transfer signal and centered its
-  travel corridor across mobile and desktop layouts.
+  travel corridor across mobile and desktop layouts. Removed the decorative
+  horizontal connector behind the four event phases.
 
 ### 2026-08-27
 

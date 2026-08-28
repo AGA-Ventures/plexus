@@ -291,9 +291,9 @@ const capabilityShowcasePresentation = [
       "min-h-[22rem] lg:col-start-1 lg:row-start-8 lg:col-span-4 lg:row-span-5 lg:min-h-0",
   },
   {
-    moduleIndex: 4,
+    moduleIndex: 5,
     icon: CheckmarkCircle02Icon,
-    status: "live" as const,
+    status: "mixed" as const,
     image: "/app-future/mou-engine-web-transparent.png",
     imageClass: "object-contain object-center p-4",
     mediaClass: "bg-[#e7dfcf]",
@@ -638,9 +638,10 @@ export default async function Page({
             data-capability-grid
             className="mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-12 lg:grid-rows-[repeat(12,minmax(0,3.125rem))]"
           >
-            {capabilityShowcasePresentation.map((presentation) => {
+            {capabilityShowcasePresentation.map((presentation, index) => {
               const capability =
                 content.homeCapabilityShowcase.modules[presentation.moduleIndex]
+              const displayNumber = String(index + 1).padStart(2, "0")
               const isConcept = presentation.status === "concept"
 
               if (isConcept) {
@@ -654,7 +655,7 @@ export default async function Page({
                     <div className="flex w-full flex-col">
                       <div className="flex items-start justify-between gap-4">
                         <span className="text-sm font-semibold tracking-[0.14em] text-white/70 tabular-nums">
-                          {capability.number}
+                          {displayNumber}
                         </span>
                         <span
                           className={`${capabilityStatusClasses[presentation.status]} inline-flex h-6 items-center rounded-full px-2.5 text-[0.6875rem] leading-none font-bold tracking-[0.05em] uppercase`}
@@ -700,7 +701,7 @@ export default async function Page({
                 >
                   <div className="relative z-20 flex items-start justify-between gap-4">
                     <span className="text-sm font-semibold tracking-[0.14em] text-[#6f6a61] tabular-nums">
-                      {capability.number}
+                      {displayNumber}
                     </span>
                     <span
                       className={`${capabilityStatusClasses[presentation.status]} inline-flex h-6 items-center rounded-full px-2.5 text-[0.6875rem] leading-none font-bold tracking-[0.05em] uppercase`}

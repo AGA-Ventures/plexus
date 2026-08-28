@@ -243,19 +243,19 @@
   0%,
   18% {
     opacity: 0;
-    transform: translateX(-50%) translateY(0) scale(0.65);
+    transform: translateY(0) scale(0.65);
   }
   24% {
     opacity: 1;
   }
   66% {
     opacity: 1;
-    transform: translateX(-50%) translateY(2.875rem) scale(1);
+    transform: translateY(1.75rem) scale(1);
   }
   72%,
   100% {
     opacity: 0;
-    transform: translateX(-50%) translateY(2.875rem) scale(0.72);
+    transform: translateY(1.75rem) scale(0.82);
   }
 }
 
@@ -283,19 +283,19 @@
   0%,
   18% {
     opacity: 0;
-    transform: translateY(-50%) translateX(0) scale(0.65);
+    transform: translateX(0) scale(0.65);
   }
   24% {
     opacity: 1;
   }
   66% {
     opacity: 1;
-    transform: translateY(-50%) translateX(6.375rem) scale(1);
+    transform: translateX(5.75rem) scale(1);
   }
   72%,
   100% {
     opacity: 0;
-    transform: translateY(-50%) translateX(6.375rem) scale(0.72);
+    transform: translateX(5.75rem) scale(0.82);
   }
 }
 
@@ -311,25 +311,6 @@
   20% {
     box-shadow: 0 10px 24px rgba(7, 19, 38, 0.28);
     transform: translateY(-2px);
-  }
-}
-
-@keyframes event-handoff-relay {
-  0%,
-  39%,
-  57%,
-  100% {
-    background-color: #0758c8;
-    color: #c2fcff;
-    box-shadow: 0 0 0 0 rgba(194, 252, 255, 0);
-    transform: translate(-50%, -50%) scale(1);
-  }
-  46%,
-  51% {
-    background-color: #c2fcff;
-    color: #0758c8;
-    box-shadow: 0 6px 18px rgba(7, 19, 38, 0.24);
-    transform: translate(-50%, -50%) scale(1.08);
   }
 }
 
@@ -387,11 +368,6 @@
 .event-handoff[data-motion="active"] .event-handoff-signal {
   animation: event-handoff-signal-y 4.2s linear infinite;
   will-change: transform, opacity;
-}
-
-.event-handoff[data-motion="active"] .event-handoff-arrow {
-  animation: event-handoff-relay 4.2s cubic-bezier(0.16, 1, 0.3, 1) infinite;
-  will-change: transform;
 }
 
 .event-handoff[data-motion="active"] .event-handoff-destination {
@@ -455,7 +431,6 @@
   .event-handoff-trace,
   .event-handoff-signal,
   .event-handoff-source,
-  .event-handoff-arrow,
   .event-handoff-destination {
     animation: none;
   }

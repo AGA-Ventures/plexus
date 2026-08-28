@@ -49,7 +49,7 @@ export function EventHandoff({
   return (
     <div
       ref={rootRef}
-      className="event-handoff grid items-center gap-3 sm:grid-cols-[1fr_auto_1fr]"
+      className="event-handoff grid items-center gap-0 sm:grid-cols-[1fr_auto_1fr] sm:gap-3"
       data-motion={isActive ? "active" : "idle"}
     >
       <div className="event-handoff-source rounded-xl bg-[#071326] px-4 py-5 text-center text-sm font-semibold sm:px-5">
@@ -58,18 +58,19 @@ export function EventHandoff({
 
       <div
         aria-hidden="true"
-        className="event-handoff-route relative mx-auto h-14 w-7 sm:h-7 sm:w-28"
+        className="event-handoff-route relative mx-auto h-12 w-8 sm:h-7 sm:w-28"
       >
         <span className="event-handoff-track absolute top-0 left-1/2 h-full w-px -translate-x-1/2 bg-[#c2fcff]/35 sm:top-1/2 sm:left-0 sm:h-px sm:w-full sm:translate-x-0 sm:-translate-y-1/2" />
         <span className="event-handoff-trace absolute top-0 left-1/2 h-full w-px origin-top -translate-x-1/2 bg-[#c2fcff] sm:top-1/2 sm:left-0 sm:h-px sm:w-full sm:origin-left sm:translate-x-0 sm:-translate-y-1/2" />
-        <span className="event-handoff-signal absolute top-0 left-1/2 size-2.5 -translate-x-1/2 rounded-full bg-[#c2fcff] sm:top-1/2 sm:left-0 sm:-translate-y-1/2" />
-        <span className="event-handoff-arrow absolute top-1/2 left-1/2 grid size-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-[#c2fcff]/65 bg-[#0758c8] text-[#c2fcff]">
-          <HugeiconsIcon
-            icon={ArrowRight01Icon}
-            size={16}
-            strokeWidth={2}
-            className="rotate-90 sm:rotate-0"
-          />
+        <span className="absolute inset-y-0 left-1/2 w-5 -translate-x-1/2 sm:inset-x-0 sm:inset-y-auto sm:top-1/2 sm:h-5 sm:w-auto sm:translate-x-0 sm:-translate-y-1/2">
+          <span className="event-handoff-signal absolute top-0 left-0 grid size-5 place-items-center text-[#c2fcff] drop-shadow-[0_4px_8px_rgba(7,19,38,0.3)]">
+            <HugeiconsIcon
+              icon={ArrowRight01Icon}
+              size={20}
+              strokeWidth={2.4}
+              className="rotate-90 sm:rotate-0"
+            />
+          </span>
         </span>
       </div>
 

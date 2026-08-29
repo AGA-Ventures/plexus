@@ -156,7 +156,7 @@ export function PreEventCountryExplorer({
         <p className="mt-2 text-lg font-semibold text-[#111826]">
           {selectedCountry?.countryName ?? copy.countryFallback}
         </p>
-        {whatsappHref && whatsappDisplay ? (
+        {selectedCountry && whatsappHref && whatsappDisplay ? (
           <>
             <a
               href={whatsappHref}
@@ -167,7 +167,7 @@ export function PreEventCountryExplorer({
                 contactCountry
               )}
               data-testid="pre-event-whatsapp"
-              className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[4px] bg-[#0758c8] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#064caf] focus-visible:ring-2 focus-visible:ring-[#0a84ff] focus-visible:outline-none sm:w-auto"
+              className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-[11px] bg-[#075e54] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#064b43] focus-visible:ring-2 focus-visible:ring-[#075e54] focus-visible:ring-offset-2 focus-visible:outline-none sm:w-auto"
             >
               <HugeiconsIcon
                 icon={WhatsappIcon}

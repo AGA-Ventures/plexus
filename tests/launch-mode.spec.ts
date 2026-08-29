@@ -307,6 +307,7 @@ test.describe("public pre-event campaign", () => {
     const search = page.getByRole("searchbox", {
       name: "Search countries and regions",
     })
+    await expect(page.getByTestId("pre-event-whatsapp")).toHaveCount(0)
     await search.fill("Macao")
     const macaoOption = page.getByRole("button", {
       name: "Select Macao SAR China",
@@ -316,22 +317,14 @@ test.describe("public pre-event campaign", () => {
     await expect(macaoOption).toHaveAttribute("aria-pressed", "true")
 
     const whatsapp = page.getByTestId("pre-event-whatsapp")
-    if ((await whatsapp.count()) > 0) {
-      const whatsappHref = await whatsapp.getAttribute("href")
-      expect(whatsappHref).toBeTruthy()
-      const whatsappUrl = new URL(whatsappHref!)
-      expect(whatsappUrl.origin).toBe("https://wa.me")
-      expect(whatsappUrl.searchParams.get("text")).toContain(
-        "travelling from Macao SAR China"
-      )
-      expect(whatsappUrl.searchParams.get("text")).toContain(
-        "business objectives"
-      )
-    } else {
-      await expect(
-        page.getByRole("link", { name: "Discuss your visit" }).last()
-      ).toBeVisible()
-    }
+    const whatsappHref = await whatsapp.getAttribute("href")
+    expect(whatsappHref).toBeTruthy()
+    const whatsappUrl = new URL(whatsappHref!)
+    expect(whatsappUrl.origin).toBe("https://wa.me")
+    expect(whatsappUrl.searchParams.get("text")).toContain(
+      "travelling from Macao SAR China"
+    )
+    expect(whatsappUrl.searchParams.get("text")).toContain("business objective")
 
     await expect(page.getByTestId("pre-event-cobrand")).toHaveCount(0)
     await expect(page.getByTestId("pre-event-email")).toHaveCount(0)
@@ -340,10 +333,17 @@ test.describe("public pre-event campaign", () => {
     await expect(page.getByText("WeChat", { exact: true })).toHaveCount(0)
     await expect(page.getByText("LINE", { exact: true })).toHaveCount(0)
     await expect(
-      page.getByRole("link", { name: "Pre-event Support", exact: true })
+      page.getByRole("link", { name: "Pre-event service", exact: true })
     ).toHaveAttribute("href", "/pre-event?lang=en")
     expect(supabaseRequests).toEqual([])
     await expectNoHorizontalOverflow(page)
+
+    await page.goto("/contact?lang=en")
+    const contactWhatsappHref = await page
+      .getByRole("link", { name: "Enquire on WhatsApp", exact: true })
+      .getAttribute("href")
+    expect(contactWhatsappHref).toBeTruthy()
+    expect(whatsappUrl.pathname).toBe(new URL(contactWhatsappHref!).pathname)
   })
 
   test("localizes the public campaign and normalizes an unsupported locale", async ({
@@ -354,7 +354,7 @@ test.describe("public pre-event campaign", () => {
         "ms",
         "Sediakan mesyuarat perniagaan yang tepat sebelum anda berangkat.",
       ],
-      ["zh-Hans", "出发前 先安排合适的商务会议"],
+      ["zh-Hans", "出发前 安排合适的商务会面"],
       ["unsupported", "Prepare the right business meetings before you travel."],
     ] as const) {
       await page.goto(`/pre-event?lang=${lang}`)

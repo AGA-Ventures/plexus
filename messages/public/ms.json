@@ -289,9 +289,8 @@
       "selectedLabel": "Negara atau wilayah pelepasan anda",
       "whatsappCta": "Bincangkan lawatan anda melalui WhatsApp",
       "whatsappAria": "Buka WhatsApp untuk bertanya kepada Plexus tentang sokongan pra-acara dari {country}",
-      "messageTemplate": "Helo Plexus, saya akan berlepas dari {country} dan ingin membincangkan objektif perniagaan, organisasi yang ingin ditemui, tarikh perjalanan serta sokongan lawatan yang mungkin saya perlukan.",
-      "countryFallback": "negara atau wilayah saya",
-      "privacy": "WhatsApp membuka draf kepada {number}. Tiada mesej dihantar secara automatik atau disimpan pada halaman ini."
+      "messageTemplate": "Hai, saya dari {country}. Saya berminat dengan perkhidmatan pra-acara.",
+      "countryFallback": "negara atau wilayah saya"
     },
     "contact": {
       "eyebrow": "Rancang lawatan anda",

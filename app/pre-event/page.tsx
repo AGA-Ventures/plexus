@@ -26,6 +26,7 @@ import {
   getPreEventCountryOptions,
   preEventCampaignConfig,
 } from "@/lib/pre-event"
+import { getPublicEnquiryChannels } from "@/lib/public-enquiry-email"
 import {
   getPublicContent,
   normalizePublicLocale,
@@ -192,6 +193,7 @@ export default async function PreEventPage({ searchParams }: PageProps) {
   const content = getPublicContent(locale)
   const page = content.preEvent
   const countries = getPreEventCountryOptions(locale)
+  const publicEnquiryChannels = getPublicEnquiryChannels()
   const genericWhatsappHref = buildPreEventWhatsAppHref({
     countryName: page.countries.countryFallback,
     messageTemplate: page.countries.messageTemplate,
@@ -579,8 +581,8 @@ export default async function PreEventPage({ searchParams }: PageProps) {
           <PreEventCountryExplorer
             countries={countries}
             copy={page.countries}
-            whatsappNumber={preEventCampaignConfig.whatsappNumber}
-            whatsappDisplay={preEventCampaignConfig.whatsappDisplay}
+            whatsappNumber={publicEnquiryChannels.whatsappNumber}
+            whatsappDisplay={publicEnquiryChannels.whatsappDisplay}
           />
         </div>
       </section>

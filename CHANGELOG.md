@@ -33,6 +33,11 @@ reviewed together.
   Aligned Malay and Simplified Chinese readiness-badge colors with English.
   Shortened the agreed Simplified Chinese display headlines across public pages
   and the product preview, while retaining the existing How it works page copy.
+- After a country is selected, the pre-event directory now reveals the same
+  public WhatsApp enquiry action used on Contact, with the selected country in
+  its drafted message.
+- Simplified the country-selected WhatsApp draft and removed its supporting
+  disclosure text from the pre-event directory.
 
 ### 2026-08-27
 

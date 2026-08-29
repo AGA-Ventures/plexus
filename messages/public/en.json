@@ -285,9 +285,8 @@
       "selectedLabel": "Your departure country or region",
       "whatsappCta": "Discuss your visit on WhatsApp",
       "whatsappAria": "Open WhatsApp to ask Plexus about pre-event support from {country}",
-      "messageTemplate": "Hello Plexus, I will be travelling from {country} and would like to discuss my business objective, the organizations I hope to meet, my travel dates, and the visit support I may need.",
-      "countryFallback": "my country or region",
-      "privacy": "WhatsApp opens a draft to {number}. Nothing is sent automatically or stored on this page."
+      "messageTemplate": "Hi, I am from {country}. I am interested in the Pre Event service.",
+      "countryFallback": "my country or region"
     },
     "contact": {
       "eyebrow": "Plan your visit",

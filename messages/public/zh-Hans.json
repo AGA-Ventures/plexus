@@ -281,9 +281,8 @@
       "selectedLabel": "您的出发国家或地区",
       "whatsappCta": "通过 WhatsApp 商讨访问安排",
       "whatsappAria": "打开 WhatsApp，向 Plexus 咨询从 {country} 出发的活动前支持",
-      "messageTemplate": "你好，Plexus。我将从 {country} 出发，希望沟通我的商务目标、想会面的机构、出行日期，以及可能需要的访问支持。",
-      "countryFallback": "我的国家或地区",
-      "privacy": "WhatsApp 会打开一则发送至 {number} 的消息草稿。本页不会自动发送或存储任何信息。"
+      "messageTemplate": "您好，我来自{country}，我对活动前服务感兴趣。",
+      "countryFallback": "我的国家或地区"
     },
     "contact": {
       "eyebrow": "规划您的访问",

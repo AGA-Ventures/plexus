@@ -47,6 +47,96 @@ const serviceIcons = [
   CalendarCheckIcon,
 ]
 
+const federalAgencies = [
+  {
+    src: "/ecosystem-partners/cradle.png",
+    alt: "Cradle",
+    width: 430,
+    height: 432,
+  },
+  {
+    src: "/ecosystem-partners/cybersecurity-malaysia.png",
+    alt: "CyberSecurity Malaysia",
+    width: 4096,
+    height: 831,
+  },
+  {
+    src: "/ecosystem-partners/fama.png",
+    alt: "FAMA",
+    width: 298,
+    height: 368,
+  },
+  {
+    src: "/ecosystem-partners/marii.png",
+    alt: "MARii",
+    width: 1473,
+    height: 619,
+  },
+  {
+    src: "/ecosystem-partners/mranti.png",
+    alt: "MRANTI",
+    width: 4096,
+    height: 1218,
+  },
+  {
+    src: "/ecosystem-partners/sirim.png",
+    alt: "SIRIM",
+    width: 584,
+    height: 716,
+  },
+  {
+    src: "/ecosystem-partners/talent-corp.png",
+    alt: "TalentCorp",
+    width: 1712,
+    height: 486,
+  },
+]
+
+const stateAgencies = [
+  {
+    src: "/ecosystem-partners/digital-penang.png",
+    alt: "Digital Penang",
+    width: 596,
+    height: 258,
+  },
+  {
+    src: "/ecosystem-partners/invest-johor.png",
+    alt: "Invest Johor",
+    width: 1024,
+    height: 615,
+  },
+  {
+    src: "/ecosystem-partners/invest-penang.png",
+    alt: "Invest Penang",
+    width: 1177,
+    height: 772,
+  },
+  {
+    src: "/ecosystem-partners/invest-sarawak.png",
+    alt: "Invest Sarawak",
+    width: 1036,
+    height: 156,
+  },
+  {
+    src: "/ecosystem-partners/invest-selangor.png",
+    alt: "Invest Selangor",
+    width: 670,
+    height: 246,
+  },
+  {
+    src: "/ecosystem-partners/sdec.png",
+    alt: "Sarawak Digital Economy Corporation",
+    width: 2247,
+    height: 803,
+  },
+  {
+    src: "/ecosystem-partners/sidec.png",
+    alt: "Selangor Information Technology and Digital Economy Corporation",
+    width: 3693,
+    height: 1278,
+  },
+]
+
 const openGraphLocales = {
   en: "en_MY",
   ms: "ms_MY",
@@ -366,6 +456,89 @@ export default async function PreEventPage({ searchParams }: PageProps) {
               </p>
             </div>
           </aside>
+        </div>
+      </section>
+
+      <section
+        data-testid="pre-event-ecosystem-partners"
+        className="border-b border-[#d5e1eb] bg-[#f7f7f2] px-4 py-16 sm:px-6 lg:px-8 lg:py-20"
+      >
+        <div className="mx-auto max-w-7xl">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="text-xs font-semibold tracking-[0.22em] text-[#0758c8] uppercase">
+              {page.ecosystemPartners.eyebrow}
+            </p>
+            <h2 className="mt-4 text-3xl leading-tight font-semibold tracking-[-0.025em] text-[#111826] sm:text-4xl">
+              {page.ecosystemPartners.title}
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-[#53667c]">
+              {page.ecosystemPartners.body}
+            </p>
+          </div>
+
+          <div className="mt-12 border-y border-[#d5e1eb] py-8 sm:py-10">
+            <p className="text-center text-xs font-semibold tracking-[0.18em] text-[#53667c] uppercase">
+              {page.ecosystemPartners.federalInvestmentAgency}
+            </p>
+            <div className="mt-5 flex justify-center">
+              <Image
+                src="/ecosystem-partners/mida.png"
+                alt="MIDA"
+                width={438}
+                height={172}
+                sizes="180px"
+                className="h-14 w-auto object-contain"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-10 pt-10 sm:space-y-12 sm:pt-12">
+            {[
+              {
+                label: page.ecosystemPartners.federalAgencies,
+                logos: federalAgencies,
+              },
+              {
+                label: page.ecosystemPartners.stateAgencies,
+                logos: stateAgencies,
+              },
+            ].map((category) => (
+              <div key={category.label}>
+                <h3 className="mb-5 text-center text-xs font-semibold tracking-[0.18em] text-[#53667c] uppercase">
+                  {category.label}
+                </h3>
+                <div
+                  tabIndex={0}
+                  role="group"
+                  aria-label={category.label}
+                  className="ecosystem-marquee"
+                >
+                  <div className="ecosystem-marquee-track">
+                    {[false, true].map((isDuplicate) => (
+                      <ul
+                        key={String(isDuplicate)}
+                        aria-hidden={isDuplicate}
+                        className="ecosystem-marquee-group"
+                      >
+                        {category.logos.map((logo) => (
+                          <li key={logo.src} className="ecosystem-marquee-logo">
+                            <Image
+                              src={logo.src}
+                              alt={isDuplicate ? "" : logo.alt}
+                              width={logo.width}
+                              height={logo.height}
+                              sizes="160px"
+                              className="h-11 w-auto max-w-40 object-contain sm:h-12 sm:max-w-44"
+                            />
+                          </li>
+                        ))}
+                      </ul>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

@@ -29,22 +29,25 @@ const publicLocaleLabels: Record<PublicLocale, string> = {
 
 const launchCopy: Record<
   PublicLocale,
-  { status: string; line: string; preview: string }
+  { status: string; line: string; preview: string; collaboration: string }
 > = {
   en: {
     status: "Pre-launch",
     line: "Structured matching, meetings and follow-up for cross-border business programs.",
     preview: "Explore the product preview",
+    collaboration: "In collaboration with",
   },
   ms: {
     status: "Pra-pelancaran",
     line: "Lapisan operasi terkawal untuk program perniagaan rentas sempadan.",
     preview: "Terokai pratonton produk",
+    collaboration: "Dengan kerjasama",
   },
   "zh-Hans": {
     status: "预发布",
     line: "面向跨境商务项目的规范化运营平台。",
     preview: "探索产品预览",
+    collaboration: "合作单位",
   },
 }
 
@@ -103,16 +106,70 @@ export async function SiteFooter({
             </Link>
           </div>
 
-          <FooterColumn
-            title={content.footer.platform}
-            links={content.footer.platformLinks}
-            locale={locale}
-          />
-          <FooterColumn
-            title={content.footer.company}
-            links={content.footer.companyLinks}
-            locale={locale}
-          />
+          <nav>
+            <h2 className="text-sm font-semibold text-white">
+              {content.footer.platform}
+            </h2>
+            <ul className="mt-5 grid gap-3">
+              {content.footer.platformLinks.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={withLocale(link.href, locale)}
+                    className="text-sm text-[#aebed0] transition-colors hover:text-white"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+          <nav aria-label={content.footer.company}>
+            <h2 className="text-sm font-semibold text-white">
+              {content.footer.company}
+            </h2>
+            <ul className="mt-5 grid gap-3">
+              {content.footer.companyLinks.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={withLocale(link.href, locale)}
+                    className="text-sm text-[#aebed0] transition-colors hover:text-white"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <div
+              data-testid="footer-collaboration"
+              className="mt-8 border-t border-white/12 pt-6"
+            >
+              <p className="text-xs font-semibold text-[#80e8ff]">
+                {labels.collaboration}
+              </p>
+              <p className="mt-2 text-sm font-semibold text-white">
+                YL Inspiration Sdn Bhd
+              </p>
+              <p className="mt-2 text-xs leading-5 text-[#aebed0]">
+                Company No. 202301038393 (1532315-X)
+              </p>
+              <div className="mt-4 flex w-fit rounded-md bg-white px-3 py-2">
+                <Image
+                  src="/malaysia-digital.png"
+                  alt="Malaysia Digital"
+                  width={1152}
+                  height={566}
+                  sizes="104px"
+                  className="h-7 w-auto object-contain"
+                />
+              </div>
+              <p className="mt-4 text-sm font-semibold text-white">
+                Malaysia Digital Status
+              </p>
+              <p className="mt-1 text-xs leading-5 text-[#aebed0]">
+                MD File ID: MD/0002990
+              </p>
+            </div>
+          </nav>
 
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-[#80e8ff]/30 bg-[#80e8ff]/10 px-3 py-1.5 text-xs font-semibold text-[#80e8ff]">
@@ -164,33 +221,5 @@ export async function SiteFooter({
         </div>
       </div>
     </footer>
-  )
-}
-
-function FooterColumn({
-  title,
-  links,
-  locale,
-}: {
-  title: string
-  links: Array<{ label: string; href: string }>
-  locale: PublicLocale
-}) {
-  return (
-    <nav>
-      <h2 className="text-sm font-semibold text-white">{title}</h2>
-      <ul className="mt-5 grid gap-3">
-        {links.map((link) => (
-          <li key={link.href}>
-            <Link
-              href={withLocale(link.href, locale)}
-              className="text-sm text-[#aebed0] transition-colors hover:text-white"
-            >
-              {link.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </nav>
   )
 }

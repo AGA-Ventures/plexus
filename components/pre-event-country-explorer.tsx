@@ -25,7 +25,6 @@ type CountryExplorerCopy = {
   whatsappAria: string
   messageTemplate: string
   countryFallback: string
-  privacy: string
 }
 
 type PreEventCountryExplorerProps = {
@@ -183,9 +182,6 @@ export function PreEventCountryExplorer({
                 aria-hidden="true"
               />
             </a>
-            <p className="mt-3 text-xs leading-5 text-[#53667c]">
-              {copy.privacy.replace("{number}", whatsappDisplay)}
-            </p>
           </>
         ) : null}
       </div>

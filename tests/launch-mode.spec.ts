@@ -321,10 +321,10 @@ test.describe("public pre-event campaign", () => {
     expect(whatsappHref).toBeTruthy()
     const whatsappUrl = new URL(whatsappHref!)
     expect(whatsappUrl.origin).toBe("https://wa.me")
-    expect(whatsappUrl.searchParams.get("text")).toContain(
-      "travelling from Macao SAR China"
+    expect(whatsappUrl.searchParams.get("text")).toBe(
+      "Hi, I am from Macao SAR China. I am interested in the Pre Event service."
     )
-    expect(whatsappUrl.searchParams.get("text")).toContain("business objective")
+    await expect(page.getByText(/WhatsApp opens a draft to/)).toHaveCount(0)
 
     await expect(page.getByTestId("pre-event-cobrand")).toHaveCount(0)
     await expect(page.getByTestId("pre-event-email")).toHaveCount(0)

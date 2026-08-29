@@ -260,6 +260,14 @@
       ],
       "disclaimer": "Plexus coordinates requests and approved-partner handoffs. This page does not sell flight tickets or hotel rooms, issue visas, guarantee approvals, or accept travel payments."
     },
+    "ecosystemPartners": {
+      "eyebrow": "Malaysia business ecosystem",
+      "title": "Our Ecosystem Partners",
+      "body": "Federal and state agencies supporting investment, business growth and market access across Malaysia.",
+      "federalInvestmentAgency": "Federal investment agency",
+      "federalAgencies": "Federal agencies",
+      "stateAgencies": "State agencies"
+    },
     "countries": {
       "eyebrow": "Prepare your inquiry",
       "title": "Tell us where your journey starts.",

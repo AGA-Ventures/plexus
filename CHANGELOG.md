@@ -6,6 +6,14 @@ reviewed together.
 
 ## Unreleased
 
+### 2026-08-29
+
+- Added the localized Pre-event ecosystem-partner section, with MIDA as the
+  featured federal investment agency and accessible, reduced-motion-safe logo
+  marquees for the supplied federal and state agency partners. The Company
+  footer column now identifies YL Inspiration Sdn Bhd and its Malaysia Digital
+  status details.
+
 ### 2026-08-28
 
 - Tightened the homepage's mobile online-to-on-ground handoff, restarted the

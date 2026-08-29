@@ -261,6 +261,35 @@ test.describe("public pre-event campaign", () => {
       page.getByText("Malaysia · Live", { exact: true })
     ).toBeVisible()
     await expect(page.getByText("Macao · Live", { exact: true })).toBeVisible()
+    const ecosystemPartners = page.getByTestId("pre-event-ecosystem-partners")
+    await expect(
+      ecosystemPartners.getByRole("heading", {
+        name: "Our Ecosystem Partners",
+      })
+    ).toBeVisible()
+    await expect(
+      ecosystemPartners.getByText("Federal investment agency", { exact: true })
+    ).toBeVisible()
+    await expect(
+      ecosystemPartners.getByText("Federal agencies", { exact: true })
+    ).toBeVisible()
+    await expect(
+      ecosystemPartners.getByText("State agencies", { exact: true })
+    ).toBeVisible()
+    await expect(
+      ecosystemPartners.getByRole("img", { name: "MIDA" })
+    ).toBeVisible()
+    await expect(
+      ecosystemPartners.getByRole("img", { name: "Cradle" })
+    ).toBeVisible()
+    await expect(
+      ecosystemPartners.getByRole("img", { name: "Digital Penang" })
+    ).toBeVisible()
+    await expect(
+      page.locator(
+        '[data-testid="pre-event-ecosystem-partners"] + #country-support'
+      )
+    ).toHaveCount(1)
     await expect(
       page.getByRole("heading", { name: "Know who you want to meet—and why." })
     ).toBeVisible()
@@ -334,6 +363,59 @@ test.describe("public pre-event campaign", () => {
       ).toBeVisible()
       await expectNoHorizontalOverflow(page)
     }
+  })
+
+  test("pauses and simplifies ecosystem marquees for keyboard and reduced motion", async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" })
+    await page.goto("/pre-event?lang=en")
+
+    const federalMarquee = page.getByRole("group", {
+      name: "Federal agencies",
+    })
+    const federalTrack = federalMarquee.locator(".ecosystem-marquee-track")
+    await expect(federalTrack).toHaveCSS("animation-name", "none")
+    await expect(
+      federalMarquee.locator('.ecosystem-marquee-group[aria-hidden="true"]')
+    ).toBeHidden()
+    await expectNoHorizontalOverflow(page)
+
+    await page.emulateMedia({ reducedMotion: "no-preference" })
+    await page.reload()
+    await federalMarquee.focus()
+    await expect(federalTrack).toHaveCSS("animation-play-state", "paused")
+  })
+
+  test("shows YL Inspiration's Malaysia Digital status below Company", async ({
+    page,
+  }) => {
+    await page.goto("/pre-event?lang=en")
+
+    const collaboration = page
+      .getByRole("navigation", { name: "Company" })
+      .getByTestId("footer-collaboration")
+    await expect(
+      collaboration.getByText("In collaboration with", { exact: true })
+    ).toBeVisible()
+    await expect(
+      collaboration.getByText("YL Inspiration Sdn Bhd", { exact: true })
+    ).toBeVisible()
+    await expect(
+      collaboration.getByText("Company No. 202301038393 (1532315-X)", {
+        exact: true,
+      })
+    ).toBeVisible()
+    await expect(
+      collaboration.getByRole("img", { name: "Malaysia Digital" })
+    ).toHaveAttribute("src", /malaysia-digital/)
+    await expect(
+      collaboration.getByText("Malaysia Digital Status", { exact: true })
+    ).toBeVisible()
+    await expect(
+      collaboration.getByText("MD File ID: MD/0002990", { exact: true })
+    ).toBeVisible()
+    await expectNoHorizontalOverflow(page)
   })
 })
 

@@ -256,6 +256,14 @@
       ],
       "disclaimer": "Plexus 负责协调需求及对接经认可的合作伙伴。本页不销售机票或酒店房间、不签发签证、不保证审批结果，也不收取旅行相关款项。"
     },
+    "ecosystemPartners": {
+      "eyebrow": "马来西亚商业生态系统",
+      "title": "我们的生态合作伙伴",
+      "body": "支持马来西亚各地投资、企业发展及市场准入的联邦和州级机构。",
+      "federalInvestmentAgency": "联邦投资机构",
+      "federalAgencies": "联邦机构",
+      "stateAgencies": "州级机构"
+    },
     "countries": {
       "eyebrow": "准备您的咨询信息",
       "title": "告诉我们从哪里出发",

@@ -191,6 +191,12 @@
   }
 }
 
+@keyframes ecosystem-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
 @keyframes login-network-twinkle {
   0%,
   100% {
@@ -346,6 +352,61 @@
   animation: pulse-track 1000ms 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+.ecosystem-marquee {
+  overflow: hidden;
+  isolation: isolate;
+  outline-offset: 0.5rem;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 8%,
+    #000 92%,
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 8%,
+    #000 92%,
+    transparent
+  );
+}
+
+.ecosystem-marquee:focus {
+  outline: 2px solid #0a84ff;
+}
+
+.ecosystem-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: ecosystem-marquee 32s linear infinite;
+  will-change: transform;
+}
+
+.ecosystem-marquee:hover .ecosystem-marquee-track,
+.ecosystem-marquee:focus .ecosystem-marquee-track,
+.ecosystem-marquee:focus-within .ecosystem-marquee-track {
+  animation-play-state: paused;
+}
+
+.ecosystem-marquee-group {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2.5rem;
+  margin: 0;
+  padding: 0 2.5rem 0 0;
+  list-style: none;
+}
+
+.ecosystem-marquee-logo {
+  display: flex;
+  width: 10rem;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+}
+
 .event-handoff-trace {
   opacity: 0;
   transform: translateX(-50%) scaleY(0);
@@ -437,6 +498,29 @@
   .event-handoff-trace,
   .event-handoff-signal {
     opacity: 0;
+  }
+  .ecosystem-marquee {
+    overflow: visible;
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+  .ecosystem-marquee-track {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    animation: none;
+    will-change: auto;
+  }
+  .ecosystem-marquee-group {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    padding: 0;
+  }
+  .ecosystem-marquee-group[aria-hidden="true"] {
+    display: none;
   }
   .login-network-twinkle {
     opacity: 0.14;

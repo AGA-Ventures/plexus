@@ -398,6 +398,15 @@ Representative modules sit on warm cream cards (`#f3eee2`) over a mineral-paper 
 
 PLEXA is the sole interactive feature card and the saturated brand-blue interruption (`#0758c8`) in this composition. It uses white ink, shifts to Filled Surface Blue Hover (`#064caf`) with the PLEXA Route hover lift, and opens the maintained 12-module capability map. The other cards are representative evidence, not implied links.
 
+### Expo Print Collateral
+
+Expo collateral extends the Governed Blue Agenda rather than creating a separate event identity. Every piece uses the exact Plexus wordmark, Inter, Filled Surface Blue, Midnight or Checkpoint Ground, Mineral Paper, and cyan connection signals, with a 3 mm bleed, exact-format TrimBox, generous safe zones, and evidence-bound copy.
+
+- **Standee:** Use an exact 610 × 1830 mm TrimBox, a distance-first promise, one unified product-system visual with its pre-launch qualification attached, an ordered five-stage rail, and a QR plus readable URL. Keep essential bottom content above a generic 120 mm roll-up safety zone unless the printer's hardware template overrides it.
+- **A5 QR Poster:** Use an exact 148 × 210 mm TrimBox and one-action hierarchy. Keep the 82 mm QR and its quiet zone intact, with labels no smaller than 7.5 pt.
+- **A4 Brochure:** Use an exact 210 × 297 mm TrimBox, a concise promise, candid human-governed evidence, the ordered five-stage journey, a dark sidebar, and a QR. Reversed supporting copy never drops below 7.5 pt.
+- **Proof Contract:** Decode every QR from the rendered proof and check the live destination before handoff; the current destination is `https://www.plexus.enterprises`. Never invent an event date, organizer, customer, outcome, readiness state, or broad-market claim.
+
 ### Motion
 
 Route arrival uses 420ms and hero reveal uses 800ms with `cubic-bezier(0.16, 1, 0.3, 1)`; the program progress track uses 1000ms with the same easing. The Governed Checkpoint network uses one 7.6s irregular opacity-only luminance cycle so its nodes breathe without moving the layout or identity marks. Hover and component-state feedback stays near 180–200ms. Under `prefers-reduced-motion: reduce`, these animations stop, the network holds a quiet static luminance, smooth scrolling is disabled, and state changes remain immediately understandable.
@@ -423,6 +432,8 @@ Route arrival uses 420ms and hero reveal uses 800ms with `cubic-bezier(0.16, 1, 
 - **Do** keep authentication's Governed Checkpoint ordered across the identity rail, three-stage header, credentials, and support, and preserve the pre-event route's compact campaign geometry within the shared blue palette.
 - **Do** place pre-launch, illustrative, and readiness qualification beside the relevant product image or module copy.
 - **Do** preserve the capability bento's unequal editorial proportions, attached readiness chips, and one-column narrow-mobile reading order.
+- **Do** keep expo print collateral inside the Governed Blue Agenda and honor each format's exact TrimBox, 3 mm bleed, safe zones, minimum type, and rendered-QR proof checks.
+- **Do** keep pre-launch qualification attached to illustrative print evidence and decode every rendered QR before checking its live destination.
 
 ### Don't:
 
@@ -434,3 +445,5 @@ Route arrival uses 420ms and hero reveal uses 800ms with `cubic-bezier(0.16, 1, 
 - **Don't** use animation, color, badges, or polished imagery as evidence of approval, compliance, provider readiness, market coverage, or business outcomes.
 - **Don't** reuse Live, Mixed, Adapter, and Concept colors as generic success, warning, or category styling.
 - **Don't** generalize the capability bento's cream cards or unequal proportions into a new global card system; its PLEXA route reuses the established Filled Surface Blue action role.
+- **Don't** place standee essentials inside the generic bottom 120 mm roll-up safety zone, disturb QR quiet zones, or set poster labels and brochure reversed supporting copy below 7.5 pt.
+- **Don't** invent event dates, organizers, customers, outcomes, readiness states, or broad-market proof in expo collateral.

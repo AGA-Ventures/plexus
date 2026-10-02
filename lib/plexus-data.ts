@@ -213,6 +213,7 @@ export type PortalSession = {
   tenantLogoUrl?: string
   tenantVendorDiscoveryEnabled?: boolean
   tenantMeetingAvailability?: MeetingAvailability
+  plexaEnabled?: boolean
 }
 
 function assertRows<T>(

@@ -673,6 +673,110 @@ test.describe("Superadmin flow", () => {
     await expectNoHorizontalOverflow(page)
   })
 
+  test("Superadmin keeps every workspace section directly below its metrics", async ({
+    page,
+  }) => {
+    await login(page, superadminEmail!, superadminPassword!, /\/en\/superadmin/)
+
+    for (const destination of [
+      "Admin tenants",
+      "Vendors",
+      "Accounts",
+      "Reporting",
+      "Critical incidents",
+      "TChina Expo",
+      "Email delivery",
+      "PLEXA",
+      "Platform settings",
+      "Audit events",
+    ]) {
+      await openMobilePortalMenu(page)
+      const navigation =
+        (page.viewportSize()?.width ?? 1024) >= 1024
+          ? page.getByRole("complementary")
+          : page.getByRole("dialog")
+
+      await navigation
+        .getByRole("tab", { name: destination, exact: true })
+        .click()
+
+      const metrics = page.getByTestId("superadmin-metrics")
+      const activePanel = page.locator(
+        '[role="tabpanel"][data-state="active"]'
+      )
+      await expect(activePanel).toBeVisible()
+
+      const metricsBox = await metrics.boundingBox()
+      const panelBox = await activePanel.boundingBox()
+      expect(metricsBox).not.toBeNull()
+      expect(panelBox).not.toBeNull()
+
+      const verticalGap = panelBox!.y - (metricsBox!.y + metricsBox!.height)
+      expect(verticalGap).toBeGreaterThanOrEqual(0)
+      expect(verticalGap).toBeLessThanOrEqual(40)
+      await expectNoHorizontalOverflow(page)
+    }
+  })
+
+  test("Superadmin can open the governed PLEXA simulation", async ({
+    page,
+  }) => {
+    await login(page, superadminEmail!, superadminPassword!, /\/en\/superadmin/)
+    await openMobilePortalMenu(page)
+    const navigation =
+      (page.viewportSize()?.width ?? 1024) >= 1024
+        ? page.getByRole("complementary")
+        : page.getByRole("dialog")
+
+    await navigation.getByRole("tab", { name: "PLEXA" }).click()
+    await expect(
+      page.getByText("Interactive demo", { exact: true })
+    ).toBeVisible()
+    await expect(
+      page.getByText("Simulation boundary", { exact: true })
+    ).toBeVisible()
+    await expect(
+      page.getByText("Prepared tasks", { exact: true })
+    ).toBeVisible()
+    await expect(
+      page.getByText("PLEXA distribution control", { exact: true })
+    ).toBeVisible()
+    await expectNoHorizontalOverflow(page)
+
+    await page.getByRole("button", { name: "Prepare my briefing" }).click()
+    await expect(
+      page.getByText("Today’s operating brief", { exact: true })
+    ).toBeVisible()
+  })
+
+  test("Superadmin can preview a read-only 240-Vendor directory", async ({
+    page,
+  }) => {
+    await login(page, superadminEmail!, superadminPassword!, /\/en\/superadmin/)
+    await openMobilePortalMenu(page)
+    const navigation =
+      (page.viewportSize()?.width ?? 1024) >= 1024
+        ? page.getByRole("complementary")
+        : page.getByRole("dialog")
+
+    await navigation.getByRole("tab", { name: "Vendors", exact: true }).click()
+    const enablePreview = page.getByRole("button", {
+      name: "Preview 240 Vendors",
+    })
+    await expect(enablePreview).toBeVisible()
+    await enablePreview.click()
+
+    await expect(
+      page.getByText("Scale preview: 240 Vendor companies", { exact: true })
+    ).toBeVisible()
+    await expect(page.getByText("Showing 1–12 of 240 Vendors")).toBeVisible()
+    await expect(page.getByText("Demo record").first()).toBeVisible()
+    await expectNoHorizontalOverflow(page)
+
+    await page.getByRole("button", { name: "Next", exact: true }).click()
+    await expect(page.getByText("Page 2 of 20", { exact: true })).toBeVisible()
+  })
+
   test("Superadmin is redirected away from the Admin workspace", async ({
     page,
   }) => {

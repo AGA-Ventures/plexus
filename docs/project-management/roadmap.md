@@ -41,7 +41,7 @@ issues and pull requests hold execution detail.
 | P2       | Fine-grained tenant configuration | Feature flags/plans without weakening authorization                           |
 | P2       | Vendor teams                      | Multiple users per Vendor with explicit delegated permissions                 |
 | P2       | Advanced audit/search             | Operator investigation and export with retention controls                     |
-| P3       | AI assistance                     | Grounded, permission-aware assistant with evaluation and human approval       |
+| P3       | Production AI assistance          | Replace the role-scoped PLEXA simulation with a grounded, permission-aware agent, provider observability, evaluation, and approved tools |
 | P3       | Regional expansion                | Market configuration and localization beyond current programs                 |
 
 ## Known technical and operational debt

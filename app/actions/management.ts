@@ -27,6 +27,7 @@ import {
   meetingTimeOptions,
   normalizeMeetingAvailability,
 } from "@/lib/meeting-availability"
+import { PLEXA_ROLE_ACCESS_SETTING_KEY } from "@/lib/plexa"
 import {
   createSupabaseAdminClient,
   hasSupabaseAdminSecret,
@@ -177,6 +178,12 @@ const updatePlatformSettingSchema = z.object({
   settingId: uuidSchema,
   value: z.string().trim().max(20_000),
 })
+const updatePlexaRoleAccessSchema = z.object({
+  locale: localeSchema,
+  settingId: uuidSchema,
+  admin: z.boolean(),
+  vendor: z.boolean(),
+})
 const retryMeetingCreationSchema = z.object({
   locale: localeSchema,
   jobId: uuidSchema,
@@ -199,6 +206,7 @@ function actionError(error: unknown) {
 function refreshManagement(locale: Locale) {
   revalidatePath(`/${locale}/superadmin`)
   revalidatePath(`/${locale}/admin`)
+  revalidatePath(`/${locale}/vendor`)
 }
 
 async function sendVendorSetupEmail({
@@ -2163,6 +2171,50 @@ export async function updatePlatformSettingAction(
         updated_by: authorization.identity.userId,
       })
       .eq("id", parsed.data.settingId)
+      .select("id")
+      .single()
+
+    if (result.error) {
+      return { ok: false, error: result.error.message }
+    }
+
+    refreshManagement(parsed.data.locale)
+    return { ok: true }
+  } catch (error) {
+    return actionError(error)
+  }
+}
+
+export async function updatePlexaRoleAccessAction(
+  input: unknown
+): Promise<ManagementActionResult> {
+  const parsed = updatePlexaRoleAccessSchema.safeParse(input)
+
+  if (!parsed.success) {
+    return { ok: false, error: "Choose valid PLEXA role access settings." }
+  }
+
+  try {
+    const authorization = await requireOperator()
+
+    if (authorization.identity.role !== "superadmin") {
+      return {
+        ok: false,
+        error: "Only Superadmins can change PLEXA role access.",
+      }
+    }
+
+    const result = await authorization.supabase
+      .from("platform_settings")
+      .update({
+        value: {
+          admin: parsed.data.admin,
+          vendor: parsed.data.vendor,
+        },
+        updated_by: authorization.identity.userId,
+      })
+      .eq("id", parsed.data.settingId)
+      .eq("setting_key", PLEXA_ROLE_ACCESS_SETTING_KEY)
       .select("id")
       .single()
 

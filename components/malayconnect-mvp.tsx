@@ -18,6 +18,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import type { CountryCode } from "libphonenumber-js"
 import {
   AddIcon,
+  AiBrain01Icon,
   Alert02Icon,
   AnalyticsUpIcon,
   ArrowDown01Icon,
@@ -128,6 +129,7 @@ import {
   getVendorMeetingProposalState,
 } from "@/lib/meeting-proposals"
 import { AdminVendorProvision } from "@/components/admin-vendor-provision"
+import { PlexaDemo } from "@/components/plexa-demo"
 import {
   WorkspaceNavigationShell,
   type WorkspaceNavigationSurface,
@@ -1251,10 +1253,10 @@ function channelLabel(channel: AnnouncementChannel, locale: Locale) {
   return locale === "zh-Hant" ? toTraditional(labels[channel]) : labels[channel]
 }
 
-function adminTabItems(locale: Locale) {
+function adminTabItems(locale: Locale, plexaEnabled = false) {
   const t = getUiCopy(locale)
 
-  return [
+  const items: NavItem[] = [
     { value: "dashboard", label: t.dashboard, icon: AnalyticsUpIcon },
     {
       value: "companies",
@@ -1297,20 +1299,40 @@ function adminTabItems(locale: Locale) {
     { value: "resources", label: t.resources, icon: Upload01Icon },
     { value: "onsite", label: t.onsite, icon: QrCodeIcon },
     { value: "reports", label: t.reports, icon: Download01Icon },
-  ] satisfies NavItem[]
+  ]
+
+  if (plexaEnabled) {
+    items.splice(items.length - 1, 0, {
+      value: "plexa",
+      label: "PLEXA",
+      icon: AiBrain01Icon,
+    })
+  }
+
+  return items
 }
 
-function portalTabItems(locale: Locale, profileLabel: string) {
+function portalTabItems(
+  locale: Locale,
+  profileLabel: string,
+  plexaEnabled = false
+) {
   const t = getUiCopy(locale)
 
-  return [
+  const items: NavItem[] = [
     { value: "dashboard", label: t.dashboard, icon: AnalyticsUpIcon },
     { value: "profile", label: profileLabel, icon: Building01Icon },
     { value: "matches", label: t.myMatches, icon: UserGroupIcon },
     { value: "meetings", label: t.myMeetings, icon: CameraVideoIcon },
     { value: "signing", label: "MOU", icon: File01Icon },
     { value: "onsite", label: t.onsite, icon: QrCodeIcon },
-  ] satisfies NavItem[]
+  ]
+
+  if (plexaEnabled) {
+    items.push({ value: "plexa", label: "PLEXA", icon: AiBrain01Icon })
+  }
+
+  return items
 }
 
 function formatDateTime(value: string, locale: Locale = "en") {
@@ -2462,7 +2484,7 @@ function AdminPortal(props: {
   } = props
   const router = useRouter()
   const navigationCopy = getUiCopy(locale)
-  const navigationItems = adminTabItems(locale)
+  const navigationItems = adminTabItems(locale, session.plexaEnabled)
   const validSections = navigationItems.flatMap((item) =>
     item.children ? item.children.map((child) => child.value) : [item.value]
   )
@@ -3150,6 +3172,59 @@ function AdminPortal(props: {
         </div>
       </TabsContent>
 
+      {session.plexaEnabled ? (
+        <TabsContent value="plexa" className="min-w-0">
+          <PlexaDemo
+            role="admin"
+            locale={locale}
+            context={{
+              workspaceName: session.tenantName ?? "Plexus Admin",
+              metrics: [
+                {
+                  label: textFor(locale, "Pending matches", "待审配对"),
+                  value: pendingOrganizerReviews,
+                },
+                {
+                  label: textFor(locale, "Scheduled meetings", "已安排会议"),
+                  value: db.meetings.filter(
+                    (meeting) => meeting.status === "Scheduled"
+                  ).length,
+                },
+                {
+                  label: textFor(locale, "Incomplete profiles", "未完成资料"),
+                  value: [
+                    ...db.delegationCompanies,
+                    ...db.partnerCompanies,
+                  ].filter((company) => company.profileComplete < 100).length,
+                },
+                {
+                  label: textFor(locale, "Open MOUs", "进行中 MOU"),
+                  value: db.deals.filter((deal) => deal.status !== "Signed")
+                    .length,
+                },
+              ],
+              signals: [
+                textFor(
+                  locale,
+                  `${pendingOrganizerReviews} match request${pendingOrganizerReviews === 1 ? "" : "s"} await Organizer review.`,
+                  `${pendingOrganizerReviews} 项配对请求等待主办方审查。`
+                ),
+                textFor(
+                  locale,
+                  `${db.meetings.filter((meeting) => meeting.status === "Scheduled").length} scheduled meeting${db.meetings.filter((meeting) => meeting.status === "Scheduled").length === 1 ? "" : "s"} remain in the preparation queue.`,
+                  `${db.meetings.filter((meeting) => meeting.status === "Scheduled").length} 场已安排会议仍在准备队列中。`
+                ),
+                textFor(
+                  locale,
+                  "All suggestions require Organizer review before any operational change.",
+                  "所有建议在变更运营记录前均须主办方审阅。"
+                ),
+              ],
+            }}
+          />
+        </TabsContent>
+      ) : null}
+
       <TabsContent value="reports" className="min-w-0">
         <ReportsPanel db={db} metrics={metrics} locale={locale} />
       </TabsContent>
@@ -3258,6 +3333,63 @@ function DelegationPortal(props: {
         />
       }
       onsite={<UserItinerary db={db} />}
+      plexa={
+        session.plexaEnabled ? (
+          <PlexaDemo
+            role="vendor"
+            locale={locale}
+            context={{
+              workspaceName: company.nameEn,
+              metrics: [
+                {
+                  label: textFor(locale, "Profile complete", "资料完成度"),
+                  value: `${company.profileComplete}%`,
+                },
+                {
+                  label: textFor(locale, "Active matches", "活跃配对"),
+                  value: matches.filter((match) => match.status !== "Rejected")
+                    .length,
+                },
+                {
+                  label: textFor(locale, "Upcoming meetings", "即将举行会议"),
+                  value: meetings.filter((meeting) =>
+                    isFutureMeeting({
+                      startsAt: meeting.startsAt,
+                      durationMinutes: meeting.duration,
+                      status: meeting.status,
+                    })
+                  ).length,
+                },
+                {
+                  label: textFor(locale, "Open MOUs", "进行中 MOU"),
+                  value: db.deals.filter(
+                    (deal) =>
+                      deal.status !== "Signed" &&
+                      matches.some((match) => match.id === deal.matchId)
+                  ).length,
+                },
+              ],
+              signals: [
+                textFor(
+                  locale,
+                  `Your company profile is ${company.profileComplete}% complete.`,
+                  `您的公司资料完成度为 ${company.profileComplete}%。`
+                ),
+                textFor(
+                  locale,
+                  `${matches.length} match record${matches.length === 1 ? " is" : "s are"} available in your company scope.`,
+                  `您的公司范围内有 ${matches.length} 条配对记录。`
+                ),
+                textFor(
+                  locale,
+                  "PLEXA can prepare suggestions but cannot accept a match or sign an MOU for you.",
+                  "PLEXA 可准备建议，但不能代您接受配对或签署 MOU。"
+                ),
+              ],
+            }}
+          />
+        ) : undefined
+      }
     />
   )
 }
@@ -3376,6 +3508,63 @@ function PartnerPortal(props: {
           onConfirm={() => confirmAttendance(company.id)}
         />
       }
+      plexa={
+        session.plexaEnabled ? (
+          <PlexaDemo
+            role="vendor"
+            locale={locale}
+            context={{
+              workspaceName: company.nameEn,
+              metrics: [
+                {
+                  label: textFor(locale, "Profile complete", "资料完成度"),
+                  value: `${company.profileComplete}%`,
+                },
+                {
+                  label: textFor(locale, "Active matches", "活跃配对"),
+                  value: matches.filter((match) => match.status !== "Rejected")
+                    .length,
+                },
+                {
+                  label: textFor(locale, "Upcoming meetings", "即将举行会议"),
+                  value: meetings.filter((meeting) =>
+                    isFutureMeeting({
+                      startsAt: meeting.startsAt,
+                      durationMinutes: meeting.duration,
+                      status: meeting.status,
+                    })
+                  ).length,
+                },
+                {
+                  label: textFor(locale, "Open MOUs", "进行中 MOU"),
+                  value: db.deals.filter(
+                    (deal) =>
+                      deal.status !== "Signed" &&
+                      matches.some((match) => match.id === deal.matchId)
+                  ).length,
+                },
+              ],
+              signals: [
+                textFor(
+                  locale,
+                  `Your company profile is ${company.profileComplete}% complete.`,
+                  `您的公司资料完成度为 ${company.profileComplete}%。`
+                ),
+                textFor(
+                  locale,
+                  `${matches.length} match record${matches.length === 1 ? " is" : "s are"} available in your company scope.`,
+                  `您的公司范围内有 ${matches.length} 条配对记录。`
+                ),
+                textFor(
+                  locale,
+                  "PLEXA can prepare suggestions but cannot accept a match or sign an MOU for you.",
+                  "PLEXA 可准备建议，但不能代您接受配对或签署 MOU。"
+                ),
+              ],
+            }}
+          />
+        ) : undefined
+      }
     />
   )
 }
@@ -3387,6 +3576,7 @@ function PortalTabs({
   meetings,
   signing,
   onsite,
+  plexa,
   profileLabel,
   role,
   locale,
@@ -3400,6 +3590,7 @@ function PortalTabs({
   meetings: React.ReactNode
   signing: React.ReactNode
   onsite: React.ReactNode
+  plexa?: React.ReactNode
   profileLabel: string
   role: PortalRole
   locale: Locale
@@ -3407,7 +3598,7 @@ function PortalTabs({
   logout: () => void
   initialSection?: string
 }) {
-  const items = portalTabItems(locale, profileLabel)
+  const items = portalTabItems(locale, profileLabel, Boolean(plexa))
   const validSections = items.map((item) => item.value)
   const requestedTab =
     initialSection && validSections.includes(initialSection)
@@ -3449,6 +3640,11 @@ function PortalTabs({
       <TabsContent value="onsite" className="min-w-0">
         {onsite}
       </TabsContent>
+      {plexa ? (
+        <TabsContent value="plexa" className="min-w-0">
+          {plexa}
+        </TabsContent>
+      ) : null}
     </Tabs>
   )
 }

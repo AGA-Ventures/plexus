@@ -123,8 +123,8 @@ const productPreviewCopy: Record<PublicLocale, ProductPreviewCopy> = {
       },
       {
         name: "AI assistance",
-        detail: "Illustrative, human-reviewed product direction",
-        state: "Concept",
+        detail: "Role-scoped interactive simulation; model provider unconnected",
+        state: "Mixed",
       },
     ],
     states: [
@@ -199,8 +199,8 @@ const productPreviewCopy: Record<PublicLocale, ProductPreviewCopy> = {
       "A polished preview is not evidence that every module is live. The maintained capability map distinguishes verified product behavior from controlled steps, provider adapters, and future direction.",
     ],
     plexa: [
-      "PLEXA may assist across the journey. It does not own the decision.",
-      "This exploratory assistant direction could organize approved context, prepare conversations, surface open questions, and structure follow-up. Providers, scope, review controls, and rollout remain uncommitted.",
+      "PLEXA demonstrates assistance across the journey. It does not own the decision.",
+      "The authenticated, role-scoped demo organizes approved workspace context, prepares conversations, surfaces open questions, and structures follow-up. It is deterministic and non-persistent; production model providers, approved tool execution, and durable memory remain future capabilities.",
       ["Prepare", "Orient", "Prompt", "Structure"],
       "PLEXA coordination-core concept connecting company context, match briefing, meeting assistance, agreement drafting, and follow-up under human review",
     ],
@@ -287,8 +287,8 @@ const productPreviewCopy: Record<PublicLocale, ProductPreviewCopy> = {
       },
       {
         name: "Bantuan AI",
-        detail: "Hala tuju produk ilustrasi dengan semakan manusia",
-        state: "Konsep",
+        detail: "Simulasi interaktif mengikut peranan; penyedia model belum disambungkan",
+        state: "Campuran",
       },
     ],
     states: [
@@ -366,8 +366,8 @@ const productPreviewCopy: Record<PublicLocale, ProductPreviewCopy> = {
       "Pratonton yang kemas bukan bukti bahawa setiap modul sudah aktif. Peta keupayaan yang diselenggara membezakan tingkah laku produk yang disahkan daripada langkah terkawal, penyesuai penyedia dan hala tuju masa hadapan.",
     ],
     plexa: [
-      "PLEXA boleh membantu sepanjang aliran kerja, tetapi tidak menggantikan keputusan manusia.",
-      "Arah pembantu penerokaan ini boleh mengatur konteks yang diluluskan, menyediakan perbualan, mengetengahkan soalan terbuka dan menyusun tindakan susulan. Penyedia, skop, kawalan semakan dan pelancaran masih belum diputuskan.",
+      "PLEXA menunjukkan bantuan sepanjang aliran kerja, tetapi tidak menggantikan keputusan manusia.",
+      "Demo yang disahkan dan mengikut peranan ini mengatur konteks ruang kerja yang diluluskan, menyediakan perbualan, mengetengahkan soalan terbuka dan menyusun tindakan susulan. Ia bersifat deterministik dan tidak kekal; penyedia model pengeluaran, pelaksanaan alat yang diluluskan dan memori kekal masih merupakan keupayaan masa hadapan.",
       ["Sediakan", "Orientasi", "Gesaan", "Susun"],
       "Konsep teras penyelarasan PLEXA yang menghubungkan konteks syarikat, taklimat padanan, bantuan mesyuarat, draf perjanjian dan tindakan susulan di bawah semakan manusia",
     ],
@@ -423,7 +423,11 @@ const productPreviewCopy: Record<PublicLocale, ProductPreviewCopy> = {
         detail: "运营摘要；监控仍在规划中",
         state: "混合",
       },
-      { name: "AI 协助", detail: "经人工审核的示意产品方向", state: "概念" },
+      {
+        name: "AI 协助",
+        detail: "按角色提供交互式模拟；模型供应商尚未连接",
+        state: "混合",
+      },
     ],
     states: [
       ["已上线", "已在受控产品环境中保存及验证"],
@@ -491,8 +495,8 @@ const productPreviewCopy: Record<PublicLocale, ProductPreviewCopy> = {
       "精致的预览并非每个模块均已上线的证明。持续维护的功能地图区分已验证的产品行为、受控步骤、服务供应商适配器和未来方向。",
     ],
     plexa: [
-      "PLEXA 协助全程\n决策仍由人作出",
-      "这一探索性助手的规划方向可以整理已批准的背景、准备对话、呈现开放问题及组织后续行动。服务供应商、范围、审核控制和发布安排仍未确定。",
+      "PLEXA 展示全程协助\n决策仍由人作出",
+      "这个经过身份验证并按角色限定的演示会整理已批准的工作区背景、准备对话、呈现开放问题并组织后续行动。它采用确定性逻辑且不持久保存；生产模型供应商、获准的工具执行和持久记忆仍属于未来能力。",
       ["准备", "导向", "提示", "组织"],
       "PLEXA 协调核心概念，在人工审核下连接企业背景、配对简报、会议协助、协议起草及后续行动",
     ],

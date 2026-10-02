@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(83);
+select plan(89);
 
 insert into auth.users (
   id, instance_id, aud, role, email, encrypted_password,
@@ -1123,6 +1123,62 @@ select is(
   ),
   false,
   'A second finalization cannot approve the same application twice'
+);
+
+set local role authenticated;
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000001","role":"authenticated","app_metadata":{"role":"superadmin"}}';
+select results_eq(
+  $$select count(*) from public.platform_settings
+    where setting_key = 'plexa_role_access'$$,
+  array[1::bigint],
+  'Superadmin can read the PLEXA distribution setting'
+);
+
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000002","role":"authenticated","app_metadata":{"role":"admin","admin_id":"82000000-0000-4000-8000-000000000001"}}';
+select results_eq(
+  $$select setting_key from public.platform_settings order by setting_key$$,
+  $$values ('plexa_role_access'::text), ('vendor_account_provisioning'::text)$$,
+  'Admin can read only the two platform permissions required by its workspace'
+);
+
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000006","role":"authenticated","app_metadata":{"role":"vendor","admin_id":"82000000-0000-4000-8000-000000000001","vendor_company_id":"83000000-0000-4000-8000-000000000004","vendor_type":"partner"}}';
+select results_eq(
+  $$select setting_key from public.platform_settings order by setting_key$$,
+  $$values ('plexa_role_access'::text)$$,
+  'Vendor can read only the PLEXA distribution setting'
+);
+select results_eq(
+  $$update public.platform_settings
+    set value = '{"admin": false, "vendor": false}'::jsonb
+    where setting_key = 'plexa_role_access'
+    returning setting_key$$,
+  $$select setting_key from public.platform_settings where false$$,
+  'Vendor cannot change PLEXA distribution'
+);
+
+set local request.jwt.claims =
+  '{"sub":"81000000-0000-4000-8000-000000000001","role":"authenticated","app_metadata":{"role":"superadmin"}}';
+select results_eq(
+  $$update public.platform_settings
+    set
+      value = '{"admin": true, "vendor": false}'::jsonb,
+      updated_by = '81000000-0000-4000-8000-000000000001'
+    where setting_key = 'plexa_role_access'
+    returning value$$,
+  $$values ('{"admin": true, "vendor": false}'::jsonb)$$,
+  'Superadmin can update the PLEXA role toggles'
+);
+select results_eq(
+  $$select count(*) from public.audit_events
+    where action = 'update'
+      and target_table = 'platform_settings'
+      and actor_user_id = '81000000-0000-4000-8000-000000000001'
+      and after_values ->> 'setting_key' = 'plexa_role_access'$$,
+  array[1::bigint],
+  'PLEXA distribution changes write Superadmin audit evidence'
 );
 
 update public.user_profiles

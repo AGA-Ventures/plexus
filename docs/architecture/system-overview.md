@@ -75,6 +75,7 @@ the product.
 | Communications/resources | Admin APIs, portals, Superadmin Email sending, Resend webhook and reminder route                                        | Protected actions/handlers, Resend adapter, Supabase Auth email boundary | Announcements, notifications, resources, delivery ledger, provider events, Storage      |
 | Compliance               | Protected compliance routes                                                                                             | Compliance adapter                                                       | Provider responses, no secret in client                                                 |
 | Governance               | Superadmin console                                                                                                      | Management actions                                                       | Settings, audit events, and read-only cross-tenant email operations                     |
+| PLEXA demonstration      | Superadmin, Admin, and Vendor workspace sections                                                                        | Superadmin-only audited role toggle; deterministic client simulation     | `plexa_role_access` platform setting plus already authorized workspace snapshot         |
 
 ## Request lifecycle
 

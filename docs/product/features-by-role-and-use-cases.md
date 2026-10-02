@@ -180,6 +180,7 @@ flowchart LR
 | Capability                                               | Superadmin                                                                       | Admin                                                                       | Vendor                                                                         |
 | -------------------------------------------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | Shared login, role routing, logout                       | Own account                                                                      | Own account                                                                 | Own account                                                                    |
+| PLEXA interactive demo                                  | Always available; controls downstream role visibility                           | Role-scoped tenant context when Superadmin enables Admin access             | Own-company context when Superadmin enables Vendor access                     |
 | Self-service password recovery                           | Own account                                                                      | Own account                                                                 | Own account                                                                    |
 | Account profile settings                                 | No dedicated self-service panel                                                  | Edit own display name; manage branding and access from one settings dialog  | Edit own display name and review access                                        |
 | Admin tenant creation                                    | All tenants                                                                      | No                                                                          | No                                                                             |
@@ -295,9 +296,30 @@ active Admin account without viewing or replacing the password.
 
 - Maintain the default Admin plan.
 - Enable or disable Admin-side Vendor account provisioning.
+- Enable or disable the PLEXA interactive demonstration independently for
+  Admin and Vendor workspaces.
 - Maintain supported-market reference data.
 - Publish a platform operations notice.
 - Store settings as JSON values or strings and record the updating user.
+
+### PLEXA interactive demonstration
+
+**Status: Controlled simulation**
+
+- Superadmin always receives a PLEXA workspace and can toggle platform-wide
+  visibility for Admin and Vendor roles independently.
+- Admin receives tenant-scoped operating briefs, matching and meeting
+  preparation, communication drafts, report summaries, and simulated approval
+  states when enabled.
+- Vendor receives own-company profile coaching, match explanations, meeting
+  preparation, follow-up structure, and simulated approval states when
+  enabled.
+- The current demonstration derives responses deterministically from the
+  already authorized workspace snapshot. It calls no model provider, sends no
+  message, persists no conversation, and performs no business-data mutation or
+  external-provider action.
+- Every surface labels the simulation boundary and keeps commercial, matching,
+  account, legal, compliance, and signing decisions with the responsible user.
 
 ### Audit events
 
@@ -833,7 +855,10 @@ The following are not complete production features:
 - Production-secure QR generation and scanning.
 - Complete compliance case management and configured provider coverage.
 - Error tracking, uptime monitoring, product analytics, and alert ownership.
-- The AI assistant and other `/app` future-superapp concepts.
+- A production grounded AI agent, model/provider integration, durable memory,
+  approved tool execution, agent evaluation, and provider observability. The
+  role-scoped PLEXA workspace is an interactive deterministic demonstration,
+  not evidence that those production capabilities are complete.
 
 See the [capability map](capability-map.md) and
 [roadmap](../project-management/roadmap.md) for the maintained delivery status.

@@ -13,6 +13,7 @@ import {
   normalizeMeetingAvailability,
   type MeetingAvailability,
 } from "@/lib/meeting-availability"
+import { canRoleAccessPlexa, PLEXA_ROLE_ACCESS_SETTING_KEY } from "@/lib/plexa"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
 export type AuthenticatedIdentity = {
@@ -29,6 +30,7 @@ export type AuthenticatedIdentity = {
   tenantLogoUrl?: string
   tenantVendorDiscoveryEnabled?: boolean
   tenantMeetingAvailability?: MeetingAvailability
+  plexaEnabled?: boolean
 }
 
 type ProfileRow = {
@@ -142,6 +144,20 @@ export async function validateAuthenticatedUser(
     tenantDetails = tenantResult.data
   }
 
+  let plexaEnabled = metadata.role === "superadmin"
+
+  if (!plexaEnabled) {
+    const plexaSettingResult = await supabase
+      .from("platform_settings")
+      .select("value")
+      .eq("setting_key", PLEXA_ROLE_ACCESS_SETTING_KEY)
+      .maybeSingle()
+
+    plexaEnabled =
+      !plexaSettingResult.error &&
+      canRoleAccessPlexa(metadata.role, plexaSettingResult.data?.value)
+  }
+
   return {
     ok: true,
     identity: {
@@ -161,6 +177,7 @@ export async function validateAuthenticatedUser(
       tenantMeetingAvailability: normalizeMeetingAvailability(
         tenantDetails?.meeting_availability
       ),
+      plexaEnabled,
     },
   }
 }

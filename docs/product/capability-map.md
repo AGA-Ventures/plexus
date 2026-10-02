@@ -43,7 +43,7 @@
 | Governance        | Append-only privileged audit events               | Live            | `audit_events` and triggers                              |
 | Reporting         | Operational dashboard summaries                   | Controlled      | Existing portal views                                    |
 | Observability     | Error tracking, uptime, product analytics         | Planned         | Provider selection pending                               |
-| AI                | Illustrative Plexus assistant direction           | Concept         | `/app` pre-launch preview only                           |
+| AI                | Role-scoped PLEXA interactive demonstration       | Controlled      | Superadmin-controlled Admin/Vendor workspace simulation |
 
 ## Superapp module boundaries
 
@@ -61,6 +61,15 @@ The capability map groups into modules with independent ownership:
 10. Platform governance and audit
 11. Analytics and observability
 12. AI assistance
+
+The current PLEXA workspace is a deterministic interactive demonstration. It
+uses already authorized workspace data to show role-specific briefs, meeting
+preparation, profile coaching, draft communications, reporting summaries, and
+human approval states. It does not call an AI model, persist conversation
+memory, mutate business workflow records, send messages, or invoke an external
+provider. A Superadmin-controlled `plexa_role_access` setting governs whether
+Admin and Vendor navigation exposes the demonstration; Superadmin always
+retains access.
 
 Each module must satisfy the module contract in
 [System architecture](../architecture/system-overview.md) before being called

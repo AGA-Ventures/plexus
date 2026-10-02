@@ -199,6 +199,13 @@ event_registrations (
 )
 ```
 
+`plexa_role_access` stores an object with strict `admin` and `vendor` boolean
+flags. Active Admin and Vendor sessions may read only this setting, in addition
+to the Admin-only Vendor-provisioning permission, so server-side identity
+resolution can decide whether their workspace exposes PLEXA. Only Superadmin
+may update it. The existing privileged-change trigger records every toggle in
+`audit_events`.
+
 `tchina_events` is a platform singleton whose only legal `singleton_key` is
 `plexus`. It has no tenant or Admin foreign key. Registration cannot open until
 the exact venue, organizer, support email, and publication timestamp are

@@ -83,6 +83,15 @@ platform brand, active section, and account controls, while the desktop rail,
 mobile header, navigation sheet, responsive breakpoint, and interaction model
 remain common.
 
+Superadmin always receives the in-place `PLEXA` section and controls the
+audited `plexa_role_access` booleans for Admin and Vendor. Active downstream
+sessions read only that one distribution setting during server-side identity
+validation. Enabled roles receive an in-place PLEXA navigation destination;
+disabled roles do not, and a direct `?section=plexa` request falls back to the
+Dashboard because it is absent from the permitted section list. The current
+surface is a deterministic, non-persistent demonstration and introduces no new
+route or authorization role.
+
 Tenant-branded login accepts the owning Admin and Vendors bound to that Admin
 tenant. It rejects Superadmins and accounts belonging to any other tenant. The
 tenant slug is presentation and validation context only; it never grants a

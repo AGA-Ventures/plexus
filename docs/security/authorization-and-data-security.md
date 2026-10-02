@@ -147,6 +147,21 @@ For upload/replacement policies, validate:
 - Download authorization.
 - Deletion and retention behavior.
 
+### PLEXA demonstration boundary
+
+- Superadmin always sees the PLEXA demonstration and is the only role allowed
+  to update the audited `plexa_role_access` platform setting.
+- Active Admin and Vendor sessions may read only that setting so server-side
+  identity resolution can expose or hide their PLEXA navigation.
+- The Admin experience receives only the already authorized tenant snapshot;
+  the Vendor experience receives only the own-company and explicitly shared
+  workflow snapshot already returned by RLS-scoped portal queries.
+- Demo prompts are processed deterministically in the browser. They are not
+  sent to a model, persisted, or used to call a business action or provider.
+- Simulated approval changes only local demo state and is visibly labelled as
+  non-persistent. It cannot accept a match, sign an MOU, send a message, change
+  an account, or make a compliance decision.
+
 ## Server APIs and providers
 
 - Authenticate and authorize every route handler.

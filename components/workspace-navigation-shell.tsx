@@ -54,11 +54,13 @@ export function WorkspaceNavigationShell({
         data-testid="workspace-navigation-shell"
         className={`hidden self-stretch lg:block ${desktopClassName ?? ""}`}
       >
-        <div className="sticky top-4 flex min-h-[calc(100svh-12rem)] flex-col rounded-xl border border-sidebar-border bg-sidebar p-3 text-sidebar-foreground shadow-[0_18px_42px_rgba(7,19,38,0.12)]">
-          <div className="mb-3 rounded-lg border border-white/10 bg-white/6 px-3 py-3">
+        <div className="sticky top-4 flex max-h-[calc(100svh-2rem)] min-h-[calc(100svh-12rem)] flex-col overflow-hidden rounded-2xl bg-sidebar p-3.5 text-sidebar-foreground shadow-[0_20px_48px_rgba(7,19,38,0.16)]">
+          <div className="mb-4 rounded-xl bg-white/6 px-3 py-3.5">
             {desktopBrand}
           </div>
-          {renderNavigation("desktop", () => undefined)}
+          <div className="min-h-0 flex-1 [scrollbar-width:thin] [scrollbar-color:#53667c_transparent] overflow-y-auto pr-1">
+            {renderNavigation("desktop", () => undefined)}
+          </div>
           {desktopFooter}
         </div>
       </aside>

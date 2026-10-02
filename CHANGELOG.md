@@ -6,6 +6,29 @@ reviewed together.
 
 ## Unreleased
 
+### 2026-10-02
+
+- Upgraded Next.js and `eslint-config-next` from 16.3.3 to 16.3.8 before
+  production release, clearing the critical `next/og` ImageResponse advisory
+  while keeping the application on the established Next.js 16.3 patch line.
+- Corrected the Superadmin workspace grid so every active section starts
+  directly beneath the summary metrics instead of being pushed toward the
+  bottom of the sticky navigation rail; added desktop and mobile regression
+  coverage across all ten Superadmin destinations.
+- Refined the Superadmin operating shell with a wider grouped navigation rail,
+  stronger active-state hierarchy, and clearer signed-in context. Added a
+  toggleable, non-persistent 240-company Vendor scale preview with deterministic
+  read-only records, composable filters, profile completeness, empty states,
+  and pagination; live Vendor management remains available only in live-data
+  mode.
+- Added the role-scoped PLEXA interactive demonstration to the authenticated
+  workspaces. Superadmin always receives the PLEXA control surface and can
+  independently enable Admin and Vendor visibility through one audited
+  platform setting. Enabled roles receive tenant- or company-scoped briefs,
+  prepared tasks, free-text demo prompts, evidence summaries, draft approvals,
+  and a non-persistent activity trail. Every surface labels that no model,
+  message delivery, workflow mutation, or external-provider action occurs.
+
 ### 2026-08-29
 
 - Added the localized Pre-event ecosystem-partner section, with MIDA as the
@@ -38,6 +61,43 @@ reviewed together.
   its drafted message.
 - Simplified the country-selected WhatsApp draft and removed its supporting
   disclosure text from the pre-event directory.
+
+- Revised the expo collateral around the supplied bilingual opportunity copy:
+  moved the outdoor standee QR to an above-centre scan height, changed the
+  journey to PROFILE / MATCH / MEET / FOLLOW UP / MOU, enlarged the A5
+  pre-launch and post-QR wording, and added a brochure contact panel with the
+  currently published email and phone plus an explicitly unconfirmed WeChat
+  field. All three QRs retain the verified Chinese questionnaire destination.
+- Converted the primary expo standee, A5 QR poster, A4 brochure, and combined
+  print pack to the Simplified Chinese edition. Their scan prompts now name the
+  attendee questionnaire directly, and every QR and printed route points to the
+  verified Chinese intake at `https://www.plexus.enterprises/zh/tchina-expo`.
+- Redesigned the legacy and bilingual V2 A5 QR posters as a Governed Scan Pass:
+  one aligned wordmark and pre-launch row, a distance-readable headline, a
+  mineral access pass that groups the action, QR code, and live URL, and a
+  compact pale-network journey band. The network motif is now confined to the
+  lower edge so it supports rather than competes with the scan task.
+- Reworked the expo standee journey rail in the legacy and bilingual V2 print
+  packs as a compact pale-network band with larger numbered checkpoints,
+  stronger localized labels, and tighter spacing into the expo call to action.
+  The sequence now reads as meaningful process information at standee distance
+  instead of a thin decorative line in an under-filled field.
+- Added a bilingual V2 expo print package with separate English and Simplified
+  Chinese editions of the 61 x 183 cm standee, A5 QR poster, A4 brochure, and
+  combined print pack. Both editions share the refined product close-up and
+  governed Plexus visual system; the Chinese set uses embedded Noto Sans SC
+  regular, medium, semibold, and bold faces with native line wrapping. Every
+  file preserves exact trim, 3 mm bleed, and the verified live Plexus QR route.
+- Refined the expo standee and combined print pack with a closer, clearer Plexus
+  product-system view. The larger phone and laptop interfaces now lead over the
+  atmospheric network treatment, and the pre-launch qualification sits above
+  the frame without obscuring product evidence.
+- Created a coordinated Plexus expo collateral set with a full-size
+  61 x 183 cm standee, A5 QR poster, A4 product brochure, and mixed-size print
+  pack. The designs extend the established Governed Blue Agenda, preserve the
+  exact Plexus wordmark and evidence-bound pre-launch language, include exact
+  trim boxes with 3 mm bleed, and use verified QR codes for the live
+  `www.plexus.enterprises` destination.
 
 ### 2026-08-27
 

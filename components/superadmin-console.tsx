@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   AddIcon,
+  AiBrain01Icon,
   AnalyticsUpIcon,
   Alert02Icon,
   Audit01Icon,
@@ -61,7 +62,17 @@ import type {
   TenantStatus,
   VendorStatus,
 } from "@/lib/management-data"
+import {
+  normalizePlexaRoleAccess,
+  PLEXA_ROLE_ACCESS_SETTING_KEY,
+} from "@/lib/plexa"
+import {
+  buildSuperadminVendorDemoRecords,
+  isSuperadminDemoVendor,
+  SUPERADMIN_VENDOR_DEMO_TARGET,
+} from "@/lib/superadmin-demo-data"
 import { IndustrySectorCombobox } from "@/components/industry-sector-combobox"
+import { PlexaDemo, PlexaRoleAccessPanel } from "@/components/plexa-demo"
 import {
   Alert,
   AlertAction,
@@ -133,17 +144,39 @@ type Props = {
 const fieldClass =
   "h-8 w-full rounded-md border border-input bg-transparent px-2 text-xs outline-none focus:border-ring focus:ring-2 focus:ring-ring/30"
 
-const superadminNavItems = [
-  { value: "admins", label: "Admin tenants", icon: Building01Icon },
-  { value: "vendors", label: "Vendors", icon: UserGroupIcon },
-  { value: "accounts", label: "Accounts", icon: ShieldUserIcon },
-  { value: "reporting", label: "Reporting", icon: AnalyticsUpIcon },
-  { value: "incidents", label: "Critical incidents", icon: Alert02Icon },
-  { value: "tchina", label: "TChina Expo", icon: Calendar03Icon },
-  { value: "email", label: "Email sending", icon: Mail01Icon },
-  { value: "settings", label: "Platform settings", icon: Settings01Icon },
-  { value: "audit", label: "Audit events", icon: Audit01Icon },
+const superadminNavGroups = [
+  {
+    label: "Directory",
+    items: [
+      { value: "admins", label: "Admin tenants", icon: Building01Icon },
+      { value: "vendors", label: "Vendors", icon: UserGroupIcon },
+      { value: "accounts", label: "Accounts", icon: ShieldUserIcon },
+    ],
+  },
+  {
+    label: "Operations",
+    items: [
+      { value: "reporting", label: "Reporting", icon: AnalyticsUpIcon },
+      { value: "incidents", label: "Critical incidents", icon: Alert02Icon },
+      { value: "tchina", label: "TChina Expo", icon: Calendar03Icon },
+      { value: "email", label: "Email delivery", icon: Mail01Icon },
+    ],
+  },
+  {
+    label: "Intelligence",
+    items: [{ value: "plexa", label: "PLEXA", icon: AiBrain01Icon }],
+  },
+  {
+    label: "Governance",
+    items: [
+      { value: "settings", label: "Platform settings", icon: Settings01Icon },
+      { value: "audit", label: "Audit events", icon: Audit01Icon },
+    ],
+  },
 ]
+
+const superadminNavItems = superadminNavGroups.flatMap((group) => group.items)
+const VENDOR_PAGE_SIZE = 12
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-MY", {
@@ -676,13 +709,16 @@ function AdminRecoveryButton({
 
 function SuperadminWorkspaceBrand({ subtitle }: { subtitle: string }) {
   return (
-    <div className="min-w-0">
-      <p className="truncate text-xs font-semibold text-sidebar-foreground">
-        Plexus Platform
-      </p>
-      <p className="mt-0.5 truncate text-xs text-muted-foreground">
-        {subtitle}
-      </p>
+    <div className="flex min-w-0 items-center gap-3">
+      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#0758c8] text-white shadow-[0_8px_18px_rgba(7,88,200,0.24)]">
+        <HugeiconsIcon icon={Building01Icon} strokeWidth={1.8} />
+      </span>
+      <div className="min-w-0">
+        <p className="truncate text-sm font-semibold tracking-[-0.01em] text-sidebar-foreground">
+          Plexus Platform
+        </p>
+        <p className="mt-0.5 truncate text-xs text-[#8fa9c3]">{subtitle}</p>
+      </div>
     </div>
   )
 }
@@ -698,13 +734,26 @@ function SuperadminWorkspaceNavigation({
     superadminNavItems.find((item) => item.value === activeValue)?.label ??
     superadminNavItems[0].label
   const accountContext = (
-    <div className="mt-auto rounded-lg border border-white/10 bg-white/6 px-3 py-2.5">
-      <p className="truncate text-xs font-medium text-sidebar-foreground">
-        {session.displayName}
-      </p>
-      <p className="mt-0.5 truncate text-xs text-muted-foreground">
-        {session.email}
-      </p>
+    <div className="mt-auto flex items-center gap-3 rounded-lg bg-white/7 px-3 py-3">
+      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#102443] text-xs font-semibold text-[#80e8ff]">
+        {session.displayName
+          .split(/\s+/)
+          .slice(0, 2)
+          .map((part) => part[0])
+          .join("")
+          .toUpperCase() || "SA"}
+      </span>
+      <div className="min-w-0">
+        <p className="text-[0.6875rem] font-medium tracking-wide text-[#8fa9c3] uppercase">
+          Signed in as
+        </p>
+        <p className="mt-0.5 truncate text-xs font-medium text-sidebar-foreground">
+          {session.displayName}
+        </p>
+        <p className="mt-0.5 truncate text-xs text-[#8fa9c3]">
+          {session.email}
+        </p>
+      </div>
     </div>
   )
 
@@ -725,8 +774,8 @@ function SuperadminWorkspaceNavigation({
       renderNavigation={(surface, closeMobile) => {
         const mobile = surface === "mobile"
         const navTriggerClass = mobile
-          ? "h-12 w-full flex-none shrink-0 justify-start gap-3 rounded-lg px-4 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-sidebar-ring/45 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:hover:bg-primary"
-          : "h-10 w-full justify-start gap-2 rounded-md px-3 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-sidebar-ring/45 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm data-[state=active]:hover:bg-primary"
+          ? "h-12 w-full flex-none shrink-0 justify-start gap-3 rounded-lg px-3 text-sm text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-sidebar-ring/45 data-[state=active]:bg-[#0758c8] data-[state=active]:text-white data-[state=active]:shadow-[0_10px_24px_rgba(7,88,200,0.2)] data-[state=active]:hover:bg-[#0758c8]"
+          : "h-11 w-full justify-start gap-3 rounded-lg px-2.5 text-sm text-[#9bb0c5] transition-colors hover:bg-white/7 hover:text-white focus-visible:ring-sidebar-ring/45 data-[state=active]:bg-[#0758c8] data-[state=active]:text-white data-[state=active]:shadow-[0_10px_24px_rgba(7,88,200,0.2)] data-[state=active]:hover:bg-[#0758c8]"
 
         return (
           <TabsList
@@ -735,20 +784,50 @@ function SuperadminWorkspaceNavigation({
               mobile ? "gap-1.5" : "gap-1"
             }`}
           >
-            {superadminNavItems.map((item) => (
-              <TabsTrigger
-                key={item.value}
-                value={item.value}
-                className={navTriggerClass}
-                onClick={mobile ? closeMobile : undefined}
+            {superadminNavGroups.map((group, groupIndex) => (
+              <div
+                key={group.label}
+                className={groupIndex ? "mt-4" : undefined}
               >
-                <HugeiconsIcon
-                  icon={item.icon}
-                  strokeWidth={1.7}
-                  className={mobile ? "size-5" : "size-4"}
-                />
-                {item.label}
-              </TabsTrigger>
+                <p className="mb-1.5 px-2.5 text-[0.6875rem] font-semibold tracking-[0.08em] text-[#6f8aa5] uppercase">
+                  {group.label}
+                </p>
+                <div className="grid gap-1">
+                  {group.items.map((item) => {
+                    const active = item.value === activeValue
+
+                    return (
+                      <TabsTrigger
+                        key={item.value}
+                        value={item.value}
+                        className={navTriggerClass}
+                        onClick={mobile ? closeMobile : undefined}
+                      >
+                        <span
+                          className={`grid size-7 shrink-0 place-items-center rounded-md ${
+                            active ? "bg-white/14" : "bg-white/5"
+                          }`}
+                        >
+                          <HugeiconsIcon
+                            icon={item.icon}
+                            strokeWidth={1.7}
+                            className={mobile ? "size-5" : "size-4"}
+                          />
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-left">
+                          {item.label}
+                        </span>
+                        {active ? (
+                          <span
+                            aria-hidden="true"
+                            className="size-1.5 shrink-0 rounded-full bg-[#80e8ff]"
+                          />
+                        ) : null}
+                      </TabsTrigger>
+                    )
+                  })}
+                </div>
+              </div>
             ))}
           </TabsList>
         )
@@ -784,20 +863,52 @@ export function SuperadminConsole(props: Props) {
   const [emailStatusFilter, setEmailStatusFilter] = useState("all")
   const [emailSenderFilter, setEmailSenderFilter] = useState("all")
   const [activeTab, setActiveTab] = useState("admins")
+  const [vendorPage, setVendorPage] = useState(1)
+  const [demoScaleEnabled, setDemoScaleEnabled] = useState(
+    process.env.NODE_ENV !== "production"
+  )
 
   const tenantNames = useMemo(
     () => new Map(tenants.map((tenant) => [tenant.id, tenant.name])),
     [tenants]
   )
-  const filteredVendors = vendors.filter((vendor) => {
-    const text =
-      `${vendor.name_en} ${vendor.name_cn} ${vendor.sector}`.toLowerCase()
-    return (
-      text.includes(vendorSearch.toLowerCase()) &&
-      (tenantFilter === "all" || vendor.admin_id === tenantFilter) &&
-      (typeFilter === "all" || vendor.vendor_type === typeFilter)
-    )
-  })
+  const demoVendors = useMemo(
+    () => buildSuperadminVendorDemoRecords(tenants, vendors.length),
+    [tenants, vendors.length]
+  )
+  const displayVendors = useMemo(
+    () => (demoScaleEnabled ? [...demoVendors, ...vendors] : vendors),
+    [demoScaleEnabled, demoVendors, vendors]
+  )
+  const filteredVendors = useMemo(() => {
+    const query = vendorSearch.toLowerCase()
+
+    return displayVendors.filter((vendor) => {
+      const text =
+        `${vendor.name_en} ${vendor.name_cn} ${vendor.sector}`.toLowerCase()
+      return (
+        text.includes(query) &&
+        (tenantFilter === "all" || vendor.admin_id === tenantFilter) &&
+        (typeFilter === "all" || vendor.vendor_type === typeFilter)
+      )
+    })
+  }, [displayVendors, tenantFilter, typeFilter, vendorSearch])
+  const vendorPageCount = Math.max(
+    1,
+    Math.ceil(filteredVendors.length / VENDOR_PAGE_SIZE)
+  )
+  const safeVendorPage = Math.min(vendorPage, vendorPageCount)
+  const visibleVendors = filteredVendors.slice(
+    (safeVendorPage - 1) * VENDOR_PAGE_SIZE,
+    safeVendorPage * VENDOR_PAGE_SIZE
+  )
+  const vendorRangeStart = filteredVendors.length
+    ? (safeVendorPage - 1) * VENDOR_PAGE_SIZE + 1
+    : 0
+  const vendorRangeEnd = Math.min(
+    safeVendorPage * VENDOR_PAGE_SIZE,
+    filteredVendors.length
+  )
   const filteredAudit = auditEvents.filter((event) =>
     `${event.action} ${event.target_table} ${event.actor_role ?? ""} ${event.target_id ?? ""}`
       .toLowerCase()
@@ -863,8 +974,14 @@ export function SuperadminConsole(props: Props) {
       delivery.provider === "supabase_auth" && delivery.status === "requested"
   ).length
   const activeTenants = tenants.filter((tenant) => tenant.status === "active")
-  const activeVendors = vendors.filter((vendor) => vendor.status === "active")
+  const activeVendors = displayVendors.filter(
+    (vendor) => vendor.status === "active"
+  )
   const suspendedAccounts = accounts.filter((account) => !account.active)
+  const plexaSetting = platformSettings.find(
+    (setting) => setting.setting_key === PLEXA_ROLE_ACCESS_SETTING_KEY
+  )
+  const plexaRoleAccess = normalizePlexaRoleAccess(plexaSetting?.value)
   const adminAccountsByTenant = useMemo(() => {
     const byTenant = new Map<string, ManagedAccount>()
 
@@ -1033,13 +1150,16 @@ export function SuperadminConsole(props: Props) {
           orientation="vertical"
           className="flex flex-col gap-4"
         >
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[220px_minmax(0,1fr)] lg:items-start">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)] lg:grid-rows-[max-content_minmax(0,1fr)] lg:items-start">
             <SuperadminWorkspaceNavigation
               session={session}
               activeValue={activeTab}
             />
 
-            <div className="grid gap-3 sm:grid-cols-2 lg:col-start-2 lg:row-start-1 xl:grid-cols-4">
+            <div
+              data-testid="superadmin-metrics"
+              className="grid gap-3 sm:grid-cols-2 lg:col-start-2 lg:row-start-1 xl:grid-cols-4"
+            >
               <MetricCard
                 label="Admin tenants"
                 value={tenants.length}
@@ -1048,8 +1168,12 @@ export function SuperadminConsole(props: Props) {
               />
               <MetricCard
                 label="Vendors"
-                value={vendors.length}
-                detail={`${activeVendors.length} active across all Admins`}
+                value={displayVendors.length}
+                detail={
+                  demoScaleEnabled
+                    ? `${activeVendors.length} active · ${demoVendors.length} demo records`
+                    : `${activeVendors.length} active across all Admins`
+                }
                 icon={UserGroupIcon}
               />
               <MetricCard
@@ -1227,28 +1351,69 @@ export function SuperadminConsole(props: Props) {
                   <div>
                     <CardTitle>Vendor directory</CardTitle>
                     <CardDescription>
-                      All Vendor companies, grouped by owning Admin and subtype.
+                      {demoScaleEnabled
+                        ? `A ${SUPERADMIN_VENDOR_DEMO_TARGET}-company scale preview using live records plus clearly marked demo data.`
+                        : "All live Vendor companies, grouped by owning Admin and subtype."}
                     </CardDescription>
                   </div>
-                  <CreateVendorDialog
-                    tenants={tenants}
-                    disabled={!provisioningConfigured}
-                    pending={pending}
-                    onSubmit={createVendor}
-                  />
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setDemoScaleEnabled((enabled) => !enabled)
+                        setVendorPage(1)
+                      }}
+                    >
+                      {demoScaleEnabled
+                        ? "Show live data only"
+                        : `Preview ${SUPERADMIN_VENDOR_DEMO_TARGET} Vendors`}
+                    </Button>
+                    <CreateVendorDialog
+                      tenants={tenants}
+                      disabled={!provisioningConfigured}
+                      pending={pending}
+                      onSubmit={createVendor}
+                    />
+                  </div>
                 </CardHeader>
                 <CardContent className="grid gap-4">
+                  {demoScaleEnabled ? (
+                    <div className="flex flex-col gap-3 rounded-xl bg-[#dcecf7] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-[#111826]">
+                          Scale preview: {displayVendors.length} Vendor
+                          companies
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-[#53667c]">
+                          {vendors.length} live records and {demoVendors.length}{" "}
+                          generated records across {tenants.length} Admin
+                          tenants. Demo records are read-only and never
+                          persisted.
+                        </p>
+                      </div>
+                      <Badge className="w-fit shrink-0 bg-[#071326] text-white hover:bg-[#071326]">
+                        Demo dataset
+                      </Badge>
+                    </div>
+                  ) : null}
                   <div className="grid gap-2 sm:grid-cols-3">
                     <Input
                       aria-label="Search Vendors"
                       placeholder="Search name or sector"
                       value={vendorSearch}
-                      onChange={(event) => setVendorSearch(event.target.value)}
+                      onChange={(event) => {
+                        setVendorSearch(event.target.value)
+                        setVendorPage(1)
+                      }}
                     />
                     <NativeSelect
                       aria-label="Filter by Admin tenant"
                       value={tenantFilter}
-                      onChange={(event) => setTenantFilter(event.target.value)}
+                      onChange={(event) => {
+                        setTenantFilter(event.target.value)
+                        setVendorPage(1)
+                      }}
                     >
                       <option value="all">All Admin tenants</option>
                       {tenants.map((tenant) => (
@@ -1260,14 +1425,17 @@ export function SuperadminConsole(props: Props) {
                     <NativeSelect
                       aria-label="Filter by Vendor subtype"
                       value={typeFilter}
-                      onChange={(event) => setTypeFilter(event.target.value)}
+                      onChange={(event) => {
+                        setTypeFilter(event.target.value)
+                        setVendorPage(1)
+                      }}
                     >
                       <option value="all">All subtypes</option>
                       <option value="delegation">Delegation</option>
                       <option value="partner">Partner</option>
                     </NativeSelect>
                   </div>
-                  <div className="hidden md:block">
+                  <div className="hidden overflow-x-auto md:block">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -1275,12 +1443,15 @@ export function SuperadminConsole(props: Props) {
                           <TableHead>Owning Admin</TableHead>
                           <TableHead>Subtype</TableHead>
                           <TableHead>Sector</TableHead>
+                          <TableHead>Profile</TableHead>
                           <TableHead>Status</TableHead>
-                          <TableHead>Control / transfer</TableHead>
+                          {!demoScaleEnabled ? (
+                            <TableHead>Control / transfer</TableHead>
+                          ) : null}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredVendors.map((vendor) => (
+                        {visibleVendors.map((vendor) => (
                           <TableRow key={vendor.id}>
                             <TableCell>
                               <div className="font-medium">
@@ -1289,6 +1460,11 @@ export function SuperadminConsole(props: Props) {
                               <div className="text-muted-foreground">
                                 {vendor.name_cn || vendor.id}
                               </div>
+                              {isSuperadminDemoVendor(vendor) ? (
+                                <Badge variant="outline" className="mt-2">
+                                  Demo record
+                                </Badge>
+                              ) : null}
                             </TableCell>
                             <TableCell>
                               {tenantNames.get(vendor.admin_id) ?? "Unknown"}
@@ -1299,107 +1475,176 @@ export function SuperadminConsole(props: Props) {
                               </Badge>
                             </TableCell>
                             <TableCell>{vendor.sector}</TableCell>
-                            <TableCell>{statusBadge(vendor.status)}</TableCell>
-                            <TableCell>
-                              <div className="flex flex-col gap-2">
-                                <VendorDirectoryDialog
-                                  locale={locale}
-                                  vendor={vendor}
-                                  accounts={accounts.filter(
-                                    (account) =>
-                                      account.vendor_company_id === vendor.id
-                                  )}
-                                  accountEditingEnabled={provisioningConfigured}
-                                />
-                                <StatusControl
-                                  value={vendor.status}
-                                  options={["active", "suspended", "archived"]}
-                                  pending={pending}
-                                  onApply={(status) =>
-                                    runAction(
-                                      () =>
-                                        setVendorStatusAction({
-                                          locale,
-                                          vendorId: vendor.id,
-                                          status: status as VendorStatus,
-                                        }),
-                                      "Vendor status updated."
-                                    )
-                                  }
-                                />
-                                <TransferControl
-                                  vendor={vendor}
-                                  tenants={tenants}
-                                  pending={pending || !provisioningConfigured}
-                                  onTransfer={(destinationAdminId) =>
-                                    runAction(
-                                      () =>
-                                        transferVendorAction({
-                                          locale,
-                                          vendorId: vendor.id,
-                                          destinationAdminId,
-                                        }),
-                                      "Vendor transferred to the selected Admin."
-                                    )
-                                  }
-                                />
-                              </div>
+                            <TableCell className="tabular-nums">
+                              {vendor.profile_complete}%
                             </TableCell>
+                            <TableCell>{statusBadge(vendor.status)}</TableCell>
+                            {!demoScaleEnabled ? (
+                              <TableCell>
+                                <div className="flex flex-col gap-2">
+                                  <VendorDirectoryDialog
+                                    locale={locale}
+                                    vendor={vendor}
+                                    accounts={accounts.filter(
+                                      (account) =>
+                                        account.vendor_company_id === vendor.id
+                                    )}
+                                    accountEditingEnabled={
+                                      provisioningConfigured
+                                    }
+                                  />
+                                  <StatusControl
+                                    value={vendor.status}
+                                    options={[
+                                      "active",
+                                      "suspended",
+                                      "archived",
+                                    ]}
+                                    pending={pending}
+                                    onApply={(status) =>
+                                      runAction(
+                                        () =>
+                                          setVendorStatusAction({
+                                            locale,
+                                            vendorId: vendor.id,
+                                            status: status as VendorStatus,
+                                          }),
+                                        "Vendor status updated."
+                                      )
+                                    }
+                                  />
+                                  <TransferControl
+                                    vendor={vendor}
+                                    tenants={tenants}
+                                    pending={pending || !provisioningConfigured}
+                                    onTransfer={(destinationAdminId) =>
+                                      runAction(
+                                        () =>
+                                          transferVendorAction({
+                                            locale,
+                                            vendorId: vendor.id,
+                                            destinationAdminId,
+                                          }),
+                                        "Vendor transferred to the selected Admin."
+                                      )
+                                    }
+                                  />
+                                </div>
+                              </TableCell>
+                            ) : null}
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
                   </div>
-                  <div className="grid gap-3">
-                    {filteredVendors.map((vendor) => (
+                  <div className="grid gap-3 md:hidden">
+                    {visibleVendors.map((vendor) => (
                       <MobileRecord
                         key={vendor.id}
                         title={vendor.name_en}
                         subtitle={`${tenantNames.get(vendor.admin_id) ?? "Unknown Admin"} · ${labelStatus(vendor.vendor_type)} · ${vendor.sector}`}
                         status={vendor.status}
                       >
-                        <VendorDirectoryDialog
-                          locale={locale}
-                          vendor={vendor}
-                          accounts={accounts.filter(
-                            (account) => account.vendor_company_id === vendor.id
-                          )}
-                          accountEditingEnabled={provisioningConfigured}
-                        />
-                        <StatusControl
-                          value={vendor.status}
-                          options={["active", "suspended", "archived"]}
-                          pending={pending}
-                          onApply={(status) =>
-                            runAction(
-                              () =>
-                                setVendorStatusAction({
-                                  locale,
-                                  vendorId: vendor.id,
-                                  status: status as VendorStatus,
-                                }),
-                              "Vendor status updated."
-                            )
-                          }
-                        />
-                        <TransferControl
-                          vendor={vendor}
-                          tenants={tenants}
-                          pending={pending || !provisioningConfigured}
-                          onTransfer={(destinationAdminId) =>
-                            runAction(
-                              () =>
-                                transferVendorAction({
-                                  locale,
-                                  vendorId: vendor.id,
-                                  destinationAdminId,
-                                }),
-                              "Vendor transferred to the selected Admin."
-                            )
-                          }
-                        />
+                        <p className="text-xs text-muted-foreground">
+                          Profile {vendor.profile_complete}% complete
+                        </p>
+                        {demoScaleEnabled || isSuperadminDemoVendor(vendor) ? (
+                          <div className="rounded-lg bg-[#dcecf7] px-3 py-2 text-xs leading-5 text-[#53667c]">
+                            Read-only scale preview. Generated records are never
+                            persisted.
+                          </div>
+                        ) : (
+                          <>
+                            <VendorDirectoryDialog
+                              locale={locale}
+                              vendor={vendor}
+                              accounts={accounts.filter(
+                                (account) =>
+                                  account.vendor_company_id === vendor.id
+                              )}
+                              accountEditingEnabled={provisioningConfigured}
+                            />
+                            <StatusControl
+                              value={vendor.status}
+                              options={["active", "suspended", "archived"]}
+                              pending={pending}
+                              onApply={(status) =>
+                                runAction(
+                                  () =>
+                                    setVendorStatusAction({
+                                      locale,
+                                      vendorId: vendor.id,
+                                      status: status as VendorStatus,
+                                    }),
+                                  "Vendor status updated."
+                                )
+                              }
+                            />
+                            <TransferControl
+                              vendor={vendor}
+                              tenants={tenants}
+                              pending={pending || !provisioningConfigured}
+                              onTransfer={(destinationAdminId) =>
+                                runAction(
+                                  () =>
+                                    transferVendorAction({
+                                      locale,
+                                      vendorId: vendor.id,
+                                      destinationAdminId,
+                                    }),
+                                  "Vendor transferred to the selected Admin."
+                                )
+                              }
+                            />
+                          </>
+                        )}
                       </MobileRecord>
                     ))}
+                  </div>
+                  {!filteredVendors.length ? (
+                    <div className="rounded-xl bg-[#f7f7f2] px-4 py-8 text-center">
+                      <p className="text-sm font-semibold text-[#111826]">
+                        No Vendors match these filters
+                      </p>
+                      <p className="mt-1 text-xs text-[#53667c]">
+                        Clear the search or choose a different Admin or subtype.
+                      </p>
+                    </div>
+                  ) : null}
+                  <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-xs text-muted-foreground">
+                      Showing {vendorRangeStart}–{vendorRangeEnd} of{" "}
+                      {filteredVendors.length} Vendors
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={safeVendorPage === 1}
+                        onClick={() =>
+                          setVendorPage((page) => Math.max(1, page - 1))
+                        }
+                      >
+                        Previous
+                      </Button>
+                      <span className="min-w-20 text-center text-xs font-medium tabular-nums">
+                        Page {safeVendorPage} of {vendorPageCount}
+                      </span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={safeVendorPage === vendorPageCount}
+                        onClick={() =>
+                          setVendorPage((page) =>
+                            Math.min(vendorPageCount, page + 1)
+                          )
+                        }
+                      >
+                        Next
+                      </Button>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -2045,6 +2290,38 @@ export function SuperadminConsole(props: Props) {
                 locale={locale}
                 event={tchinaEvent}
                 registrations={tchinaRegistrations}
+              />
+            </TabsContent>
+
+            <TabsContent
+              value="plexa"
+              className="grid min-w-0 gap-4 lg:col-start-2 lg:row-start-2"
+            >
+              <PlexaRoleAccessPanel
+                locale={locale}
+                settingId={plexaSetting?.id}
+                initialAccess={plexaRoleAccess}
+              />
+              <PlexaDemo
+                role="superadmin"
+                locale={locale}
+                context={{
+                  workspaceName: "Plexus Platform",
+                  metrics: [
+                    { label: "Active tenants", value: activeTenants.length },
+                    { label: "Active Vendors", value: activeVendors.length },
+                    {
+                      label: "Open incidents",
+                      value: meetingCreationIncidents.length,
+                    },
+                    { label: "Audit events", value: auditEvents.length },
+                  ],
+                  signals: [
+                    `${plexaRoleAccess.admin ? "Admin access is enabled" : "Admin access is disabled"}.`,
+                    `${plexaRoleAccess.vendor ? "Vendor access is enabled" : "Vendor access is disabled"}.`,
+                    `${suspendedAccounts.length} suspended account${suspendedAccounts.length === 1 ? "" : "s"} require platform visibility.`,
+                  ],
+                }}
               />
             </TabsContent>
 

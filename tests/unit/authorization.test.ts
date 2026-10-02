@@ -63,6 +63,12 @@ function createSupabaseMock(vendorDiscoveryEnabled = true) {
       },
       error: null,
     },
+    platform_settings: {
+      data: {
+        value: { admin: true, vendor: true },
+      },
+      error: null,
+    },
   }
   const queriedTables: string[] = []
 
@@ -107,12 +113,14 @@ describe("validateAuthenticatedUser", () => {
         tenantLogoUrl: "https://cdn.example.com/aga-logo.png",
         tenantVendorDiscoveryEnabled: true,
         tenantMeetingAvailability: defaultMeetingAvailability,
+        plexaEnabled: true,
       },
     })
     expect(queriedTables).toEqual([
       "user_profiles",
       "vendor_companies",
       "admin_tenants",
+      "platform_settings",
     ])
   })
 
